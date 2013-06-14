@@ -8,12 +8,14 @@
  * Copyright (c) 2012-2013 Advanced Institute for Computational Science, RIKEN.
  * All rights reserved.
  *
- *
  */
 
 
 Release
 =======
+
+2013-06-14  Version 1.9
+ * autotools version
 
 2013-06-13  Version 1.8
  * Change install policy

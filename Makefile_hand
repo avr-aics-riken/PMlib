@@ -1,0 +1,41 @@
+##############################################################################
+#
+# PMlib - Performance Monitor library
+#
+# Copyright (c) 2010-2011 VCAD System Research Program, RIKEN.
+# All rights reserved.
+#
+# Copyright (c) 2012-2013 Advanced Institute for Computational Science, RIKEN.
+# All rights reserved.
+#
+##############################################################################
+
+
+# Install Dir
+PM_DIR = /usr/local/PMlib
+
+AR          = ar cru
+RANLIB      = ranlib
+RM          = \rm -f
+MPI_DIR     = /opt/openmpi
+CXX         = icpc
+CXXFLAGS    = -O3 -Wall
+CXXFLAGS   += -I$(MPI_DIR)/include
+
+all:
+	( \
+	cd src; \
+	make -f Makefile_hand \
+		CXX='$(CXX)' \
+		CXXFLAGS='$(CXXFLAGS)' \
+		AR='$(AR)' \
+		RANLIB='$(RANLIB)' \
+		RM='$(RM)' \
+		PM_DIR='$(PM_DIR)' \
+	)
+
+clean:
+	(cd src; make clean)
+
+depend:
+	(cd src; make depend)

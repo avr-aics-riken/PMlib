@@ -22,9 +22,11 @@ doc/                   Document
   How_to_use_PMlib.pdf Explanation of usage (in Japanese)
   PMlib.pdf            User's manual (in Japanese)
 include/               Header files
-INSTALL                How to install
-lib/                   Compiled module is stored
-make_setting.*         Environment setting
-Makefile               Building PMlib
+INSTALL                Description of how to install
+LICENSE                License to apply
+NEWS                   Release note
+Makefile_hand          Building PMlib by hand compile
 README                 This document
 src/                   Source codes
+
+Other files are used to configure.
