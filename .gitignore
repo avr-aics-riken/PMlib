@@ -6,8 +6,25 @@
 # Compiled Dynamic libraries
 *.so
 *.dylib
+*.so.[0-9]*
 
 # Compiled Static libraries
 *.lai
 *.la
 *.a
+
+# Tex
+*.bak
+*.aux
+*.log
+*.toc
+*.bbl
+*.blg
+*.out
+*.ind
+*.ilg
+*.dvi
+*.idx
+
+# Mac
+.DS_Store
