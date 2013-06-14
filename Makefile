@@ -1,15 +1,19 @@
 ###################################################################
 #
 # PMlib - Performance Monitor library
-# 
-# Copyright (c) 2010-2013 Advanced Institute for Computational Science, RIKEN.
-# All right reserved.
+#
+# Copyright (c) 2010-2011 VCAD System Research Program, RIKEN.
+# All rights reserved.
+#
+# Copyright (c) 2012-2013 Advanced Institute for Computational Science, RIKEN.
+# All rights reserved.
 #
 ###################################################################
 #
 #  At first, editing a make_setting.* file, then make
-#  If PMlib is placed inside the directory of FFVC solver, this makefile is ignored.
 
+# Install Dir
+PM_DIR = /usr/local/PMlib
 
 # Default environment
 MACHINE=intel
@@ -44,7 +48,7 @@ all:
 		AR='$(AR)' \
 		RANLIB='$(RANLIB)' \
 		RM='$(RM)' \
-		UDEF_INC_PATH='$(UDEF_INC_PATH)' \
+		PM_DIR='$(PM_DIR)' \
 	)
 
 clean:

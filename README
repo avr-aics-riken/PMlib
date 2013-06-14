@@ -1,13 +1,20 @@
-PMlib - Performance Monitor library
-
-Copyright (c) 2010-2013 Advanced Institute for Computational Science, RIKEN.
-All right reserved.
+/*
+ *
+ * PMlib - Performance Monitor library
+ *
+ * Copyright (c) 2010-2011 VCAD System Research Program, RIKEN.
+ * All rights reserved.
+ *
+ * Copyright (c) 2012-2013 Advanced Institute for Computational Science, RIKEN.
+ * All rights reserved.
+ *
+ */
 
 
 Ingredients
---------------------------
+===========
 
-AUTHORS 	             Contributors
+AUTHORS                Contributors
 ChangeLog              History of modification
 COPYING                Copyright
 doc/                   Document
@@ -15,9 +22,9 @@ doc/                   Document
   How_to_use_PMlib.pdf Explanation of usage (in Japanese)
   PMlib.pdf            User's manual (in Japanese)
 include/               Header files
-INSTALL 	             How to install
+INSTALL                How to install
 lib/                   Compiled module is stored
 make_setting.*         Environment setting
 Makefile               Building PMlib
-README 		             This document
+README                 This document
 src/                   Source codes
