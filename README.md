@@ -1,4 +1,0 @@
-pmlib
-=====
-
-Performance Monitor library
