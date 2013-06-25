@@ -14,14 +14,14 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.69])
-AC_INIT([PMlib], [1.9], [keno@riken.jp],[PMlib])
+AC_INIT([PMlib], [1.9.1], [keno@riken.jp],[PMlib])
 AM_INIT_AUTOMAKE()
 AC_CONFIG_SRCDIR([src/PerfMonitor.cpp])
 AC_CONFIG_HEADERS([config.h])
 
 
 # revision No.
-PM_REVISION="20130614_1200"
+PM_REVISION="20130625_1300"
 AC_SUBST(PM_REVISION)
 
 
@@ -36,19 +36,89 @@ else
 fi
 
 
+
 #
-# MPI environment
+# platform
 #
-AC_SUBST(MPI_DIR)
-AC_SUBST(MPI_CFLAGS)
-AC_ARG_WITH(mpi, [AC_HELP_STRING([--with-mpi=dir],[Specify MPI install directory])], , with_mpi=none)
-if test "$with_mpi" != "none" ; then
-  MPI_DIR=$with_mpi;
-  MPI_CFLAGS=-I$MPI_DIR/include
-else
-  echo "  Warning: MPI library not specified."
-  echo "           if compilation error about MPI occurs, set --with-mpi option"
+PL_DEVICE="$($SHELL ./pm-uname)"
+AC_SUBST(PL_DEVICE)
+
+#
+# compiler libs
+#
+AC_ARG_WITH(comp, [AC_HELP_STRING([--with-comp=(INTEL|FJ)],[Specify Compiler type])], , with_comp=none)
+AC_SUBST(COMPILER_LIBS)
+case "$with_comp" in
+"INTEL")
+  COMPILER_LIBS="-lifport -lifcore"
+  ;;
+"FJ")
+  COMPILER_LIBS="--linkfortran"
+  ;;
+esac
+
+enable_mpi="none"
+
+
+#
+# MPICH environment
+#
+AC_SUBST(MPICH_DIR)
+AC_SUBST(MPICH_CFLAGS)
+AC_SUBST(MPICH_LDFLAGS)
+AC_SUBST(MPICH_LIBS)
+AC_SUBST(MPICH_FCLIBS)
+AC_ARG_WITH(mpich, [AC_HELP_STRING([--with-mpich=dir],[Specify MPICH install directory])], , with_mpich=none)
+if test "$with_mpich" != "none" ; then
+  MPICH_DIR=$with_mpich;
+  MPICH_CFLAGS=-I$MPICH_DIR/include
+  MPICH_LDFLAGS=-L$MPICH_DIR/lib
+  enable_mpi="mpich"
 fi
+
+#
+# OpenMPI environment
+#
+if test "$with_mpich" = "none" ; then
+  AC_ARG_WITH(ompi, [AC_HELP_STRING([--with-ompi=dir],[Specify OpenMPI install directory])], , with_ompi=none)
+  if test "$with_ompi" != "none" ; then
+    MPICH_DIR=$with_ompi;
+    MPICH_CFLAGS=-I$MPICH_DIR/include
+    MPICH_LDFLAGS=-L$MPICH_DIR/lib
+    enable_mpi="ompi"
+  fi
+fi
+
+
+#
+# MPI Library
+#
+if test "$with_comp" = "FJ" ; then
+  MPICH_LIBS=""
+  case "$host" in
+  sparc*)
+    MPICH_FCLIBS="$MPICH_LIBS"" -lmpi_f77 -lmpi_f90"
+    ;;
+  esac
+elif test "$enable_mpi" = "mpich" ; then
+  MPICH_LIBS="-lmpich"
+  MPICH_FCLIBS="$MPICH_LIBS"" -lfmpich"
+  case "$CPM_DEVICE" in
+  "Lion"|"Snow_Leopard"|"Leopard"|"Mountain_Lion")
+#    MPICH_LIBS="$MPICH_LIBS"" -lpmpich"
+    ;;
+  esac
+elif test "$enable_mpi" = "ompi" ; then
+  MPICH_LIBS="-lmpi"
+  MPICH_FCLIBS="$MPICH_LIBS"" -lmpi_f77 -lmpi_f90"
+  case "$CPM_DEVICE" in
+  "Lion"|"Snow_Leopard"|"Leopard"|"Mountain_Lion")
+#    MPICH_LIBS="$MPICH_LIBS"" -lmpi_cxx"
+    ;;
+  esac
+fi
+
+
 
 
 #
@@ -56,10 +126,13 @@ fi
 #
 PM_CFLAGS="-I$PM_INST_DIR/include"
 AC_SUBST(PM_CFLAGS)
+
 PM_LDFLAGS="-L$PM_INST_DIR/lib"
 AC_SUBST(PM_LDFLAGS)
+
 PM_LIBS="-lPM"
 AC_SUBST(PM_LIBS)
+
 PM_CXX="$CXX"
 AC_SUBST(PM_CXX)
 

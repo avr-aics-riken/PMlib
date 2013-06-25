@@ -181,6 +181,7 @@ AWK = @AWK@
 CC = @CC@
 CCDEPMODE = @CCDEPMODE@
 CFLAGS = @CFLAGS@
+COMPILER_LIBS = @COMPILER_LIBS@
 CPP = @CPP@
 CPPFLAGS = @CPPFLAGS@
 CXX = @CXX@
@@ -207,8 +208,11 @@ LTLIBOBJS = @LTLIBOBJS@
 MAKEINFO = @MAKEINFO@
 MAKE_SUB_DIRS = @MAKE_SUB_DIRS@
 MKDIR_P = @MKDIR_P@
-MPI_CFLAGS = @MPI_CFLAGS@
-MPI_DIR = @MPI_DIR@
+MPICH_CFLAGS = @MPICH_CFLAGS@
+MPICH_DIR = @MPICH_DIR@
+MPICH_FCLIBS = @MPICH_FCLIBS@
+MPICH_LDFLAGS = @MPICH_LDFLAGS@
+MPICH_LIBS = @MPICH_LIBS@
 OBJEXT = @OBJEXT@
 PACKAGE = @PACKAGE@
 PACKAGE_BUGREPORT = @PACKAGE_BUGREPORT@
@@ -218,6 +222,7 @@ PACKAGE_TARNAME = @PACKAGE_TARNAME@
 PACKAGE_URL = @PACKAGE_URL@
 PACKAGE_VERSION = @PACKAGE_VERSION@
 PATH_SEPARATOR = @PATH_SEPARATOR@
+PL_DEVICE = @PL_DEVICE@
 PM_CFLAGS = @PM_CFLAGS@
 PM_CXX = @PM_CXX@
 PM_LDFLAGS = @PM_LDFLAGS@
@@ -273,8 +278,11 @@ top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 SUBDIRS = @MAKE_SUB_DIRS@
 bin_SCRIPTS = pm-config
-EXTRA_DIST = pm-config.in LICENSE Makefile_hand src/Makefile_hand doc/Doxyfile
-dist_data_DATA = AUTHORS COPYING ChangeLog README LICENSE
+CLEANFILES = $(bin_SCRIPTS)
+EXTRA_DIST = pm-config.in LICENSE Makefile_hand src/Makefile_hand \
+                 doc/Doxyfile pm-uname
+
+dist_data_DATA = AUTHORS COPYING ChangeLog README LICENSE 
 all: config.h
 	$(MAKE) $(AM_MAKEFLAGS) all-recursive
 
@@ -734,6 +742,7 @@ install-strip:
 mostlyclean-generic:
 
 clean-generic:
+	-test -z "$(CLEANFILES)" || rm -f $(CLEANFILES)
 
 distclean-generic:
 	-test -z "$(CONFIG_CLEAN_FILES)" || rm -f $(CONFIG_CLEAN_FILES)
@@ -835,7 +844,6 @@ uninstall-am: uninstall-binSCRIPTS uninstall-dist_dataDATA
 	tags-recursive uninstall uninstall-am uninstall-binSCRIPTS \
 	uninstall-dist_dataDATA
 
-#doc_DATA       = doc/Doxyfile doc/How_to_use_PMlib.pdf doc/PMlib.pdf 
 
 clean-local:
 	find ./ -name *.obj | xargs rm -f

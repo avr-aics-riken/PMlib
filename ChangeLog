@@ -14,6 +14,9 @@
 Release
 =======
 
+2013-06-25  Version 1.9.1
+ * Change configure options of MPI to install for K-computer/FX10.
+
 2013-06-14  Version 1.9
  * autotools version
 

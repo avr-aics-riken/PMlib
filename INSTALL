@@ -11,19 +11,54 @@
  */
 
 
-How to install PMlib
-====================
+Prerequisite
+============
+- MPI library
 
-1) Use configure
 
-   $ ./configure --prefix=/usr/local/PMlib --with-mpi=/opt/openmpi CXX=icpc CXXFLAGS=-O3
+How to compile
+==============
 
-   prefix   : install directory path
-   with-mpi : installed MPI directory path
-   CXX      : C++ compiler
-   CXXFLAGS : Compiler option
+1) with configure
 
-   If you try to install process again, execute 'make distclean' then configure.
+
+$ ./configure [options]
+$ make
+# make install
+
+
+Configure options:
+ 
+ --prefix=OMSTALL_DIR
+    Install directory path.  If omitted, default is /usr/local/PMlib.
+
+ --with-mpich=MPICH_DIR
+    If you will use a MPICH library, specify the directory that MPICH library is installed.
+    Either --with-mpich of --with-ompi option will be required except. If the wrapper compiler,
+    e.g., mpic++ or mpicxx is used to compile, both options can be eliminated.
+
+ --with-ompi=OPENMPI_DIR
+    If you will use an OpenMPI library, specify the directory path of OpenMPI.
+
+ --with-comp=(INTEL|FJ)
+    If Intel compiler is used, choose INTEL, and if Fujitsu compiler, specify FJ. This option 
+    is mandatory when using both compilers.
+
+ --host=hostname
+    Specify in case of cross-compilation.
+
+ CXX      : C++ compiler
+ 
+ CXXFLAGS : Compiler options
+
+
+here is an example.
+
+$ ./configure --prefix=/usr/local/PMlib --with-comp=INTEL --with-ompi=/opt/openmpi CXX=icpc CXXFLAGS=-O3
+
+
+If you try to install process again, execute 'make distclean' then configure.
+
 
 
 2) Hand compile

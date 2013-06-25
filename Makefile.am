@@ -13,9 +13,10 @@
 SUBDIRS = @MAKE_SUB_DIRS@
 
 bin_SCRIPTS    = pm-config
-EXTRA_DIST     = pm-config.in LICENSE Makefile_hand src/Makefile_hand doc/Doxyfile
-dist_data_DATA = AUTHORS COPYING ChangeLog README LICENSE
-#doc_DATA       = doc/Doxyfile doc/How_to_use_PMlib.pdf doc/PMlib.pdf 
+CLEANFILES     = $(bin_SCRIPTS)
+EXTRA_DIST     = pm-config.in LICENSE Makefile_hand src/Makefile_hand \
+                 doc/Doxyfile pm-uname
+dist_data_DATA = AUTHORS COPYING ChangeLog README LICENSE 
 
 clean-local:
 	find ./ -name *.obj | xargs rm -f
