@@ -14,14 +14,14 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.69])
-AC_INIT([PMlib], [1.9.1], [keno@riken.jp],[PMlib])
+AC_INIT([PMlib], [1.9.2], [keno@riken.jp],[PMlib])
 AM_INIT_AUTOMAKE()
 AC_CONFIG_SRCDIR([src/PerfMonitor.cpp])
 AC_CONFIG_HEADERS([config.h])
 
 
 # revision No.
-PM_REVISION="20130625_1300"
+PM_REVISION="20130626_2200"
 AC_SUBST(PM_REVISION)
 
 
@@ -44,79 +44,44 @@ PL_DEVICE="$($SHELL ./pm-uname)"
 AC_SUBST(PL_DEVICE)
 
 #
-# compiler libs
+# MPI environment
 #
-AC_ARG_WITH(comp, [AC_HELP_STRING([--with-comp=(INTEL|FJ)],[Specify Compiler type])], , with_comp=none)
-AC_SUBST(COMPILER_LIBS)
-case "$with_comp" in
-"INTEL")
-  COMPILER_LIBS="-lifport -lifcore"
-  ;;
-"FJ")
-  COMPILER_LIBS="--linkfortran"
-  ;;
-esac
-
 enable_mpi="none"
 
+AC_SUBST(MPI_DIR)
+AC_SUBST(MPI_CFLAGS)
+AC_SUBST(MPI_LDFLAGS)
+AC_SUBST(MPI_LIBS)
 
-#
-# MPICH environment
-#
-AC_SUBST(MPICH_DIR)
-AC_SUBST(MPICH_CFLAGS)
-AC_SUBST(MPICH_LDFLAGS)
-AC_SUBST(MPICH_LIBS)
-AC_SUBST(MPICH_FCLIBS)
+
+# mpich
 AC_ARG_WITH(mpich, [AC_HELP_STRING([--with-mpich=dir],[Specify MPICH install directory])], , with_mpich=none)
 if test "$with_mpich" != "none" ; then
-  MPICH_DIR=$with_mpich;
-  MPICH_CFLAGS=-I$MPICH_DIR/include
-  MPICH_LDFLAGS=-L$MPICH_DIR/lib
+  MPI_DIR=$with_mpich;
+  MPI_CFLAGS=-I$MPI_DIR/include
+  MPI_LDFLAGS=-L$MPI_DIR/lib
+  MPI_LIBS=-lmpich
   enable_mpi="mpich"
 fi
 
-#
-# OpenMPI environment
-#
+
+# openmpi
 if test "$with_mpich" = "none" ; then
-  AC_ARG_WITH(ompi, [AC_HELP_STRING([--with-ompi=dir],[Specify OpenMPI install directory])], , with_ompi=none)
+  AC_ARG_WITH( ompi, [AC_HELP_STRING([--with-ompi=dir],[Specify OpenMPI install directory])], , with_ompi=none)
   if test "$with_ompi" != "none" ; then
-    MPICH_DIR=$with_ompi;
-    MPICH_CFLAGS=-I$MPICH_DIR/include
-    MPICH_LDFLAGS=-L$MPICH_DIR/lib
+    MPI_DIR=$with_ompi;
+    MPI_CFLAGS=-I$MPI_DIR/include
+    MPI_LDFLAGS=-L$MPI_DIR/lib
+    MPI_LIBS=-lmpi
     enable_mpi="ompi"
   fi
 fi
 
-
-#
-# MPI Library
-#
-if test "$with_comp" = "FJ" ; then
-  MPICH_LIBS=""
-  case "$host" in
-  sparc*)
-    MPICH_FCLIBS="$MPICH_LIBS"" -lmpi_f77 -lmpi_f90"
-    ;;
-  esac
-elif test "$enable_mpi" = "mpich" ; then
-  MPICH_LIBS="-lmpich"
-  MPICH_FCLIBS="$MPICH_LIBS"" -lfmpich"
-  case "$CPM_DEVICE" in
-  "Lion"|"Snow_Leopard"|"Leopard"|"Mountain_Lion")
-#    MPICH_LIBS="$MPICH_LIBS"" -lpmpich"
-    ;;
-  esac
-elif test "$enable_mpi" = "ompi" ; then
-  MPICH_LIBS="-lmpi"
-  MPICH_FCLIBS="$MPICH_LIBS"" -lmpi_f77 -lmpi_f90"
-  case "$CPM_DEVICE" in
-  "Lion"|"Snow_Leopard"|"Leopard"|"Mountain_Lion")
-#    MPICH_LIBS="$MPICH_LIBS"" -lmpi_cxx"
-    ;;
-  esac
+if test "$enable_mpi" = "none" ; then
+  echo "  Warning: Neither MPICH nor OpenMPI library is not specified."
+  echo "           If compilation error occurs about MPI, specify --with-mpich or --with-ompi option."
 fi
+
 
 
 

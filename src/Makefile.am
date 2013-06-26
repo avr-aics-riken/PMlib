@@ -14,7 +14,7 @@
 
 lib_LIBRARIES = libPM.a
 
-libPM_a_CXXFLAGS = @MPICH_CFLAGS@ -I$(top_builddir)/include
+libPM_a_CXXFLAGS = @MPI_CFLAGS@ -I$(top_builddir)/include
 
 libPM_a_SOURCES = \
     PerfMonitor.cpp \
