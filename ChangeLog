@@ -14,6 +14,9 @@
 UPDATE HISTORY
 ==============
 
+Version 1.9.3  2013-06-27
+ * Modify pm-config.in
+
 Version 1.9.2  2013-06-26
  * Modify configure options of MPI.
 

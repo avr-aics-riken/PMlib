@@ -14,14 +14,14 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.69])
-AC_INIT([PMlib], [1.9.2], [keno@riken.jp],[PMlib])
+AC_INIT([PMlib], [1.9.3], [keno@riken.jp],[PMlib])
 AM_INIT_AUTOMAKE()
 AC_CONFIG_SRCDIR([src/PerfMonitor.cpp])
 AC_CONFIG_HEADERS([config.h])
 
 
 # revision No.
-PM_REVISION="20130626_2200"
+PM_REVISION="20130627_1400"
 AC_SUBST(PM_REVISION)
 
 
