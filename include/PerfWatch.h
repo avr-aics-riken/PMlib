@@ -1,7 +1,7 @@
 #ifndef _CAERU_PERFWATCH_H_
 #define _CAERU_PERFWATCH_H_
 
-/* ##################################################################
+/* ############################################################################
  *
  * PMlib - Performance Monitor library
  *
@@ -11,7 +11,7 @@
  * Copyright (c) 2012-2013 Advanced Institute for Computational Science, RIKEN.
  * All rights reserved.
  *
- * ###################################################################
+ * ############################################################################
  */
 
 //@file   PerfWatch.h

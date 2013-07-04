@@ -1,4 +1,4 @@
-/* ##################################################################
+/* ############################################################################
  *
  * PMlib - Performance Monitor library
  *
@@ -8,7 +8,7 @@
  * Copyright (c) 2012-2013 Advanced Institute for Computational Science, RIKEN.
  * All rights reserved.
  *
- * ###################################################################
+ * ############################################################################
  */
 
 //@file   PerfMonitor.cpp
@@ -76,7 +76,8 @@ namespace pm_lib {
     maxLabelLen++;
     
     fprintf(fp, "\n\t-----------------------------------------------------------------\n");
-    fprintf(fp, "\tReport of Timing Statistics PMlib version %3.1f\n", (float)PMLIB_VERS/10.0);
+    fprintf(fp, "\tReport of Timing Statistics PMlib version ");
+    printVersion(fp, PMLIB_VERS);
     fprintf(fp, "\n");
     fprintf(fp, "\tOperator  : %s\n", operatorname.c_str());
     fprintf(fp, "\tHost name : %s\n", hostname.c_str());

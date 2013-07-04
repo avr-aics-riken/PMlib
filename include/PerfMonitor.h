@@ -1,7 +1,7 @@
 #ifndef _CAERU_PERFMONITOR_H_
 #define _CAERU_PERFMONITOR_H_
 
-/* ##################################################################
+/* ############################################################################
  *
  * PMlib - Performance Monitor library
  *
@@ -11,7 +11,7 @@
  * Copyright (c) 2012-2013 Advanced Institute for Computational Science, RIKEN.
  * All rights reserved.
  *
- * ###################################################################
+ * ############################################################################
  */
 
 //@file   PerfMonitor.h
@@ -32,7 +32,7 @@ namespace pm_lib {
 #define PM_TIMING_DETAIL__  if (PerfMonitor::TimingLevel > 1)
 
   /// バージョン情報
-#define PMLIB_VERS 19
+#define PMLIB_VERS 194
   
   /**
    * 計算性能測定管理クラス.
@@ -82,6 +82,25 @@ namespace pm_lib {
       m_total.setProperties("Total excution time", CALC, my_rank, false);
       m_total.start();
     }
+    
+    
+    /** バージョン情報の表示
+     * @param [in] fp   ファイルポインタ
+     * @param [in] ver  バージョン番号
+     */
+    void printVersion(FILE* fp, const int ver)
+    {
+      int a, b, c;
+      a = b = c = 0;
+      
+      a = ver / 100;
+      b = (ver - a*100) / 10;
+      c = ver - a*100 - b*10;
+      
+      fprintf(fp, "%d.%d.%d\n", a, b, c);
+    }
+    
+    
     
     /// ランク番号の通知
     void setRankInfo(const int myID) {
