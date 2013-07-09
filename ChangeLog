@@ -11,45 +11,58 @@
  */
 
 
-UPDATE HISTORY
-==============
+REVISION HISTORY
+================
 
-Version 1.9.4  2013-07-04
- * Add PerfMonitor::printVersion()
 
-Version 1.9.3  2013-06-27
- * Modify pm-config.in
+-------------------------
+2013-07-09
 
-Version 1.9.2  2013-06-26
- * Modify configure options of MPI.
+ r12 version 1.9.5
+     - change implementation of make depend
+     - use depend.inc file in Makefile_hand
+     - update style of ChangeLog and NEWS
+     - remove tp-uname
+     - change policy; pm-config --cflags/--libs give only PMlib's option
+       
 
-Version 1.9.1  2013-06-25
- * Change configure options of MPI to install for K-computer/FX10.
+-------------------------
+2013-07-04
 
-Version 1.9  2013-06-14
- * autotools version
+ r11 Add printVersion for 3 digit
 
-Version 1.8  2013-06-13
- * Change install policy
 
-Version 1.7  2013-05-08
- * Split make_setting file
- 
-Version 1.6  2013-04-13
- * Change make procedure
- * add LICENSE
+-------------------------
+2013-06-27
 
-Version 1.5  2012-12-05
- * Change make procedure
- * Bug fix for in case of m_time_av is 0.0
+ r10 update pm-config
+   
 
-Version 1.4  2012-09-06
+-------------------------
+2013-06-26
 
-Version 1.3  2012-07-23
+ r9 change configure option
 
-Version 1.2  2012-07-11
 
-Version 1.1  2012-05-02
+-------------------------
+2013-06-25
 
-Version 1.0  2012-04-28
+ r8 cross-compile 1.9.1
 
+
+-------------------------
+2013-06-15
+
+ r7 modify copyright info. for header and source files
+
+
+-------------------------
+2013-06-14
+
+ r6 PMlib-1.9 beautify
+
+ r5 PMlib-1.9
+
+ r4 PMlib-1.8
+
+ r3 PMlib-1.7

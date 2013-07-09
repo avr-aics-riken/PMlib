@@ -71,11 +71,11 @@ EOF
       ;;
 
     --cflags)
-      echo @PM_CFLAGS@ @MPI_CFLAGS@
+      echo @PM_CFLAGS@
       ;;
 
     --libs)
-      echo @PM_LDFLAGS@ @PM_LIBS@ @MPI_LDFLAGS@ @MPI_LIBS@
+      echo @PM_LDFLAGS@ @PM_LIBS@
       ;;
 
     *)

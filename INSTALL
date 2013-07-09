@@ -54,14 +54,22 @@ Configure options:
 
 Here is examples.
 
-$ ./configure --prefix=/usr/local/PMlib --with-ompi=/opt/openmpi CXX=icpc CXXFLAGS=-O3
+# Specify install directory, mpi library and compiler
 
-$ ./configure CXX=mpicxx CXXFLAGS=-O3
+  $ ./configure --prefix=/usr/local/PMlib --with-ompi=/opt/openmpi CXX=icpc CXXFLAGS=-O3
 
-$ ./configure --prefix=$1 \
-              --host=sparc64-unknown-linux-gnu \
-              CXX=mpiFCCpx \
-              CXXFLAGS="-Kfast,ocl,preex,simd=2,uxsimd,array_private,parallel,openmp"
+
+# Using a wrapper compiler with default install directory
+
+  $ ./configure CXX=mpicxx CXXFLAGS=-O3
+
+
+# FX, K computer, cross compilation
+
+  $ ./configure --prefix=$1 \
+                --host=sparc64-unknown-linux-gnu \
+                CXX=mpiFCCpx \
+                CXXFLAGS="-Kfast,ocl,preex,simd=2,uxsimd,array_private,parallel,openmp"
 
 
 If you try to install process again, execute 'make distclean' then configure.

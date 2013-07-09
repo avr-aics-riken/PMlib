@@ -15,7 +15,9 @@ PMLIB  = libPM.a
 
 all: $(PMLIB)
 
-OBJS = PerfWatch.o PerfMonitor.o
+SRCS = PerfWatch.cpp PerfMonitor.cpp
+.SUFFIXES: .o .cpp
+OBJS = $(SRCS:.cpp=.o)
 
 
 $(PMLIB): $(OBJS)
@@ -34,10 +36,11 @@ $(PMLIB): $(OBJS)
 clean:
 	$(RM) *.o $(PM_DIR)/$(PMLIB)
 
-depend:
-	makedepend -I. -I../include -Y PerfWatch.cpp PerfMonitor.cpp
-  
-# DO NOT DELETE
+depend: $(OBJS:.o=.cpp)
+	@ rm -rf depend.inc
+	@ echo $(CXXFLAGS)
+	@ for i in $^; do\
+		$(CXX) $(CXXFLAGS) -I../include -MM $$i >> depend.inc;\
+	done
 
-PerfWatch.o: ../include/PerfWatch.h
-PerfMonitor.o: ../include/PerfMonitor.h ../include/PerfWatch.h
+-include depend.inc

@@ -35,7 +35,25 @@ all:
 	)
 
 clean:
-	(cd src; make clean)
+	( \
+	cd src; \
+	make -f Makefile_hand clean \
+		CXX='$(CXX)' \
+		CXXFLAGS='$(CXXFLAGS)' \
+		AR='$(AR)' \
+		RANLIB='$(RANLIB)' \
+		RM='$(RM)' \
+		PM_DIR='$(PM_DIR)' \
+	)
 
 depend:
-	(cd src; make depend)
+	( \
+	cd src; \
+	make -f Makefile_hand depend \
+		CXX='$(CXX)' \
+		CXXFLAGS='$(CXXFLAGS)' \
+		AR='$(AR)' \
+		RANLIB='$(RANLIB)' \
+		RM='$(RM)' \
+		PM_DIR='$(PM_DIR)' \
+	)

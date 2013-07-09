@@ -14,14 +14,14 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.69])
-AC_INIT([PMlib], [1.9.4], [keno@riken.jp],[PMlib])
+AC_INIT([PMlib], [1.9.5], [keno@riken.jp],[PMlib])
 AM_INIT_AUTOMAKE()
 AC_CONFIG_SRCDIR([src/PerfMonitor.cpp])
 AC_CONFIG_HEADERS([config.h])
 
 
 # revision No.
-PM_REVISION="20130704_1700"
+PM_REVISION="20130709_1100"
 AC_SUBST(PM_REVISION)
 
 
@@ -34,19 +34,24 @@ if test "$prefix" = "NONE" ; then
 else
   PM_INST_DIR="$prefix"
 fi
-
-
-
-#
-# platform
-#
-PL_DEVICE="$($SHELL ./pm-uname)"
-AC_SUBST(PL_DEVICE)
+
 
 #
 # MPI environment
 #
 enable_mpi="none"
+
+PM_CXX="$CXX"
+AC_SUBST(PM_CXX)
+
+case "$PM_CXX" in
+  mpicxx)   enable_mpi="wrappermpi" ;;
+  mpicc)    enable_mpi="wrappermpi" ;;
+  mpiCC)    enable_mpi="wrappermpi" ;;
+  mpic++)   enable_mpi="wrappermpi" ;;
+  mpiFCCpx) enable_mpi="wrappermpi" ;;
+esac
+
 
 AC_SUBST(MPI_DIR)
 AC_SUBST(MPI_CFLAGS)
@@ -54,29 +59,38 @@ AC_SUBST(MPI_LDFLAGS)
 AC_SUBST(MPI_LIBS)
 
 
+#
+# if wrapper compiler is specified, skip this part
+#
+
+if test "$enable_mpi" = "none" ; then
+
 # mpich
-AC_ARG_WITH(mpich, [AC_HELP_STRING([--with-mpich=dir],[Specify MPICH install directory])], , with_mpich=none)
-if test "$with_mpich" != "none" ; then
-  MPI_DIR=$with_mpich;
-  MPI_CFLAGS=-I$MPI_DIR/include
-  MPI_LDFLAGS=-L$MPI_DIR/lib
-  MPI_LIBS=-lmpich
-  enable_mpi="mpich"
-fi
+  AC_ARG_WITH(mpich, [AC_HELP_STRING([--with-mpich=dir],[Specify MPICH install directory])], , with_mpich=none)
+  if test "$with_mpich" != "none" ; then
+    MPI_DIR=$with_mpich;
+    MPI_CFLAGS=-I$MPI_DIR/include
+    MPI_LDFLAGS=-L$MPI_DIR/lib
+    MPI_LIBS=-lmpich
+    enable_mpi="mpich"
+  fi
 
 
 # openmpi
-if test "$with_mpich" = "none" ; then
-  AC_ARG_WITH( ompi, [AC_HELP_STRING([--with-ompi=dir],[Specify OpenMPI install directory])], , with_ompi=none)
-  if test "$with_ompi" != "none" ; then
-    MPI_DIR=$with_ompi;
-    MPI_CFLAGS=-I$MPI_DIR/include
-    MPI_LDFLAGS=-L$MPI_DIR/lib
-    MPI_LIBS=-lmpi
-    enable_mpi="ompi"
+  if test "$with_mpich" = "none" ; then
+    AC_ARG_WITH( ompi, [AC_HELP_STRING([--with-ompi=dir],[Specify OpenMPI install directory])], , with_ompi=none)
+    if test "$with_ompi" != "none" ; then
+      MPI_DIR=$with_ompi;
+      MPI_CFLAGS=-I$MPI_DIR/include
+      MPI_LDFLAGS=-L$MPI_DIR/lib
+      MPI_LIBS=-lmpi
+      enable_mpi="ompi"
+    fi
   fi
 fi
 
+# warning. if a wrapper compiler is used, "enable_mpi" is empty, but parallel.
+#
 if test "$enable_mpi" = "none" ; then
   echo "  Warning: Neither MPICH nor OpenMPI library is not specified."
   echo "           If compilation error occurs about MPI, specify --with-mpich or --with-ompi option."
@@ -98,8 +112,6 @@ AC_SUBST(PM_LDFLAGS)
 PM_LIBS="-lPM"
 AC_SUBST(PM_LIBS)
 
-PM_CXX="$CXX"
-AC_SUBST(PM_CXX)
 
 
 #
