@@ -18,6 +18,8 @@ REVISION HISTORY
 -------------------------
 2013-07-09
 
+ r13 update INSTALL
+
  r12 version 1.9.5
      - change implementation of make depend
      - use depend.inc file in Makefile_hand
