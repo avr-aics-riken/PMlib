@@ -14,8 +14,7 @@ SUBDIRS = @MAKE_SUB_DIRS@
 
 bin_SCRIPTS    = pm-config
 CLEANFILES     = $(bin_SCRIPTS)
-EXTRA_DIST     = pm-config.in LICENSE Makefile_hand src/Makefile_hand \
-                 doc/Doxyfile
+EXTRA_DIST     = pm-config.in LICENSE Makefile_hand doc/Doxyfile
 dist_data_DATA = AUTHORS COPYING ChangeLog README LICENSE 
 
 clean-local:
