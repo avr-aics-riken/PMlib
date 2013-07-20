@@ -76,9 +76,7 @@ namespace pm_lib {
     maxLabelLen++;
     
     fprintf(fp, "\n\t-----------------------------------------------------------------\n");
-    fprintf(fp, "\tReport of Timing Statistics PMlib version ");
-    printVersion(fp, PMLIB_VERS);
-    fprintf(fp, "\n");
+    fprintf(fp, "\tReport of Timing Statistics PMlib version %s\n", PM_VERSION_NO);
     fprintf(fp, "\tOperator  : %s\n", operatorname.c_str());
     fprintf(fp, "\tHost name : %s\n", hostname.c_str());
     fprintf(fp, "\tDate      : %04d/%02d/%02d : %02d:%02d:%02d\n", year, month, day, hour, minute, second);

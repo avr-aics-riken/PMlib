@@ -14,6 +14,12 @@
 REVISION HISTORY
 ================
 
+------------------
+2013-07-20
+
+ r15 Introduce getVersionInfo() [ver 1.9.7]
+   - add Version.h.in
+
 -------------------------
 2013-07-15
 

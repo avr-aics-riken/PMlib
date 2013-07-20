@@ -21,6 +21,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include "PerfWatch.h"
+#include "Version.h"
 
 namespace pm_lib {
   
@@ -31,8 +32,6 @@ namespace pm_lib {
   /// 排他測定＋非排他測定用マクロ
 #define PM_TIMING_DETAIL__  if (PerfMonitor::TimingLevel > 1)
 
-  /// バージョン情報
-#define PMLIB_VERS 194
   
   /**
    * 計算性能測定管理クラス.
@@ -81,23 +80,6 @@ namespace pm_lib {
       
       m_total.setProperties("Total excution time", CALC, my_rank, false);
       m_total.start();
-    }
-    
-    
-    /** バージョン情報の表示
-     * @param [in] fp   ファイルポインタ
-     * @param [in] ver  バージョン番号
-     */
-    void printVersion(FILE* fp, const int ver)
-    {
-      int a, b, c;
-      a = b = c = 0;
-      
-      a = ver / 100;
-      b = (ver - a*100) / 10;
-      c = ver - a*100 - b*10;
-      
-      fprintf(fp, "%d.%d.%d\n", a, b, c);
     }
     
     
@@ -195,6 +177,15 @@ namespace pm_lib {
     ///   @note ノード0以外は, 呼び出されてもなにもしない
     ///
     void printDetail(FILE* fp);
+    
+    /**
+     * @brief バージョン番号の文字列を返す
+     */
+    std::string getVersionInfo()
+    {
+      std::string str(PM_VERSION_NO);
+      return str;
+    }
     
   };
 

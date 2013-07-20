@@ -23,7 +23,8 @@ libPM_a_SOURCES = \
 PM_includedir = $(includedir)
 PM_include_HEADERS = \
     $(top_builddir)/include/PerfMonitor.h \
-    $(top_builddir)/include/PerfWatch.h
+    $(top_builddir)/include/PerfWatch.h \
+    $(top_builddir)/include/Version.h
 
 
 EXTRA_DIST = Makefile_hand depend.inc
