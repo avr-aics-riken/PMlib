@@ -15,6 +15,12 @@ REVISION HISTORY
 ================
 
 ------------------
+2013-10-02
+
+ r16 modify for intel mpi [ver 1.9.8]
+   - include mpi.h before stdio.h to suppress error message #error "SEEK_SET is #defined but must not be for the C++ binding of MPI"
+   
+------------------
 2013-07-20
 
  r15 Introduce getVersionInfo() [ver 1.9.7]

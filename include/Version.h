@@ -19,9 +19,9 @@
 #define _PMLIB_VERSION_H_
 
 
-#define PM_VERSION_NO  "1.9.7"
+#define PM_VERSION_NO  "1.9.8"
 
-#define PM_REVISION    "201307020_1400"
+#define PM_REVISION    "201301002_1430"
 
 #endif /* _PMLIB_VERSION_H_ */
 

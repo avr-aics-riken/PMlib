@@ -15,6 +15,11 @@ RELEASE
 =======
 
 -------------------------
+Version 1.9.8  2013-10-02
+
+ - modify for intel mpi
+ 
+-------------------------
 Version 1.9.7  2013-07-20
 
  - Introduce Version.h and getVersionInfo()

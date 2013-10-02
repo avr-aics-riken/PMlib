@@ -14,9 +14,10 @@
 //@file   PerfMonitor.cpp
 //@brief  PerfMonitor class
 
+#include <mpi.h>
 #include "PerfMonitor.h"
 #include <time.h>
-#include <mpi.h>
+
 
 namespace pm_lib {
   
