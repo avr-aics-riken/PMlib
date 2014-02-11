@@ -5,7 +5,7 @@
  * Copyright (c) 2010-2011 VCAD System Research Program, RIKEN.
  * All rights reserved.
  *
- * Copyright (c) 2012-2013 Advanced Institute for Computational Science, RIKEN.
+ * Copyright (c) 2012-2014 Advanced Institute for Computational Science, RIKEN.
  * All rights reserved.
  *
  */
@@ -58,7 +58,7 @@ Here is examples.
 
 # Using a wrapper compiler with default install directory
 
-  $ ./configure CXX=mpicxx CXXFLAGS=-O3
+  $ ./configure --prefix=/usr/local/FFV/PMlib CXX=mpicxx CXXFLAGS=-O3
 
 
 # FX, K computer, cross compilation

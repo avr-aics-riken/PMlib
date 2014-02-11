@@ -5,7 +5,7 @@
 # Copyright (c) 2010-2011 VCAD System Research Program, RIKEN.
 # All rights reserved.
 #
-# Copyright (c) 2012-2013 Advanced Institute for Computational Science, RIKEN.
+# Copyright (c) 2012-2014 Advanced Institute for Computational Science, RIKEN.
 # All rights reserved.
 #
 ##############################################################################
@@ -13,15 +13,15 @@
 #                                               -*- Autoconf -*-
 # Process this file with autoconf to produce a configure script.
 
-AC_PREREQ([2.69])
-AC_INIT([PMlib], [1.9.9], [keno@riken.jp],[PMlib])
+AC_PREREQ([2.57])
+AC_INIT([PMlib], [2.0.0], [keno@riken.jp],[PMlib])
 AM_INIT_AUTOMAKE()
 AC_CONFIG_SRCDIR([src/PerfMonitor.cpp])
 AC_CONFIG_HEADERS([config.h])
 
 
 # revision No.
-PM_REVISION="201301102_1330"
+PM_REVISION="20140211_2030"
 AC_SUBST(PM_REVISION)
 
 
@@ -29,17 +29,18 @@ AC_SUBST(PM_REVISION)
 # default prefix setting
 #
 AC_PREFIX_DEFAULT([/usr/local/PMlib])
-if test "$prefix" = "NONE" ; then
+if test x"$prefix" = x"NONE" ; then
   PM_INST_DIR=/usr/local/PMlib
 else
   PM_INST_DIR="$prefix"
 fi
-
+
 
 #
 # MPI environment
 #
 enable_mpi="none"
+
 
 PM_CXX="$CXX"
 AC_SUBST(PM_CXX)
@@ -50,6 +51,7 @@ case "$PM_CXX" in
   mpiCC)    enable_mpi="wrappermpi" ;;
   mpic++)   enable_mpi="wrappermpi" ;;
   mpiFCCpx) enable_mpi="wrappermpi" ;;
+  CC)       enable_mpi="wrappermpi" ;;
 esac
 
 
@@ -67,7 +69,7 @@ if test "$enable_mpi" = "none" ; then
 
 # openmpi
   AC_ARG_WITH( ompi, [AC_HELP_STRING([--with-ompi=dir],[Specify OpenMPI install directory])], , with_ompi=none)
-  if test "$with_ompi" != "none" ; then
+  if test x"$with_ompi" != x"none" ; then
     MPI_DIR=$with_ompi;
     MPI_CFLAGS=-I$MPI_DIR/include
     MPI_LDFLAGS=-L$MPI_DIR/lib
@@ -79,8 +81,8 @@ fi
 # warning. if a wrapper compiler is used, "enable_mpi" is empty, but parallel.
 #
 
-if test "$enable_mpi" != "wrappermpi" ; then
-  if test "$with_ompi" = "none" ; then
+if test x"$enable_mpi" != x"wrappermpi" ; then
+  if test x"$with_ompi" = x"none" ; then
     echo "  Warning: OpenMPI library is not specified."
     echo "           If compilation error occurs about MPI, specify --with-ompi option."
   fi

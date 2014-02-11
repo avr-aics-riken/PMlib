@@ -5,7 +5,7 @@
  * Copyright (c) 2010-2011 VCAD System Research Program, RIKEN.
  * All rights reserved.
  *
- * Copyright (c) 2012-2013 Advanced Institute for Computational Science, RIKEN.
+ * Copyright (c) 2012-2014 Advanced Institute for Computational Science, RIKEN.
  * All rights reserved.
  *
  */
@@ -19,9 +19,9 @@
 #define _PMLIB_VERSION_H_
 
 
-#define PM_VERSION_NO  "1.9.9"
+#define PM_VERSION_NO  "2.0.0"
 
-#define PM_REVISION    "201301102_1330"
+#define PM_REVISION    "20140211_2030"
 
 #endif /* _PMLIB_VERSION_H_ */
 

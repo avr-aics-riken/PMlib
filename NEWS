@@ -5,7 +5,7 @@
  * Copyright (c) 2010-2011 VCAD System Research Program, RIKEN.
  * All rights reserved.
  *
- * Copyright (c) 2012-2013 Advanced Institute for Computational Science, RIKEN.
+ * Copyright (c) 2012-2014 Advanced Institute for Computational Science, RIKEN.
  * All rights reserved.
  *
  */
@@ -13,6 +13,11 @@
 
 RELEASE
 =======
+
+-------------------------
+Version 2.0.0  2014-02-11
+
+ - add CC compiler wrapper script for NERSC Hopper
 
 -------------------------
 Version 1.9.9  2013-11-02
