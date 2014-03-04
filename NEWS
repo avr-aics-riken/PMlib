@@ -14,70 +14,60 @@
 RELEASE
 =======
 
+-------------
+Version 2.0.1   2014-03-04
+ - change output format for pm-config --version
+ 
 -------------------------
 Version 2.0.0  2014-02-11
-
  - add CC compiler wrapper script for NERSC Hopper
 
 -------------------------
 Version 1.9.9  2013-11-02
-
  - cleanup configure.ac
 
 -------------------------
 Version 1.9.8  2013-10-02
-
  - modify for intel mpi
  
 -------------------------
 Version 1.9.7  2013-07-20
-
  - Introduce Version.h and getVersionInfo()
 
 -------------------------
 Version 1.9.6  2013-07-15
-
  - Update Makefile.am
-
 
 -------------------------
 Version 1.9.5  2013-07-09
-
  - Change implementation of make depend
 
 -------------------------
 Version 1.9.4  2013-07-04
-
  - Add PerfMonitor::printVersion()
 
 -------------------------
 Version 1.9.3  2013-06-27
-
  - Modify pm-config.in
 
 -------------------------
 Version 1.9.2  2013-06-26
-
  - Modify configure options of MPI.
 
 -------------------------
 Version 1.9.1  2013-06-25
-
  - Change configure options of MPI to install for K-computer/FX10.
 
 -------------------------
 Version 1.9  2013-06-14
-
  - autotools version
 
 -------------------------
 Version 1.8  2013-06-13
-
  - Change install policy
 
 -------------------------
 Version 1.7  2013-05-08
-
  - Split make_setting file
 
 -------------------------
@@ -87,7 +77,6 @@ Version 1.6  2013-04-13
 
 -------------------------
 Version 1.5  2012-12-05
-
  - Change make procedure
  - Bug fix for in case of m_time_av is 0.0
 

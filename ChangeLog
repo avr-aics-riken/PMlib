@@ -15,6 +15,11 @@ REVISION HISTORY
 ================
 
 ------------------
+2014-03-04
+ r19 version format [ver 2.0.1]
+  - change output format for pm-config --version
+  
+------------------
 2013-11-02
  
  r18 modify configure.ac [ver 2.0.0]
