@@ -18,10 +18,10 @@
 //@brief  PerfMonitor class Header
 //@note MPI_Init(), MPI_Finalize()はライブラリ外で行う。
 
+#include "PerfWatch.h"
 #include <cstdio>
 #include <cstdlib>
-#include "PerfWatch.h"
-#include "Version.h"
+#include "pmVersion.h"
 
 namespace pm_lib {
   

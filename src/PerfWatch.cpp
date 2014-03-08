@@ -14,9 +14,9 @@
 //@file   PerfWatch.cpp
 //@brief  PerfWatch class
 
-#include <mpi.h>
-#include <cmath>
 #include "PerfWatch.h"
+#include <cmath>
+
 
 namespace pm_lib {
   

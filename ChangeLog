@@ -15,6 +15,10 @@ REVISION HISTORY
 ================
 
 ------------------
+2014-03-08
+ r20 introduce mpi_stabs.h [ver 2.0.2]
+
+------------------
 2014-03-04
  r19 version format [ver 2.0.1]
   - change output format for pm-config --version

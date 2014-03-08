@@ -14,14 +14,14 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.57])
-AC_INIT([PMlib], [2.0.1], [keno@riken.jp],[PMlib])
+AC_INIT([PMlib], [2.0.2], [keno@riken.jp],[PMlib])
 AM_INIT_AUTOMAKE()
 AC_CONFIG_SRCDIR([src/PerfMonitor.cpp])
 AC_CONFIG_HEADERS([config.h])
 
 
 # revision No.
-PM_REVISION="20140304_1230"
+PM_REVISION="20140308_1130"
 AC_SUBST(PM_REVISION)
 
 
@@ -66,6 +66,8 @@ AC_SUBST(MPI_LIBS)
 #
 
 if test "$enable_mpi" = "none" ; then
+  CXXFLAGS=-D_PM_WITHOUT_MPI_
+else
 
 # openmpi
   AC_ARG_WITH( ompi, [AC_HELP_STRING([--with-ompi=dir],[Specify OpenMPI install directory])], , with_ompi=none)
@@ -126,8 +128,8 @@ AC_PROG_RANLIB
 #
 AC_CHECK_HEADERS([sys/time.h])
 
+
 # Checks for typedefs, structures, and compiler characteristics.
-#AC_CHECK_HEADER_STDBOOL
 AC_HEADER_STDBOOL
 AC_C_INLINE
 AC_TYPE_SIZE_T
@@ -139,7 +141,7 @@ AC_CONFIG_FILES([Makefile
                  src/Makefile \
                  doc/Makefile \
                  pm-config \
-                 include/Version.h \
+                 include/pmVersion.h \
 		])
 AC_OUTPUT
 

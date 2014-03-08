@@ -51,6 +51,11 @@ Configure options:
 
 Here is examples.
 
+# Using intel compiler, serial version
+
+  $ ./configure --prefix=/usr/local/FFV/PMlib CXX=icpc CXXFLAGS=-O3
+
+
 # Specify install directory, mpi library and compiler
 
   $ ./configure --prefix=/hoge/PMlib --with-ompi=/opt/openmpi CXX=icpc CXXFLAGS=-O3

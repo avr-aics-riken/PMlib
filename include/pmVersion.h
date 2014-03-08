@@ -11,7 +11,7 @@
  */
 
 /**
- * @file   Version.h
+ * @file   pmVersion.h
  * PMlibバージョン情報のヘッダーファイル
  */
 
@@ -19,9 +19,9 @@
 #define _PMLIB_VERSION_H_
 
 
-#define PM_VERSION_NO  "@PACKAGE_VERSION@"
+#define PM_VERSION_NO  "2.0.2"
 
-#define PM_REVISION    "@PM_REVISION@"
+#define PM_REVISION    "20140308_1130"
 
 #endif /* _PMLIB_VERSION_H_ */
 

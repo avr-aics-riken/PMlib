@@ -17,6 +17,12 @@
 //@file   PerfWatch.h
 //@brief  PerfWatch class Header
 
+#ifdef _PM_WITHOUT_MPI_
+#include "mpi_stubs.h"
+#else
+#include <mpi.h>
+#endif
+
 #include <cassert>
 #include <cstdio>
 #include <cstdarg>
