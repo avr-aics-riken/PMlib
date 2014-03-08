@@ -147,6 +147,7 @@ namespace pm_lib {
     ///   全計算時間用測定時計をストップ.
     ///
     void gather() {
+
       if (m_gathered) {
         fprintf(stderr, "\tPerfMonitor::gather() error, already gathered\n");
         PM_Exit(0);

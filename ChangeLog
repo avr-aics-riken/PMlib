@@ -16,7 +16,9 @@ REVISION HISTORY
 
 ------------------
 2014-03-08
- r20 introduce mpi_stabs.h [ver 2.0.2]
+ r21 bug fix [ver 2.0.2]
+
+ r20 introduce mpi_stabs.h
 
 ------------------
 2014-03-04
