@@ -15,10 +15,12 @@ REVISION HISTORY
 ================
 
 ------------------
-2014-03-08
- r21 bug fix [ver 2.0.2]
+2014-03-28
+ r21 change string FlatMPI [ver 2.0.3]
 
- r20 introduce mpi_stabs.h
+------------------
+2014-03-08
+ r20 introduce mpi_stabs.h [ver 2.0.2]
 
 ------------------
 2014-03-04

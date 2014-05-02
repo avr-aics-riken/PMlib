@@ -55,7 +55,7 @@ namespace pm_lib {
     int num_threads;           ///< 並列スレッド数
     int num_process;           ///< 並列プロセス数
     int my_rank;               ///< 自ランク番号
-    std::string parallel_mode; ///< 並列動作モード（"Serial", "OpenMP", "Flat MPI", "Hybrid"）
+    std::string parallel_mode; ///< 並列動作モード（"Serial", "OpenMP", "FlatMPI", "Hybrid"）
     PerfWatch* m_watchArray;   ///< 測定時計配列
     PerfWatch  m_total;        ///< 全計算時間用測定時計
     
