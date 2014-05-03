@@ -1,12 +1,17 @@
 #ifndef _PM_MPI_STUBS_H_
 #define _PM_MPI_STUBS_H_
 
-/*
- * CIOlib - Cartesian Input / Output library
+/* ############################################################################
  *
- * Copyright (c) 2013-2014 Advanced Institute for Computational Science, RIKEN.
+ * PMlib - Performance Monitor library
+ *
+ * Copyright (c) 2010-2011 VCAD System Research Program, RIKEN.
  * All rights reserved.
  *
+ * Copyright (c) 2012-2014 Advanced Institute for Computational Science, RIKEN.
+ * All rights reserved.
+ *
+ * ############################################################################
  */
 
 /**

@@ -14,7 +14,7 @@
 SOFTWARE REQUIREMENT
 ====================
 - MPI library
-
+- PAPI library
 
 
 HOW TO COMPILE
@@ -36,11 +36,16 @@ Configure options:
  --prefix=INSTALL_DIR
     Install directory path.  If omitted, default is /usr/local/PMlib.
 
+ --with-example=(no|yes)
+    Turn on to build examples. Default setting is 'no'.
+ 
  --with-ompi=OPENMPI_DIR
     If the OpenMPI library is used, specify the directory path that OpenMPI library is
     installed. This option will be required to use a native compiler. Instead, if the 
     wrapper compiler, e.g., mpicxx, is used to compile, this options can be eliminated.
 
+ --with-papi=PAPI_DIR
+    If the PAPI library is installed in a target system, you can specify this option.
 
  CXX=CXX_COMPILER
     Specify a C++ compiler, e.g., g++, icpc, xlc++ or others.
@@ -49,27 +54,41 @@ Configure options:
     Specify compiler options.
 
 
+
 Here is examples.
 
-# Using intel compiler, serial version
+# Using GNU compiler, serial version
 
-  $ ./configure --prefix=/usr/local/FFV/PMlib CXX=icpc CXXFLAGS=-O3
+  $ ./configure --prefix=/usr/local/FFV/PMlib CXX=g++ CXXFLAGS="-O3 -fopenmp"
 
 
 # Specify install directory, mpi library and compiler
 
-  $ ./configure --prefix=/hoge/PMlib --with-ompi=/opt/openmpi CXX=icpc CXXFLAGS=-O3
+  $ ./configure --prefix=/hoge/PMlib --with-ompi=/opt/openmpi CXX=icpc CXXFLAGS="-O3 -openmp"
 
 
-# Using a wrapper compiler with default install directory
+# Using a wrapper compiler (Intel)
 
-  $ ./configure --prefix=/usr/local/FFV/PMlib CXX=mpicxx CXXFLAGS=-O3
+  $ ./configure --prefix=/usr/local/FFV/PMlib CXX=mpicxx CXXFLAGS="-O3 -openmp"
+
+
+# Using a wrapper compiler (Intel) with PAPI, examples
+
+  $ ./configure CXX=mpicxx CXXFLAGS="-O3 -openmp" \
+	CC=mpicc CFLAGS="-O3 -openmp" \
+	--with-papi=/usr/local/papi/papi-5.2.0/intel --with-example=yes
+  
+
+# Using a wrapper compiler (GNU) with default install directory
+
+  $ ./configure CXX=mpicxx CXXFLAGS="-O3 -fopenmp"
 
 
 # FX, K computer, cross compilation
 
   $ ./configure --prefix=$1 \
                 --host=sparc64-unknown-linux-gnu \
+                --with-papi=hoehoge \
                 CXX=mpiFCCpx \
                 CXXFLAGS="-Kfast,ocl,preex,simd=2,uxsimd,array_private,parallel,openmp"
 

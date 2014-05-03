@@ -246,7 +246,7 @@ namespace pm_lib {
     
     if ( np > 1 ) {
       fprintf(fp,"\t%-*s| \t\t\t                                                                   %7.2f %s\n", 
-              maxLabelLen, "   Performance", flop_serial*(double)np, unit.c_str());
+		maxLabelLen, "Performance", flop_serial*(double)np, unit.c_str());
     }
   }
   
@@ -278,7 +278,9 @@ namespace pm_lib {
     }
     for (int i = 0; i < m_nWatch; i++) {
       m_watchArray[i].printDatail(fp, tot);
+      m_watchArray[i].printHWPC(fp);
     }
+    m_total.printHWPCLegend(fp);
     
   }
   

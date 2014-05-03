@@ -1,0 +1,23 @@
+CC	  = icc
+#CFLAGS    = -std=c99 -g -openmp 
+
+CFLAGS    = -std=c99 -g -DSTATIC_PAPI_EVENTS_TABLE -D_REENTRANT -D_GNU_SOURCE -DUSE_COMPILER_TLS  -DPAPI_NO_MEMORY_MANAGEMENT -DUSE_PAPI
+DEBUGFLAGS = -O0
+OPTFLAGS   = -O2
+INCLUDES   = -I.  -I$(PAPI_ROOT)/include
+EXT_LIB = $(PWD)/libpapi_ext.a
+PAPI_LIB = $(PAPI_ROOT)/lib/libpapi.a
+PAPI_ROOT = /usr/local/papi/papi-5.2.0/intel
+
+all: libpapi_ext.a
+
+libpapi_ext.a: papi_ext.o
+	rm -f libpapi_ext.a
+	ar  rv libpapi_ext.a papi_ext.o
+
+papi_ext.o: papi_ext.c $(HEADERS)
+	$(CC) $(CFLAGS) $(OPTFLAGS) $(INCLUDES) -c papi_ext.c
+
+clean:
+	rm -f papi_ext.o libpapi_ext.a
+

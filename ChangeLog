@@ -15,6 +15,10 @@ REVISION HISTORY
 ================
 
 ------------------
+2014-05-03
+ r22 Introduction of PAPI interface [ver 2.1.0]
+ 
+------------------
 2014-03-28
  r21 change string FlatMPI [ver 2.0.3]
 
@@ -27,12 +31,6 @@ REVISION HISTORY
  r19 version format [ver 2.0.1]
   - change output format for pm-config --version
   
-------------------
-2013-11-02
- 
- r18 modify configure.ac [ver 2.0.0]
-   - add CC compiler wrapper script for NERSC Hopper
-   
 ------------------
 2013-11-02
  

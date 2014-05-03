@@ -15,7 +15,7 @@ PMLIB  = libPM.a
 
 all: $(PMLIB)
 
-SRCS = PerfWatch.cpp PerfMonitor.cpp
+SRCS = PerfWatch.cpp PerfMonitor.cpp PerfCpuType.cpp
 .SUFFIXES: .o .cpp
 OBJS = $(SRCS:.cpp=.o)
 

@@ -1,4 +1,7 @@
-/*
+#ifndef _PMLIB_VERSION_H_
+#define _PMLIB_VERSION_H_
+
+/* ############################################################################
  *
  * PMlib - Performance Monitor library
  *
@@ -8,20 +11,15 @@
  * Copyright (c) 2012-2014 Advanced Institute for Computational Science, RIKEN.
  * All rights reserved.
  *
+ * ############################################################################
  */
 
 /**
  * @file   pmVersion.h
- * PMlibバージョン情報のヘッダーファイル
+ * @brief  PMlib version header
  */
 
-#ifndef _PMLIB_VERSION_H_
-#define _PMLIB_VERSION_H_
-
-
-#define PM_VERSION_NO  "2.0.3"
-
-#define PM_REVISION    "20140328_1730"
+#define PM_VERSION_NO  "2.1.0"
+#define PM_REVISION    "20140503_1800"
 
 #endif /* _PMLIB_VERSION_H_ */
-

@@ -1,5 +1,5 @@
-#ifndef _CAERU_PERFWATCH_H_
-#define _CAERU_PERFWATCH_H_
+#ifndef _PM_PERFWATCH_H_
+#define _PM_PERFWATCH_H_
 
 /* ############################################################################
  *
@@ -35,8 +35,10 @@
 #include "sph_win32_util.h"   // for win32
 #endif
 
+#include "pmlib_papi.h"
+
 namespace pm_lib {
-  
+
   /// デバッグ用マクロ
 #define PM_Exit(x) \
 ((void)printf("exit at %s:%u\n", __FILE__, __LINE__), exit((x)))
@@ -67,6 +69,8 @@ namespace pm_lib {
     
     bool m_valid;        ///< 測定回数が全ノードで等しいかどうかのフラグ(ノード0のみ)
     
+	struct pmlib_papi_chooser my_papi;
+
   private:
     // 測定時の補助変数
     double m_startTime;  ///< 測定開始時刻
@@ -84,11 +88,14 @@ namespace pm_lib {
     /// 並列時の自ノードのランク番号
     int my_rank;
     
+    ///
+    bool m_is_first;      /// true if the first instance
+
   public:
     /// コンストラクタ.
     PerfWatch() : m_time(0.0), m_flop(0.0), m_count(0), m_started(false), 
     m_gathered(false), m_valid(true), my_rank(0),
-    m_timeArray(0), m_flopArray(0), m_countArray(0) {}
+    m_timeArray(0), m_flopArray(0), m_countArray(0), m_is_first(true) {}
     
     /// デストラクタ.
     ~PerfWatch() {
@@ -140,6 +147,14 @@ namespace pm_lib {
     ///
     void printDatail(FILE* fp, double totalTime);
     
+    
+    /// HWPC測定結果を出力.
+    ///
+    ///   @param[in] fp 出力ファイルポインタ
+    ///
+    void printHWPC(FILE* fp);
+    void printHWPCLegend(FILE* fp);
+    
     /// 単位変換.
     ///
     ///   @param[in] fops 浮動小数演算数/通信量(バイト)
@@ -148,6 +163,7 @@ namespace pm_lib {
     ///   @return  単位変換後の数値
     ///
     static double flops(double fops, std::string &unit, bool mode);
+
     
   private:
     /// 時刻を取得.
@@ -165,9 +181,21 @@ namespace pm_lib {
     ///   @param[in] fmt  出力フォーマット文字列
     ///
     void printError(const char* func, const char* fmt, ...);
-    
+
+// DEBUG from here...
+  public:
+    void initializePapi(void);
+  private:
+	void createPapiCounterList (void);
+	void outputPapiCounterList (FILE* fp);
+	void outputPapiCounterLegend (FILE* fp);
+	double countPapiFlop (pmlib_papi_chooser my_papi);
+	double countPapiByte (pmlib_papi_chooser my_papi);
+  public:
+
   };
   
 } /* namespace pm_lib */
 
-#endif // _CAERU_PERFWATCH_H_
+#endif // _PM_PERFWATCH_H_
+

@@ -15,7 +15,6 @@
 
 @SET_MAKE@
 
-###
 ##############################################################################
 #
 # PMlib - Performance Monitor library
@@ -27,7 +26,6 @@
 # All rights reserved.
 #
 ##############################################################################
-###
 
 
 VPATH = @srcdir@
@@ -47,8 +45,9 @@ POST_INSTALL = :
 NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
-subdir = src
-DIST_COMMON = $(nobase_include_HEADERS) $(srcdir)/Makefile.am \
+noinst_PROGRAMS = check_new_api$(EXEEXT) pmlib_test$(EXEEXT)
+subdir = example
+DIST_COMMON = $(dist_noinst_DATA) $(srcdir)/Makefile.am \
 	$(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/configure.ac
@@ -58,48 +57,34 @@ mkinstalldirs = $(install_sh) -d
 CONFIG_HEADER = $(top_builddir)/config.h
 CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
-am__vpath_adj_setup = srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`;
-am__vpath_adj = case $$p in \
-    $(srcdir)/*) f=`echo "$$p" | sed "s|^$$srcdirstrip/||"`;; \
-    *) f=$$p;; \
-  esac;
-am__strip_dir = f=`echo $$p | sed -e 's|^.*/||'`;
-am__install_max = 40
-am__nobase_strip_setup = \
-  srcdirstrip=`echo "$(srcdir)" | sed 's/[].[^$$\\*|]/\\\\&/g'`
-am__nobase_strip = \
-  for p in $$list; do echo "$$p"; done | sed -e "s|$$srcdirstrip/||"
-am__nobase_list = $(am__nobase_strip_setup); \
-  for p in $$list; do echo "$$p $$p"; done | \
-  sed "s| $$srcdirstrip/| |;"' / .*\//!s/ .*/ ./; s,\( .*\)/[^/]*$$,\1,' | \
-  $(AWK) 'BEGIN { files["."] = "" } { files[$$2] = files[$$2] " " $$1; \
-    if (++n[$$2] == $(am__install_max)) \
-      { print $$2, files[$$2]; n[$$2] = 0; files[$$2] = "" } } \
-    END { for (dir in files) print dir, files[dir] }'
-am__base_list = \
-  sed '$$!N;$$!N;$$!N;$$!N;$$!N;$$!N;$$!N;s/\n/ /g' | \
-  sed '$$!N;$$!N;$$!N;$$!N;s/\n/ /g'
-am__installdirs = "$(DESTDIR)$(libdir)" "$(DESTDIR)$(includedir)"
-LIBRARIES = $(lib_LIBRARIES)
-AR = ar
-ARFLAGS = cru
-libPM_a_AR = $(AR) $(ARFLAGS)
-libPM_a_LIBADD =
-am_libPM_a_OBJECTS = libPM_a-PerfMonitor.$(OBJEXT) \
-	libPM_a-PerfWatch.$(OBJEXT) libPM_a-PerfCpuType.$(OBJEXT)
-libPM_a_OBJECTS = $(am_libPM_a_OBJECTS)
+PROGRAMS = $(noinst_PROGRAMS)
+am_check_new_api_OBJECTS = check_new_api-check_new_api.$(OBJEXT)
+check_new_api_OBJECTS = $(am_check_new_api_OBJECTS)
+check_new_api_DEPENDENCIES =
+check_new_api_LINK = $(CCLD) $(check_new_api_CFLAGS) $(CFLAGS) \
+	$(AM_LDFLAGS) $(LDFLAGS) -o $@
+am_pmlib_test_OBJECTS = pmlib_test-pmlib_test.$(OBJEXT) \
+	pmlib_test-sub_kernel.$(OBJEXT)
+pmlib_test_OBJECTS = $(am_pmlib_test_OBJECTS)
+pmlib_test_DEPENDENCIES =
+pmlib_test_LINK = $(CXXLD) $(pmlib_test_CXXFLAGS) $(CXXFLAGS) \
+	$(AM_LDFLAGS) $(LDFLAGS) -o $@
 DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__depfiles_maybe = depfiles
 am__mv = mv -f
+COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
+	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
+CCLD = $(CC)
+LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
 CXXLD = $(CXX)
 CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
 	-o $@
-SOURCES = $(libPM_a_SOURCES)
-DIST_SOURCES = $(libPM_a_SOURCES)
-HEADERS = $(nobase_include_HEADERS)
+SOURCES = $(check_new_api_SOURCES) $(pmlib_test_SOURCES)
+DIST_SOURCES = $(check_new_api_SOURCES) $(pmlib_test_SOURCES)
+DATA = $(dist_noinst_DATA)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -205,24 +190,37 @@ target_alias = @target_alias@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-lib_LIBRARIES = libPM.a
-libPM_a_CXXFLAGS = @MPI_CFLAGS@ -I$(top_builddir)/include -I@PAPI_DIR@/include
-libPM_a_SOURCES = \
-    PerfMonitor.cpp \
-    PerfWatch.cpp \
-    PerfCpuType.cpp
+DISTCLEANFILES = *~ check_new_api pmlib_test
+CLEANFILES = data/*.log
+EXTRA_DIST = check_new_api.c sub_kernel.c pmlib_test.cpp
+check_new_api_SOURCES = check_new_api.c
+check_new_api_CFLAGS = -I$(top_builddir)/include -I@PAPI_DIR@/include -std=c99
+#     -std=c99 -g -DSTATIC_PAPI_EVENTS_TABLE -D_REENTRANT -D_GNU_SOURCE -DUSE_COMPILER_TLS  -DPAPI_NO_MEMORY_MANAGEMENT -DUSE_PAPI
+check_new_api_LDADD = \
+    -L$(top_builddir)/src -lPM \
+    -L$(top_builddir)/src_papi_ext -lpapi_ext \
+    @MPI_LIBS@ \
+    @MPI_LDFLAGS@ \
+    -L@PAPI_DIR@/lib -lpapi \
+    -L@PAPI_DIR@/lib -lpfm
 
-nobase_include_HEADERS = \
-    $(top_builddir)/include/PerfMonitor.h \
-    $(top_builddir)/include/PerfWatch.h \
-    $(top_builddir)/include/pmVersion.h \
-    $(top_builddir)/include/pmlib_papi.h
+pmlib_test_SOURCES = pmlib_test.cpp sub_kernel.c
+pmlib_test_CFLAGS = -I$(top_builddir)/include -I@PAPI_DIR@/include @MPI_CFLAGS@
+pmlib_test_CXXFLAGS = -I$(top_builddir)/include -I@PAPI_DIR@/include @MPI_CFLAGS@
+#     -std=c99 -g -DSTATIC_PAPI_EVENTS_TABLE -D_REENTRANT -D_GNU_SOURCE -DUSE_COMPILER_TLS  -DPAPI_NO_MEMORY_MANAGEMENT -DUSE_PAPI
+pmlib_test_LDADD = \
+    -L$(top_builddir)/src -lPM \
+    -L$(top_builddir)/src_papi_ext -lpapi_ext \
+    @MPI_LIBS@ \
+    @MPI_LDFLAGS@ \
+    -L@PAPI_DIR@/lib -lpapi \
+    -L@PAPI_DIR@/lib -lpfm
 
-EXTRA_DIST = Makefile_hand depend.inc
+dist_noinst_DATA = 
 all: all-am
 
 .SUFFIXES:
-.SUFFIXES: .cpp .o .obj
+.SUFFIXES: .c .cpp .o .obj
 $(srcdir)/Makefile.in:  $(srcdir)/Makefile.am  $(am__configure_deps)
 	@for dep in $?; do \
 	  case '$(am__configure_deps)' in \
@@ -232,9 +230,9 @@ $(srcdir)/Makefile.in:  $(srcdir)/Makefile.am  $(am__configure_deps)
 	      exit 1;; \
 	  esac; \
 	done; \
-	echo ' cd $(top_srcdir) && $(AUTOMAKE) --gnu src/Makefile'; \
+	echo ' cd $(top_srcdir) && $(AUTOMAKE) --gnu example/Makefile'; \
 	$(am__cd) $(top_srcdir) && \
-	  $(AUTOMAKE) --gnu src/Makefile
+	  $(AUTOMAKE) --gnu example/Makefile
 .PRECIOUS: Makefile
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	@case '$?' in \
@@ -253,42 +251,15 @@ $(top_srcdir)/configure:  $(am__configure_deps)
 $(ACLOCAL_M4):  $(am__aclocal_m4_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
 $(am__aclocal_m4_deps):
-install-libLIBRARIES: $(lib_LIBRARIES)
-	@$(NORMAL_INSTALL)
-	test -z "$(libdir)" || $(MKDIR_P) "$(DESTDIR)$(libdir)"
-	@list='$(lib_LIBRARIES)'; test -n "$(libdir)" || list=; \
-	list2=; for p in $$list; do \
-	  if test -f $$p; then \
-	    list2="$$list2 $$p"; \
-	  else :; fi; \
-	done; \
-	test -z "$$list2" || { \
-	  echo " $(INSTALL_DATA) $$list2 '$(DESTDIR)$(libdir)'"; \
-	  $(INSTALL_DATA) $$list2 "$(DESTDIR)$(libdir)" || exit $$?; }
-	@$(POST_INSTALL)
-	@list='$(lib_LIBRARIES)'; test -n "$(libdir)" || list=; \
-	for p in $$list; do \
-	  if test -f $$p; then \
-	    $(am__strip_dir) \
-	    echo " ( cd '$(DESTDIR)$(libdir)' && $(RANLIB) $$f )"; \
-	    ( cd "$(DESTDIR)$(libdir)" && $(RANLIB) $$f ) || exit $$?; \
-	  else :; fi; \
-	done
 
-uninstall-libLIBRARIES:
-	@$(NORMAL_UNINSTALL)
-	@list='$(lib_LIBRARIES)'; test -n "$(libdir)" || list=; \
-	files=`for p in $$list; do echo $$p; done | sed -e 's|^.*/||'`; \
-	test -n "$$files" || exit 0; \
-	echo " ( cd '$(DESTDIR)$(libdir)' && rm -f "$$files" )"; \
-	cd "$(DESTDIR)$(libdir)" && rm -f $$files
-
-clean-libLIBRARIES:
-	-test -z "$(lib_LIBRARIES)" || rm -f $(lib_LIBRARIES)
-libPM.a: $(libPM_a_OBJECTS) $(libPM_a_DEPENDENCIES) 
-	-rm -f libPM.a
-	$(libPM_a_AR) libPM.a $(libPM_a_OBJECTS) $(libPM_a_LIBADD)
-	$(RANLIB) libPM.a
+clean-noinstPROGRAMS:
+	-test -z "$(noinst_PROGRAMS)" || rm -f $(noinst_PROGRAMS)
+check_new_api$(EXEEXT): $(check_new_api_OBJECTS) $(check_new_api_DEPENDENCIES) 
+	@rm -f check_new_api$(EXEEXT)
+	$(check_new_api_LINK) $(check_new_api_OBJECTS) $(check_new_api_LDADD) $(LIBS)
+pmlib_test$(EXEEXT): $(pmlib_test_OBJECTS) $(pmlib_test_DEPENDENCIES) 
+	@rm -f pmlib_test$(EXEEXT)
+	$(pmlib_test_LINK) $(pmlib_test_OBJECTS) $(pmlib_test_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -296,9 +267,51 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libPM_a-PerfCpuType.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libPM_a-PerfMonitor.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libPM_a-PerfWatch.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_new_api-check_new_api.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pmlib_test-pmlib_test.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pmlib_test-sub_kernel.Po@am__quote@
+
+.c.o:
+@am__fastdepCC_TRUE@	$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(COMPILE) -c $<
+
+.c.obj:
+@am__fastdepCC_TRUE@	$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ `$(CYGPATH_W) '$<'`
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(COMPILE) -c `$(CYGPATH_W) '$<'`
+
+check_new_api-check_new_api.o: check_new_api.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(check_new_api_CFLAGS) $(CFLAGS) -MT check_new_api-check_new_api.o -MD -MP -MF $(DEPDIR)/check_new_api-check_new_api.Tpo -c -o check_new_api-check_new_api.o `test -f 'check_new_api.c' || echo '$(srcdir)/'`check_new_api.c
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/check_new_api-check_new_api.Tpo $(DEPDIR)/check_new_api-check_new_api.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='check_new_api.c' object='check_new_api-check_new_api.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(check_new_api_CFLAGS) $(CFLAGS) -c -o check_new_api-check_new_api.o `test -f 'check_new_api.c' || echo '$(srcdir)/'`check_new_api.c
+
+check_new_api-check_new_api.obj: check_new_api.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(check_new_api_CFLAGS) $(CFLAGS) -MT check_new_api-check_new_api.obj -MD -MP -MF $(DEPDIR)/check_new_api-check_new_api.Tpo -c -o check_new_api-check_new_api.obj `if test -f 'check_new_api.c'; then $(CYGPATH_W) 'check_new_api.c'; else $(CYGPATH_W) '$(srcdir)/check_new_api.c'; fi`
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/check_new_api-check_new_api.Tpo $(DEPDIR)/check_new_api-check_new_api.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='check_new_api.c' object='check_new_api-check_new_api.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(check_new_api_CFLAGS) $(CFLAGS) -c -o check_new_api-check_new_api.obj `if test -f 'check_new_api.c'; then $(CYGPATH_W) 'check_new_api.c'; else $(CYGPATH_W) '$(srcdir)/check_new_api.c'; fi`
+
+pmlib_test-sub_kernel.o: sub_kernel.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(pmlib_test_CFLAGS) $(CFLAGS) -MT pmlib_test-sub_kernel.o -MD -MP -MF $(DEPDIR)/pmlib_test-sub_kernel.Tpo -c -o pmlib_test-sub_kernel.o `test -f 'sub_kernel.c' || echo '$(srcdir)/'`sub_kernel.c
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/pmlib_test-sub_kernel.Tpo $(DEPDIR)/pmlib_test-sub_kernel.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='sub_kernel.c' object='pmlib_test-sub_kernel.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(pmlib_test_CFLAGS) $(CFLAGS) -c -o pmlib_test-sub_kernel.o `test -f 'sub_kernel.c' || echo '$(srcdir)/'`sub_kernel.c
+
+pmlib_test-sub_kernel.obj: sub_kernel.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(pmlib_test_CFLAGS) $(CFLAGS) -MT pmlib_test-sub_kernel.obj -MD -MP -MF $(DEPDIR)/pmlib_test-sub_kernel.Tpo -c -o pmlib_test-sub_kernel.obj `if test -f 'sub_kernel.c'; then $(CYGPATH_W) 'sub_kernel.c'; else $(CYGPATH_W) '$(srcdir)/sub_kernel.c'; fi`
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/pmlib_test-sub_kernel.Tpo $(DEPDIR)/pmlib_test-sub_kernel.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='sub_kernel.c' object='pmlib_test-sub_kernel.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(pmlib_test_CFLAGS) $(CFLAGS) -c -o pmlib_test-sub_kernel.obj `if test -f 'sub_kernel.c'; then $(CYGPATH_W) 'sub_kernel.c'; else $(CYGPATH_W) '$(srcdir)/sub_kernel.c'; fi`
 
 .cpp.o:
 @am__fastdepCXX_TRUE@	$(CXXCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
@@ -314,70 +327,19 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
 
-libPM_a-PerfMonitor.o: PerfMonitor.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libPM_a_CXXFLAGS) $(CXXFLAGS) -MT libPM_a-PerfMonitor.o -MD -MP -MF $(DEPDIR)/libPM_a-PerfMonitor.Tpo -c -o libPM_a-PerfMonitor.o `test -f 'PerfMonitor.cpp' || echo '$(srcdir)/'`PerfMonitor.cpp
-@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/libPM_a-PerfMonitor.Tpo $(DEPDIR)/libPM_a-PerfMonitor.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='PerfMonitor.cpp' object='libPM_a-PerfMonitor.o' libtool=no @AMDEPBACKSLASH@
+pmlib_test-pmlib_test.o: pmlib_test.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(pmlib_test_CXXFLAGS) $(CXXFLAGS) -MT pmlib_test-pmlib_test.o -MD -MP -MF $(DEPDIR)/pmlib_test-pmlib_test.Tpo -c -o pmlib_test-pmlib_test.o `test -f 'pmlib_test.cpp' || echo '$(srcdir)/'`pmlib_test.cpp
+@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/pmlib_test-pmlib_test.Tpo $(DEPDIR)/pmlib_test-pmlib_test.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='pmlib_test.cpp' object='pmlib_test-pmlib_test.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libPM_a_CXXFLAGS) $(CXXFLAGS) -c -o libPM_a-PerfMonitor.o `test -f 'PerfMonitor.cpp' || echo '$(srcdir)/'`PerfMonitor.cpp
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(pmlib_test_CXXFLAGS) $(CXXFLAGS) -c -o pmlib_test-pmlib_test.o `test -f 'pmlib_test.cpp' || echo '$(srcdir)/'`pmlib_test.cpp
 
-libPM_a-PerfMonitor.obj: PerfMonitor.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libPM_a_CXXFLAGS) $(CXXFLAGS) -MT libPM_a-PerfMonitor.obj -MD -MP -MF $(DEPDIR)/libPM_a-PerfMonitor.Tpo -c -o libPM_a-PerfMonitor.obj `if test -f 'PerfMonitor.cpp'; then $(CYGPATH_W) 'PerfMonitor.cpp'; else $(CYGPATH_W) '$(srcdir)/PerfMonitor.cpp'; fi`
-@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/libPM_a-PerfMonitor.Tpo $(DEPDIR)/libPM_a-PerfMonitor.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='PerfMonitor.cpp' object='libPM_a-PerfMonitor.obj' libtool=no @AMDEPBACKSLASH@
+pmlib_test-pmlib_test.obj: pmlib_test.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(pmlib_test_CXXFLAGS) $(CXXFLAGS) -MT pmlib_test-pmlib_test.obj -MD -MP -MF $(DEPDIR)/pmlib_test-pmlib_test.Tpo -c -o pmlib_test-pmlib_test.obj `if test -f 'pmlib_test.cpp'; then $(CYGPATH_W) 'pmlib_test.cpp'; else $(CYGPATH_W) '$(srcdir)/pmlib_test.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/pmlib_test-pmlib_test.Tpo $(DEPDIR)/pmlib_test-pmlib_test.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='pmlib_test.cpp' object='pmlib_test-pmlib_test.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libPM_a_CXXFLAGS) $(CXXFLAGS) -c -o libPM_a-PerfMonitor.obj `if test -f 'PerfMonitor.cpp'; then $(CYGPATH_W) 'PerfMonitor.cpp'; else $(CYGPATH_W) '$(srcdir)/PerfMonitor.cpp'; fi`
-
-libPM_a-PerfWatch.o: PerfWatch.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libPM_a_CXXFLAGS) $(CXXFLAGS) -MT libPM_a-PerfWatch.o -MD -MP -MF $(DEPDIR)/libPM_a-PerfWatch.Tpo -c -o libPM_a-PerfWatch.o `test -f 'PerfWatch.cpp' || echo '$(srcdir)/'`PerfWatch.cpp
-@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/libPM_a-PerfWatch.Tpo $(DEPDIR)/libPM_a-PerfWatch.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='PerfWatch.cpp' object='libPM_a-PerfWatch.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libPM_a_CXXFLAGS) $(CXXFLAGS) -c -o libPM_a-PerfWatch.o `test -f 'PerfWatch.cpp' || echo '$(srcdir)/'`PerfWatch.cpp
-
-libPM_a-PerfWatch.obj: PerfWatch.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libPM_a_CXXFLAGS) $(CXXFLAGS) -MT libPM_a-PerfWatch.obj -MD -MP -MF $(DEPDIR)/libPM_a-PerfWatch.Tpo -c -o libPM_a-PerfWatch.obj `if test -f 'PerfWatch.cpp'; then $(CYGPATH_W) 'PerfWatch.cpp'; else $(CYGPATH_W) '$(srcdir)/PerfWatch.cpp'; fi`
-@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/libPM_a-PerfWatch.Tpo $(DEPDIR)/libPM_a-PerfWatch.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='PerfWatch.cpp' object='libPM_a-PerfWatch.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libPM_a_CXXFLAGS) $(CXXFLAGS) -c -o libPM_a-PerfWatch.obj `if test -f 'PerfWatch.cpp'; then $(CYGPATH_W) 'PerfWatch.cpp'; else $(CYGPATH_W) '$(srcdir)/PerfWatch.cpp'; fi`
-
-libPM_a-PerfCpuType.o: PerfCpuType.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libPM_a_CXXFLAGS) $(CXXFLAGS) -MT libPM_a-PerfCpuType.o -MD -MP -MF $(DEPDIR)/libPM_a-PerfCpuType.Tpo -c -o libPM_a-PerfCpuType.o `test -f 'PerfCpuType.cpp' || echo '$(srcdir)/'`PerfCpuType.cpp
-@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/libPM_a-PerfCpuType.Tpo $(DEPDIR)/libPM_a-PerfCpuType.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='PerfCpuType.cpp' object='libPM_a-PerfCpuType.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libPM_a_CXXFLAGS) $(CXXFLAGS) -c -o libPM_a-PerfCpuType.o `test -f 'PerfCpuType.cpp' || echo '$(srcdir)/'`PerfCpuType.cpp
-
-libPM_a-PerfCpuType.obj: PerfCpuType.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libPM_a_CXXFLAGS) $(CXXFLAGS) -MT libPM_a-PerfCpuType.obj -MD -MP -MF $(DEPDIR)/libPM_a-PerfCpuType.Tpo -c -o libPM_a-PerfCpuType.obj `if test -f 'PerfCpuType.cpp'; then $(CYGPATH_W) 'PerfCpuType.cpp'; else $(CYGPATH_W) '$(srcdir)/PerfCpuType.cpp'; fi`
-@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/libPM_a-PerfCpuType.Tpo $(DEPDIR)/libPM_a-PerfCpuType.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='PerfCpuType.cpp' object='libPM_a-PerfCpuType.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libPM_a_CXXFLAGS) $(CXXFLAGS) -c -o libPM_a-PerfCpuType.obj `if test -f 'PerfCpuType.cpp'; then $(CYGPATH_W) 'PerfCpuType.cpp'; else $(CYGPATH_W) '$(srcdir)/PerfCpuType.cpp'; fi`
-install-nobase_includeHEADERS: $(nobase_include_HEADERS)
-	@$(NORMAL_INSTALL)
-	test -z "$(includedir)" || $(MKDIR_P) "$(DESTDIR)$(includedir)"
-	@list='$(nobase_include_HEADERS)'; test -n "$(includedir)" || list=; \
-	$(am__nobase_list) | while read dir files; do \
-	  xfiles=; for file in $$files; do \
-	    if test -f "$$file"; then xfiles="$$xfiles $$file"; \
-	    else xfiles="$$xfiles $(srcdir)/$$file"; fi; done; \
-	  test -z "$$xfiles" || { \
-	    test "x$$dir" = x. || { \
-	      echo "$(MKDIR_P) '$(DESTDIR)$(includedir)/$$dir'"; \
-	      $(MKDIR_P) "$(DESTDIR)$(includedir)/$$dir"; }; \
-	    echo " $(INSTALL_HEADER) $$xfiles '$(DESTDIR)$(includedir)/$$dir'"; \
-	    $(INSTALL_HEADER) $$xfiles "$(DESTDIR)$(includedir)/$$dir" || exit $$?; }; \
-	done
-
-uninstall-nobase_includeHEADERS:
-	@$(NORMAL_UNINSTALL)
-	@list='$(nobase_include_HEADERS)'; test -n "$(includedir)" || list=; \
-	$(am__nobase_strip_setup); files=`$(am__nobase_strip)`; \
-	test -n "$$files" || exit 0; \
-	echo " ( cd '$(DESTDIR)$(includedir)' && rm -f" $$files ")"; \
-	cd "$(DESTDIR)$(includedir)" && rm -f $$files
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(pmlib_test_CXXFLAGS) $(CXXFLAGS) -c -o pmlib_test-pmlib_test.obj `if test -f 'pmlib_test.cpp'; then $(CYGPATH_W) 'pmlib_test.cpp'; else $(CYGPATH_W) '$(srcdir)/pmlib_test.cpp'; fi`
 
 ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)
 	list='$(SOURCES) $(HEADERS) $(LISP) $(TAGS_FILES)'; \
@@ -463,11 +425,8 @@ distdir: $(DISTFILES)
 	done
 check-am: all-am
 check: check-am
-all-am: Makefile $(LIBRARIES) $(HEADERS)
+all-am: Makefile $(PROGRAMS) $(DATA)
 installdirs:
-	for dir in "$(DESTDIR)$(libdir)" "$(DESTDIR)$(includedir)"; do \
-	  test -z "$$dir" || $(MKDIR_P) "$$dir"; \
-	done
 install: install-am
 install-exec: install-exec-am
 install-data: install-data-am
@@ -485,17 +444,19 @@ install-strip:
 mostlyclean-generic:
 
 clean-generic:
+	-test -z "$(CLEANFILES)" || rm -f $(CLEANFILES)
 
 distclean-generic:
 	-test -z "$(CONFIG_CLEAN_FILES)" || rm -f $(CONFIG_CLEAN_FILES)
 	-test . = "$(srcdir)" || test -z "$(CONFIG_CLEAN_VPATH_FILES)" || rm -f $(CONFIG_CLEAN_VPATH_FILES)
+	-test -z "$(DISTCLEANFILES)" || rm -f $(DISTCLEANFILES)
 
 maintainer-clean-generic:
 	@echo "This command is intended for maintainers to use"
 	@echo "it deletes files that may require special tools to rebuild."
 clean: clean-am
 
-clean-am: clean-generic clean-libLIBRARIES mostlyclean-am
+clean-am: clean-generic clean-noinstPROGRAMS mostlyclean-am
 
 distclean: distclean-am
 	-rm -rf ./$(DEPDIR)
@@ -515,13 +476,13 @@ info: info-am
 
 info-am:
 
-install-data-am: install-nobase_includeHEADERS
+install-data-am:
 
 install-dvi: install-dvi-am
 
 install-dvi-am:
 
-install-exec-am: install-libLIBRARIES
+install-exec-am:
 
 install-html: install-html-am
 
@@ -560,25 +521,25 @@ ps: ps-am
 
 ps-am:
 
-uninstall-am: uninstall-libLIBRARIES uninstall-nobase_includeHEADERS
+uninstall-am:
 
 .MAKE: install-am install-strip
 
 .PHONY: CTAGS GTAGS all all-am check check-am clean clean-generic \
-	clean-libLIBRARIES ctags distclean distclean-compile \
+	clean-noinstPROGRAMS ctags distclean distclean-compile \
 	distclean-generic distclean-tags distdir dvi dvi-am html \
 	html-am info info-am install install-am install-data \
 	install-data-am install-dvi install-dvi-am install-exec \
 	install-exec-am install-html install-html-am install-info \
-	install-info-am install-libLIBRARIES install-man \
-	install-nobase_includeHEADERS install-pdf install-pdf-am \
+	install-info-am install-man install-pdf install-pdf-am \
 	install-ps install-ps-am install-strip installcheck \
 	installcheck-am installdirs maintainer-clean \
 	maintainer-clean-generic mostlyclean mostlyclean-compile \
 	mostlyclean-generic pdf pdf-am ps ps-am tags uninstall \
-	uninstall-am uninstall-libLIBRARIES \
-	uninstall-nobase_includeHEADERS
+	uninstall-am
 
+
+.PHONY:$(dist_noinst_DATA)
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

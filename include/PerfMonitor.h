@@ -1,5 +1,5 @@
-#ifndef _CAERU_PERFMONITOR_H_
-#define _CAERU_PERFMONITOR_H_
+#ifndef _PM_PERFMONITOR_H_
+#define _PM_PERFMONITOR_H_
 
 /* ############################################################################
  *
@@ -22,6 +22,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include "pmVersion.h"
+
 
 namespace pm_lib {
   
@@ -58,7 +59,7 @@ namespace pm_lib {
     std::string parallel_mode; ///< 並列動作モード（"Serial", "OpenMP", "FlatMPI", "Hybrid"）
     PerfWatch* m_watchArray;   ///< 測定時計配列
     PerfWatch  m_total;        ///< 全計算時間用測定時計
-    
+
   public:
     /// コンストラクタ.
     PerfMonitor() : m_watchArray(0) {}
@@ -76,10 +77,14 @@ namespace pm_lib {
       m_nWatch = nWatch;
       m_watchArray = new PerfWatch[m_nWatch];
       m_gathered = false;
-      my_rank = 0;
+      //	my_rank = 0;
       
+// additional call to interface with PAPI
+      m_total.initializePapi();
+
       m_total.setProperties("Total excution time", CALC, my_rank, false);
       m_total.start();
+
     }
     
     
@@ -147,7 +152,6 @@ namespace pm_lib {
     ///   全計算時間用測定時計をストップ.
     ///
     void gather() {
-
       if (m_gathered) {
         fprintf(stderr, "\tPerfMonitor::gather() error, already gathered\n");
         PM_Exit(0);
@@ -192,4 +196,4 @@ namespace pm_lib {
 
 } /* namespace pm_lib */
 
-#endif // _CAERU_PERFMONITOR_H_
+#endif // _PM_PERFMONITOR_H_
