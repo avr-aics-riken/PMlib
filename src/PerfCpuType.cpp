@@ -508,7 +508,7 @@ void PerfWatch::outputPapiCounterLegend (FILE* fp)
 
 double PerfWatch::countPapiFlop (pmlib_papi_chooser my_papi)
 {
-	double flops;
+	double flops=0.0;
 #ifdef USE_PAPI
 	#ifdef DEBUG_PRINT_PAPI
 	fprintf (stderr, " <PerfWatch::countPapiFlop()> starts\n");
@@ -532,7 +532,7 @@ double PerfWatch::countPapiFlop (pmlib_papi_chooser my_papi)
 double PerfWatch::countPapiByte (pmlib_papi_chooser my_papi)
 {
 	//	double bandwidth;
-	double bytes;
+	double bytes = 0.0;
 #ifdef USE_PAPI
 	#ifdef DEBUG_PRINT_PAPI
 	fprintf (stderr, " <PerfWatch::countPapiMemBW()> starts\n");

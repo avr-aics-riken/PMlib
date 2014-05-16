@@ -44,8 +44,10 @@ Configure options:
     installed. This option will be required to use a native compiler. Instead, if the 
     wrapper compiler, e.g., mpicxx, is used to compile, this options can be eliminated.
 
- --with-papi=PAPI_DIR
-    If the PAPI library is installed in a target system, you can specify this option.
+ --with-papi=PAPI_DIR or yes
+    If you want to use the PAPI library, specify the directory where the library is installed.
+    In the case of compilation on K front-end, sprcifiy the directory. Use 'yes' for when you
+    compile on compute nodes.
 
  CXX=CXX_COMPILER
     Specify a C++ compiler, e.g., g++, icpc, xlc++ or others.
@@ -74,9 +76,12 @@ Here is examples.
 
 # Using a wrapper compiler (Intel) with PAPI, examples
 
-  $ ./configure CXX=mpicxx CXXFLAGS="-O3 -openmp" \
-	CC=mpicc CFLAGS="-O3 -openmp" \
-	--with-papi=/usr/local/papi/papi-5.2.0/intel --with-example=yes
+  $ ./configure CXX=mpicxx \
+                CXXFLAGS="-O3 -openmp" \
+	              CC=mpicc \
+                CFLAGS="-O3 -openmp" \
+	              --with-papi=/usr/local/papi/papi-5.2.0/intel \
+                --with-example=yes
   
 
 # Using a wrapper compiler (GNU) with default install directory
@@ -84,13 +89,29 @@ Here is examples.
   $ ./configure CXX=mpicxx CXXFLAGS="-O3 -fopenmp"
 
 
-# FX, K computer, cross compilation
 
-  $ ./configure --prefix=$1 \
+# FX, K computer, compilation on compute nodes
+
+  $ ./configure --prefix=hogehoge \
+                --with-papi=yes \
+                --with-example=yes \
+                CC=mpifcc \
+                CFLAGS="-Kfast,parallel,openmp" \
+                CXX=mpiFCC \
+                CXXFLAGS="-Kfast,parallel,openmp"
+
+
+
+# FX, K computer, compilation on login nodes
+
+  $ ./configure --prefix=hogehoge \
                 --host=sparc64-unknown-linux-gnu \
-                --with-papi=hoehoge \
+                --with-papi=/opt/FJSVXosDevkit/sparc64fx/V01L02E07 \
+                --with-example=yes \
+                CC=mpifccpx \
+                CFLAGS="-Kfast,parallel,openmp" \
                 CXX=mpiFCCpx \
-                CXXFLAGS="-Kfast,ocl,preex,simd=2,uxsimd,array_private,parallel,openmp"
+                CXXFLAGS="-Kfast,parallel,openmp"
 
 
 If you try to install process again, execute 'make distclean' then configure.

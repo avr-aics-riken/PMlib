@@ -14,14 +14,14 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.57])
-AC_INIT([PMlib], [2.1.0], [keno@riken.jp],[PMlib])
+AC_INIT([PMlib], [2.1.2], [keno@riken.jp],[PMlib])
 AM_INIT_AUTOMAKE()
 AC_CONFIG_SRCDIR([src/PerfMonitor.cpp])
 AC_CONFIG_HEADERS([config.h])
 
 
 # revision No.
-PM_REVISION="20140503_1800"
+PM_REVISION="20140516_1500"
 AC_SUBST(PM_REVISION)
 
 
@@ -55,6 +55,7 @@ case "$PM_CXX" in
   mpiCC)    enable_mpi="wrappermpi" ;;
   mpic++)   enable_mpi="wrappermpi" ;;
   mpiFCCpx) enable_mpi="wrappermpi" ;;
+  mpiFCC)   enable_mpi="wrappermpi" ;;
   CC)       enable_mpi="wrappermpi" ;;
 esac
 
@@ -106,7 +107,9 @@ enable_papi="none"
 AC_SUBST(PAPI_DIR)
 
 AC_ARG_WITH( papi, [AC_HELP_STRING([--with-papi=dir],[Specify PAPI install directory])], , with_papi=none)
-if test x"$with_papi" != x"none" ; then
+if test x"$with_papi" == x"yes" ; then
+  enable_papi="yes"
+elif test x"$with_papi" != x"none" ; then
   PAPI_DIR=$with_papi;
   enable_papi="yes"
 fi
