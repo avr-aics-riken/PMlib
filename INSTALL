@@ -78,9 +78,9 @@ Here is examples.
 
   $ ./configure CXX=mpicxx \
                 CXXFLAGS="-O3 -openmp" \
-	              CC=mpicc \
+                CC=mpicc \
                 CFLAGS="-O3 -openmp" \
-	              --with-papi=/usr/local/papi/papi-5.2.0/intel \
+                --with-papi=/usr/local/papi/papi-5.2.0/intel \
                 --with-example=yes
   
 

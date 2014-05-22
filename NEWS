@@ -15,6 +15,10 @@ RELEASE
 =======
 
 -------------
+Version 2.1.3   2014-05-22
+ - add Makefile_hand in example
+
+-------------
 Version 2.1.2   2014-05-16
  - Compilation of PAPI on K
 

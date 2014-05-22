@@ -16,7 +16,7 @@ noinst_PROGRAMS = check_new_api pmlib_test
 DISTCLEANFILES=*~ check_new_api pmlib_test
 CLEANFILES=data/*.log
 
-EXTRA_DIST= check_new_api.c sub_kernel.c pmlib_test.cpp
+EXTRA_DIST= check_new_api.c sub_kernel.c pmlib_test.cpp Makefile_hand.fx10.login Makefile_hand.intel
 
 
 check_new_api_SOURCES  =  check_new_api.c
