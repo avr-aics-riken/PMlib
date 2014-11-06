@@ -14,8 +14,9 @@
  * ############################################################################
  */
 
-//@file   PerfWatch.h
-//@brief  PerfWatch class Header
+//! @file   PerfWatch.h
+//! @brief  PerfWatch class Header
+//! @version rev.2.2 dated 10/30/2014 
 
 #ifdef _PM_WITHOUT_MPI_
 #include "mpi_stubs.h"
@@ -52,7 +53,7 @@ namespace pm_lib {
     
     // プロパティ
     std::string m_label;   ///< ラベル
-    bool m_typeCalc;       ///< 測定対象タイプ(true=計算/false=通信)
+    int m_typeCalc;       ///< 測定対象タイプ (0:通信, 1:計算, 2:自動決定)
     bool m_exclusive;      ///< 排他測定フラグ
     
     // 測定値の積算量
@@ -61,13 +62,13 @@ namespace pm_lib {
     unsigned long m_count; ///< 測定回数
     
     // 統計量
-    double m_time_av;    ///< 時間の平均値(ノード0のみ)
-    double m_time_sd;    ///< 時間の標準偏差(ノード0のみ)
-    double m_flop_av;    ///< 浮動小数点演算量or通信量の平均値(ノード0のみ)
-    double m_flop_sd;    ///< 浮動小数点演算量or通信量の標準偏差(ノード0のみ)
-    double m_time_comm;  ///< 通信部分の最大値（ノード0のみ）
+    double m_time_av;    ///< 時間の平均値(ランク0のみ)
+    double m_time_sd;    ///< 時間の標準偏差(ランク0のみ)
+    double m_flop_av;    ///< 浮動小数点演算量or通信量の平均値(ランク0のみ)
+    double m_flop_sd;    ///< 浮動小数点演算量or通信量の標準偏差(ランク0のみ)
+    double m_time_comm;  ///< 通信部分の最大値（ランク0のみ）
     
-    bool m_valid;        ///< 測定回数が全ノードで等しいかどうかのフラグ(ノード0のみ)
+    bool m_valid;        ///< 測定回数が全ランクで等しいかどうかのフラグ(ランク0のみ)
     
 	struct pmlib_papi_chooser my_papi;
 
@@ -85,7 +86,7 @@ namespace pm_lib {
     /// 排他測定実行中フラグ. 非排他測定では未使用
     static bool ExclusiveStarted;
     
-    /// 並列時の自ノードのランク番号
+    /// 並列時の自ランク番号
     int my_rank;
     
     ///
@@ -105,16 +106,16 @@ namespace pm_lib {
     }
     
     /// 測定モードを返す
-    bool get_typeCalc(void) { return m_typeCalc; }
+    int get_typeCalc(void) { return m_typeCalc; }	// rev.2.2 type changed
     
     /// 測定時計にプロパティを設定.
     ///
     ///   @param[in] label ラベル
-    ///   @param[in] typeCalc  測定対象タイプ(true=計算/false=通信)
+    ///   @param[in] typeCalc  測定対象タイプ(0:通信, 1:計算, 2:自動決定)
     ///   @param[in] myID      ランク番号
     ///   @param[in] exclusive 排他測定フラグ
     ///
-    void setProperties(const std::string& label, bool typeCalc, const int myID, bool exclusive) {
+    void setProperties(const std::string& label, const int typeCalc, const int myID, bool exclusive) {
       m_label = label;
       m_typeCalc = typeCalc;
       m_exclusive =  exclusive;
@@ -122,6 +123,7 @@ namespace pm_lib {
     }
     
     /// 測定スタート.
+    ///
     void start();
     
     /// 測定ストップ.
@@ -129,41 +131,53 @@ namespace pm_lib {
     ///   @param[in] flopPerTask 「タスク」あたりの計算量/通信量(バイト)
     ///   @param[in] iterationCount  実行「タスク」数
     ///
-    ///   @note m_countには, iterationCountではなく, 「測定回数」を積算
-    ///
     void stop(double flopPerTask, unsigned iterationCount);
     
-    /// 測定結果情報をノード０に集約.
-    void gather();
-    
-    /// 詳細な測定結果を出力.
+    /// 測定結果情報をランク０に集約.
     ///
-    ///   ノード毎に非排他測定区間も出力
+    void gather();
+
+    /// MPIランク別測定結果を出力. 非排他測定区間も出力
     ///
     ///   @param[in] fp 出力ファイルポインタ
     ///   @param[in] totalTime 全排他測定区間での計算時間(平均値)の合計
     ///
-    ///   @note ノード0からのみ, 呼び出し可能
+    ///   @note ランク0からのみ, 呼び出し可能
     ///
-    void printDatail(FILE* fp, double totalTime);
+    void printDetailRanks(FILE* fp, double totalTime);
     
+    /// HWPCイベントを初期化する
+    ///
+    void initializeHWPC(void);
+
+    /// HWPCイベントの測定値を収集する
+    ///
+    void gatherHWPC(void);
     
-    /// HWPC測定結果を出力.
+    /// HWPCヘッダーを出力.
     ///
     ///   @param[in] fp 出力ファイルポインタ
     ///
-    void printHWPC(FILE* fp);
+    void printHWPCHeader(FILE* fp);
+    /// HWPCレジェンドを出力.
+    ///
+    ///   @param[in] fp 出力ファイルポインタ
+    ///
     void printHWPCLegend(FILE* fp);
+    /// HWPCイベントの測定結果と統計値を出力.
+    ///
+    ///   @param[in] fp 出力ファイルポインタ
+    ///
+    void printDetailHWPCsums(FILE* fp, std::string s_label);
     
     /// 単位変換.
     ///
     ///   @param[in] fops 浮動小数演算数/通信量(バイト)
     ///   @param[out] unit 単位の文字列
-    ///   @param[in] mode 測定モード (通信か計算)
+    ///   @param[in] typeCalc  測定対象タイプ(0:通信, 1:計算, 2:自動決定)
     ///   @return  単位変換後の数値
     ///
-    static double flops(double fops, std::string &unit, bool mode);
-
+    static double flops(double fops, std::string &unit, int typeCalc);
     
   private:
     /// 時刻を取得.
@@ -182,16 +196,14 @@ namespace pm_lib {
     ///
     void printError(const char* func, const char* fmt, ...);
 
-// DEBUG from here...
-  public:
-    void initializePapi(void);
   private:
 	void createPapiCounterList (void);
+	void sortPapiCounterList (void);
+	void outputPapiCounterHeader (FILE* fp, std::string s_label);
 	void outputPapiCounterList (FILE* fp);
 	void outputPapiCounterLegend (FILE* fp);
 	double countPapiFlop (pmlib_papi_chooser my_papi);
 	double countPapiByte (pmlib_papi_chooser my_papi);
-  public:
 
   };
   

@@ -14,6 +14,10 @@
 RELEASE
 =======
 
+------------------
+Version 2.2   2014-10-30
+ - New API for initialize/setProperties/start/stop [ver 2.2]
+
 -------------
 Version 2.1.3   2014-05-22
  - add Makefile_hand in example

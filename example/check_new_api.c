@@ -1,9 +1,7 @@
 /*****************************************************************************
-*  This example code shows how to use most of PAPI's High level functions    * 
-*  to start,count,read and stop on an event set. We use two preset events    *
-*  here:                                                                     *
-*     PAPI_TOT_INS: Total instructions executed in a period of time		     *
-*     PAPI_TOT_CYC: Total cpu cycles in a period of time		             *
+*  This example code shows how to use the newly coded highlevel interface
+*  routines for PAPI
+*  Those routines accept the specific events and report the statistics for them
 ******************************************************************************/ 
 
 #include <stdio.h>
@@ -38,7 +36,7 @@ extern int my_papi_bind_stop( int *, long long *, int );
 extern int my_papi_bind_read( int *, long long *, int );
 
 
-/* stupid codes to be monitored */ 
+/* some kernel to be monitored, stupid codes as commented in PAPI source */ 
 double computation_add()
 {
    double tmp=1.0;

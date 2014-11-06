@@ -5,10 +5,6 @@
 #include <PerfMonitor.h>
 #include <string>
 using namespace pm_lib;
-//	char parallel_mode[] = "Serial";
-char parallel_mode[] = "Hybrid";
-//	char parallel_mode[] = "OpenMP";
-//	char parallel_mode[] = "FlatMPI";
 
 #define MATSIZE 1000
 int nsize;
@@ -25,14 +21,9 @@ PerfMonitor PM;
 
 int main (int argc, char *argv[])
 {
-	double flop_count;
+	double flop_count, bandwidth_count, dsize;
 	double t1, t2;
 	int i, j, loop, num_threads;
-	enum timing_key {
-		tm_sec1,
-		tm_sec2,
-		tm_END_,
-	};
 
 	MPI_Init(&argc, &argv);
 	MPI_Comm_rank(MPI_COMM_WORLD, &my_id);
@@ -43,26 +34,30 @@ int main (int argc, char *argv[])
 		fprintf (stderr, "\n\t OMP_NUM_THREADS is not defined. It will be set as 1.\n");
 		omp_set_num_threads(1);
 	}
+    char parallel_mode[] = "Hybrid"; //	choose from "Serial", "OpenMP", "FlatMPI", "Hybrid"
 	num_threads  = omp_get_max_threads();
 	nsize=MATSIZE;
 	matrix.nsize = nsize;
+	dsize = (double)nsize;
 	if(my_id == 0) {
-		fprintf(stderr, "<main> MATSIZE=%d max_threads=%d\n", MATSIZE, num_threads);
+		fprintf(stderr, "\t<main> MATSIZE=%d max_threads=%d\n", MATSIZE, num_threads);
 	}
 
+	PM.initialize();
 	PM.setRankInfo(my_id);
-	PM.initialize(tm_END_);
-	PM.setProperties(tm_sec1, "section1", PerfMonitor::CALC);
-//	PM.setProperties(tm_sec1, "section1", PerfMonitor::COMM);
-//	PM.setProperties(tm_sec1, "section1", PerfMonitor::CALC, false);
-	num_threads  = omp_get_max_threads();
+
 	PM.setParallelMode(parallel_mode, num_threads, npes);
 
-	fprintf(stderr, "\n<main> starting the measurement\n");
+	PM.setProperties("First location", PerfMonitor::CALC);
+	PM.setProperties("Second location", PerfMonitor::CALC);
+	PM.setProperties("Third location", PerfMonitor::COMM);
+	PM.setProperties("Extra location", PerfMonitor::AUTO);
+
+	fprintf(stderr, "\t<main> starting the measurement\n");
 	set_array();
 
 	loop=3;
-	PM.start(tm_sec1);
+	PM.start("First location");
 	for (i=1; i<=loop; i++){
 		t1=MPI_Wtime();
 		subkerel();
@@ -70,15 +65,28 @@ int main (int argc, char *argv[])
 		MPI_Barrier(MPI_COMM_WORLD);
 		if(my_id == 0) { fprintf(stderr, "<main> step %d finished in %f seconds\n", i,t2-t1);}
 	}
-	PM.stop (tm_sec1);
+	PM.stop ("First location");
 
-	PM.setProperties(tm_sec2, "section2", PerfMonitor::CALC);
-	PM.start(tm_sec2);
+	PM.start("Second location");
 	subkerel();
-	flop_count=pow ((double)nsize, 3.0)*4.0;
-	PM.stop (tm_sec2, flop_count, 1);
+	flop_count=pow (dsize, 3.0)*4.0;
+	PM.stop ("Second location", flop_count, 1);
 	if(my_id == 0) {
-		fprintf(stderr, "<section2> flop count in the source code: %15.0f\n\n", flop_count);
+		fprintf(stderr, "<Second location> flop count in the source code: %15.0f\n\n", flop_count);
+	}
+
+	PM.start("Third location");
+	subkerel();
+	bandwidth_count=pow (dsize, 3.0)*2.0 + dsize*dsize*2.0;
+	PM.stop ("Third location", bandwidth_count, 1);
+
+	PM.start("Extra location");
+	subkerel();
+	subkerel();
+	PM.stop ("Extra location");
+
+	if(my_id == 0) {
+		fprintf(stderr, "<Third location> count in the source code: %15.0f\n\n", bandwidth_count);
 	}
 
 	PM.gather();
