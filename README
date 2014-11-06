@@ -19,8 +19,8 @@ ChangeLog              History of modification
 COPYING                Copyright
 doc/                   Document
   Doxyfile             Configuration file to generate a doxygen file
-  How_to_use_PMlib.pdf Explanation of usage (in Japanese)
-  PMlib.pdf            User's manual (in Japanese)
+  PMlib_User_Guide.pdf User's manual (in Japanese)
+  Training_Slides.pdf  Explanation Slides for in depth training (in Japanese)
 example/               example source codes
 include/               Header files
 INSTALL                Description of how to install

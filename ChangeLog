@@ -15,12 +15,8 @@ REVISION HISTORY
 ================
 
 ------------------
-2014-07-29
- r25 add compiler and linker option for K/fx [ver 2.1.4]
-
-------------------
-2014-05-22
- r24 add Makefile_hand for fx10 and intel in example [ver 2.1.3]
+2014-10-30
+ r25 New API for initialize/setProperties/start/stop [ver 2.2]
 
 ------------------
 2014-05-16

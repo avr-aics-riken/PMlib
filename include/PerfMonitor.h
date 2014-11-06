@@ -14,14 +14,15 @@
  * ############################################################################
  */
 
-//@file   PerfMonitor.h
-//@brief  PerfMonitor class Header
-//@note MPI_Init(), MPI_Finalize()はライブラリ外で行う。
+//! @file   PerfMonitor.h
+//! @brief  PerfMonitor class Header
+//! @version rev.2.2 dated 10/30/2014 
 
 #include "PerfWatch.h"
 #include <cstdio>
 #include <cstdlib>
 #include "pmVersion.h"
+#include <map>
 
 
 namespace pm_lib {
@@ -42,8 +43,9 @@ namespace pm_lib {
     
     /// 測定対象タイプ
     enum Type {
-      COMM,  ///< 通信
-      CALC,  ///< 計算
+      COMM,  ///< 0:通信
+      CALC,  ///< 1:計算
+      AUTO,  ///< 2:自動決定
     };
     
     /// 測定レベル制御変数.
@@ -59,6 +61,11 @@ namespace pm_lib {
     std::string parallel_mode; ///< 並列動作モード（"Serial", "OpenMP", "FlatMPI", "Hybrid"）
     PerfWatch* m_watchArray;   ///< 測定時計配列
     PerfWatch  m_total;        ///< 全計算時間用測定時計
+    // 注意 PerfWatchのインスタンスは全部で m_nWatch + 1 生成される
+    // ユーザーが定義する各区間 m_watchArray[m_nWatch] と
+    // 全区間を含む合計用に pmlibが独自に作成する m_totalとがある
+    unsigned *m_order;         ///< 経過時間でソートした測定区間のリストm_order[m_nWatch]
+    int researved_nWatch;      ///< 測定区間用にリザーブされたブロックの大きさ
 
   public:
     /// コンストラクタ.
@@ -67,47 +74,74 @@ namespace pm_lib {
     /// デストラクタ.
     ~PerfMonitor() { if (m_watchArray) delete[] m_watchArray; }
     
+
     /// 初期化.
     ///
     /// 測定区間数分の測定時計を準備.
     /// 全計算時間用測定時計をスタート.
-    /// @param[in] nWatch 測定区間数
+    /// @param[in] （引数はオプション） init_nWatch 最初に確保する測定区間数
     ///
-    void initialize(unsigned nWatch) {
-      m_nWatch = nWatch;
-      m_watchArray = new PerfWatch[m_nWatch];
-      m_gathered = false;
-      //	my_rank = 0;
-      
-// additional call to interface with PAPI
-      m_total.initializePapi();
+    /// @note 測定区間数 m_nWatch は動的に増えていく事もある
+    /// 最初にinit_nWatch区間分を確保し、不足したらさらにinit_nWatch追加する
+    ///
 
+
+// Just for DEBUG
+    void initialize (int init_nWatch=100) {
+    //	void initialize (int init_nWatch=300) {
+      m_watchArray = new PerfWatch[init_nWatch];
+      m_gathered = false;
+      m_nWatch = 0 ;
+      researved_nWatch = init_nWatch;
+      /// additional call to interface HWPC
+      /// m_total は PerfWatch classである(PerfMonitorではない)ことに留意
+      m_total.initializeHWPC();
       m_total.setProperties("Total excution time", CALC, my_rank, false);
       m_total.start();
-
     }
-    
-    
+
     
     /// ランク番号の通知
     void setRankInfo(const int myID) {
       my_rank = myID;
     }
+
     
     /// 測定時計にプロパティを設定.
     ///
-    ///   @param[in] key キー番号
-    ///   @param[in] label ラベル
-    ///   @param[in] type  測定対象タイプ(COMM or CALC)
+    ///   @param[in] label ラベル文字列
+    ///   @param[in] type  測定対象タイプ(COMM:通信, CALC:計算, AUTO:自動決定)
     ///   @param[in] exclusive 排他測定フラグ(ディフォルトtrue)
     ///
-    void setProperties(unsigned key, const std::string& label, Type type, bool exclusive=true) {
-      if (key >= m_nWatch) {
-        fprintf(stderr, "\tPerfMonitor::setProperties() error, out of range key\n");
+    ///   @note 測定区間を識別するためにlabelを用いる。
+    ///   各labelに対応したキー番号 key は各ラベル毎に内部で自動生成する
+    ///   最初に確保した区間数init_nWatchが不足したらさらにinit_nWatch区間追加する
+    ///
+    void setProperties(const std::string& label, Type type, bool exclusive=true) {
+      int key = add_perf_label(label);
+      if (m_nWatch < 0) {
+        fprintf(stderr, "\tPerfMonitor::setProperties() error. key=%u \n", key);
         PM_Exit(0);
+      }
+      #ifdef DEBUG_PRINT_LABEL
+      fprintf(stderr, "<setProperties> %s type:%d key:%d\n",
+                             label.c_str(), type, key);
+      #endif
+
+      m_nWatch++;
+      if (m_nWatch > researved_nWatch) {
+        PerfWatch* watch_more = new PerfWatch[2*researved_nWatch ];
+        for (int i = 0; i < researved_nWatch; i++) {
+            watch_more[i] = m_watchArray[i];
+        }
+        delete [] m_watchArray;
+        m_watchArray = watch_more;
+        watch_more = NULL;
+        researved_nWatch = 2*researved_nWatch;
       }
       m_watchArray[key].setProperties(label, type, my_rank, exclusive);
     }
+
     
     /// 並列モードを設定
     ///
@@ -119,51 +153,44 @@ namespace pm_lib {
       parallel_mode = p_mode;
       num_threads   = n_thread;
       num_process   = n_proc;
+		#ifdef DEBUG_PRINT_LABEL
+		fprintf(stderr, "<setParallelMode> %s \n", p_mode.c_str());
+		#endif
     }
     
     /// 測定スタート.
     ///
-    ///   @param[in] key キー番号
-    ///
-    void start(unsigned key) {
-      if (key >= m_nWatch) {
-        fprintf(stderr, "\tPerfMonitor::start() error, out of range key\n");
-        PM_Exit(0);
-      }
+    ///   @param[in] label ラベル rev.2.2 からkey キー番号ではなくラベルを使用
+    void start (const std::string& label) {
+      int key = key_perf_label(label);
       m_watchArray[key].start();
+		#ifdef DEBUG_PRINT_LABEL
+    	fprintf(stderr, "<start> %s : %d\n", label.c_str(), key);
+		#endif
     }
     
     /// 測定ストップ.
     ///
-    ///   @param[in] key キー番号
+    ///   @param[in] label ラベル rev.2.2 からkey キー番号ではなくラベルを使用
     ///   @param[in] flopPerTask 「タスク」あたりの計算量/通信量(バイト) (ディフォルト0)
     ///   @param[in] iterationCount  実行「タスク」数 (ディフォルト1)
     ///
-    void stop(unsigned key, double flopPerTask=0.0, unsigned iterationCount=1) {
-      if (key >= m_nWatch) {
-        fprintf(stderr, "\tPerfMonitor::stop() error, out of range key\n");
-        PM_Exit(0);
-      }
+    void stop(const std::string& label, double flopPerTask=0.0, unsigned iterationCount=1) {
+      int key = key_perf_label(label);
       m_watchArray[key].stop(flopPerTask, iterationCount);
+		#ifdef DEBUG_PRINT_LABEL
+    	fprintf(stderr, "<stop>  %s : %d\n", label.c_str(), key);
+		#endif
     }
     
-    /// 測定結果情報をノード０に集約.
+    /// 全プロセスの全測定結果情報をマスタープロセス(0)に集約.
     ///
     ///   全計算時間用測定時計をストップ.
     ///
-    void gather() {
-      if (m_gathered) {
-        fprintf(stderr, "\tPerfMonitor::gather() error, already gathered\n");
-        PM_Exit(0);
-      }
-      m_total.stop(0.0, 1);
-      for (int i = 0; i < m_nWatch; i++) {
-        m_watchArray[i].gather();
-      }
-      m_gathered = true;
-    }
+    void gather(void);
+
     
-    /// 測定結果を出力.
+    /// 測定結果の基本統計情報を出力.
     ///
     ///   排他測定区間のみ
     ///   @param[in] fp           出力ファイルポインタ
@@ -191,9 +218,47 @@ namespace pm_lib {
       std::string str(PM_VERSION_NO);
       return str;
     }
-    
+
+  private:
+	std::map<std::string, int > array_of_symbols;
+
+    /// labelに対応した計測区間のkey番号を追加作成する
+    ///
+    ///   @param[in] 測定区間のラベル
+    ///
+    int add_perf_label(std::string arg_st)
+    {
+		int ip = m_nWatch;
+    	// perhaps it is better to return ip showing the insert status.
+		// sometime later...
+    	array_of_symbols.insert( make_pair(arg_st, ip) );
+		#ifdef DEBUG_PRINT_LABEL
+    	fprintf(stderr, "<add_perf_label> label=%s value=%d\n", arg_st.c_str(), ip);
+		#endif
+    	return ip;
+    }
+
+    /// labelに対応するkey番号を取得
+    ///
+    ///   @param[in] 測定区間のラベル
+    ///
+    int key_perf_label(std::string arg_st)
+    {
+    	int pair_value;
+    	if (array_of_symbols.find(arg_st) == array_of_symbols.end()) {
+    		pair_value = -1;
+    	} else {
+    		pair_value = array_of_symbols[arg_st] ;
+    	}
+		#ifdef DEBUG_PRINT_LABEL
+    	fprintf(stderr, "<key_perf_label> label=%s value=%d\n", arg_st.c_str(), pair_value);
+		#endif
+    	return pair_value;
+    }
+
   };
 
 } /* namespace pm_lib */
 
 #endif // _PM_PERFMONITOR_H_
+

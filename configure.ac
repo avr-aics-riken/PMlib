@@ -14,14 +14,14 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.57])
-AC_INIT([PMlib], [2.1.4], [keno@riken.jp],[PMlib])
+AC_INIT([PMlib], [2.2], [keno@riken.jp],[PMlib])
 AM_INIT_AUTOMAKE()
 AC_CONFIG_SRCDIR([src/PerfMonitor.cpp])
 AC_CONFIG_HEADERS([config.h])
 
 
 # revision No.
-PM_REVISION="20140729_1200"
+PM_REVISION="20141030_1700"
 AC_SUBST(PM_REVISION)
 
 
@@ -139,7 +139,7 @@ fi
 PM_LDFLAGS="-L$PM_INST_DIR/lib"
 AC_SUBST(PM_LDFLAGS)
 
-PM_LIBS="-lPM"
+PM_LIBS="-lPM -lpapi_ext"
 AC_SUBST(PM_LIBS)
 
 

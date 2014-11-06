@@ -11,10 +11,10 @@
  * ###################################################################
  */
 
-//@file   PerfWatch.cpp
-//@brief  PerfWatch class
+//@file   PerfCpuType.cpp
+//@brief  PMlib - PAPI interface class
 
-// When compiling this file with USE_PAPI defined, openmp option should be enabled.
+// if USE_PAPI is defined, compile this file with openmp option 
 
 #include <mpi.h>
 #include <cmath>
@@ -31,7 +31,12 @@ extern struct hwpc_group_chooser hwpc_group;
 namespace pm_lib {
 
 
-void PerfWatch::initializePapi ()
+  /// HWPC interface initialization
+  ///
+  /// @note  PMlib - HWPC PAPI interface class
+  /// PAPI library is used to interface HWPC events
+  ///
+void PerfWatch::initializeHWPC ()
 {
 #ifdef USE_PAPI
 #include <string>
@@ -49,7 +54,7 @@ void PerfWatch::initializePapi ()
 
 	#ifdef DEBUG_PRINT_PAPI
 	int n_thread = omp_get_max_threads();
-	fprintf (stderr, "\n <initializePapi> starts n_threads=%d, &papi=%llu \n\n", n_thread, &papi.num_events);
+	fprintf (stderr, "\n <initializeHWPC> starts n_threads=%d, &papi=%llu \n\n", n_thread, &papi.num_events);
 	#endif
 
 	for (int i=0; i<Max_hwpc_output_group; i++) {
@@ -92,13 +97,16 @@ void PerfWatch::initializePapi ()
 	}
 
 	#ifdef DEBUG_PRINT_PAPI
-	fprintf (stderr, " <initializePapi> ends\n\n");
+	fprintf (stderr, " <initializeHWPC> ends\n\n");
 	#endif
 #endif // USE_PAPI
 }
 
 
 
+  /// Construct the available list of PAPI counters for the targer processor
+  /// @note  this routine needs the processor hardware information
+  ///
 void PerfWatch::createPapiCounterList ()
 {
 #ifdef USE_PAPI
@@ -120,14 +128,6 @@ void PerfWatch::createPapiCounterList ()
 	if (hwinfo == NULL) {
 		fprintf (stderr, "*** error. <PAPI_get_hardware_info> failed.\n" );
 	}
-
-	#ifdef DEBUG_PRINT_PAPI
-	if (my_id == 0) {
-		fprintf(stderr, " <PAPI_get_hardware_info> detected the followings:\n" );
-		fprintf(stderr, "\t%s\n", hwinfo->vendor_string);
-		fprintf(stderr, "\t%s\n", hwinfo->model_string);
-	}
-	#endif
 
 	s_model_string = hwinfo->model_string;
 
@@ -159,7 +159,6 @@ void PerfWatch::createPapiCounterList ()
 	} else {
 		s_chooser=s_default;
 	}
-	if (my_id == 0) fprintf(stderr," <PerfWatch::> HWPC_CHOOSER: %s\n", s_chooser.c_str());
 
 // 3. Select the corresponding PAPI hardware counter events
 	int ip=0;
@@ -222,32 +221,32 @@ void PerfWatch::createPapiCounterList ()
 		hwpc_group.number[I_bandwidth] = 0;
 
 		if (hwpc_group.platform == "Xeon" ) {
-		/* Xeon E5 Sandybridge the choices were made out of trial and error...
-			// hit or miss counters
-			papi.s_name[ip] = "L3_LAT_CACHE:MISS";	// demand request which missed L3
-			papi.s_name[ip] = "MEM_LOAD_UOPS_RETIRED:L3_MISS";	// ditto
-			papi.s_name[ip] = "L1-DCACHE-LOADS";		// N.A. error. L1_DCACHE_LOAD either
-			papi.s_name[ip] = "L1-DCACHE-LOADS-MISSES";	// N.A. error.
-			papi.s_name[ip] = "PERF_COUNT_HW_CACHE_L1D:ACCESS";	// N.A. error.
-		*/
-		// offcore requests and offcore response.  OFFCORE_RESPONSE_0:* only return 0
-		// OFFCORE_REQUESTS:* return reasonable values,
-		// so the bandwidth is calculated using OFFCORE_REQUESTS:ALL_DATA_RD
-			hwpc_group.number[I_bandwidth] += 7;
+		// Bandwidth related event counting with PAPI on Xeon E5 is quite complex,
+		// If offcore events can be measured, the bandwidth should be calculated as
+		// sum of offcore(demand read/write, prefetch, write back) * linesize *1.0e-9 / time
+		// But they are not available in the current environment.
+		// Linux kernel must be 3.5+ to support offcore events "OFFCORE_REQUESTS:*"
+		// Instead, the bandwidth from/to uncore, i.e. L3 and DRAM, is calculated below
+		// The events can be of demand read, rfo, or prefetch, and they must be combined.
+		// 	for example, LLC_MISSES represents the L3 miss of demand requests only .
+		// For more info regarding the events, see check_papi_events.cpp
 
+			hwpc_group.number[I_bandwidth] += 8;
 			papi.s_name[ip] = "LD_INS"; papi.events[ip] = PAPI_LD_INS; ip++;
 			papi.s_name[ip] = "SR_INS"; papi.events[ip] = PAPI_SR_INS; ip++;
-			//	following events are native events
-			papi.s_name[ip] = "MEM_LOAD_UOPS_RETIRED:HIT_LFB";
-			my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); ip++;
+
 			papi.s_name[ip] = "MEM_LOAD_UOPS_RETIRED:L1_HIT";
 			my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); ip++;
-			papi.s_name[ip] = "MEM_LOAD_UOPS_RETIRED:L2_HIT";
+			papi.s_name[ip] = "MEM_LOAD_UOPS_RETIRED:HIT_LFB";
 			my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); ip++;
-			papi.s_name[ip] = "MEM_LOAD_UOPS_RETIRED:L3_HIT";
-			my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); ip++;
-			papi.s_name[ip] = "OFFCORE_REQUESTS:ALL_DATA_RD";	// dm and prefetch missed L3
-			my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); ip++;
+			papi.s_name[ip] = "L2_RQSTS:ALL_DEMAND_DATA_RD";	// L2 demand read request
+			my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "L2_DRD_REQ"; ip++;
+			papi.s_name[ip] = "L2_RQSTS:ALL_DEMAND_RD_HIT";		// L2 demand read hit
+			my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "L2_DRD_HIT"; ip++;
+			papi.s_name[ip] = "L2_RQSTS:PF_MISS";
+			my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "L2_PF_MISS"; ip++;
+			papi.s_name[ip] = "L2_RQSTS:RFO_MISS";
+			my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "L2_RFO_MISS"; ip++;
 		}
 
 		if (hwpc_group.platform == "SPARC64" ) {
@@ -296,40 +295,45 @@ void PerfWatch::createPapiCounterList ()
 			hwpc_group.number[I_cycle] += 2;
 			papi.s_name[ip] = "LD_INS"; papi.events[ip] = PAPI_LD_INS; ip++;
 			papi.s_name[ip] = "SR_INS"; papi.events[ip] = PAPI_SR_INS; ip++;
+			//	papi.s_name[ip] = "LST_INS"; papi.events[ip] = PAPI_LST_INS; ip++;
 			//	papi.s_name[ip] = "MEM_SCY"; papi.events[ip] = PAPI_MEM_SCY; ip++;
 			//	papi.s_name[ip] = "STL_ICY"; papi.events[ip] = PAPI_STL_ICY; ip++;
 		}
 	}
 
-
+// total number of traced events by PMlib
 	papi.num_events = ip;
+
 // end of hwpc_group selection
 
-#ifdef DEBUG_PRINT_PAPI
-	fprintf(stderr, " CPU architecture: %s\n", hwpc_group.platform.c_str());
-	fprintf(stderr, " hwpc max output groups:%d\n", Max_hwpc_output_group);
-	for (int i=0; i<Max_hwpc_output_group; i++) {
+	#ifdef DEBUG_PRINT_PAPI
+	if (my_id == 0) {
+		fprintf(stderr, " platform: %s\n", hwpc_group.platform.c_str());
+		fprintf(stderr, " HWPC_CHOOSER=%s\n", s_chooser.c_str());
+		fprintf(stderr, " hwpc max output groups:%d\n", Max_hwpc_output_group);
+		for (int i=0; i<Max_hwpc_output_group; i++) {
 		fprintf(stderr, "  i:%d hwpc_group.number[i]=%d, hwpc_group.index[i]=%d\n",
 						i, hwpc_group.number[i], hwpc_group.index[i]);
 		}
-	fprintf(stderr, " papi.num_events=%d, &papi=%lu \n", papi.num_events, &papi.num_events);
-	for (int i=0; i<papi.num_events; i++) {
+		fprintf(stderr, " papi.num_events=%d, &papi=%lu \n", papi.num_events, &papi.num_events);
+		for (int i=0; i<papi.num_events; i++) {
 		fprintf(stderr, " i=%d : %s : events[i]=%u \n", 
 					i, papi.s_name[i].c_str(), papi.events[i]);
 		}
-	fprintf (stderr, " <createPapiCounterList> ends\n" );
-#endif // DEBUG_PRINT_PAPI
+		fprintf (stderr, " <createPapiCounterList> ends\n" );
+	}
+	#endif
 #endif // USE_PAPI
 }
 
 
 
-void PerfWatch::outputPapiCounterList (FILE* fp)
+  /// Sort out the list of counters linked with the user input parameter
+  ///
+void PerfWatch::sortPapiCounterList (void)
 {
 #ifdef USE_PAPI
 
-	std::string s_value[Max_chooser_events];
-	double v_value[Max_chooser_events];
 	int ip,jp;
 	double flops, counts, bandwidth;
 
@@ -341,12 +345,12 @@ void PerfWatch::outputPapiCounterList (FILE* fp)
 		ip = hwpc_group.index[I_flops];
 		for(int i=0; i<hwpc_group.number[I_flops]; i++)
 		{
-			s_value[jp] = papi.s_name[ip] ;
-			flops += v_value[jp] = my_papi.accumu[ip] ;
+			papi.s_sorted[jp] = papi.s_name[ip] ;
+			flops += papi.v_sorted[jp] = my_papi.accumu[ip] ;
 			ip++;jp++;
 		}
-		s_value[jp] = "[GFlops]" ;
-		v_value[jp] = flops / m_time;	// scale 10.e-9 later
+		papi.s_sorted[jp] = "[Flops]" ;
+		papi.v_sorted[jp] = flops / m_time ; // * 1.0e-9;
 		jp++;
 	}
 
@@ -355,8 +359,8 @@ void PerfWatch::outputPapiCounterList (FILE* fp)
 		ip = hwpc_group.index[I_vector];
 		for(int i=0; i<hwpc_group.number[I_vector]; i++)
 		{
-			s_value[jp] = papi.s_name[ip] ;
-			counts += v_value[jp] = my_papi.accumu[ip] ;
+			papi.s_sorted[jp] = papi.s_name[ip] ;
+			counts += papi.v_sorted[jp] = my_papi.accumu[ip] ;
 			ip++;jp++;
 		}
 	}
@@ -367,26 +371,30 @@ void PerfWatch::outputPapiCounterList (FILE* fp)
 		ip = hwpc_group.index[I_bandwidth];
 		for(int i=0; i<hwpc_group.number[I_bandwidth]; i++)
 			{
-			s_value[jp] = papi.s_name[ip] ;
-			if ( s_value[jp] == "OFFCORE_REQUESTS:ALL_DATA_RD" ) s_value[jp] = "OFFCORE";
-			counts += v_value[jp] = my_papi.accumu[ip] ;
+			papi.s_sorted[jp] = papi.s_name[ip] ;
+			counts += papi.v_sorted[jp] = my_papi.accumu[ip] ;
 			ip++;jp++;
 			}
     	if (hwpc_group.platform == "Xeon" ) {
-			// the last event should be OFFCORE == OFFCORE_REQUESTS:ALL_DATA_RD
-			if ( s_value[jp-1] != "OFFCORE" ) {
-				fprintf(stderr, "*** internal error. string does not match. %s\n", \
-						s_value[jp-1].c_str());
-			}
-			// Bandwidth = OFFCORE_REQUESTS:ALL_DATA_RD * 64 *1.0e-9 / time
-			bandwidth = v_value[jp-1] * 64 / m_time; // Xeon E5 has 64 Byte L3 $ lines
+			// See notes in createPapiCounterList ()
+			// Xeon E5 has 64 Byte L2 $ lines
+			// BandWidth = (L2 demad read miss + L2 RFO(write) miss + L2 prefetch miss + L2 WB) x 64 *1.0e-9 / time
+			counts = \
+				(papi.v_sorted[jp-4]-papi.v_sorted[jp-3]
+				+ papi.v_sorted[jp-1]
+				+ papi.v_sorted[jp-2]
+				+ 0 // WB is not measured...
+				);
+			bandwidth = counts*64.0/m_time;
 		}
+
     	if (hwpc_group.platform == "SPARC64" ) {
 			// BandWidth = (L2_MISS_DM + L2_MISS_PF + L2_WB_DM + L2_WB_PF) x 128 *1.0e-9 / time
 			bandwidth = counts * 128 / m_time; // Sparc64 has 128 Byte $ line
 		}
-		s_value[jp] = "[Mem GB/s]" ;
-		v_value[jp] = bandwidth;
+
+		papi.s_sorted[jp] = "[HW B/s]" ;
+		papi.v_sorted[jp] = bandwidth ; //* 1.0e-9;
 		jp++;
 	}
 
@@ -395,9 +403,9 @@ void PerfWatch::outputPapiCounterList (FILE* fp)
 		ip = hwpc_group.index[I_cache];
 		for(int i=0; i<hwpc_group.number[I_cache]; i++)
 		{
-			s_value[jp] = papi.s_name[ip] ;
-			if ( s_value[jp] == "OFFCORE_REQUESTS:ALL_DATA_RD" ) s_value[jp] = "OFFCORE";
-			counts += v_value[jp] = my_papi.accumu[ip] ;
+			papi.s_sorted[jp] = papi.s_name[ip] ;
+			if ( papi.s_sorted[jp] == "OFFCORE_REQUESTS:ALL_DATA_RD" ) papi.s_sorted[jp] = "OFFCORE";
+			counts += papi.v_sorted[jp] = my_papi.accumu[ip] ;
 			ip++;jp++;
 		}
 	}
@@ -407,34 +415,92 @@ void PerfWatch::outputPapiCounterList (FILE* fp)
 		ip = hwpc_group.index[I_cycle];
 		for(int i=0; i<hwpc_group.number[I_cycle]; i++)
 		{
-			s_value[jp] = papi.s_name[ip] ;
-			counts += v_value[jp] = my_papi.accumu[ip] ;
+			papi.s_sorted[jp] = papi.s_name[ip] ;
+			counts += papi.v_sorted[jp] = my_papi.accumu[ip] ;
 			ip++;jp++;
 		}
 	}
 
-// Now, print the event values and their derived values
-	int kp;
+// count the number of reported events and derived matrices
+	papi.num_sorted = jp;
+
+#endif // USE_PAPI
+}
+
+
+  /// Display the HWPC header line
+  ///   @param[in] fp 出力ファイルポインタ
+  ///   @param[in] s_label ラベル
+  ///
+void PerfWatch::outputPapiCounterHeader (FILE* fp, std::string s_label)
+{
+#ifdef USE_PAPI
+
+// print the Label string
+	fprintf(fp, "Label   %s%s\n", m_exclusive ? "" : "*", s_label.c_str());
+
+// print the header line with event names
 	std::string s;
-	int n_thread = omp_get_max_threads();
-	fprintf(fp, "\tHardware Performance counter values (rank #0 sum of %d threads) time=%f\n", n_thread, m_time);
-	for(int i=0; i<jp; i++) {
-		kp = s_value[i].find_last_of(':');
+	int ip, jp, kp;
+	fprintf (fp, "Header  ID :");
+	for(int i=0; i<papi.num_sorted; i++) {
+		kp = papi.s_sorted[i].find_last_of(':');
 		if ( kp < 0) {
-			s = s_value[i];
+			s = papi.s_sorted[i];
 		} else {
-			s = s_value[i].substr(kp);
+			s = papi.s_sorted[i].substr(kp+1);
 		}
-		fprintf (fp, "  %10.10s", s.c_str() );
-	} fprintf (fp, "\n");
-	for(int i=0; i<jp; i++) {
-			fprintf (fp, "  %10.3f", fabs(v_value[i]*1.0e-9) );
+		fprintf (fp, " %10.10s", s.c_str() );
 	} fprintf (fp, "\n");
 
 #endif // USE_PAPI
 }
 
 
+  /// Display the HWPC measured values and their derived values
+  ///   @param[in] fp 出力ファイルポインタ
+  ///
+void PerfWatch::outputPapiCounterList (FILE* fp)
+{
+#ifdef USE_PAPI
+	double* gather_sorted;
+	int iret;
+	int m_np;
+	MPI_Comm_size(MPI_COMM_WORLD, &m_np);
+
+	iret = MPI_Barrier(MPI_COMM_WORLD);
+	if (!(gather_sorted  = new double[m_np * papi.num_sorted])) {
+		fprintf (fp, "  gather_sorted failed.\n");
+		PM_Exit(0);
+	}
+	iret =
+	MPI_Gather (papi.v_sorted, papi.num_sorted, MPI_DOUBLE,
+				gather_sorted, papi.num_sorted, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+	if ( iret != 0 ) {
+		fprintf (fp, "  *** MPI_Gather failed.\n");
+		PM_Exit(0);
+	}
+
+// print the event values and their derived values
+	if (my_rank == 0) {
+	for (int i=0; i<m_np; i++) {
+		fprintf(fp, "Rank %5d :", i);
+
+		for(int n=0; n<papi.num_sorted; n++) {
+			//	fprintf (fp, "  %9.3e", fabs(papi.v_sorted[n]) );
+			fprintf (fp, "  %9.3e", fabs(gather_sorted[i*papi.num_sorted + n]));
+		}
+		fprintf (fp, "\n");
+	}
+	}
+	iret = MPI_Barrier(MPI_COMM_WORLD);
+#endif // USE_PAPI
+}
+
+
+  /// Display the HWPC legend
+  ///   @param[in] fp 出力ファイルポインタ
+  ///
 void PerfWatch::outputPapiCounterLegend (FILE* fp)
 {
 #ifdef USE_PAPI
@@ -442,18 +508,8 @@ void PerfWatch::outputPapiCounterLegend (FILE* fp)
 	const PAPI_hw_info_t *hwinfo = NULL;
 	std::string s_model_string;
 	using namespace std;
-	int my_id;
-	int i_papi;
-	MPI_Comm_rank(MPI_COMM_WORLD, &my_id);
 
-	hwinfo = PAPI_get_hardware_info();
-	if (my_id == 0) {
-		fprintf(stderr, "\n\t\tThe tool automatically detected the CPU architecture:\n" );
-		fprintf(stderr, "\t\t\t%s\n", hwinfo->vendor_string);
-		fprintf(stderr, "\t\t\t%s\n", hwinfo->model_string);
-	}
-
-	fprintf(fp, "\t\tHardware performance counter events legend: unit in Giga (10^9)\n");
+	fprintf(fp, "\n\t\tHWPC events legend: \n");
 	fprintf(fp, "\t\t\tFP_OPS: floating point operations\n");
 	if (hwpc_group.platform == "Xeon" ) { // Intel Xeon E5 specific 
 	fprintf(fp, "\t\t\tSP_OPS: single precision floating point operations\n");
@@ -500,12 +556,15 @@ void PerfWatch::outputPapiCounterLegend (FILE* fp)
 	fprintf(fp, "\t\t\t[L1$ %]: Level 1 cache hit percentage \n");
 	fprintf(fp, "\t\t\t[LL$ %]: Last Level cache hit percentage \n");
 
-	fprintf(fp, "\n\t\tPlease note that the available events are platform dependent.\n");
+	fprintf(fp, "\n\t\tPlease note that only the available HWPC events on this CPU are listed.\n");
 
 #endif // USE_PAPI
 }
 
 
+  /// Return the sum of flop values
+  ///   @param[in] my_papi struct pmlib_papi_chooser
+  ///
 double PerfWatch::countPapiFlop (pmlib_papi_chooser my_papi)
 {
 	double flops=0.0;
@@ -529,17 +588,21 @@ double PerfWatch::countPapiFlop (pmlib_papi_chooser my_papi)
 	return(flops);
 }
 
+
+  /// Debug. This routine needs more testing. It is commented out temporarily.
+  ///
+  /// Return the byte counts, not the bandwidth
+  ///   @param[in] my_papi struct pmlib_papi_chooser
+  ///
 double PerfWatch::countPapiByte (pmlib_papi_chooser my_papi)
 {
 	//	double bandwidth;
 	double bytes = 0.0;
 #ifdef USE_PAPI
 	#ifdef DEBUG_PRINT_PAPI
-	fprintf (stderr, " <PerfWatch::countPapiMemBW()> starts\n");
+	fprintf (stderr, " <PerfWatch::countPapiByte()> starts\n");
 	#endif
 
-// if (BANDWIDTH)
-// if (Count bytes instead of bandwidth)
 	if ( hwpc_group.number[I_bandwidth] > 0 ) {
 		long counts = 0.0;
 		int ip = hwpc_group.index[I_bandwidth];
