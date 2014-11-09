@@ -15,6 +15,11 @@ REVISION HISTORY
 ================
 
 ------------------
+2014-11-09
+r27 package 3.0.1
+ - modify PM_LIBS flags in configure.ac to suppress papi option when it is not specified.
+
+------------------
 2014-11-06
  r26 package 3.0.0
 

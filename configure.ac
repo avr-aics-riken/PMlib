@@ -14,14 +14,14 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.57])
-AC_INIT([PMlib], [3.0.0], [keno@riken.jp],[PMlib])
+AC_INIT([PMlib], [3.0.1], [keno@riken.jp],[PMlib])
 AM_INIT_AUTOMAKE()
 AC_CONFIG_SRCDIR([src/PerfMonitor.cpp])
 AC_CONFIG_HEADERS([config.h])
 
 
 # revision No.
-PM_REVISION="20141106_2000"
+PM_REVISION="20141109_1100"
 AC_SUBST(PM_REVISION)
 
 
@@ -133,14 +133,17 @@ if test x"$enable_papi" == x"yes" ; then
   PM_CFLAGS="$PM_CFLAGS"" -DUSE_PAPI"
   CXXFLAGS="$CXXFLAGS"" -DUSE_PAPI"
   CFLAGS="$CFLAGS"" -DUSE_PAPI"
+  PM_LIBS="-lPM -lpapi_ext"
+else
+  PM_LIBS="-lPM"
 fi
 
+AC_SUBST(PM_LIBS)
 
 PM_LDFLAGS="-L$PM_INST_DIR/lib"
 AC_SUBST(PM_LDFLAGS)
 
-PM_LIBS="-lPM -lpapi_ext"
-AC_SUBST(PM_LIBS)
+
 
 
 
