@@ -15,6 +15,10 @@ REVISION HISTORY
 ================
 
 ------------------
+2014-11-06
+ r26 package 3.0.0
+
+------------------
 2014-10-30
  r25 New API for initialize/setProperties/start/stop [ver 2.2]
 
