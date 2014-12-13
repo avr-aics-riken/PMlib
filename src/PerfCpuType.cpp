@@ -16,7 +16,11 @@
 
 // if USE_PAPI is defined, compile this file with openmp option 
 
+#ifdef _PM_WITHOUT_MPI_
+#include "mpi_stubs.h"
+#else
 #include <mpi.h>
+#endif
 #include <cmath>
 #include "PerfWatch.h"
 

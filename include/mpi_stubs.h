@@ -62,6 +62,16 @@ namespace pm_lib {
     return 0;
   }
 
+  inline int MPI_Barrier(MPI_Comm comm)
+  {
+    return 0;
+  }
+  
+  inline int MPI_Finalize(void)
+  {
+    return 0;
+  }
+  
 }
 
 #endif /* _PM_MPI_STUBS_H_ */

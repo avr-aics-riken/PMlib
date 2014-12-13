@@ -2930,8 +2930,8 @@ esac
 #
 
 if test x"$enable_mpi" = x"none" ; then
-  CXXFLAGS=-D_PM_WITHOUT_MPI_
-  CFLAGS=-D_PM_WITHOUT_MPI_
+  CXXFLAGS="$CXXFLAGS -D_PM_WITHOUT_MPI_"
+  CFLAGS="$CFLAGS -D_PM_WITHOUT_MPI_"
 else
 
 # openmpi
