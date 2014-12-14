@@ -1,4 +1,8 @@
+#ifdef _PM_WITHOUT_MPI_
+#include "mpi_stubs.h"
+#else
 #include <mpi.h>
+#endif
 #include <stdio.h>
 #include <math.h>
 #include <omp.h>
@@ -15,6 +19,7 @@ struct {
 	float c2[MATSIZE][MATSIZE];
 } matrix;
 extern "C" void set_array(), subkerel();
+double my_timer_(void);
 int my_id, npes, num_threads;
 
 PerfMonitor PM;
@@ -59,9 +64,9 @@ int main (int argc, char *argv[])
 	loop=3;
 	PM.start("First location");
 	for (i=1; i<=loop; i++){
-		t1=MPI_Wtime();
+		t1=my_timer_();
 		subkerel();
-		t2=MPI_Wtime();
+		t2=my_timer_();
 		MPI_Barrier(MPI_COMM_WORLD);
 		if(my_id == 0) { fprintf(stderr, "<main> step %d finished in %f seconds\n", i,t2-t1);}
 	}
@@ -95,5 +100,15 @@ int main (int argc, char *argv[])
 
 	MPI_Finalize();
 	return 0;
+}
+
+// timer routine for both MPI and serial model
+// remark that the timer resolution of gettimeofday is only millisecond order
+#include        <sys/time.h>
+double my_timer_()
+{
+	struct timeval s_val;
+	gettimeofday(&s_val,0);
+	return ((double) s_val.tv_sec + 0.000001*s_val.tv_usec);
 }
 
