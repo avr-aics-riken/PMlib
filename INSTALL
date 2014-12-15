@@ -71,7 +71,7 @@ Here is examples.
 
 # Using a wrapper compiler (Intel)
 
-  $ ./configure --prefix=/usr/local/FFV/PMlib CXX=mpicxx CXXFLAGS="-O3 -openmp"
+  $ ./configure --prefix=/usr/local/FFV/PMlib CXX=mpicxx CXXFLAGS="-O3 -openmp" CC=mpicc CFLAGS="-O3 -openmp"
 
 
 # Using a wrapper compiler (Intel) with PAPI, examples

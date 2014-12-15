@@ -19,7 +19,7 @@
  * @brief  PMlib version header
  */
 
-#define PM_VERSION_NO  "3.0.1"
-#define PM_REVISION    "20141109_1100"
+#define PM_VERSION_NO  "3.0.2"
+#define PM_REVISION    "20141215_1000"
 
 #endif /* _PMLIB_VERSION_H_ */
