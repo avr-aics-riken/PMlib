@@ -18,11 +18,6 @@
 //! @brief  PerfWatch class Header
 //! @version rev.2.2 dated 10/30/2014 
 
-#ifdef _PM_WITHOUT_MPI_
-#include "mpi_stubs.h"
-#else
-#include <mpi.h>
-#endif
 
 #include <cassert>
 #include <cstdio>
@@ -30,13 +25,17 @@
 #include <string>
 #include <cstdlib>
 
+#ifdef _OPENMP
+	#include <omp.h>
+#endif
+#include "pmlib_papi.h"
+
 #ifndef _WIN32
 #include <sys/time.h>
 #else
 #include "sph_win32_util.h"   // for win32
 #endif
 
-#include "pmlib_papi.h"
 
 namespace pm_lib {
 
@@ -53,7 +52,7 @@ namespace pm_lib {
     
     // プロパティ
     std::string m_label;   ///< ラベル
-    int m_typeCalc;       ///< 測定対象タイプ (0:通信, 1:計算, 2:自動決定)
+    int m_typeCalc;       ///< 測定対象タイプ (0:通信, 1:計算)
     bool m_exclusive;      ///< 排他測定フラグ
     
     // 測定値の積算量
@@ -81,15 +80,17 @@ namespace pm_lib {
     double* m_timeArray;         ///< 「時間」集計用配列
     double* m_flopArray;         ///< 「浮動小数点演算量or通信量」集計用配列
     unsigned long* m_countArray; ///< 「測定回数」集計用配列
+    unsigned long  m_count_sum; ///< 「測定回数」summed over all MPI ranks
     bool m_gathered;             ///< 集計済みフラグ
     
     /// 排他測定実行中フラグ. 非排他測定では未使用
     static bool ExclusiveStarted;
     
-    /// 並列時の自ランク番号
+    /// MPI並列時の並列プロセス数と自ランク番号
+    int num_process;
     int my_rank;
     
-    ///
+    /// 測定区間が初めてstartされる場合かどうかのフラグ
     bool m_is_first;      /// true if the first instance
 
   public:
@@ -106,22 +107,27 @@ namespace pm_lib {
     }
     
     /// 測定モードを返す
-    int get_typeCalc(void) { return m_typeCalc; }	// rev.2.2 type changed
+    int get_typeCalc(void) { return m_typeCalc; }
     
     /// 測定時計にプロパティを設定.
     ///
     ///   @param[in] label ラベル
-    ///   @param[in] typeCalc  測定対象タイプ(0:通信, 1:計算, 2:自動決定)
+    ///   @param[in] typeCalc  測定対象タイプ(0:通信, 1:計算)
     ///   @param[in] myID      ランク番号
     ///   @param[in] exclusive 排他測定フラグ
     ///
-    void setProperties(const std::string& label, const int typeCalc, const int myID, bool exclusive) {
+    void setProperties(const std::string& label, const int typeCalc, const int nPEs, const int myID, bool exclusive) {
       m_label = label;
       m_typeCalc = typeCalc;
       m_exclusive =  exclusive;
+      num_process = nPEs;
       my_rank = myID;
     }
     
+    /// HWPCイベントを初期化する
+    ///
+    void initializeHWPC(void);
+
     /// 測定スタート.
     ///
     void start();
@@ -135,7 +141,24 @@ namespace pm_lib {
     
     /// 測定結果情報をランク０に集約.
     ///
-    void gather();
+    void gather(void);
+
+    /// HWPCイベントの測定値を収集する
+    ///
+    void gatherHWPC(void);
+
+    /// 測定結果の平均値・標準偏差などの基礎的な統計計算
+    ///
+    void statsAverage(void);
+
+    /// 計算量としてユーザー申告値を用いるかHWPC計測値を用いるかの決定を行う
+    ///   @return  戻り値とその意味合い
+    ///		0: user set bandwidth
+    /// 	1: user set flop counts
+    /// 	2: HWPC base bandwidth
+    /// 	3: HWPC base flop counts
+    /// 	4: other HWPC base statistics
+    int statsSwitch(void);
 
     /// MPIランク別測定結果を出力. 非排他測定区間も出力
     ///
@@ -145,14 +168,6 @@ namespace pm_lib {
     ///   @note ランク0からのみ, 呼び出し可能
     ///
     void printDetailRanks(FILE* fp, double totalTime);
-    
-    /// HWPCイベントを初期化する
-    ///
-    void initializeHWPC(void);
-
-    /// HWPCイベントの測定値を収集する
-    ///
-    void gatherHWPC(void);
     
     /// HWPCヘッダーを出力.
     ///
@@ -174,10 +189,10 @@ namespace pm_lib {
     ///
     ///   @param[in] fops 浮動小数演算数/通信量(バイト)
     ///   @param[out] unit 単位の文字列
-    ///   @param[in] typeCalc  測定対象タイプ(0:通信, 1:計算, 2:自動決定)
+    ///   @param[in] typeCalc  測定対象タイプ(0:通信, 1:計算)
     ///   @return  単位変換後の数値
     ///
-    static double flops(double fops, std::string &unit, int typeCalc);
+    static double unitFlop(double fops, std::string &unit, int typeCalc);
     
   private:
     /// 時刻を取得.

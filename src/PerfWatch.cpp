@@ -16,6 +16,12 @@
 
 // When compiling with USE_PAPI macro, openmp option should be enabled.
 
+#ifdef _PM_WITHOUT_MPI_
+#include "mpi_stubs.h"
+#else
+#include <mpi.h>
+#endif
+
 #include "PerfWatch.h"
 #include <cmath>
 
@@ -31,7 +37,6 @@ extern void sortPapiCounterList ();
 extern void outputPapiCounterHeader (FILE*, std::string);
 extern void outputPapiCounterList (FILE*);
 extern void outputPapiCounterLegend (FILE*);
-extern double countPapiFlop (pmlib_papi_chooser );
 extern double countPapiByte (pmlib_papi_chooser );
 
 
@@ -45,19 +50,16 @@ namespace pm_lib {
   ///
   ///   @param[in] fops 浮動小数演算数/通信量(バイト)
   ///   @param[out] unit 単位の文字列
-  ///   @param[in] typeCalc 測定対象タイプ (0:通信, 1:計算, 2:自動決定)
+  ///   @param[in] typeCalc 測定対象タイプ (0:通信, 1:計算)
   ///   @return  単位変換後の数値
   ///
-  double PerfWatch::flops(double fops, std::string &unit, const int typeCalc)
+  double PerfWatch::unitFlop(double fops, std::string &unit, const int typeCalc)
   {
     int is_unit;
-    // is_unit=0:通信, 1:計算, 2:自動決定
-    // 0: bandwidth, =1: arithmetic operations, =2: HWPC based generic unit
     if (typeCalc == 0) is_unit=0;
     if (typeCalc == 1) is_unit=1;
-    if (typeCalc == 2) is_unit=2;
-    if ((typeCalc == 2) && (hwpc_group.number[I_bandwidth] > 0)) is_unit=0;
-    if ((typeCalc == 2) && (hwpc_group.number[I_flops] > 0)) is_unit=1;
+    if (hwpc_group.number[I_bandwidth] > 0) is_unit=0;
+    if (hwpc_group.number[I_flops] > 0) is_unit=1;
 
     double P, T, G, M, K, ret=0.0;
     K = 1000.0;
@@ -104,28 +106,32 @@ namespace pm_lib {
       }
     }
 
-    if (is_unit == 2) {
-      if      ( fops > P ) {
-        ret = fops / P;
-        unit = "Peta/s";
-      }
-      else if ( fops > T ) {
-        ret = fops / T;
-        unit = "Tera/s";
-      }
-      else if ( fops > G ) {
-        ret = fops / G;
-        unit = "Giga/s";
-      }
-      else {
-        ret = fops / M;
-        unit = "Mega/s";
-      }
-    }
-
     return ret;
   }
 
+  
+
+  /// HWPCによるイベントカウンターの測定値を PAPI APIで取得収集する
+  ///
+  ///
+  void PerfWatch::gatherHWPC()
+  {
+#ifdef USE_PAPI
+	if (!m_exclusive) return;
+	if ( papi.num_events == 0 ) return;
+
+	sortPapiCounterList ();
+
+    int is_unit = statsSwitch();
+
+	// if conditions meet, overwrite the user values with HWPC measured values
+	if ( (is_unit == 2) || (is_unit == 3) )
+	{
+		m_flop = my_papi.v_sorted[my_papi.num_sorted-1] * m_time;
+	}
+
+#endif
+  }
   
   
   /// 測定結果情報をノード０に集約.
@@ -137,8 +143,8 @@ namespace pm_lib {
       PM_Exit(0);
     }
     
-    int m_np; ///< 並列ノード数
-    MPI_Comm_size(MPI_COMM_WORLD, &m_np);
+    int m_np;
+    m_np = num_process;
     
     if (!(m_timeArray  = new double[m_np]))        PM_Exit(0);
     if (!(m_flopArray  = new double[m_np]))        PM_Exit(0);
@@ -148,13 +154,25 @@ namespace pm_lib {
       m_timeArray[0] = m_time;
       m_flopArray[0] = m_flop;
       m_countArray[0]= m_count;
+      m_count_sum = m_count;
     } else {
       if ( MPI_Gather(&m_time,  1, MPI_DOUBLE,        m_timeArray,  1, MPI_DOUBLE,        0, MPI_COMM_WORLD) != MPI_SUCCESS ) PM_Exit(0);
       if ( MPI_Gather(&m_flop,  1, MPI_DOUBLE,        m_flopArray,  1, MPI_DOUBLE,        0, MPI_COMM_WORLD) != MPI_SUCCESS ) PM_Exit(0);
       if ( MPI_Gather(&m_count, 1, MPI_UNSIGNED_LONG, m_countArray, 1, MPI_UNSIGNED_LONG, 0, MPI_COMM_WORLD) != MPI_SUCCESS ) PM_Exit(0);
+      if ( MPI_Allreduce(&m_count, &m_count_sum, 1, MPI_UNSIGNED_LONG, MPI_SUM, MPI_COMM_WORLD) != MPI_SUCCESS ) PM_Exit(0);
     }
     m_gathered = true;
-    
+  }
+
+  
+  /// 測定結果の平均値・標準偏差などの基礎的な統計計算
+  ///
+  void PerfWatch::statsAverage()
+  {
+
+    int m_np;
+    m_np = num_process;
+
     if (my_rank == 0) {
       if (m_exclusive) {
         
@@ -205,6 +223,49 @@ namespace pm_lib {
   }
   
   
+  /// 計算量の選択を行う
+  ///
+  /// @note
+  /// 計算量としてユーザー申告値を用いるかHWPC計測値を用いるかの決定を行う
+  /// もし環境変数HWPC_CHOOSERの値がFLOPSかBANDWIDTHの場合はそれが優先される
+  /// 必要であればHWPC計測値を m_flopArray[i]にコピー(上書き)する
+  ///
+  int PerfWatch::statsSwitch()
+  {
+    int is_unit;
+    // 0: user set bandwidth
+	// 1: user set flop counts
+	// 2: HWPC base bandwidth
+	// 3: HWPC base flop counts
+	// 4: other HWPC base statistics
+
+
+	is_unit=-1;
+
+    if (m_typeCalc == 0) {
+		is_unit=0;
+	}
+    if (m_typeCalc == 1) {
+		is_unit=1;
+	}
+#ifdef USE_PAPI
+	if (hwpc_group.number[I_bandwidth] > 0) {
+		is_unit=2;
+	}
+	if (hwpc_group.number[I_flops]  > 0) {
+		is_unit=3;
+	}
+	if (( hwpc_group.number[I_vector]
+		+ hwpc_group.number[I_cache]
+		+ hwpc_group.number[I_cycle]) >0) {
+		is_unit=4;
+	}
+#endif
+
+	return is_unit;
+  }
+
+  
   /// 時刻を取得.
   ///
   ///   Unix/Linux: gettimeofdayシステムコールを使用.
@@ -217,23 +278,6 @@ namespace pm_lib {
     struct timeval tv;
     gettimeofday(&tv, 0);
     return (double)tv.tv_sec + (double)tv.tv_usec * 1.0e-6;
-  }
-  
-
-  /// HWPCによるイベントカウンターの測定値を収集する
-  /// PAPI HWPCイベントをAPIで取得
-  ///
-  void PerfWatch::gatherHWPC()
-  {
-#ifdef USE_PAPI
-	char* c_env = std::getenv("HWPC_CHOOSER");
-	if (c_env == NULL) return;
-	if ( papi.num_events == 0 ) return;
-	if (!m_exclusive) return;
-
-	sortPapiCounterList ();
-
-#endif
   }
  
   
@@ -248,17 +292,9 @@ namespace pm_lib {
   ///
   void PerfWatch::printDetailRanks(FILE* fp, double totalTime)
   {
-    if (my_rank != 0) {
-      printError("PerfWatch::printDetailRanks()", "call from root only\n");
-      PM_Exit(0);
-    }
-    if (!m_gathered) {
-      printError("PerfWatch::printDetailRanks()", "must call gather() first\n");
-      PM_Exit(0);
-    }
     
-    int m_np; ///< 並列ノード数
-    MPI_Comm_size(MPI_COMM_WORLD, &m_np);
+    int m_np;
+    m_np = num_process;
     
 	double t_per_call, perf_rate;
     double tMax = 0.0;
@@ -267,25 +303,20 @@ namespace pm_lib {
     }
     
 	std::string unit;
-    int is_unit;
-    // is_unit=0:通信, 1:計算, 2:自動決定
-    // 0: bandwidth, =1: arithmetic operations, =2: HWPC based generic unit
-    if (m_typeCalc == 0) is_unit=0;
-    if (m_typeCalc == 1) is_unit=1;
-    if (m_typeCalc == 2) is_unit=2;
-    if ((m_typeCalc == 2) && (hwpc_group.number[I_bandwidth] > 0)) is_unit=0;
-    if ((m_typeCalc == 2) && (hwpc_group.number[I_flops] > 0)) is_unit=1;
-    if (is_unit == 0) unit = "Bytes/sec";
-    if (is_unit == 1) unit = "Flops";
-    if (is_unit == 2) unit = "HWPC unit";
+    int is_unit = statsSwitch();
+    if (is_unit == 0) unit = "Bytes/sec";	// 0: user set bandwidth
+    if (is_unit == 1) unit = "Flops";		// 1: user set flop counts
+    if (is_unit == 2) unit = "Bytes/s (HWPC)";	// 2: HWPC base bandwidth
+    if (is_unit == 3) unit = "Flops (HWPC)";	// 3: HWPC base flop counts
+    if (is_unit == 4) unit = "events (HWPC)";	// 4: other HWPC base statistics
 
 
     unsigned long total_count = 0;
     for (int i = 0; i < m_np; i++) total_count += m_countArray[i];
     
-    if ( total_count > 0 ) {
+    if ( total_count > 0 && is_unit <= 3) {
       fprintf(fp, "Label  %s%s\n", m_exclusive ? "" : "*", m_label.c_str());
-      fprintf(fp, "Header ID  :     call   time[s] time[%%]  t_wait[s]  t[s]/call   flop|msg    speed  (speed unit)\n");
+      fprintf(fp, "Header ID  :     call   time[s] time[%%]  t_wait[s]  t[s]/call   flop|msg    speed              \n");
       for (int i = 0; i < m_np; i++) {
 		t_per_call = (m_countArray[i]==0) ? 0.0: m_timeArray[i]/m_countArray[i];
 		perf_rate = (m_countArray[i]==0) ? 0.0 : m_flopArray[i]/m_timeArray[i];
@@ -299,6 +330,20 @@ namespace pm_lib {
 			m_flopArray[i],  // ノードあたりの演算数
 			perf_rate,       // スピード　Bytes/sec or Flops
 			unit.c_str()     // スピードの単位
+			);
+      }
+    } else if ( total_count > 0 && is_unit > 3) {
+      fprintf(fp, "Label  %s%s\n", m_exclusive ? "" : "*", m_label.c_str());
+      fprintf(fp, "Header ID  :     call   time[s] time[%%]  t_wait[s]  t[s]/call   \n");
+      for (int i = 0; i < m_np; i++) {
+		t_per_call = (m_countArray[i]==0) ? 0.0: m_timeArray[i]/m_countArray[i];
+		fprintf(fp, "Rank %5d : %8ld  %9.3e  %5.1f  %9.3e  %9.3e  \n",
+			i, 
+			m_countArray[i], // コール回数
+			m_timeArray[i],  // ノードあたりの時間
+			100*m_timeArray[i]/totalTime, // 非排他測定区間に対する割合
+			tMax-m_timeArray[i], // ノード間の最大値を基準にした待ち時間
+			t_per_call      // 1回あたりの時間コスト
 			);
       }
     }
@@ -316,13 +361,16 @@ namespace pm_lib {
   void PerfWatch::printDetailHWPCsums(FILE* fp, std::string s_label)
   {
 #ifdef USE_PAPI
-
 	char* c_env = std::getenv("HWPC_CHOOSER");
 	if (c_env == NULL) return;
 	if ( papi.num_events == 0 ) return;
 	if (!m_exclusive) return;
 
-	//	sortPapiCounterList ();
+	#ifdef DEBUG_PRINT_PAPI
+	fprintf(fp, "\t<printDetailHWPCsums> my_rank=%d, m_count=%lu, m_count_sum=%lu\n", my_rank, m_count, m_count_sum);
+	#endif
+    if ( m_count_sum == 0 ) return;
+
 	if (my_rank == 0) {
 		outputPapiCounterHeader (fp, s_label);
 	}
@@ -343,17 +391,12 @@ namespace pm_lib {
 	const PAPI_hw_info_t *hwinfo = NULL;
 	using namespace std;
 	char* c_env = std::getenv("HWPC_CHOOSER");
+
+	fprintf(fp, "\n# PMlib hardware performance counter (HWPC) Report -------------------------\n");
+
 	if (c_env == NULL) return;
-	fprintf(fp, "\tHardware performance counter (HWPC) statistics were collected with HWPC_CHOOSER=%s\n", c_env);
-
-	hwinfo = PAPI_get_hardware_info();
-	//	if (hwinfo == NULL) fprintf (stderr, "*** error <printHWPCHeader>\n");
-	fprintf(fp, "\tPMlib detected the CPU architecture:\n" );
-	fprintf(fp, "\t\t%s\n", hwinfo->vendor_string);
-	fprintf(fp, "\t\t%s\n", hwinfo->model_string);
-	fprintf(fp, "\tThe available Hardware Performance Counter (HWPC) events depend on this CPU architecture.\n");
-
-	fprintf(fp, "\tHWPC event values of each MPI process are shown below. sum of threads.\n\n");
+	fprintf(fp, "\tHWPC_CHOOSER=%s statistics were collected using PAPI \n", c_env);
+	fprintf(fp, "\tThe values of each MPI process are the sum of threads.\n\n");
 
 #endif
   }
@@ -418,7 +461,7 @@ namespace pm_lib {
 #ifdef USE_PAPI
 	#ifdef DEBUG_PRINT_PAPI
     if ((my_rank == 0) && (m_is_first))
-		fprintf (stderr, "\t<PerfWatch::start> The first call for <%s>, num_events=%d\n",
+		fprintf (stderr, "\t<PerfWatch::start> The first <%s> num_events=%d\n",
 						m_label.c_str(), my_papi.num_events);
 	#endif
 
@@ -430,7 +473,7 @@ namespace pm_lib {
 		my_papi.values[i] = 0;
 	}
 
-#pragma omp parallel
+	#pragma omp parallel
 	{
 		struct pmlib_papi_chooser th_papi = my_papi;
 
@@ -453,6 +496,7 @@ namespace pm_lib {
   ///
   ///   @note 引数はオプション
   ///   指定されない場合はHWPC_CHOOSERの設定によりHWPC内部で自動計測する
+  ///   自動計測されたイベントは <sortPapiCounterList> で分析する
   ///
   void PerfWatch::stop(double flopPerTask, unsigned iterationCount)
   {
@@ -467,8 +511,7 @@ namespace pm_lib {
     if (m_exclusive) ExclusiveStarted = false;
 
 #ifdef USE_PAPI
-
-#pragma omp parallel
+	#pragma omp parallel
 	{
 	struct pmlib_papi_chooser th_papi = my_papi;
 	int i_thread = omp_get_thread_num();
@@ -477,7 +520,7 @@ namespace pm_lib {
 		fprintf(stderr, "*** error. <PerfWatch::stop> <my_papi_bind_stop> code: %d, thread:%d\n", i_ret, i_thread);
 		PM_Exit(0);
 		}
-	#pragma omp critical
+		#pragma omp critical
 		{
 		for (int i=0; i<papi.num_events; i++) {
 			my_papi.values[i] += th_papi.values[i];
@@ -486,7 +529,7 @@ namespace pm_lib {
 
 		#ifdef DEBUG_PRINT_PAPI_THREADS
     	if (my_rank == 0) {
-		#pragma omp critical
+			#pragma omp critical
 			{
 			fprintf (stderr, "   values of thread: %d\n", i_thread);
 			for (int i=0; i<papi.num_events; i++) {
@@ -500,29 +543,13 @@ namespace pm_lib {
 		my_papi.accumu[i] += my_papi.values[i];
 	}
 
-	// HWPC events must be collected afterward by the PerfCpuType.cpp functions
-	//		<sortPapiCounterList> and <outputPapiCounterList>
 	// Only the user provided arguments are checked here
-
 	if (flopPerTask > 0.0) {
 		// The user provided the flopPerTask value
     	m_flop += (double)flopPerTask * iterationCount;
 	} else {
 		// The user did not provide the flopPerTask value
 	}
-
-
-	/*
-	} else if  {(hwpc_group.number[I_flops] > 0) {
-		// HWPC_CHOOSER="FLOPS" environment variable was given.
-		m_flop += countPapiFlop ( my_papi );
-	} else if  (hwpc_group.number[I_bandwidth] > 0) {
-		// HWPC_CHOOSER="BANDWIDTH" environment variable was given.
-		m_flop += countPapiByte ( my_papi );
-	} else {
-		// There was no argument or environment variable. Leave it un-changed.
-	}
-	*/
 
 
 	#ifdef DEBUG_PRINT_PAPI
@@ -532,7 +559,8 @@ namespace pm_lib {
 		for (int i=0; i<my_papi.num_events; i++) {
 			fprintf (stderr, "  event i=%d, value=%llu, accumu=%llu\n", i, my_papi.values[i], my_papi.accumu[i]);
 		}
-		fprintf (stderr, "\t<PerfWatch::stop> <%s> flopPerTask=%f, iterationCount=%u, time=%f, flop=%.1f, count=%lu\n", m_label.c_str(), flopPerTask, iterationCount, m_time, m_flop, m_count);
+		fprintf (stderr, "\t<PerfWatch::stop> <%s> flopPerTask=%f, iterationCount=%u, time=%f, flop=%.1f, count=%lu\n"
+			, m_label.c_str(), flopPerTask, iterationCount, m_time, m_flop, m_count);
 	}
 	#endif
 

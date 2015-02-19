@@ -45,7 +45,6 @@ namespace pm_lib {
     enum Type {
       COMM,  ///< 0:通信
       CALC,  ///< 1:計算
-      AUTO,  ///< 2:自動決定
     };
     
     /// 測定レベル制御変数.
@@ -66,6 +65,9 @@ namespace pm_lib {
     // 全区間を含む合計用に pmlibが独自に作成する m_totalとがある
     unsigned *m_order;         ///< 経過時間でソートした測定区間のリストm_order[m_nWatch]
     int researved_nWatch;      ///< 測定区間用にリザーブされたブロックの大きさ
+    bool is_MPI_enabled;	   ///< PMlibの対応動作可能フラグ:MPI
+    bool is_OpenMP_enabled;	   ///< PMlibの対応動作可能フラグ:OpenMP
+    bool is_PAPI_enabled;	   ///< PMlibの対応動作可能フラグ:PAPI
 
   public:
     /// コンストラクタ.
@@ -76,44 +78,42 @@ namespace pm_lib {
     
 
     /// 初期化.
-    ///
     /// 測定区間数分の測定時計を準備.
+    /// 最初にinit_nWatch区間分を確保し、不足したら動的にinit_nWatch追加する
     /// 全計算時間用測定時計をスタート.
     /// @param[in] （引数はオプション） init_nWatch 最初に確保する測定区間数
     ///
-    /// @note 測定区間数 m_nWatch は動的に増えていく事もある
-    /// 最初にinit_nWatch区間分を確保し、不足したらさらにinit_nWatch追加する
+    /// @note 測定区間数 m_nWatch は不足すると動的に増えていく
     ///
+    void initialize (int init_nWatch=100);
 
 
-// Just for DEBUG
-    void initialize (int init_nWatch=100) {
-    //	void initialize (int init_nWatch=300) {
-      m_watchArray = new PerfWatch[init_nWatch];
-      m_gathered = false;
-      m_nWatch = 0 ;
-      researved_nWatch = init_nWatch;
-      /// additional call to interface HWPC
-      /// m_total は PerfWatch classである(PerfMonitorではない)ことに留意
-      m_total.initializeHWPC();
-      m_total.setProperties("Total excution time", CALC, my_rank, false);
-      m_total.start();
-    }
+    /// 並列モードを設定
+    ///
+    /// @param[in] p_mode 並列モード
+    /// @param[in] n_thread
+    /// @param[in] n_proc
+    ///
+    void setParallelMode(const std::string& p_mode, const int n_thread, const int n_proc);
 
     
     /// ランク番号の通知
+    ///
+    /// @param[in] myID MPI process ID
+    ///
     void setRankInfo(const int myID) {
-      my_rank = myID;
+      //	This function is redundant, and is now silently ignored.
+      //	my_rank = myID;
     }
 
     
     /// 測定時計にプロパティを設定.
     ///
     ///   @param[in] label ラベル文字列
-    ///   @param[in] type  測定対象タイプ(COMM:通信, CALC:計算, AUTO:自動決定)
+    ///   @param[in] type  測定対象タイプ(COMM:通信, CALC:計算)
     ///   @param[in] exclusive 排他測定フラグ(ディフォルトtrue)
     ///
-    ///   @note 測定区間を識別するためにlabelを用いる。
+    ///   @note labelラベル文字列は測定区間を識別するために用いる。
     ///   各labelに対応したキー番号 key は各ラベル毎に内部で自動生成する
     ///   最初に確保した区間数init_nWatchが不足したらさらにinit_nWatch区間追加する
     ///
@@ -139,28 +139,15 @@ namespace pm_lib {
         watch_more = NULL;
         researved_nWatch = 2*researved_nWatch;
       }
-      m_watchArray[key].setProperties(label, type, my_rank, exclusive);
+      m_watchArray[key].setProperties(label, type, num_process, my_rank, exclusive);
     }
 
     
-    /// 並列モードを設定
-    ///
-    /// @param[in] p_mode 並列モード
-    /// @param[in] n_thread
-    /// @param[in] n_proc
-    ///
-    void setParallelMode(const std::string& p_mode, const int n_thread, const int n_proc) {
-      parallel_mode = p_mode;
-      num_threads   = n_thread;
-      num_process   = n_proc;
-		#ifdef DEBUG_PRINT_LABEL
-		fprintf(stderr, "<setParallelMode> %s \n", p_mode.c_str());
-		#endif
-    }
-    
     /// 測定スタート.
     ///
-    ///   @param[in] label ラベル rev.2.2 からkey キー番号ではなくラベルを使用
+    ///   @param[in] label ラベル文字列。測定区間を識別するために用いる。
+    ///
+    ///
     void start (const std::string& label) {
       int key = key_perf_label(label);
       m_watchArray[key].start();
@@ -171,7 +158,7 @@ namespace pm_lib {
     
     /// 測定ストップ.
     ///
-    ///   @param[in] label ラベル rev.2.2 からkey キー番号ではなくラベルを使用
+    ///   @param[in] label ラベル文字列。測定区間を識別するために用いる。
     ///   @param[in] flopPerTask 「タスク」あたりの計算量/通信量(バイト) (ディフォルト0)
     ///   @param[in] iterationCount  実行「タスク」数 (ディフォルト1)
     ///
@@ -202,22 +189,20 @@ namespace pm_lib {
     void print(FILE* fp, const std::string hostname, const std::string operatorname);
     
     /// 詳細な測定結果を出力.
+    /// MPIランク別詳細レポート、HWPC計測結果を出力. 非排他測定区間も出力
     ///
-    ///   ノード毎に非排他測定区間も出力
     ///   @param[in] fp 出力ファイルポインタ
     ///
-    ///   @note ノード0以外は, 呼び出されてもなにもしない
+    ///   @note 全プロセスの情報が PerfWatch::gather() によってrank 0に集計すみ
     ///
     void printDetail(FILE* fp);
     
+
     /**
-     * @brief バージョン番号の文字列を返す
+     * @brief PMlibバージョン番号の文字列を返す
      */
-    std::string getVersionInfo()
-    {
-      std::string str(PM_VERSION_NO);
-      return str;
-    }
+    std::string getVersionInfo(void);
+
 
   private:
 	std::map<std::string, int > array_of_symbols;
@@ -233,7 +218,7 @@ namespace pm_lib {
 		// sometime later...
     	array_of_symbols.insert( make_pair(arg_st, ip) );
 		#ifdef DEBUG_PRINT_LABEL
-    	fprintf(stderr, "<add_perf_label> label=%s value=%d\n", arg_st.c_str(), ip);
+    	fprintf(stderr, "<add_perf_label> %s : %d\n", arg_st.c_str(), ip);
 		#endif
     	return ip;
     }
@@ -251,7 +236,7 @@ namespace pm_lib {
     		pair_value = array_of_symbols[arg_st] ;
     	}
 		#ifdef DEBUG_PRINT_LABEL
-    	fprintf(stderr, "<key_perf_label> label=%s value=%d\n", arg_st.c_str(), pair_value);
+    	fprintf(stderr, "<key_perf_label> %s : %d\n", arg_st.c_str(), pair_value);
 		#endif
     	return pair_value;
     }

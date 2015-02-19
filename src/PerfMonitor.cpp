@@ -14,6 +14,16 @@
 ///@file   PerfMonitor.cpp
 ///@brief  PerfMonitor class
 
+//
+// 2015/2/2 Note for Debug. Delete the following comment lines later on.
+// Shall we maintain two source files, one with MPI and another without MPI?
+//
+#ifdef _PM_WITHOUT_MPI_
+#include "mpi_stubs.h"
+#else
+#include <mpi.h>
+#endif
+
 #include "PerfMonitor.h"
 #include <time.h>
 
@@ -25,7 +35,105 @@ namespace pm_lib {
   /// =1:排他測定のみ
   /// =2:非排他測定も(ディフォルト)
   unsigned PerfMonitor::TimingLevel = 2;
-  
+
+
+  /// 初期化.
+  /// 測定区間数分の測定時計を準備.
+  /// 最初にinit_nWatch区間分を確保し、不足したら動的にinit_nWatch追加する
+  /// 全計算時間用測定時計をスタート.
+  /// @param[in] （引数はオプション） init_nWatch 最初に確保する測定区間数
+  ///
+  /// @note 測定区間数 m_nWatch は不足すると動的に増えていく
+  ///
+  void PerfMonitor::initialize (int init_nWatch)
+  {
+    char* c_env;
+    m_watchArray = new PerfWatch[init_nWatch];
+    m_gathered = false;
+    m_nWatch = 0 ;
+    researved_nWatch = init_nWatch;
+    MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
+    MPI_Comm_size(MPI_COMM_WORLD, &num_process);
+
+	#ifdef _OPENMP
+    // if OMP_NUM_THREADS environment variable is not defined, set it to 1
+    c_env = std::getenv("OMP_NUM_THREADS");
+    if (c_env == NULL) {
+        omp_set_num_threads(1);
+    }
+    num_threads = omp_get_max_threads();
+	#else
+    num_threads = 1;
+	#endif
+
+	// Preserve the parallel mode information while PMlib is being made.
+	#ifdef _PM_WITHOUT_MPI_
+	is_MPI_enabled = false;
+	#else
+	is_MPI_enabled = true;
+	#endif
+	#ifdef _OPENMP
+	is_OpenMP_enabled = true;
+	#else
+	is_OpenMP_enabled = false;
+	#endif
+	#ifdef USE_PAPI
+	is_PAPI_enabled = true;
+	#else
+	is_PAPI_enabled = false;
+	#endif
+
+	// 環境変数PMLIB_PRINT_VERSION が指定された場合
+	// PMlibがインストールされた時に指定された、サポートすべきプログラムモデル
+	// についての情報を内部で保存しているが、その情報をstderrに出力する
+    c_env = std::getenv("PMLIB_PRINT_VERSION");
+    if (c_env != NULL) {
+	if(my_rank == 0) {
+		fprintf(stderr, "\tPMlib version %s built with the feature ",
+			 getVersionInfo().c_str());
+		fprintf(stderr, "MPI:%s, OpenMP:%s, HWPC/PAPI:%s\n"
+			, is_MPI_enabled?"supported":"off"
+			, is_OpenMP_enabled?"supported":"off"
+			, is_PAPI_enabled?"supported":"off"
+			);
+	}
+    }
+
+    /// m_total は PerfWatch classである(PerfMonitorではない)ことに留意
+    m_total.initializeHWPC();
+    m_total.setProperties("Total excution time", CALC, num_process, my_rank, false);
+    m_total.start();
+  }
+
+
+  /// 並列モードを設定
+  ///
+  /// @param[in] p_mode 並列モード
+  /// @param[in] n_thread
+  /// @param[in] n_proc
+  ///
+  void PerfMonitor::setParallelMode(const std::string& p_mode, const int n_thread, const int n_proc)
+  {
+    parallel_mode = p_mode;
+    if ((n_thread != num_threads) || (n_proc != num_process)) {
+      if (my_rank == 0) {
+        fprintf (stderr, "\t*** <setProperties> Warning. check n_thread:%d and n_proc:%d\n", n_thread, n_proc);
+      }
+    num_threads   = n_thread;
+    num_process   = n_proc;
+	}
+  }
+
+
+  /**
+    * @brief PMlibバージョン情報の文字列を返す
+   */
+  std::string PerfMonitor::getVersionInfo(void)
+  {
+      std::string str(PM_VERSION_NO);
+      return str;
+  }
+
 
   /// 全プロセスの全測定結果情報をマスタープロセス(0)に集約.
   ///
@@ -33,14 +141,27 @@ namespace pm_lib {
   ///
   void PerfMonitor::gather(void)
   {
-    if (PerfMonitor::m_gathered) {
+    if (m_gathered) {
         fprintf(stderr, "\tPerfMonitor::gather() error, already gathered\n");
         PM_Exit(0);
     }
     m_total.stop(0.0, 1);
+
+    // 各測定区間のHWPCによるイベントカウンターの統計値を取得する
+    for (int i=0; i<m_nWatch; i++) {
+		m_watchArray[i].gatherHWPC();
+    }
+
+    // 各測定区間の測定結果情報をノード０に集約
     for (int i = 0; i < m_nWatch; i++) {
         m_watchArray[i].gather();
     }
+
+    // 測定結果の平均値・標準偏差などの基礎的な統計計算
+    for (int i = 0; i < m_nWatch; i++) {
+        m_watchArray[i].statsAverage();
+    }
+
     m_gathered = true;
 
     // 経過時間でソートした測定区間のリストm_order[m_nWatch] を作成する
@@ -81,16 +202,10 @@ namespace pm_lib {
       }
     }
 
-    // HWPCによるイベントカウンターの統計値を取得する
-    for (int i=0; i<m_nWatch; i++) {
-		if (!m_watchArray[i].m_exclusive) continue;
-		m_watchArray[i].gatherHWPC();
-    }
-
   }
 
 
-  /// 測定結果を出力.
+  /// 測定結果の基本統計情報を出力.
   ///
   ///   排他測定区間のみ
   ///   @param[in] fp           出力ファイルポインタ
@@ -113,6 +228,7 @@ namespace pm_lib {
     time_t now;
     int year, month, day;
     int hour, minute, second;
+    int is_unit;
     
     time(&now);
     date = localtime(&now);
@@ -123,8 +239,6 @@ namespace pm_lib {
     hour   = date->tm_hour;
     minute = date->tm_min;
     second = date->tm_sec;
-    
-    
     
     // 合計 > tot
     double tot = 0.0;
@@ -138,14 +252,13 @@ namespace pm_lib {
     }
     maxLabelLen++;
     
-    fprintf(fp, "\n#PMlib_report_section Basic Report type -------------\n");
-    fprintf(fp, "\n\tReport of Timing Statistics PMlib version %s\n", PM_VERSION_NO);
+    fprintf(fp, "\n# PMlib Basic Report -------------------------------------------------------\n");
+    fprintf(fp, "\n");
+    fprintf(fp, "\tReport of Timing Statistics PMlib version %s\n", PM_VERSION_NO);
     fprintf(fp, "\tOperator  : %s\n", operatorname.c_str());
     fprintf(fp, "\tHost name : %s\n", hostname.c_str());
     fprintf(fp, "\tDate      : %04d/%02d/%02d : %02d:%02d:%02d\n", year, month, day, hour, minute, second);
-    fprintf(fp, "\n");
-    
-    fprintf(fp,"\tParallel Mode                    :   %s ", parallel_mode.c_str());
+    fprintf(fp, "\tParallel Mode:   %s ", parallel_mode.c_str());
     if (parallel_mode == "Serial") {
       fprintf(fp, "\n");
     } else if (parallel_mode == "FlatMPI") {
@@ -159,21 +272,44 @@ namespace pm_lib {
       PM_Exit(0);
     }
     fprintf(fp, "\n");
-    
     fprintf(fp, "\tTotal execution time            = %12.6e [sec]\n", m_total.m_time);
     fprintf(fp, "\tTotal time of measured sections = %12.6e [sec]\n", tot);
     fprintf(fp, "\n");
-    
-    fprintf(fp, "\tStatistics per MPI process [Node Average]. Only the exclusive sections are listed.\n");
-    
-	fprintf(fp, "\t%-*s|    call  |        accumulated time[sec]           | [flop_counts or message_bytes ]\n",
+    fprintf(fp, "\tStatistics of the exclusive sections per process.\n");
+    fprintf(fp, "\n");
+/*
+ * original format for the next few lines was as below:
+ * it has been modified to reflect the selective printing rule. See mail dated 2015/02/5.
+ *
+	fprintf(fp, "\t%-*s|    call  |        accumulated time[sec]           | [flop counts or message bytes ]\n",
 		maxLabelLen, "Label");
-	fprintf(fp, "\t%-*s|          |   avr     avr[%%]    sdv     avr/call   |   avr       sdv      speed\n",
+	fprintf(fp, "\t%-*s|          |      avr   avr[%%]      sdv   avr/call  |      avr       sdv   speed\n",
 		maxLabelLen, "");
 	fputc('\t', fp); for (int i = 0; i < maxLabelLen; i++) fputc('-', fp);
 	fprintf(fp,       "+----------+----------------------------------------+----------------------------\n");
-    
-    
+ *
+ */
+    is_unit = m_total.statsSwitch();
+	fprintf(fp, "\t%-*s|    call  |        accumulated time[sec]           ", maxLabelLen, "Label");
+    if ( (0 <= is_unit) && (is_unit <= 3) ) {
+      fprintf(fp, "| [flop counts or message bytes ]\n");
+    } else {
+      fprintf(fp, "\n");
+    }
+	fprintf(fp, "\t%-*s|          |      avr   avr[%%]      sdv   avr/call  ", maxLabelLen, "");
+    if ( (0 <= is_unit) && (is_unit <= 3) ) {
+      fprintf(fp, "|      avr       sdv   speed\n");
+    } else {
+      fprintf(fp, "\n");
+    }
+	fputc('\t', fp); for (int i = 0; i < maxLabelLen; i++) fputc('-', fp);
+	fprintf(fp,       "+----------+----------------------------------------");
+    if ( (0 <= is_unit) && (is_unit <= 3) ) {
+      fprintf(fp, "+----------------------------\n");
+    } else {
+      fprintf(fp, "\n");
+    }
+
     
     // 表示
     double sum_time_av = 0.0;
@@ -181,64 +317,87 @@ namespace pm_lib {
     double sum_time_comm = 0.0;
     std::string unit;
     double flop_serial=0.0;
+    double flop_job=0.0;
+    double flops_w;
     
+    // 測定区間の時間と計算量を表示
     // タイムコスト順表示
     // 登録順で表示したい場合には for (int i=0; i<m_nWatch; i++) { の様に直接 i でループすれば良い
     
     for (int j = 0; j < m_nWatch; j++) {
       int i = m_order[j];
       PerfWatch& w = m_watchArray[i];
-      if (!w.m_exclusive) continue;   // 
-      if (w.m_label.empty()) continue;  //
-      if (w.m_valid) {
-        if ( w.m_count > 0 ) {
-          double flops_av;
-          if (w.m_time_av == 0.0) {
-            flops_av = 0.0;
-          }
-          else {
-            flops_av = (w.m_count==0) ? 0.0 : w.m_flop_av/w.m_time_av;
-          }
-          fprintf(fp, "\t%-*s: %8ld   %9.3e %6.2f  %8.2e  %9.3e    %8.3e  %8.2e %6.2f %s\n",
-                  maxLabelLen,
-                  w.m_label.c_str(), 
-                  w.m_count,            // 測定区間のコール回数
-                  w.m_time_av,          // 測定区間の時間(ノード間平均値)
-                  100*w.m_time_av/tot,  // 測定区間の時間/全排他測定区間の合計時間
-                  w.m_time_sd,          // 標準偏差
-                  (w.m_count==0) ? 0.0 : w.m_time_av/w.m_count, // 1回あたりの時間コスト
-                  w.m_flop_av,          // ノード平均
-                  w.m_flop_sd,          // 標準偏差
-                  w.flops(flops_av, unit, w.get_typeCalc()), unit.c_str());
-          sum_time_av += w.m_time_av;
-          
-          // 計算セクションのみ
-          if ( w.m_typeCalc == 1 ) sum_flop_av += w.m_flop_av;
-          
-          // 非計算セクションのみ
-          if ( w.m_typeCalc == 0 ) sum_time_comm += w.m_time_av; //w.m_time_comm;
-        }
-      }
-      else {
+      if ( !w.m_exclusive || w.m_label.empty()) continue;
+      if ( !w.m_valid || !(w.m_count > 0) ) {
         fprintf(fp, "\t%-*s: *** NA ***\n", maxLabelLen, w.m_label.c_str());
+        continue;
+      }
+
+      is_unit = w.statsSwitch();
+      if (w.m_time_av == 0.0) {
+        flops_w = 0.0;
+      } else {
+        flops_w = (w.m_count==0) ? 0.0 : w.m_flop_av/w.m_time_av;
+      }
+      sum_time_av += w.m_time_av;
+      if ( (is_unit == 0) || (is_unit == 2) ) sum_time_comm += w.m_time_av;
+      if ( (0 <= is_unit) && (is_unit <= 3) ) sum_flop_av += w.m_flop_av;
+
+      // "\t%-*s: %8ld   %9.3e %6.2f  %8.2e  %9.3e    %8.3e  %8.2e %6.2f %s\n"
+      fprintf(fp, "\t%-*s: %8ld   %9.3e %6.2f  %8.2e  %9.3e",
+              maxLabelLen,
+              w.m_label.c_str(), 
+              w.m_count,            // 測定区間のコール回数
+              w.m_time_av,          // 測定区間の時間(全プロセスの平均値)
+              100*w.m_time_av/tot,  // 測定区間の時間/全排他測定区間の合計時間
+              w.m_time_sd,          // 標準偏差
+              (w.m_count==0) ? 0.0 : w.m_time_av/w.m_count); // 1回あたりの時間
+
+      if ( (0 <= is_unit) && (is_unit <= 3) ) {
+        fprintf(fp, "    %8.3e  %8.2e %6.2f %s\n",
+              w.m_flop_av,          // 測定区間の計算量(全プロセスの平均値)
+              w.m_flop_sd,          // 計算量の標準偏差(全プロセスの平均値)
+              w.unitFlop(flops_w, unit, w.get_typeCalc()), // 測定区間の計算速度(全プロセスの平均値)
+              unit.c_str());		// 計算速度の単位
+      } else {
+        fprintf(fp, "\n");
       }
     }
     
     fputc('\t', fp); for (int i = 0; i < maxLabelLen; i++) fputc('-', fp);
-	fprintf(fp,       "+----------+----------------------------------------+----------------------------\n");
-
-    flop_serial = PerfWatch::flops(sum_flop_av/sum_time_av, unit, true);
-	// remark. the values of sum_flop_av and flop_serial are not meaningful if both COMM and CALC are mixed
-    fprintf(fp, "\t%-*s|%11s %9.3e                                %8.3e          %7.2f %s\n",
-        maxLabelLen, "Process Total", "", sum_time_av, sum_flop_av, flop_serial, unit.c_str());
-    
-    // MPI 並列時には全プロセスの合計値も表示する
-    int np;
-    MPI_Comm_size(MPI_COMM_WORLD, &np);
-    if ( np > 1 ) {
-      fprintf(fp,"\t%-*s  \t\t\t\t\t\t\t %7.2f %s\n", 
-		maxLabelLen, "Aggregate performance of the job", flop_serial*(double)np, unit.c_str());
+	fprintf(fp, "+----------+----------------------------------------");
+    if ( (0 <= is_unit) && (is_unit <= 3) ) {
+	  fprintf(fp, "+----------------------------\n");
+    } else {
+	  fprintf(fp, "\n");
     }
+
+    flop_serial = PerfWatch::unitFlop(sum_flop_av/sum_time_av, unit, true);
+    fprintf(fp, "\t%-*s %1s %9.3e", maxLabelLen+10, "Total per process", "", sum_time_av);
+	// COMM/CALC mix時はsum_flop_av/flop_serialの値が意味を失うので、speedの単位を（＊）と表示する。
+    if ( (0 <= is_unit) && (is_unit <= 3) ) {
+      fprintf(fp, "%30s  %8.3e          %7.2f", "", sum_flop_av, flop_serial );
+      if ( (is_unit==2) || (is_unit == 3) ) {
+        fprintf(fp, " %s", unit.c_str());
+      } else {
+        fprintf(fp, " %1.1s(*)", unit.c_str());
+      }
+    }
+	fprintf(fp, "\n");
+
+    // MPI 並列時には全プロセスの合計値も表示する
+    // 常に表示する
+    flop_job = PerfWatch::unitFlop((double)num_process*sum_flop_av/sum_time_av, unit, true);
+    fprintf(fp, "\t%-*s %1s %9.3e", maxLabelLen+10, "Total of the job", "", sum_time_av);
+    if ( (0 <= is_unit) && (is_unit <= 3) ) {
+      fprintf(fp, "%30s  %8.3e          %7.2f", "", (double)num_process*sum_flop_av, flop_job );
+      if ( (is_unit==2) || (is_unit == 3) ) {
+        fprintf(fp, " %s", unit.c_str());
+      } else {
+        fprintf(fp, " %1.1s(*)", unit.c_str());
+      }
+    }
+	fprintf(fp, "\n");
 
   }
   
@@ -248,18 +407,18 @@ namespace pm_lib {
   ///
   ///   @param[in] fp 出力ファイルポインタ
   ///
+  ///   @note 全プロセスの情報が PerfWatch::gather() によってrank 0に集計すみ
+  ///
   void PerfMonitor::printDetail(FILE* fp)
   {
-    //	
-	// 	詳細レポート　タイプA : MPIランク別測定結果を出力
-	//  PerfWatch::gather() によって全プロセスの情報がrank 0に集計されている
     if (!m_gathered) {
       	fprintf(stderr, "\n\t*** PerfMonitor gather() must be called before printDetail().\n");
       	PM_Exit(0);
     }
-    //	if (my_rank != 0) return;
+
+	// 	I. MPIランク別詳細レポート: MPIランク別測定結果を出力
 	if (my_rank == 0) {
-		fprintf(fp, "\n#PMlib_report_section Detail Report A ------------\n\n");
+    	fprintf(fp, "\n# PMlib Detail Report ------------------------------------------------------\n\n");
 		fprintf(fp, "\tElapsed time variation over MPI ranks\n\n");
 		double tot = 0.0;
 		for (int i = 0; i < m_nWatch; i++) {
@@ -273,10 +432,8 @@ namespace pm_lib {
 		}
 	}
 
-    //	詳細レポート　タイプＢ：HWPC計測結果を出力
-	//  プロセス情報の集計は下位ルーチンoutputPapiCounterList()で行われる
+    //	II. HWPC/PAPIレポート：HWPC計測結果を出力
 	if (my_rank == 0) {
-		fprintf(fp, "\n#PMlib_report_section Detail Report B ------------\n\n");
 		m_total.printHWPCHeader(fp);
 	}
 
@@ -286,11 +443,9 @@ namespace pm_lib {
     }
 
 	if (my_rank == 0) {
-		//	DEBUG. comment out to suppress printing the Legend.
-		//	m_total.printHWPCLegend(fp);
+		m_total.printHWPCLegend(fp);
 	}
   }
 
 } /* namespace pm_lib */
-
 
