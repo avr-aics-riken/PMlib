@@ -66,7 +66,6 @@ Configure options:
 
 
 Some examples of configure.
-More examples and detail explanation can be found in doc/How_to_use_PMlib.pdf (in Japanese only).
 
 # Using GNU compiler with OpenMP support, without MPI or PAPI
 
@@ -124,10 +123,21 @@ More examples and detail explanation can be found in doc/How_to_use_PMlib.pdf (i
 
 
 If you try to install process again, execute 'make distclean' then configure.
+More examples and detail explanation can be found in doc/PMlib-tutorial-slides.pdf.
 
 
 2) Hand compile
 
 Edit environmental variables in a Makefile_hand file for a target machine. Then, 'make'.   
 A compiled module libPM.a will be placed in $(PM_DIR)/lib/ directory.
+
+
+3) Note MPI version versus non-MPI version
+
+The name of the installed PMlib name changes according to MPI use.
+If MPI is enabled, the named is given as : ${PREFIX}/lib/libPM_MPI.a
+If MPI is not enabled, the name is given as : ${PREFIX}/lib/libPM.a
+MPI enable/disable is judged by the configure option. If the compiler name starts
+with mpi, such as CXX=mpicxx or CC=mpicc, then MPI is judged as enabled.
+
 
