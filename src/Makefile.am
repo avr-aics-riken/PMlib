@@ -12,11 +12,13 @@
 ##############################################################################
 ###
 
-lib_LIBRARIES = libPM.a
+lib_LIBRARIES = libPM@MPI_EXT@.a
 
 libPM_a_CXXFLAGS = @MPI_CFLAGS@ -I$(top_builddir)/include -I@PAPI_DIR@/include
 
-libPM_a_SOURCES = \
+AM_CXXFLAGS = $(libPM_a_CXXFLAGS)
+
+libPM@MPI_EXT@_a_SOURCES = \
     PerfMonitor.cpp \
     PerfWatch.cpp \
     PerfCpuType.cpp

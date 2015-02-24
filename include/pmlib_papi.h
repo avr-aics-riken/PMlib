@@ -17,9 +17,6 @@
 /// @file pmlib_papi.h
 /// @brief Header block for PMlib - PAPI interface class
 ///
-/// @note The following macro is enabled/disabled via Makefile CFLAGS
-///       #define USE_PAPI
-///       #define DEBUG_PRINT_PAPI
 
 #ifdef USE_PAPI
 #include "papi.h"
@@ -27,10 +24,6 @@ extern "C" int my_papi_bind_start ( int *, long long *, int );
 extern "C" int my_papi_bind_stop  ( int *, long long *, int );
 extern "C" int my_papi_add_events ( int *, int);
 extern "C" void my_papi_name_to_code ( const char *, int *);
-#endif
-
-#ifdef _OPENMP
-	#include <omp.h>
 #endif
 
 enum hwpc_output_group {

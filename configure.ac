@@ -14,14 +14,14 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.57])
-AC_INIT([PMlib], [3.0.2], [keno@riken.jp],[PMlib])
+AC_INIT([PMlib], [3.0.3], [keno@riken.jp],[PMlib])
 AM_INIT_AUTOMAKE()
 AC_CONFIG_SRCDIR([src/PerfMonitor.cpp])
 AC_CONFIG_HEADERS([config.h])
 
 
 # revision No.
-PM_REVISION="20141215_1000"
+PM_REVISION="20150214_2400"
 AC_SUBST(PM_REVISION)
 
 
@@ -41,7 +41,7 @@ fi
 # MPI environment
 #
 enable_mpi="none"
-
+MPI_EXT=""
 
 
 PM_CXX="$CXX"
@@ -84,7 +84,9 @@ else
     MPI_LIBS=-lmpi
     enable_mpi="ompi"
   fi
+  MPI_EXT="_MPI"
 fi
+AC_SUBST(MPI_EXT)
 
 # warning. if a wrapper compiler is used, "enable_mpi" is empty, but parallel.
 #
@@ -133,9 +135,9 @@ if test x"$enable_papi" == x"yes" ; then
   PM_CFLAGS="$PM_CFLAGS"" -DUSE_PAPI"
   CXXFLAGS="$CXXFLAGS"" -DUSE_PAPI"
   CFLAGS="$CFLAGS"" -DUSE_PAPI"
-  PM_LIBS="-lPM -lpapi_ext"
+  PM_LIBS="-lPM$MPI_EXT -L$PAPI_DIR/lib64 -lpapi -lpfm -L../src_papi_ext -lpapi_ext"
 else
-  PM_LIBS="-lPM"
+  PM_LIBS="-lPM$MPI_EXT"
 fi
 
 AC_SUBST(PM_LIBS)

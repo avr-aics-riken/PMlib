@@ -28,11 +28,13 @@ namespace pm_lib {
 #define MPI_DOUBLE 3
 #define MPI_UNSIGNED_LONG 4
   
-#define MPI_SUCCESS true
-  
   typedef int MPI_Comm;
   typedef int MPI_Datatype;
+  typedef int MPI_Op;
 
+#define MPI_SUCCESS true
+#define MPI_SUM (MPI_Op)(0x58000003)
+  
   
   inline bool MPI_Init(int* argc, char*** argv) { return true; }
   
@@ -61,6 +63,13 @@ namespace pm_lib {
   {
     return 0;
   }
+
+  inline int MPI_Allreduce(void *sendbuf, void *recvbuf, int count,
+                  MPI_Datatype datatype, MPI_Op op, MPI_Comm comm)
+  {
+    return 0;
+  }
+
 
   inline int MPI_Barrier(MPI_Comm comm)
   {

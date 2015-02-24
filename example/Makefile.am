@@ -10,39 +10,25 @@
 #
 ##############################################################################
 
-noinst_PROGRAMS = check_new_api pmlib_test
+noinst_PROGRAMS = pmlib_test
 
 
-DISTCLEANFILES=*~ check_new_api pmlib_test
+DISTCLEANFILES=*~ pmlib_test
 CLEANFILES=data/*.log
 
-EXTRA_DIST= check_new_api.c sub_kernel.c pmlib_test.cpp Makefile_hand.fx10.login Makefile_hand.intel
+EXTRA_DIST= pmlib_test.cpp Makefile_hand.fx10.login Makefile_hand.intel
 
 
-check_new_api_SOURCES  =  check_new_api.c
-check_new_api_CFLAGS = -I$(top_builddir)/include -I@PAPI_DIR@/include
-#     -std=c99 -g -DSTATIC_PAPI_EVENTS_TABLE -D_REENTRANT -D_GNU_SOURCE -DUSE_COMPILER_TLS  -DPAPI_NO_MEMORY_MANAGEMENT -DUSE_PAPI
-
-check_new_api_LDADD = \
-    -L$(top_builddir)/src -lPM \
-    -L$(top_builddir)/src_papi_ext -lpapi_ext \
-    @MPI_LIBS@ \
-    @MPI_LDFLAGS@ \
-    -L@PAPI_DIR@/lib64 -lpapi \
-    -L@PAPI_DIR@/lib64 -lpfm
-
-pmlib_test_SOURCES  = pmlib_test.cpp sub_kernel.c
+pmlib_test_SOURCES  = pmlib_test.cpp 
 pmlib_test_CFLAGS = -I$(top_builddir)/include -I@PAPI_DIR@/include @MPI_CFLAGS@
 pmlib_test_CXXFLAGS = -I$(top_builddir)/include -I@PAPI_DIR@/include @MPI_CFLAGS@
 #     -std=c99 -g -DSTATIC_PAPI_EVENTS_TABLE -D_REENTRANT -D_GNU_SOURCE -DUSE_COMPILER_TLS  -DPAPI_NO_MEMORY_MANAGEMENT -DUSE_PAPI
 
 pmlib_test_LDADD = \
-    -L$(top_builddir)/src -lPM \
-    -L$(top_builddir)/src_papi_ext -lpapi_ext \
+    -L$(top_builddir)/src -lPM@MPI_EXT@ \
     @MPI_LIBS@ \
     @MPI_LDFLAGS@ \
-    -L@PAPI_DIR@/lib64 -lpapi \
-    -L@PAPI_DIR@/lib64 -lpfm
+    @PM_LIBS@
 
 dist_noinst_DATA=
 
