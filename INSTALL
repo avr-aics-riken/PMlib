@@ -13,6 +13,8 @@
 
 SOFTWARE REQUIREMENT
 ====================
+Basic installation requires only C++ and C compilers.
+For general use, it is recommended to build with the following libraries
 - MPI library
 - PAPI library
 
@@ -50,45 +52,52 @@ Configure options:
     compile on compute nodes.
 
  CXX=CXX_COMPILER
-    Specify a C++ compiler, e.g., g++, icpc, xlc++ or others.
+    Specify a C++ compiler, e.g., g++, icpc, xlc++ , mpicxx or others.
 
  CXXFLAGS=CXX_OPTIONS
-    Specify compiler options.
+    Specify C++ compiler options.
+
+ CC==CC_COMPILER
+    Specify C compiler, e.g., gcc, icc, mpicc or others.
+
+ CFLAGS=CC_OPTIONS
+    Specify C compiler options.
 
 
 
-Here is examples.
+Some examples of configure.
+More examples and detail explanation can be found in doc/How_to_use_PMlib.pdf (in Japanese only).
 
-# Using GNU compiler, serial version
+# Using GNU compiler with OpenMP support, without MPI or PAPI
 
-  $ ./configure --prefix=/usr/local/FFV/PMlib CXX=g++ CXXFLAGS="-O3 -fopenmp"
+  $ ./configure CXX=g++ CXXFLAGS="-O3 -fopenmp"
+
+# Using Intel compiler with OpenMP support
+
+  $ ./configure CXX=icpc CXXFLAGS="-O3 -openmp"
+
+# Using MPI wrapper compiler, custom installation directory 
+
+  $ ./configure --prefix=/hoge/PMlib CXX=mpicxx 
+
+# Using MPI wrapper compiler, OpenMPI built with GNU compiler
+
+  $ ./configure --prefix=/hoge/PMlib CXX=mpicxx \
+    --with-ompi=/usr/local/openmpi/openmpi-1.6.5-gnu
+
+# Using MPI wrapper compiler, Intel MPI, OpenMP threads enabled, assuming that
+  mpicxx will find MPI library path.
+
+  $ ./configure CXX=mpicxx CXXFLAGS="-O3 -openmp"
 
 
-# Specify install directory, mpi library and compiler
+# Using MPI wrapper compiler (Intel) with PAPI support and examples build
 
-  $ ./configure --prefix=/hoge/PMlib --with-ompi=/opt/openmpi CXX=icpc CXXFLAGS="-O3 -openmp"
-
-
-# Using a wrapper compiler (Intel)
-
-  $ ./configure --prefix=/usr/local/FFV/PMlib CXX=mpicxx CXXFLAGS="-O3 -openmp" CC=mpicc CFLAGS="-O3 -openmp"
-
-
-# Using a wrapper compiler (Intel) with PAPI, examples
-
-  $ ./configure CXX=mpicxx \
-                CXXFLAGS="-O3 -openmp" \
-                CC=mpicc \
-                CFLAGS="-O3 -openmp" \
-                --with-papi=/usr/local/papi/papi-5.2.0/intel \
+  $ ./configure CXX=mpicxx CXXFLAGS="-O3 -openmp" \
+                CC=mpicc CFLAGS="-O3 -openmp" \
+                --with-papi=/usr/local/papi/papi-5.3.2/intel \
                 --with-example=yes
   
-
-# Using a wrapper compiler (GNU) with default install directory
-
-  $ ./configure CXX=mpicxx CXXFLAGS="-O3 -fopenmp"
-
-
 
 # FX, K computer, compilation on compute nodes
 
@@ -115,7 +124,6 @@ Here is examples.
 
 
 If you try to install process again, execute 'make distclean' then configure.
-
 
 
 2) Hand compile
