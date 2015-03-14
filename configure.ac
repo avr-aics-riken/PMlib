@@ -5,7 +5,7 @@
 # Copyright (c) 2010-2011 VCAD System Research Program, RIKEN.
 # All rights reserved.
 #
-# Copyright (c) 2012-2014 Advanced Institute for Computational Science, RIKEN.
+# Copyright (c) 2012-2015 Advanced Institute for Computational Science, RIKEN.
 # All rights reserved.
 #
 ##############################################################################
@@ -14,14 +14,14 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.57])
-AC_INIT([PMlib], [3.0.2], [keno@riken.jp],[PMlib])
+AC_INIT([PMlib], [3.0.3], [keno@riken.jp],[PMlib])
 AM_INIT_AUTOMAKE()
 AC_CONFIG_SRCDIR([src/PerfMonitor.cpp])
 AC_CONFIG_HEADERS([config.h])
 
 
 # revision No.
-PM_REVISION="20141215_1000"
+PM_REVISION="20150314_1600"
 AC_SUBST(PM_REVISION)
 
 
@@ -57,6 +57,8 @@ case "$PM_CXX" in
   mpiFCCpx) enable_mpi="wrappermpi" ;;
   mpiFCC)   enable_mpi="wrappermpi" ;;
   CC)       enable_mpi="wrappermpi" ;;
+  mpiicc)   enable_mpi="wrappermpi" ;;
+  mpiicpc)  enable_mpi="wrappermpi" ;;
 esac
 
 
