@@ -14,6 +14,12 @@
 REVISION HISTORY
 ================
 
+--------------------------
+2015-06-09
+r30 introduce BUILD_DIR to keep source directory clean
+- Change to run configure
+- Change configure.ac
+
 ------------------
 2015-03-14
 r29 update year

@@ -15,7 +15,7 @@ SUBDIRS = @MAKE_SUB_DIRS@
 bin_SCRIPTS    = pm-config
 CLEANFILES     = $(bin_SCRIPTS)
 EXTRA_DIST     = pm-config.in LICENSE Makefile_hand doc/Doxyfile \
-                 example src_papi_ext
+                 example src_papi_ext BUILD_DIR/.gitkeep
 dist_data_DATA = AUTHORS COPYING ChangeLog README LICENSE 
 dist_include_HEADERS = include/mpi_stubs.h
 

@@ -14,7 +14,7 @@
 
 lib_LIBRARIES = libPM.a
 
-libPM_a_CXXFLAGS = @MPI_CFLAGS@ -I$(top_builddir)/include -I@PAPI_DIR@/include
+libPM_a_CXXFLAGS = @MPI_CFLAGS@ -I$(top_srcdir)/include -I@PAPI_DIR@/include
 
 libPM_a_SOURCES = \
     PerfMonitor.cpp \
@@ -22,9 +22,9 @@ libPM_a_SOURCES = \
     PerfCpuType.cpp
 
 nobase_include_HEADERS = \
-    $(top_builddir)/include/PerfMonitor.h \
-    $(top_builddir)/include/PerfWatch.h \
-    $(top_builddir)/include/pmVersion.h \
-    $(top_builddir)/include/pmlib_papi.h
+    $(top_srcdir)/include/PerfMonitor.h \
+    $(top_srcdir)/include/PerfWatch.h \
+    $(top_srcdir)/include/pmVersion.h \
+    $(top_srcdir)/include/pmlib_papi.h
 
 EXTRA_DIST = Makefile_hand depend.inc

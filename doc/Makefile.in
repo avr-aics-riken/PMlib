@@ -284,8 +284,8 @@ top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 doc_includedir = $(prefix)/doc
 doc_include_HEADERS = \
-    $(top_builddir)/doc/PMlib.pdf \
-    $(top_builddir)/doc/How_to_use_PMlib.pdf
+    $(top_srcdir)/doc/PMlib.pdf \
+    $(top_srcdir)/doc/How_to_use_PMlib.pdf
 
 all: all-am
 

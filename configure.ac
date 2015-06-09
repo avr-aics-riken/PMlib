@@ -14,20 +14,64 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.57])
-AC_INIT([PMlib], [3.0.3], [keno@riken.jp],[PMlib])
-AM_INIT_AUTOMAKE()
+
+AC_INIT([PMlib], [3.1.0], [keno@riken.jp],[PMlib])
+
+echo "----------------------------------------"
+echo "Running PMlib Configure Script"
+echo "----------------------------------------"
+
+
 AC_CONFIG_SRCDIR([src/PerfMonitor.cpp])
+
+
+#
+# Specify directory for auxillary build tools (e.g., install-sh, config.sub, config.guess) and M4 files.
+#
+
+AC_CONFIG_AUX_DIR(config)
+
+
+#
+# To prevent the source codes from breaking, we suppress to do configure in the source directory.
+#
+
+if test -e configure.ac ; then
+echo "Please run configure from a separate build directory. It is not allowd to run configure in the source directory."
+echo "Pleaes try ..."
+echo " "
+echo "$ cd BUILD_DIR"
+echo "$ ../configure [options]"
+exit
+fi
+
+
+#
+# Configure should create config.h from config.h.in
+#
+
 AC_CONFIG_HEADERS([config.h])
 
 
+#
+# Use automake
+#
+
+AM_INIT_AUTOMAKE()
+
+
+#
 # revision No.
-PM_REVISION="20150314_1600"
+#
+
+PM_REVISION="20150609_2300"
 AC_SUBST(PM_REVISION)
 
 
 #
 # default prefix setting
 #
+
 AC_PREFIX_DEFAULT([/usr/local/PMlib])
 if test x"$prefix" = x"NONE" ; then
   PM_INST_DIR=/usr/local/PMlib
@@ -202,3 +246,6 @@ AC_OUTPUT
 
 chmod +x ./pm-config
 
+echo "---------------------------------------------"
+echo "Finished Running PMlib Configure Script"
+echo "---------------------------------------------"

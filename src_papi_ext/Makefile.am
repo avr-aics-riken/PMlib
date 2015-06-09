@@ -14,9 +14,9 @@
 
 lib_LIBRARIES = libpapi_ext.a
 
-libpapi_ext_a_CXXFLAGS = -I$(top_builddir)/include -I@PAPI_DIR@/include
+libpapi_ext_a_CXXFLAGS = -I$(top_srcdir)/include -I@PAPI_DIR@/include
 
-libpapi_ext_a_CFLAGS = -I$(top_builddir)/include -I@PAPI_DIR@/include
+libpapi_ext_a_CFLAGS = -I$(top_srcdir)/include -I@PAPI_DIR@/include
 
 libpapi_ext_a_SOURCES = papi_ext.c
 

@@ -204,9 +204,11 @@ CTAGS = ctags
 CSCOPE = cscope
 DIST_SUBDIRS = $(SUBDIRS)
 am__DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/config.h.in \
-	$(srcdir)/pm-config.in $(top_srcdir)/include/pmVersion.h.in \
-	AUTHORS COPYING ChangeLog INSTALL NEWS README compile depcomp \
-	install-sh missing
+	$(srcdir)/pm-config.in $(top_srcdir)/config/compile \
+	$(top_srcdir)/config/install-sh $(top_srcdir)/config/missing \
+	$(top_srcdir)/include/pmVersion.h.in AUTHORS COPYING ChangeLog \
+	INSTALL NEWS README compile config/compile config/depcomp \
+	config/install-sh config/missing depcomp install-sh missing
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 distdir = $(PACKAGE)-$(VERSION)
 top_distdir = $(distdir)
@@ -357,7 +359,7 @@ SUBDIRS = @MAKE_SUB_DIRS@
 bin_SCRIPTS = pm-config
 CLEANFILES = $(bin_SCRIPTS)
 EXTRA_DIST = pm-config.in LICENSE Makefile_hand doc/Doxyfile \
-                 example src_papi_ext
+                 example src_papi_ext BUILD_DIR/.gitkeep
 
 dist_data_DATA = AUTHORS COPYING ChangeLog README LICENSE 
 dist_include_HEADERS = include/mpi_stubs.h

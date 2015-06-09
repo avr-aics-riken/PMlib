@@ -22,10 +22,11 @@ HOW TO COMPILE
 
 1) with configure
 
-$ export FFV_HOME=/hogehoge
-$ ./configure [options]
+$ export FFV_HOME=hogehoge
+$ cd BUILD_DIR
+$ ../configure [options]
 $ make
-# make install
+$ make install
 
 
 Configure options:
@@ -61,22 +62,22 @@ Here is examples.
 
 # Using GNU compiler, serial version
 
-  $ ./configure --prefix=${FFV_HOME}PMlib CXX=g++ CXXFLAGS="-O3 -fopenmp"
+ $ ../configure --prefix=${FFV_HOME}PMlib CXX=g++ CXXFLAGS="-O3 -fopenmp"
 
 
 # Specify install directory, mpi library and compiler
 
-  $ ./configure --prefix=${FFV_HOME}/PMlib --with-ompi=/opt/openmpi CXX=icpc CXXFLAGS="-O3 -openmp"
+ $ ../configure --prefix=${FFV_HOME}/PMlib --with-ompi=/opt/openmpi CXX=icpc CXXFLAGS="-O3 -openmp"
 
 
 # Using a wrapper compiler (Intel)
 
-  $ ./configure --prefix=${FFV_HOME}/PMlib CXX=mpicxx CXXFLAGS="-O3 -openmp" CC=mpicc CFLAGS="-O3 -openmp"
+ $ ../configure --prefix=${FFV_HOME}/PMlib CXX=mpicxx CXXFLAGS="-O3 -openmp" CC=mpicc CFLAGS="-O3 -openmp"
 
 
 # Using a wrapper compiler (Intel) with PAPI, examples
 
-  $ ./configure CXX=mpicxx \
+ $ ../configure CXX=mpicxx \
                 CXXFLAGS="-O3 -openmp" \
                 CC=mpicc \
                 CFLAGS="-O3 -openmp" \
@@ -86,13 +87,13 @@ Here is examples.
 
 # Using a wrapper compiler (GNU) with default install directory
 
-  $ ./configure CXX=mpicxx CXXFLAGS="-O3 -fopenmp"
+ $ ../configure CXX=mpicxx CXXFLAGS="-O3 -fopenmp"
 
 
 
 # FX, K computer, compilation on compute nodes
 
-  $ ./configure --prefix=${FFV_HOME}/PMlib \
+ $ ../configure --prefix=${FFV_HOME}/PMlib \
                 --with-papi=yes \
                 --with-example=yes \
                 CC=mpifcc \
@@ -104,7 +105,7 @@ Here is examples.
 
 # FX, K computer, compilation on login nodes
 
-  $ ./configure --prefix=${FFV_HOME}/PMlib \
+ $ ../configure --prefix=${FFV_HOME}/PMlib \
                 --host=sparc64-unknown-linux-gnu \
                 --with-papi=/opt/FJSVXosDevkit/sparc64fx/V01L02E07 \
                 --with-example=yes \
