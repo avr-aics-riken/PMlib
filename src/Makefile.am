@@ -21,7 +21,7 @@ libPM_a_SOURCES = \
     PerfWatch.cpp \
     PerfCpuType.cpp
 
-nobase_include_HEADERS = \
+include_HEADERS = \
     $(top_srcdir)/include/PerfMonitor.h \
     $(top_srcdir)/include/PerfWatch.h \
     $(top_srcdir)/include/pmVersion.h \
