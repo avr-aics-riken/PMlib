@@ -99,7 +99,7 @@ POST_INSTALL = :
 NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
-noinst_PROGRAMS = check_new_api$(EXEEXT) pmlib_test$(EXEEXT)
+noinst_PROGRAMS = pmlib_test$(EXEEXT)
 subdir = example
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/configure.ac
@@ -112,13 +112,7 @@ CONFIG_HEADER = $(top_builddir)/config.h
 CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
 PROGRAMS = $(noinst_PROGRAMS)
-am_check_new_api_OBJECTS = check_new_api-check_new_api.$(OBJEXT)
-check_new_api_OBJECTS = $(am_check_new_api_OBJECTS)
-check_new_api_DEPENDENCIES =
-check_new_api_LINK = $(CCLD) $(check_new_api_CFLAGS) $(CFLAGS) \
-	$(AM_LDFLAGS) $(LDFLAGS) -o $@
-am_pmlib_test_OBJECTS = pmlib_test-pmlib_test.$(OBJEXT) \
-	pmlib_test-sub_kernel.$(OBJEXT)
+am_pmlib_test_OBJECTS = pmlib_test-pmlib_test.$(OBJEXT)
 pmlib_test_OBJECTS = $(am_pmlib_test_OBJECTS)
 pmlib_test_DEPENDENCIES =
 pmlib_test_LINK = $(CXXLD) $(pmlib_test_CXXFLAGS) $(CXXFLAGS) \
@@ -143,18 +137,6 @@ AM_V_lt = $(am__v_lt_$(V))
 am__v_lt_ = $(am__v_lt_$(AM_DEFAULT_VERBOSITY))
 am__v_lt_0 = --silent
 am__v_lt_1 = 
-COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
-	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
-AM_V_CC = $(am__v_CC_$(V))
-am__v_CC_ = $(am__v_CC_$(AM_DEFAULT_VERBOSITY))
-am__v_CC_0 = @echo "  CC      " $@;
-am__v_CC_1 = 
-CCLD = $(CC)
-LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
-AM_V_CCLD = $(am__v_CCLD_$(V))
-am__v_CCLD_ = $(am__v_CCLD_$(AM_DEFAULT_VERBOSITY))
-am__v_CCLD_0 = @echo "  CCLD    " $@;
-am__v_CCLD_1 = 
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
 AM_V_CXX = $(am__v_CXX_$(V))
@@ -168,8 +150,8 @@ AM_V_CXXLD = $(am__v_CXXLD_$(V))
 am__v_CXXLD_ = $(am__v_CXXLD_$(AM_DEFAULT_VERBOSITY))
 am__v_CXXLD_0 = @echo "  CXXLD   " $@;
 am__v_CXXLD_1 = 
-SOURCES = $(check_new_api_SOURCES) $(pmlib_test_SOURCES)
-DIST_SOURCES = $(check_new_api_SOURCES) $(pmlib_test_SOURCES)
+SOURCES = $(pmlib_test_SOURCES)
+DIST_SOURCES = $(pmlib_test_SOURCES)
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -197,12 +179,12 @@ ETAGS = etags
 CTAGS = ctags
 am__DIST_COMMON = $(srcdir)/Makefile.in $(top_srcdir)/config/depcomp
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
-ACLOCAL = ${SHELL} /Daily/Development/SphDev/Module/PMlib/PMlib-3.1.0/config/missing aclocal-1.15
+ACLOCAL = ${SHELL} /Daily/Development/SphDev/Module/PMlib/dev/pm-Fluorine/pm-Fluorine/config/missing aclocal-1.15
 AMTAR = $${TAR-tar}
 AM_DEFAULT_VERBOSITY = 1
-AUTOCONF = ${SHELL} /Daily/Development/SphDev/Module/PMlib/PMlib-3.1.0/config/missing autoconf
-AUTOHEADER = ${SHELL} /Daily/Development/SphDev/Module/PMlib/PMlib-3.1.0/config/missing autoheader
-AUTOMAKE = ${SHELL} /Daily/Development/SphDev/Module/PMlib/PMlib-3.1.0/config/missing automake-1.15
+AUTOCONF = ${SHELL} /Daily/Development/SphDev/Module/PMlib/dev/pm-Fluorine/pm-Fluorine/config/missing autoconf
+AUTOHEADER = ${SHELL} /Daily/Development/SphDev/Module/PMlib/dev/pm-Fluorine/pm-Fluorine/config/missing autoheader
+AUTOMAKE = ${SHELL} /Daily/Development/SphDev/Module/PMlib/dev/pm-Fluorine/pm-Fluorine/config/missing automake-1.15
 AWK = awk
 CC = mpicc
 CCDEPMODE = depmode=gcc3
@@ -230,38 +212,39 @@ LDFLAGS =
 LIBOBJS = 
 LIBS = 
 LTLIBOBJS = 
-MAKEINFO = ${SHELL} /Daily/Development/SphDev/Module/PMlib/PMlib-3.1.0/config/missing makeinfo
+MAKEINFO = ${SHELL} /Daily/Development/SphDev/Module/PMlib/dev/pm-Fluorine/pm-Fluorine/config/missing makeinfo
 MAKE_SUB_DIRS = src doc
 MKDIR_P = /usr/local/bin/gmkdir -p
 MPI_CFLAGS = 
 MPI_DIR = 
+MPI_EXT = _MPI
 MPI_LDFLAGS = 
 MPI_LIBS = 
 OBJEXT = o
 PACKAGE = PMlib
 PACKAGE_BUGREPORT = keno@riken.jp
 PACKAGE_NAME = PMlib
-PACKAGE_STRING = PMlib 3.1.1
+PACKAGE_STRING = PMlib 4.0.0
 PACKAGE_TARNAME = PMlib
 PACKAGE_URL = 
-PACKAGE_VERSION = 3.1.1
+PACKAGE_VERSION = 4.0.0
 PAPI_DIR = 
 PATH_SEPARATOR = :
 PM_CC = mpicc
-PM_CFLAGS = -I/usr/local/FFV/PMlib/include
+PM_CFLAGS = -I/Users/keno/PMlib/include
 PM_CXX = mpicxx
-PM_LDFLAGS = -L/usr/local/FFV/PMlib/lib
-PM_LIBS = -lPM
-PM_REVISION = 20150613_1800
+PM_LDFLAGS = -L/Users/keno/PMlib/lib
+PM_LIBS = -lPM_MPI
+PM_REVISION = 20150724_1800
 RANLIB = ranlib
 SET_MAKE = 
 SHELL = /bin/sh
 STRIP = 
-VERSION = 3.1.1
-abs_builddir = /Daily/Development/SphDev/Module/PMlib/PMlib-3.1.0/BUILD_DIR/example
-abs_srcdir = /Daily/Development/SphDev/Module/PMlib/PMlib-3.1.0/BUILD_DIR/../example
-abs_top_builddir = /Daily/Development/SphDev/Module/PMlib/PMlib-3.1.0/BUILD_DIR
-abs_top_srcdir = /Daily/Development/SphDev/Module/PMlib/PMlib-3.1.0/BUILD_DIR/..
+VERSION = 4.0.0
+abs_builddir = /Daily/Development/SphDev/Module/PMlib/dev/pm-Fluorine/pm-Fluorine/BUILD_DIR/example
+abs_srcdir = /Daily/Development/SphDev/Module/PMlib/dev/pm-Fluorine/pm-Fluorine/BUILD_DIR/../example
+abs_top_builddir = /Daily/Development/SphDev/Module/PMlib/dev/pm-Fluorine/pm-Fluorine/BUILD_DIR
+abs_top_srcdir = /Daily/Development/SphDev/Module/PMlib/dev/pm-Fluorine/pm-Fluorine/BUILD_DIR/..
 ac_ct_CC = mpicc
 ac_ct_CXX = 
 am__include = include
@@ -281,7 +264,7 @@ host_alias =
 htmldir = ${docdir}
 includedir = ${prefix}/include
 infodir = ${datarootdir}/info
-install_sh = ${SHELL} /Daily/Development/SphDev/Module/PMlib/PMlib-3.1.0/config/install-sh
+install_sh = ${SHELL} /Daily/Development/SphDev/Module/PMlib/dev/pm-Fluorine/pm-Fluorine/config/install-sh
 libdir = ${exec_prefix}/lib
 libexecdir = ${exec_prefix}/libexec
 localedir = ${datarootdir}/locale
@@ -290,7 +273,7 @@ mandir = ${datarootdir}/man
 mkdir_p = $(MKDIR_P)
 oldincludedir = /usr/include
 pdfdir = ${docdir}
-prefix = /usr/local/FFV/PMlib
+prefix = /Users/keno/PMlib
 program_transform_name = s,x,x,
 psdir = ${docdir}
 sbindir = ${exec_prefix}/sbin
@@ -301,37 +284,26 @@ target_alias =
 top_build_prefix = ../
 top_builddir = ..
 top_srcdir = ../..
-DISTCLEANFILES = *~ check_new_api pmlib_test
+DISTCLEANFILES = *~ pmlib_test
 CLEANFILES = data/*.log
-EXTRA_DIST = check_new_api.c sub_kernel.c pmlib_test.cpp Makefile_hand.fx10.login Makefile_hand.intel
-check_new_api_SOURCES = check_new_api.c
-check_new_api_CFLAGS = -I$(top_srcdir)/include -I/include
-#     -std=c99 -g -DSTATIC_PAPI_EVENTS_TABLE -D_REENTRANT -D_GNU_SOURCE -DUSE_COMPILER_TLS  -DPAPI_NO_MEMORY_MANAGEMENT -DUSE_PAPI
-check_new_api_LDADD = \
-    -L$(top_builddir)/src -lPM \
-    -L$(top_builddir)/src_papi_ext -lpapi_ext \
-     \
-     \
-    -L/lib64 -lpapi \
-    -L/lib64 -lpfm
-
-pmlib_test_SOURCES = pmlib_test.cpp sub_kernel.c
+EXTRA_DIST = pmlib_test.cpp Makefile_hand.fx10.login Makefile_hand.intel sub_kernel.c x.sh
+pmlib_test_SOURCES = pmlib_test.cpp
 pmlib_test_CFLAGS = -I$(top_srcdir)/include -I/include 
 pmlib_test_CXXFLAGS = -I$(top_srcdir)/include -I/include 
 #     -std=c99 -g -DSTATIC_PAPI_EVENTS_TABLE -D_REENTRANT -D_GNU_SOURCE -DUSE_COMPILER_TLS  -DPAPI_NO_MEMORY_MANAGEMENT -DUSE_PAPI
 pmlib_test_LDADD = \
-    -L$(top_builddir)/src -lPM \
-    -L$(top_builddir)/src_papi_ext -lpapi_ext \
-     \
-     \
-    -L/lib64 -lpapi \
-    -L/lib64 -lpfm
+	-L$(top_srcdir)/src -lPM \
+	-L$(top_srcdir)/src_papi_ext -lpapi_ext \
+	 \
+	 \
+	-L/lib64 -lpapi \
+	-L/lib64 -lpfm
 
 dist_noinst_DATA = 
 all: all-am
 
 .SUFFIXES:
-.SUFFIXES: .c .cpp .o .obj
+.SUFFIXES: .cpp .o .obj
 $(srcdir)/Makefile.in:  $(srcdir)/Makefile.am  $(am__configure_deps)
 	@for dep in $?; do \
 	  case '$(am__configure_deps)' in \
@@ -365,10 +337,6 @@ $(am__aclocal_m4_deps):
 clean-noinstPROGRAMS:
 	-test -z "$(noinst_PROGRAMS)" || rm -f $(noinst_PROGRAMS)
 
-check_new_api$(EXEEXT): $(check_new_api_OBJECTS) $(check_new_api_DEPENDENCIES) $(EXTRA_check_new_api_DEPENDENCIES) 
-	@rm -f check_new_api$(EXEEXT)
-	$(AM_V_CCLD)$(check_new_api_LINK) $(check_new_api_OBJECTS) $(check_new_api_LDADD) $(LIBS)
-
 pmlib_test$(EXEEXT): $(pmlib_test_OBJECTS) $(pmlib_test_DEPENDENCIES) $(EXTRA_pmlib_test_DEPENDENCIES) 
 	@rm -f pmlib_test$(EXEEXT)
 	$(AM_V_CXXLD)$(pmlib_test_LINK) $(pmlib_test_OBJECTS) $(pmlib_test_LDADD) $(LIBS)
@@ -379,51 +347,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-include ./$(DEPDIR)/check_new_api-check_new_api.Po
 include ./$(DEPDIR)/pmlib_test-pmlib_test.Po
-include ./$(DEPDIR)/pmlib_test-sub_kernel.Po
-
-.c.o:
-	$(AM_V_CC)$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
-	$(AM_V_at)$(am__mv) $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Po
-#	$(AM_V_CC)source='$<' object='$@' libtool=no \
-#	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(AM_V_CC_no)$(COMPILE) -c -o $@ $<
-
-.c.obj:
-	$(AM_V_CC)$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ `$(CYGPATH_W) '$<'`
-	$(AM_V_at)$(am__mv) $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Po
-#	$(AM_V_CC)source='$<' object='$@' libtool=no \
-#	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(AM_V_CC_no)$(COMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
-
-check_new_api-check_new_api.o: check_new_api.c
-	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(check_new_api_CFLAGS) $(CFLAGS) -MT check_new_api-check_new_api.o -MD -MP -MF $(DEPDIR)/check_new_api-check_new_api.Tpo -c -o check_new_api-check_new_api.o `test -f 'check_new_api.c' || echo '$(srcdir)/'`check_new_api.c
-	$(AM_V_at)$(am__mv) $(DEPDIR)/check_new_api-check_new_api.Tpo $(DEPDIR)/check_new_api-check_new_api.Po
-#	$(AM_V_CC)source='check_new_api.c' object='check_new_api-check_new_api.o' libtool=no \
-#	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(AM_V_CC_no)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(check_new_api_CFLAGS) $(CFLAGS) -c -o check_new_api-check_new_api.o `test -f 'check_new_api.c' || echo '$(srcdir)/'`check_new_api.c
-
-check_new_api-check_new_api.obj: check_new_api.c
-	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(check_new_api_CFLAGS) $(CFLAGS) -MT check_new_api-check_new_api.obj -MD -MP -MF $(DEPDIR)/check_new_api-check_new_api.Tpo -c -o check_new_api-check_new_api.obj `if test -f 'check_new_api.c'; then $(CYGPATH_W) 'check_new_api.c'; else $(CYGPATH_W) '$(srcdir)/check_new_api.c'; fi`
-	$(AM_V_at)$(am__mv) $(DEPDIR)/check_new_api-check_new_api.Tpo $(DEPDIR)/check_new_api-check_new_api.Po
-#	$(AM_V_CC)source='check_new_api.c' object='check_new_api-check_new_api.obj' libtool=no \
-#	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(AM_V_CC_no)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(check_new_api_CFLAGS) $(CFLAGS) -c -o check_new_api-check_new_api.obj `if test -f 'check_new_api.c'; then $(CYGPATH_W) 'check_new_api.c'; else $(CYGPATH_W) '$(srcdir)/check_new_api.c'; fi`
-
-pmlib_test-sub_kernel.o: sub_kernel.c
-	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(pmlib_test_CFLAGS) $(CFLAGS) -MT pmlib_test-sub_kernel.o -MD -MP -MF $(DEPDIR)/pmlib_test-sub_kernel.Tpo -c -o pmlib_test-sub_kernel.o `test -f 'sub_kernel.c' || echo '$(srcdir)/'`sub_kernel.c
-	$(AM_V_at)$(am__mv) $(DEPDIR)/pmlib_test-sub_kernel.Tpo $(DEPDIR)/pmlib_test-sub_kernel.Po
-#	$(AM_V_CC)source='sub_kernel.c' object='pmlib_test-sub_kernel.o' libtool=no \
-#	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(AM_V_CC_no)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(pmlib_test_CFLAGS) $(CFLAGS) -c -o pmlib_test-sub_kernel.o `test -f 'sub_kernel.c' || echo '$(srcdir)/'`sub_kernel.c
-
-pmlib_test-sub_kernel.obj: sub_kernel.c
-	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(pmlib_test_CFLAGS) $(CFLAGS) -MT pmlib_test-sub_kernel.obj -MD -MP -MF $(DEPDIR)/pmlib_test-sub_kernel.Tpo -c -o pmlib_test-sub_kernel.obj `if test -f 'sub_kernel.c'; then $(CYGPATH_W) 'sub_kernel.c'; else $(CYGPATH_W) '$(srcdir)/sub_kernel.c'; fi`
-	$(AM_V_at)$(am__mv) $(DEPDIR)/pmlib_test-sub_kernel.Tpo $(DEPDIR)/pmlib_test-sub_kernel.Po
-#	$(AM_V_CC)source='sub_kernel.c' object='pmlib_test-sub_kernel.obj' libtool=no \
-#	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(AM_V_CC_no)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(pmlib_test_CFLAGS) $(CFLAGS) -c -o pmlib_test-sub_kernel.obj `if test -f 'sub_kernel.c'; then $(CYGPATH_W) 'sub_kernel.c'; else $(CYGPATH_W) '$(srcdir)/sub_kernel.c'; fi`
 
 .cpp.o:
 	$(AM_V_CXX)$(CXXCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<

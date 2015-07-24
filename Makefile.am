@@ -27,4 +27,3 @@ clean-local:
 distclean-local: clean-local
 	rm -f ./bin/*
 	rm -f ./lib/*
-

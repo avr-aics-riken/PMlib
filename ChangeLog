@@ -16,6 +16,10 @@ REVISION HISTORY
 
 --------------------------
 2015-07-24
+r33 add proc. group and fortran I/F
+
+--------------------------
+2015-07-24
 r32 add how to compile serial version in INSTALL
 
 --------------------------
@@ -33,6 +37,14 @@ r30 introduce BUILD_DIR to keep source directory clean
 r29 update year
 - add mpiicc, mpiicpc
 - update description of INSTALL >> ${FFV_HOME}
+
+------------------
+2015-02-15
+r29 package 3.0.3
+ - Rearranged the source code structure
+ - Separated the package into MPI version and non-MPI version
+ - Sorted out the choice of printing contents depending on either the user
+   specified values or the HWPC measured values
 
 ------------------
 2014-12-15

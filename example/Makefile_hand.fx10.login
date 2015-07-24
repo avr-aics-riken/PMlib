@@ -11,12 +11,10 @@
 ##############################################################################
 
 
-all: check_new_api.ex pmlib_test.ex
-check_new_api.ex: check_new_api.o
-	$(CC) $(CFLAGS) $(PM_INCLUDES) -o $@  $< $(PMLIB_LDFLAGS)
+all: pmlib_test.ex
 
-pmlib_test.ex: pmlib_test.o sub_kernel.o
-	$(CXX) $(CXXFLAGS) $(PM_INCLUDES) -o $@ pmlib_test.o sub_kernel.o  $(PMLIB_LDFLAGS)
+pmlib_test.ex: pmlib_test.o 
+	$(CXX) $(CXXFLAGS) $(PM_INCLUDES) -o $@ pmlib_test.o $(PMLIB_LDFLAGS)
 
 CXX = mpiFCCpx
 CXXFLAGS = -Kopenmp,fast -DUSE_PAPI

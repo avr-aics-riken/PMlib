@@ -15,7 +15,7 @@
 
 AC_PREREQ([2.57])
 
-AC_INIT([PMlib], [3.1.1], [keno@riken.jp],[PMlib])
+AC_INIT([PMlib], [4.0.0], [keno@riken.jp],[PMlib])
 
 echo "----------------------------------------"
 echo "Running PMlib Configure Script"
@@ -64,7 +64,7 @@ AM_INIT_AUTOMAKE()
 # revision No.
 #
 
-PM_REVISION="20150613_1800"
+PM_REVISION="20150724_1800"
 AC_SUBST(PM_REVISION)
 
 
@@ -74,9 +74,9 @@ AC_SUBST(PM_REVISION)
 
 AC_PREFIX_DEFAULT([/usr/local/PMlib])
 if test x"$prefix" = x"NONE" ; then
-  PM_INST_DIR=/usr/local/PMlib
+PM_INST_DIR=/usr/local/PMlib
 else
-  PM_INST_DIR="$prefix"
+PM_INST_DIR="$prefix"
 fi
 
 
@@ -85,7 +85,7 @@ fi
 # MPI environment
 #
 enable_mpi="none"
-
+MPI_EXT=""
 
 
 PM_CXX="$CXX"
@@ -130,7 +130,10 @@ else
     MPI_LIBS=-lmpi
     enable_mpi="ompi"
   fi
+  MPI_EXT="_MPI"
 fi
+AC_SUBST(MPI_EXT)
+
 
 # warning. if a wrapper compiler is used, "enable_mpi" is empty, but parallel.
 #
@@ -179,9 +182,9 @@ if test x"$enable_papi" == x"yes" ; then
   PM_CFLAGS="$PM_CFLAGS"" -DUSE_PAPI"
   CXXFLAGS="$CXXFLAGS"" -DUSE_PAPI"
   CFLAGS="$CFLAGS"" -DUSE_PAPI"
-  PM_LIBS="-lPM -lpapi_ext"
+  PM_LIBS="-lPM$MPI_EXT -L$PAPI_DIR/lib64 -lpapi -lpfm -L../src_papi_ext -lpapi_ext"
 else
-  PM_LIBS="-lPM"
+  PM_LIBS="-lPM$MPI_EXT"
 fi
 
 AC_SUBST(PM_LIBS)
@@ -200,11 +203,11 @@ AC_SUBST(MAKE_SUB_DIRS)
 MAKE_SUB_DIRS="src doc"
 
 if test x"$enable_papi" == x"yes" ; then
-  MAKE_SUB_DIRS="$MAKE_SUB_DIRS"" src_papi_ext"
+MAKE_SUB_DIRS="$MAKE_SUB_DIRS"" src_papi_ext"
 fi
 
 if test x"$with_example" = x"yes" ; then
-  MAKE_SUB_DIRS="$MAKE_SUB_DIRS"" example"
+MAKE_SUB_DIRS="$MAKE_SUB_DIRS"" example"
 fi
 
 
@@ -232,7 +235,7 @@ AC_TYPE_SIZE_T
 
 
 # Checks for library functions.
-AC_CHECK_FUNCS([gettimeofday sqrt])
+AC_CHECK_FUNCS([gethostname gettimeofday sqrt])
 
 AC_CONFIG_FILES([Makefile \
                  src/Makefile \
@@ -241,7 +244,7 @@ AC_CONFIG_FILES([Makefile \
                  doc/Makefile \
                  pm-config \
                  include/pmVersion.h \
-		])
+                ])
 AC_OUTPUT
 
 chmod +x ./pm-config

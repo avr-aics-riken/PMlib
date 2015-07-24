@@ -147,11 +147,13 @@ AM_V_AR = $(am__v_AR_@AM_V@)
 am__v_AR_ = $(am__v_AR_@AM_DEFAULT_V@)
 am__v_AR_0 = @echo "  AR      " $@;
 am__v_AR_1 = 
-libPM_a_AR = $(AR) $(ARFLAGS)
-libPM_a_LIBADD =
-am_libPM_a_OBJECTS = libPM_a-PerfMonitor.$(OBJEXT) \
-	libPM_a-PerfWatch.$(OBJEXT) libPM_a-PerfCpuType.$(OBJEXT)
-libPM_a_OBJECTS = $(am_libPM_a_OBJECTS)
+libPM@MPI_EXT@_a_AR = $(AR) $(ARFLAGS)
+libPM@MPI_EXT@_a_LIBADD =
+am_libPM@MPI_EXT@_a_OBJECTS = libPM@MPI_EXT@_a-PerfMonitor.$(OBJEXT) \
+	libPM@MPI_EXT@_a-PerfWatch.$(OBJEXT) \
+	libPM@MPI_EXT@_a-PerfCpuType.$(OBJEXT) \
+	libPM@MPI_EXT@_a-PerfProgFortran.$(OBJEXT)
+libPM@MPI_EXT@_a_OBJECTS = $(am_libPM@MPI_EXT@_a_OBJECTS)
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
 am__v_P_0 = false
@@ -185,8 +187,8 @@ AM_V_CXXLD = $(am__v_CXXLD_@AM_V@)
 am__v_CXXLD_ = $(am__v_CXXLD_@AM_DEFAULT_V@)
 am__v_CXXLD_0 = @echo "  CXXLD   " $@;
 am__v_CXXLD_1 = 
-SOURCES = $(libPM_a_SOURCES)
-DIST_SOURCES = $(libPM_a_SOURCES)
+SOURCES = $(libPM@MPI_EXT@_a_SOURCES)
+DIST_SOURCES = $(libPM@MPI_EXT@_a_SOURCES)
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -252,6 +254,7 @@ MAKE_SUB_DIRS = @MAKE_SUB_DIRS@
 MKDIR_P = @MKDIR_P@
 MPI_CFLAGS = @MPI_CFLAGS@
 MPI_DIR = @MPI_DIR@
+MPI_EXT = @MPI_EXT@
 MPI_LDFLAGS = @MPI_LDFLAGS@
 MPI_LIBS = @MPI_LIBS@
 OBJEXT = @OBJEXT@
@@ -318,12 +321,14 @@ target_alias = @target_alias@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-lib_LIBRARIES = libPM.a
-libPM_a_CXXFLAGS = @MPI_CFLAGS@ -I$(top_srcdir)/include -I@PAPI_DIR@/include
-libPM_a_SOURCES = \
+lib_LIBRARIES = libPM@MPI_EXT@.a
+libPM@MPI_EXT@_a_CXXFLAGS = @MPI_CFLAGS@ -I$(top_srcdir)/include -I@PAPI_DIR@/include
+AM_CXXFLAGS = $(libPM@MPI_EXT@_a_CXXFLAGS)
+libPM@MPI_EXT@_a_SOURCES = \
     PerfMonitor.cpp \
     PerfWatch.cpp \
-    PerfCpuType.cpp
+    PerfCpuType.cpp \
+    PerfProgFortran.cpp
 
 include_HEADERS = \
     $(top_srcdir)/include/PerfMonitor.h \
@@ -397,10 +402,10 @@ uninstall-libLIBRARIES:
 clean-libLIBRARIES:
 	-test -z "$(lib_LIBRARIES)" || rm -f $(lib_LIBRARIES)
 
-libPM.a: $(libPM_a_OBJECTS) $(libPM_a_DEPENDENCIES) $(EXTRA_libPM_a_DEPENDENCIES) 
-	$(AM_V_at)-rm -f libPM.a
-	$(AM_V_AR)$(libPM_a_AR) libPM.a $(libPM_a_OBJECTS) $(libPM_a_LIBADD)
-	$(AM_V_at)$(RANLIB) libPM.a
+libPM@MPI_EXT@.a: $(libPM@MPI_EXT@_a_OBJECTS) $(libPM@MPI_EXT@_a_DEPENDENCIES) $(EXTRA_libPM@MPI_EXT@_a_DEPENDENCIES) 
+	$(AM_V_at)-rm -f libPM@MPI_EXT@.a
+	$(AM_V_AR)$(libPM@MPI_EXT@_a_AR) libPM@MPI_EXT@.a $(libPM@MPI_EXT@_a_OBJECTS) $(libPM@MPI_EXT@_a_LIBADD)
+	$(AM_V_at)$(RANLIB) libPM@MPI_EXT@.a
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -408,9 +413,10 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libPM_a-PerfCpuType.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libPM_a-PerfMonitor.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libPM_a-PerfWatch.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libPM@MPI_EXT@_a-PerfCpuType.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libPM@MPI_EXT@_a-PerfMonitor.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libPM@MPI_EXT@_a-PerfProgFortran.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libPM@MPI_EXT@_a-PerfWatch.Po@am__quote@
 
 .cpp.o:
 @am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXXCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
@@ -426,47 +432,61 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
 
-libPM_a-PerfMonitor.o: PerfMonitor.cpp
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libPM_a_CXXFLAGS) $(CXXFLAGS) -MT libPM_a-PerfMonitor.o -MD -MP -MF $(DEPDIR)/libPM_a-PerfMonitor.Tpo -c -o libPM_a-PerfMonitor.o `test -f 'PerfMonitor.cpp' || echo '$(srcdir)/'`PerfMonitor.cpp
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libPM_a-PerfMonitor.Tpo $(DEPDIR)/libPM_a-PerfMonitor.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='PerfMonitor.cpp' object='libPM_a-PerfMonitor.o' libtool=no @AMDEPBACKSLASH@
+libPM@MPI_EXT@_a-PerfMonitor.o: PerfMonitor.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libPM@MPI_EXT@_a_CXXFLAGS) $(CXXFLAGS) -MT libPM@MPI_EXT@_a-PerfMonitor.o -MD -MP -MF $(DEPDIR)/libPM@MPI_EXT@_a-PerfMonitor.Tpo -c -o libPM@MPI_EXT@_a-PerfMonitor.o `test -f 'PerfMonitor.cpp' || echo '$(srcdir)/'`PerfMonitor.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libPM@MPI_EXT@_a-PerfMonitor.Tpo $(DEPDIR)/libPM@MPI_EXT@_a-PerfMonitor.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='PerfMonitor.cpp' object='libPM@MPI_EXT@_a-PerfMonitor.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libPM_a_CXXFLAGS) $(CXXFLAGS) -c -o libPM_a-PerfMonitor.o `test -f 'PerfMonitor.cpp' || echo '$(srcdir)/'`PerfMonitor.cpp
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libPM@MPI_EXT@_a_CXXFLAGS) $(CXXFLAGS) -c -o libPM@MPI_EXT@_a-PerfMonitor.o `test -f 'PerfMonitor.cpp' || echo '$(srcdir)/'`PerfMonitor.cpp
 
-libPM_a-PerfMonitor.obj: PerfMonitor.cpp
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libPM_a_CXXFLAGS) $(CXXFLAGS) -MT libPM_a-PerfMonitor.obj -MD -MP -MF $(DEPDIR)/libPM_a-PerfMonitor.Tpo -c -o libPM_a-PerfMonitor.obj `if test -f 'PerfMonitor.cpp'; then $(CYGPATH_W) 'PerfMonitor.cpp'; else $(CYGPATH_W) '$(srcdir)/PerfMonitor.cpp'; fi`
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libPM_a-PerfMonitor.Tpo $(DEPDIR)/libPM_a-PerfMonitor.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='PerfMonitor.cpp' object='libPM_a-PerfMonitor.obj' libtool=no @AMDEPBACKSLASH@
+libPM@MPI_EXT@_a-PerfMonitor.obj: PerfMonitor.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libPM@MPI_EXT@_a_CXXFLAGS) $(CXXFLAGS) -MT libPM@MPI_EXT@_a-PerfMonitor.obj -MD -MP -MF $(DEPDIR)/libPM@MPI_EXT@_a-PerfMonitor.Tpo -c -o libPM@MPI_EXT@_a-PerfMonitor.obj `if test -f 'PerfMonitor.cpp'; then $(CYGPATH_W) 'PerfMonitor.cpp'; else $(CYGPATH_W) '$(srcdir)/PerfMonitor.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libPM@MPI_EXT@_a-PerfMonitor.Tpo $(DEPDIR)/libPM@MPI_EXT@_a-PerfMonitor.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='PerfMonitor.cpp' object='libPM@MPI_EXT@_a-PerfMonitor.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libPM_a_CXXFLAGS) $(CXXFLAGS) -c -o libPM_a-PerfMonitor.obj `if test -f 'PerfMonitor.cpp'; then $(CYGPATH_W) 'PerfMonitor.cpp'; else $(CYGPATH_W) '$(srcdir)/PerfMonitor.cpp'; fi`
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libPM@MPI_EXT@_a_CXXFLAGS) $(CXXFLAGS) -c -o libPM@MPI_EXT@_a-PerfMonitor.obj `if test -f 'PerfMonitor.cpp'; then $(CYGPATH_W) 'PerfMonitor.cpp'; else $(CYGPATH_W) '$(srcdir)/PerfMonitor.cpp'; fi`
 
-libPM_a-PerfWatch.o: PerfWatch.cpp
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libPM_a_CXXFLAGS) $(CXXFLAGS) -MT libPM_a-PerfWatch.o -MD -MP -MF $(DEPDIR)/libPM_a-PerfWatch.Tpo -c -o libPM_a-PerfWatch.o `test -f 'PerfWatch.cpp' || echo '$(srcdir)/'`PerfWatch.cpp
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libPM_a-PerfWatch.Tpo $(DEPDIR)/libPM_a-PerfWatch.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='PerfWatch.cpp' object='libPM_a-PerfWatch.o' libtool=no @AMDEPBACKSLASH@
+libPM@MPI_EXT@_a-PerfWatch.o: PerfWatch.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libPM@MPI_EXT@_a_CXXFLAGS) $(CXXFLAGS) -MT libPM@MPI_EXT@_a-PerfWatch.o -MD -MP -MF $(DEPDIR)/libPM@MPI_EXT@_a-PerfWatch.Tpo -c -o libPM@MPI_EXT@_a-PerfWatch.o `test -f 'PerfWatch.cpp' || echo '$(srcdir)/'`PerfWatch.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libPM@MPI_EXT@_a-PerfWatch.Tpo $(DEPDIR)/libPM@MPI_EXT@_a-PerfWatch.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='PerfWatch.cpp' object='libPM@MPI_EXT@_a-PerfWatch.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libPM_a_CXXFLAGS) $(CXXFLAGS) -c -o libPM_a-PerfWatch.o `test -f 'PerfWatch.cpp' || echo '$(srcdir)/'`PerfWatch.cpp
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libPM@MPI_EXT@_a_CXXFLAGS) $(CXXFLAGS) -c -o libPM@MPI_EXT@_a-PerfWatch.o `test -f 'PerfWatch.cpp' || echo '$(srcdir)/'`PerfWatch.cpp
 
-libPM_a-PerfWatch.obj: PerfWatch.cpp
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libPM_a_CXXFLAGS) $(CXXFLAGS) -MT libPM_a-PerfWatch.obj -MD -MP -MF $(DEPDIR)/libPM_a-PerfWatch.Tpo -c -o libPM_a-PerfWatch.obj `if test -f 'PerfWatch.cpp'; then $(CYGPATH_W) 'PerfWatch.cpp'; else $(CYGPATH_W) '$(srcdir)/PerfWatch.cpp'; fi`
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libPM_a-PerfWatch.Tpo $(DEPDIR)/libPM_a-PerfWatch.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='PerfWatch.cpp' object='libPM_a-PerfWatch.obj' libtool=no @AMDEPBACKSLASH@
+libPM@MPI_EXT@_a-PerfWatch.obj: PerfWatch.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libPM@MPI_EXT@_a_CXXFLAGS) $(CXXFLAGS) -MT libPM@MPI_EXT@_a-PerfWatch.obj -MD -MP -MF $(DEPDIR)/libPM@MPI_EXT@_a-PerfWatch.Tpo -c -o libPM@MPI_EXT@_a-PerfWatch.obj `if test -f 'PerfWatch.cpp'; then $(CYGPATH_W) 'PerfWatch.cpp'; else $(CYGPATH_W) '$(srcdir)/PerfWatch.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libPM@MPI_EXT@_a-PerfWatch.Tpo $(DEPDIR)/libPM@MPI_EXT@_a-PerfWatch.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='PerfWatch.cpp' object='libPM@MPI_EXT@_a-PerfWatch.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libPM_a_CXXFLAGS) $(CXXFLAGS) -c -o libPM_a-PerfWatch.obj `if test -f 'PerfWatch.cpp'; then $(CYGPATH_W) 'PerfWatch.cpp'; else $(CYGPATH_W) '$(srcdir)/PerfWatch.cpp'; fi`
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libPM@MPI_EXT@_a_CXXFLAGS) $(CXXFLAGS) -c -o libPM@MPI_EXT@_a-PerfWatch.obj `if test -f 'PerfWatch.cpp'; then $(CYGPATH_W) 'PerfWatch.cpp'; else $(CYGPATH_W) '$(srcdir)/PerfWatch.cpp'; fi`
 
-libPM_a-PerfCpuType.o: PerfCpuType.cpp
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libPM_a_CXXFLAGS) $(CXXFLAGS) -MT libPM_a-PerfCpuType.o -MD -MP -MF $(DEPDIR)/libPM_a-PerfCpuType.Tpo -c -o libPM_a-PerfCpuType.o `test -f 'PerfCpuType.cpp' || echo '$(srcdir)/'`PerfCpuType.cpp
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libPM_a-PerfCpuType.Tpo $(DEPDIR)/libPM_a-PerfCpuType.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='PerfCpuType.cpp' object='libPM_a-PerfCpuType.o' libtool=no @AMDEPBACKSLASH@
+libPM@MPI_EXT@_a-PerfCpuType.o: PerfCpuType.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libPM@MPI_EXT@_a_CXXFLAGS) $(CXXFLAGS) -MT libPM@MPI_EXT@_a-PerfCpuType.o -MD -MP -MF $(DEPDIR)/libPM@MPI_EXT@_a-PerfCpuType.Tpo -c -o libPM@MPI_EXT@_a-PerfCpuType.o `test -f 'PerfCpuType.cpp' || echo '$(srcdir)/'`PerfCpuType.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libPM@MPI_EXT@_a-PerfCpuType.Tpo $(DEPDIR)/libPM@MPI_EXT@_a-PerfCpuType.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='PerfCpuType.cpp' object='libPM@MPI_EXT@_a-PerfCpuType.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libPM_a_CXXFLAGS) $(CXXFLAGS) -c -o libPM_a-PerfCpuType.o `test -f 'PerfCpuType.cpp' || echo '$(srcdir)/'`PerfCpuType.cpp
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libPM@MPI_EXT@_a_CXXFLAGS) $(CXXFLAGS) -c -o libPM@MPI_EXT@_a-PerfCpuType.o `test -f 'PerfCpuType.cpp' || echo '$(srcdir)/'`PerfCpuType.cpp
 
-libPM_a-PerfCpuType.obj: PerfCpuType.cpp
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libPM_a_CXXFLAGS) $(CXXFLAGS) -MT libPM_a-PerfCpuType.obj -MD -MP -MF $(DEPDIR)/libPM_a-PerfCpuType.Tpo -c -o libPM_a-PerfCpuType.obj `if test -f 'PerfCpuType.cpp'; then $(CYGPATH_W) 'PerfCpuType.cpp'; else $(CYGPATH_W) '$(srcdir)/PerfCpuType.cpp'; fi`
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libPM_a-PerfCpuType.Tpo $(DEPDIR)/libPM_a-PerfCpuType.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='PerfCpuType.cpp' object='libPM_a-PerfCpuType.obj' libtool=no @AMDEPBACKSLASH@
+libPM@MPI_EXT@_a-PerfCpuType.obj: PerfCpuType.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libPM@MPI_EXT@_a_CXXFLAGS) $(CXXFLAGS) -MT libPM@MPI_EXT@_a-PerfCpuType.obj -MD -MP -MF $(DEPDIR)/libPM@MPI_EXT@_a-PerfCpuType.Tpo -c -o libPM@MPI_EXT@_a-PerfCpuType.obj `if test -f 'PerfCpuType.cpp'; then $(CYGPATH_W) 'PerfCpuType.cpp'; else $(CYGPATH_W) '$(srcdir)/PerfCpuType.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libPM@MPI_EXT@_a-PerfCpuType.Tpo $(DEPDIR)/libPM@MPI_EXT@_a-PerfCpuType.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='PerfCpuType.cpp' object='libPM@MPI_EXT@_a-PerfCpuType.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libPM_a_CXXFLAGS) $(CXXFLAGS) -c -o libPM_a-PerfCpuType.obj `if test -f 'PerfCpuType.cpp'; then $(CYGPATH_W) 'PerfCpuType.cpp'; else $(CYGPATH_W) '$(srcdir)/PerfCpuType.cpp'; fi`
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libPM@MPI_EXT@_a_CXXFLAGS) $(CXXFLAGS) -c -o libPM@MPI_EXT@_a-PerfCpuType.obj `if test -f 'PerfCpuType.cpp'; then $(CYGPATH_W) 'PerfCpuType.cpp'; else $(CYGPATH_W) '$(srcdir)/PerfCpuType.cpp'; fi`
+
+libPM@MPI_EXT@_a-PerfProgFortran.o: PerfProgFortran.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libPM@MPI_EXT@_a_CXXFLAGS) $(CXXFLAGS) -MT libPM@MPI_EXT@_a-PerfProgFortran.o -MD -MP -MF $(DEPDIR)/libPM@MPI_EXT@_a-PerfProgFortran.Tpo -c -o libPM@MPI_EXT@_a-PerfProgFortran.o `test -f 'PerfProgFortran.cpp' || echo '$(srcdir)/'`PerfProgFortran.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libPM@MPI_EXT@_a-PerfProgFortran.Tpo $(DEPDIR)/libPM@MPI_EXT@_a-PerfProgFortran.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='PerfProgFortran.cpp' object='libPM@MPI_EXT@_a-PerfProgFortran.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libPM@MPI_EXT@_a_CXXFLAGS) $(CXXFLAGS) -c -o libPM@MPI_EXT@_a-PerfProgFortran.o `test -f 'PerfProgFortran.cpp' || echo '$(srcdir)/'`PerfProgFortran.cpp
+
+libPM@MPI_EXT@_a-PerfProgFortran.obj: PerfProgFortran.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libPM@MPI_EXT@_a_CXXFLAGS) $(CXXFLAGS) -MT libPM@MPI_EXT@_a-PerfProgFortran.obj -MD -MP -MF $(DEPDIR)/libPM@MPI_EXT@_a-PerfProgFortran.Tpo -c -o libPM@MPI_EXT@_a-PerfProgFortran.obj `if test -f 'PerfProgFortran.cpp'; then $(CYGPATH_W) 'PerfProgFortran.cpp'; else $(CYGPATH_W) '$(srcdir)/PerfProgFortran.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libPM@MPI_EXT@_a-PerfProgFortran.Tpo $(DEPDIR)/libPM@MPI_EXT@_a-PerfProgFortran.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='PerfProgFortran.cpp' object='libPM@MPI_EXT@_a-PerfProgFortran.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libPM@MPI_EXT@_a_CXXFLAGS) $(CXXFLAGS) -c -o libPM@MPI_EXT@_a-PerfProgFortran.obj `if test -f 'PerfProgFortran.cpp'; then $(CYGPATH_W) 'PerfProgFortran.cpp'; else $(CYGPATH_W) '$(srcdir)/PerfProgFortran.cpp'; fi`
 install-includeHEADERS: $(include_HEADERS)
 	@$(NORMAL_INSTALL)
 	@list='$(include_HEADERS)'; test -n "$(includedir)" || list=; \
