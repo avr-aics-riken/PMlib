@@ -103,12 +103,25 @@ Here is examples.
 
 
 
-# FX, K computer, compilation on login nodes
+# FX, K computer, MPI, compilation on login nodes
 
  $ ../configure --prefix=${FFV_HOME}/PMlib \
                 --host=sparc64-unknown-linux-gnu \
                 --with-papi=/opt/FJSVXosDevkit/sparc64fx/V01L02E07 \
                 --with-example=yes \
+                CC=mpifccpx \
+                CFLAGS="-Kfast,parallel,openmp -Nrt_notune" \
+                CXX=mpiFCCpx \
+                CXXFLAGS="-Kfast,parallel,openmp -Nrt_notune"
+
+
+# FX, K computer, Serial, compilation on login nodes
+
+ $ ../configure --prefix=${FFV_HOME}/PMlib \
+                --host=sparc64-unknown-linux-gnu \
+                --with-papi=/opt/FJSVXosDevkit/sparc64fx/V01L02E07 \
+                --with-example=yes \
+                -D_PM_WITHOUT_MPI_ \
                 CC=mpifccpx \
                 CFLAGS="-Kfast,parallel,openmp -Nrt_notune" \
                 CXX=mpiFCCpx \
