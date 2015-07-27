@@ -471,7 +471,7 @@ namespace pm_lib {
   ///   @note プロセスグループは呼び出しプログラムが定義する
   ///   @note MPI_Group型, MPI_Comm型は int *型とコンパチ
   ///
-  void PerfMonitor::printGroup(FILE* fp, MPI_Group p_group, int p_comm, int* pp_ranks, int group)
+  void PerfMonitor::printGroup(FILE* fp, MPI_Group p_group, MPI_Comm p_comm, int* pp_ranks, int group)
   {
     if (!m_gathered) {
       fprintf(stderr, "\n\t*** PerfMonitor gather() must be called before printGroup().\n");

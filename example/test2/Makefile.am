@@ -10,22 +10,22 @@
 #
 ##############################################################################
 
-noinst_PROGRAMS=test1
+noinst_PROGRAMS = test2
 
 
-DISTCLEANFILES=*~
+DISTCLEANFILES=*~ test2
 CLEANFILES=data/*.log
 
-EXTRA_DIST= Makefile_hand.fx10.login Makefile_hand.intel x.sh
+EXTRA_DIST=
 
 
-test1_SOURCES  = pmlib_test.cpp sub_kernel.c
-test1_CFLAGS = -I$(top_srcdir)/include -I@PAPI_DIR@/include @MPI_CFLAGS@
-test1_CXXFLAGS = -I$(top_srcdir)/include -I@PAPI_DIR@/include @MPI_CFLAGS@
+test2_SOURCES  = main_kernel.cpp sub_kernel.c
+test2_CFLAGS = -I$(top_srcdir)/include -I@PAPI_DIR@/include @MPI_CFLAGS@
+test2_CXXFLAGS = -I$(top_srcdir)/include -I@PAPI_DIR@/include @MPI_CFLAGS@
 #     -std=c99 -g -DSTATIC_PAPI_EVENTS_TABLE -D_REENTRANT -D_GNU_SOURCE -DUSE_COMPILER_TLS  -DPAPI_NO_MEMORY_MANAGEMENT -DUSE_PAPI
 
 if PAPI_TARGET
-  test1_LDADD = \
+  test2_LDADD = \
 	  -L$(top_builddir)/src -lPM@MPI_EXT@ \
 	  -L$(top_builddir)/src_papi_ext -lpapi_ext \
 	  @MPI_LIBS@ \
@@ -33,7 +33,7 @@ if PAPI_TARGET
 	  -L@PAPI_DIR@/lib64 -lpapi \
 	  -L@PAPI_DIR@/lib64 -lpfm
 else
-  test1_LDADD = \
+  test2_LDADD = \
     -L$(top_builddir)/src -lPM@MPI_EXT@ \
     @MPI_LIBS@ \
     @MPI_LDFLAGS@

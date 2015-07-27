@@ -100,6 +100,10 @@ POST_INSTALL = :
 NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
+@EXAMPLE_TARGET_TRUE@am__append_1 = 
+@EXAMPLE_TARGET_FALSE@am__append_2 = example
+@PAPI_TARGET_TRUE@am__append_3 = 
+@PAPI_TARGET_FALSE@am__append_4 = src_papi_ext
 subdir = .
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/configure.ac
@@ -274,6 +278,8 @@ ECHO_N = @ECHO_N@
 ECHO_T = @ECHO_T@
 EGREP = @EGREP@
 EXEEXT = @EXEEXT@
+FC = @FC@
+FCFLAGS = @FCFLAGS@
 GREP = @GREP@
 INSTALL = @INSTALL@
 INSTALL_DATA = @INSTALL_DATA@
@@ -290,6 +296,7 @@ MKDIR_P = @MKDIR_P@
 MPI_CFLAGS = @MPI_CFLAGS@
 MPI_DIR = @MPI_DIR@
 MPI_EXT = @MPI_EXT@
+MPI_FCLIBS = @MPI_FCLIBS@
 MPI_LDFLAGS = @MPI_LDFLAGS@
 MPI_LIBS = @MPI_LIBS@
 OBJEXT = @OBJEXT@
@@ -305,6 +312,8 @@ PATH_SEPARATOR = @PATH_SEPARATOR@
 PM_CC = @PM_CC@
 PM_CFLAGS = @PM_CFLAGS@
 PM_CXX = @PM_CXX@
+PM_FC = @PM_FC@
+PM_FC_LD = @PM_FC_LD@
 PM_LDFLAGS = @PM_LDFLAGS@
 PM_LIBS = @PM_LIBS@
 PM_REVISION = @PM_REVISION@
@@ -319,6 +328,7 @@ abs_top_builddir = @abs_top_builddir@
 abs_top_srcdir = @abs_top_srcdir@
 ac_ct_CC = @ac_ct_CC@
 ac_ct_CXX = @ac_ct_CXX@
+ac_ct_FC = @ac_ct_FC@
 am__include = @am__include@
 am__leading_dot = @am__leading_dot@
 am__quote = @am__quote@
@@ -360,8 +370,8 @@ SUBDIRS = @MAKE_SUB_DIRS@
 bin_SCRIPTS = pm-config
 CLEANFILES = $(bin_SCRIPTS)
 EXTRA_DIST = pm-config.in LICENSE Makefile_hand doc/Doxyfile \
-                 example src_papi_ext BUILD_DIR/.gitkeep
-
+	BUILD_DIR/.gitkeep $(am__append_1) $(am__append_2) \
+	$(am__append_3) $(am__append_4)
 dist_data_DATA = AUTHORS COPYING ChangeLog README LICENSE 
 dist_include_HEADERS = include/mpi_stubs.h
 all: config.h

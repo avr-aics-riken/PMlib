@@ -26,6 +26,7 @@
 #
 ##############################################################################
 
+
 VPATH = @srcdir@
 am__is_gnu_make = { \
   if test -z '$(MAKELEVEL)'; then \
@@ -98,17 +99,25 @@ POST_INSTALL = :
 NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
-subdir = doc
+noinst_PROGRAMS = test2$(EXEEXT)
+subdir = example/test2
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
-DIST_COMMON = $(srcdir)/Makefile.am $(doc_include_HEADERS) \
+DIST_COMMON = $(srcdir)/Makefile.am $(dist_noinst_DATA) \
 	$(am__DIST_COMMON)
 mkinstalldirs = $(install_sh) -d
 CONFIG_HEADER = $(top_builddir)/config.h
 CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
+PROGRAMS = $(noinst_PROGRAMS)
+am_test2_OBJECTS = test2-main_kernel.$(OBJEXT) \
+	test2-sub_kernel.$(OBJEXT)
+test2_OBJECTS = $(am_test2_OBJECTS)
+test2_DEPENDENCIES =
+test2_LINK = $(CXXLD) $(test2_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) \
+	$(LDFLAGS) -o $@
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
 am__v_P_0 = false
@@ -121,42 +130,47 @@ AM_V_at = $(am__v_at_@AM_V@)
 am__v_at_ = $(am__v_at_@AM_DEFAULT_V@)
 am__v_at_0 = @
 am__v_at_1 = 
-SOURCES =
-DIST_SOURCES =
+DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)
+depcomp = $(SHELL) $(top_srcdir)/config/depcomp
+am__depfiles_maybe = depfiles
+am__mv = mv -f
+AM_V_lt = $(am__v_lt_@AM_V@)
+am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
+am__v_lt_0 = --silent
+am__v_lt_1 = 
+COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
+	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
+AM_V_CC = $(am__v_CC_@AM_V@)
+am__v_CC_ = $(am__v_CC_@AM_DEFAULT_V@)
+am__v_CC_0 = @echo "  CC      " $@;
+am__v_CC_1 = 
+CCLD = $(CC)
+LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
+AM_V_CCLD = $(am__v_CCLD_@AM_V@)
+am__v_CCLD_ = $(am__v_CCLD_@AM_DEFAULT_V@)
+am__v_CCLD_0 = @echo "  CCLD    " $@;
+am__v_CCLD_1 = 
+CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
+	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
+AM_V_CXX = $(am__v_CXX_@AM_V@)
+am__v_CXX_ = $(am__v_CXX_@AM_DEFAULT_V@)
+am__v_CXX_0 = @echo "  CXX     " $@;
+am__v_CXX_1 = 
+CXXLD = $(CXX)
+CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
+	-o $@
+AM_V_CXXLD = $(am__v_CXXLD_@AM_V@)
+am__v_CXXLD_ = $(am__v_CXXLD_@AM_DEFAULT_V@)
+am__v_CXXLD_0 = @echo "  CXXLD   " $@;
+am__v_CXXLD_1 = 
+SOURCES = $(test2_SOURCES)
+DIST_SOURCES = $(test2_SOURCES)
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
     *) (install-info --version) >/dev/null 2>&1;; \
   esac
-am__vpath_adj_setup = srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`;
-am__vpath_adj = case $$p in \
-    $(srcdir)/*) f=`echo "$$p" | sed "s|^$$srcdirstrip/||"`;; \
-    *) f=$$p;; \
-  esac;
-am__strip_dir = f=`echo $$p | sed -e 's|^.*/||'`;
-am__install_max = 40
-am__nobase_strip_setup = \
-  srcdirstrip=`echo "$(srcdir)" | sed 's/[].[^$$\\*|]/\\\\&/g'`
-am__nobase_strip = \
-  for p in $$list; do echo "$$p"; done | sed -e "s|$$srcdirstrip/||"
-am__nobase_list = $(am__nobase_strip_setup); \
-  for p in $$list; do echo "$$p $$p"; done | \
-  sed "s| $$srcdirstrip/| |;"' / .*\//!s/ .*/ ./; s,\( .*\)/[^/]*$$,\1,' | \
-  $(AWK) 'BEGIN { files["."] = "" } { files[$$2] = files[$$2] " " $$1; \
-    if (++n[$$2] == $(am__install_max)) \
-      { print $$2, files[$$2]; n[$$2] = 0; files[$$2] = "" } } \
-    END { for (dir in files) print dir, files[dir] }'
-am__base_list = \
-  sed '$$!N;$$!N;$$!N;$$!N;$$!N;$$!N;$$!N;s/\n/ /g' | \
-  sed '$$!N;$$!N;$$!N;$$!N;s/\n/ /g'
-am__uninstall_files_from_dir = { \
-  test -z "$$files" \
-    || { test ! -d "$$dir" && test ! -f "$$dir" && test ! -r "$$dir"; } \
-    || { echo " ( cd '$$dir' && rm -f" $$files ")"; \
-         $(am__cd) "$$dir" && rm -f $$files; }; \
-  }
-am__installdirs = "$(DESTDIR)$(doc_includedir)"
-HEADERS = $(doc_include_HEADERS)
+DATA = $(dist_noinst_DATA)
 am__tagged_files = $(HEADERS) $(SOURCES) $(TAGS_FILES) $(LISP)
 # Read a list of newline-separated strings from the standard input,
 # and print each of them once, without duplicates.  Input order is
@@ -176,7 +190,7 @@ am__define_uniq_tagged_files = \
   done | $(am__uniquify_input)`
 ETAGS = etags
 CTAGS = ctags
-am__DIST_COMMON = $(srcdir)/Makefile.in
+am__DIST_COMMON = $(srcdir)/Makefile.in $(top_srcdir)/config/depcomp
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = @ACLOCAL@
 AMTAR = @AMTAR@
@@ -289,14 +303,31 @@ target_alias = @target_alias@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-doc_includedir = $(prefix)/doc
-doc_include_HEADERS = \
-    $(top_srcdir)/doc/PMlib.pdf \
-    $(top_srcdir)/doc/How_to_use_PMlib.pdf
+DISTCLEANFILES = *~ test2
+CLEANFILES = data/*.log
+EXTRA_DIST = 
+test2_SOURCES = main_kernel.cpp sub_kernel.c
+test2_CFLAGS = -I$(top_srcdir)/include -I@PAPI_DIR@/include @MPI_CFLAGS@
+test2_CXXFLAGS = -I$(top_srcdir)/include -I@PAPI_DIR@/include @MPI_CFLAGS@
+@PAPI_TARGET_FALSE@test2_LDADD = \
+@PAPI_TARGET_FALSE@    -L$(top_builddir)/src -lPM@MPI_EXT@ \
+@PAPI_TARGET_FALSE@    @MPI_LIBS@ \
+@PAPI_TARGET_FALSE@    @MPI_LDFLAGS@
 
+#     -std=c99 -g -DSTATIC_PAPI_EVENTS_TABLE -D_REENTRANT -D_GNU_SOURCE -DUSE_COMPILER_TLS  -DPAPI_NO_MEMORY_MANAGEMENT -DUSE_PAPI
+@PAPI_TARGET_TRUE@test2_LDADD = \
+@PAPI_TARGET_TRUE@	  -L$(top_builddir)/src -lPM@MPI_EXT@ \
+@PAPI_TARGET_TRUE@	  -L$(top_builddir)/src_papi_ext -lpapi_ext \
+@PAPI_TARGET_TRUE@	  @MPI_LIBS@ \
+@PAPI_TARGET_TRUE@	  @MPI_LDFLAGS@ \
+@PAPI_TARGET_TRUE@	  -L@PAPI_DIR@/lib64 -lpapi \
+@PAPI_TARGET_TRUE@	  -L@PAPI_DIR@/lib64 -lpfm
+
+dist_noinst_DATA = 
 all: all-am
 
 .SUFFIXES:
+.SUFFIXES: .c .cpp .o .obj
 $(srcdir)/Makefile.in:  $(srcdir)/Makefile.am  $(am__configure_deps)
 	@for dep in $?; do \
 	  case '$(am__configure_deps)' in \
@@ -306,9 +337,9 @@ $(srcdir)/Makefile.in:  $(srcdir)/Makefile.am  $(am__configure_deps)
 	      exit 1;; \
 	  esac; \
 	done; \
-	echo ' cd $(top_srcdir) && $(AUTOMAKE) --gnu doc/Makefile'; \
+	echo ' cd $(top_srcdir) && $(AUTOMAKE) --gnu example/test2/Makefile'; \
 	$(am__cd) $(top_srcdir) && \
-	  $(AUTOMAKE) --gnu doc/Makefile
+	  $(AUTOMAKE) --gnu example/test2/Makefile
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	@case '$?' in \
 	  *config.status*) \
@@ -326,27 +357,78 @@ $(top_srcdir)/configure:  $(am__configure_deps)
 $(ACLOCAL_M4):  $(am__aclocal_m4_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
 $(am__aclocal_m4_deps):
-install-doc_includeHEADERS: $(doc_include_HEADERS)
-	@$(NORMAL_INSTALL)
-	@list='$(doc_include_HEADERS)'; test -n "$(doc_includedir)" || list=; \
-	if test -n "$$list"; then \
-	  echo " $(MKDIR_P) '$(DESTDIR)$(doc_includedir)'"; \
-	  $(MKDIR_P) "$(DESTDIR)$(doc_includedir)" || exit 1; \
-	fi; \
-	for p in $$list; do \
-	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
-	  echo "$$d$$p"; \
-	done | $(am__base_list) | \
-	while read files; do \
-	  echo " $(INSTALL_HEADER) $$files '$(DESTDIR)$(doc_includedir)'"; \
-	  $(INSTALL_HEADER) $$files "$(DESTDIR)$(doc_includedir)" || exit $$?; \
-	done
 
-uninstall-doc_includeHEADERS:
-	@$(NORMAL_UNINSTALL)
-	@list='$(doc_include_HEADERS)'; test -n "$(doc_includedir)" || list=; \
-	files=`for p in $$list; do echo $$p; done | sed -e 's|^.*/||'`; \
-	dir='$(DESTDIR)$(doc_includedir)'; $(am__uninstall_files_from_dir)
+clean-noinstPROGRAMS:
+	-test -z "$(noinst_PROGRAMS)" || rm -f $(noinst_PROGRAMS)
+
+test2$(EXEEXT): $(test2_OBJECTS) $(test2_DEPENDENCIES) $(EXTRA_test2_DEPENDENCIES) 
+	@rm -f test2$(EXEEXT)
+	$(AM_V_CXXLD)$(test2_LINK) $(test2_OBJECTS) $(test2_LDADD) $(LIBS)
+
+mostlyclean-compile:
+	-rm -f *.$(OBJEXT)
+
+distclean-compile:
+	-rm -f *.tab.c
+
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test2-main_kernel.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test2-sub_kernel.Po@am__quote@
+
+.c.o:
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(COMPILE) -c -o $@ $<
+
+.c.obj:
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ `$(CYGPATH_W) '$<'`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(COMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
+
+test2-sub_kernel.o: sub_kernel.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test2_CFLAGS) $(CFLAGS) -MT test2-sub_kernel.o -MD -MP -MF $(DEPDIR)/test2-sub_kernel.Tpo -c -o test2-sub_kernel.o `test -f 'sub_kernel.c' || echo '$(srcdir)/'`sub_kernel.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/test2-sub_kernel.Tpo $(DEPDIR)/test2-sub_kernel.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='sub_kernel.c' object='test2-sub_kernel.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test2_CFLAGS) $(CFLAGS) -c -o test2-sub_kernel.o `test -f 'sub_kernel.c' || echo '$(srcdir)/'`sub_kernel.c
+
+test2-sub_kernel.obj: sub_kernel.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test2_CFLAGS) $(CFLAGS) -MT test2-sub_kernel.obj -MD -MP -MF $(DEPDIR)/test2-sub_kernel.Tpo -c -o test2-sub_kernel.obj `if test -f 'sub_kernel.c'; then $(CYGPATH_W) 'sub_kernel.c'; else $(CYGPATH_W) '$(srcdir)/sub_kernel.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/test2-sub_kernel.Tpo $(DEPDIR)/test2-sub_kernel.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='sub_kernel.c' object='test2-sub_kernel.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test2_CFLAGS) $(CFLAGS) -c -o test2-sub_kernel.obj `if test -f 'sub_kernel.c'; then $(CYGPATH_W) 'sub_kernel.c'; else $(CYGPATH_W) '$(srcdir)/sub_kernel.c'; fi`
+
+.cpp.o:
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXXCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXXCOMPILE) -c -o $@ $<
+
+.cpp.obj:
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXXCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ `$(CYGPATH_W) '$<'`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
+
+test2-main_kernel.o: main_kernel.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test2_CXXFLAGS) $(CXXFLAGS) -MT test2-main_kernel.o -MD -MP -MF $(DEPDIR)/test2-main_kernel.Tpo -c -o test2-main_kernel.o `test -f 'main_kernel.cpp' || echo '$(srcdir)/'`main_kernel.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/test2-main_kernel.Tpo $(DEPDIR)/test2-main_kernel.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='main_kernel.cpp' object='test2-main_kernel.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test2_CXXFLAGS) $(CXXFLAGS) -c -o test2-main_kernel.o `test -f 'main_kernel.cpp' || echo '$(srcdir)/'`main_kernel.cpp
+
+test2-main_kernel.obj: main_kernel.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test2_CXXFLAGS) $(CXXFLAGS) -MT test2-main_kernel.obj -MD -MP -MF $(DEPDIR)/test2-main_kernel.Tpo -c -o test2-main_kernel.obj `if test -f 'main_kernel.cpp'; then $(CYGPATH_W) 'main_kernel.cpp'; else $(CYGPATH_W) '$(srcdir)/main_kernel.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/test2-main_kernel.Tpo $(DEPDIR)/test2-main_kernel.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='main_kernel.cpp' object='test2-main_kernel.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test2_CXXFLAGS) $(CXXFLAGS) -c -o test2-main_kernel.obj `if test -f 'main_kernel.cpp'; then $(CYGPATH_W) 'main_kernel.cpp'; else $(CYGPATH_W) '$(srcdir)/main_kernel.cpp'; fi`
 
 ID: $(am__tagged_files)
 	$(am__define_uniq_tagged_files); mkid -fID $$unique
@@ -432,11 +514,8 @@ distdir: $(DISTFILES)
 	done
 check-am: all-am
 check: check-am
-all-am: Makefile $(HEADERS)
+all-am: Makefile $(PROGRAMS) $(DATA)
 installdirs:
-	for dir in "$(DESTDIR)$(doc_includedir)"; do \
-	  test -z "$$dir" || $(MKDIR_P) "$$dir"; \
-	done
 install: install-am
 install-exec: install-exec-am
 install-data: install-data-am
@@ -459,21 +538,25 @@ install-strip:
 mostlyclean-generic:
 
 clean-generic:
+	-test -z "$(CLEANFILES)" || rm -f $(CLEANFILES)
 
 distclean-generic:
 	-test -z "$(CONFIG_CLEAN_FILES)" || rm -f $(CONFIG_CLEAN_FILES)
 	-test . = "$(srcdir)" || test -z "$(CONFIG_CLEAN_VPATH_FILES)" || rm -f $(CONFIG_CLEAN_VPATH_FILES)
+	-test -z "$(DISTCLEANFILES)" || rm -f $(DISTCLEANFILES)
 
 maintainer-clean-generic:
 	@echo "This command is intended for maintainers to use"
 	@echo "it deletes files that may require special tools to rebuild."
 clean: clean-am
 
-clean-am: clean-generic mostlyclean-am
+clean-am: clean-generic clean-noinstPROGRAMS mostlyclean-am
 
 distclean: distclean-am
+	-rm -rf ./$(DEPDIR)
 	-rm -f Makefile
-distclean-am: clean-am distclean-generic distclean-tags
+distclean-am: clean-am distclean-compile distclean-generic \
+	distclean-tags
 
 dvi: dvi-am
 
@@ -487,7 +570,7 @@ info: info-am
 
 info-am:
 
-install-data-am: install-doc_includeHEADERS
+install-data-am:
 
 install-dvi: install-dvi-am
 
@@ -516,12 +599,13 @@ install-ps-am:
 installcheck-am:
 
 maintainer-clean: maintainer-clean-am
+	-rm -rf ./$(DEPDIR)
 	-rm -f Makefile
 maintainer-clean-am: distclean-am maintainer-clean-generic
 
 mostlyclean: mostlyclean-am
 
-mostlyclean-am: mostlyclean-generic
+mostlyclean-am: mostlyclean-compile mostlyclean-generic
 
 pdf: pdf-am
 
@@ -531,25 +615,27 @@ ps: ps-am
 
 ps-am:
 
-uninstall-am: uninstall-doc_includeHEADERS
+uninstall-am:
 
 .MAKE: install-am install-strip
 
 .PHONY: CTAGS GTAGS TAGS all all-am check check-am clean clean-generic \
-	cscopelist-am ctags ctags-am distclean distclean-generic \
-	distclean-tags distdir dvi dvi-am html html-am info info-am \
-	install install-am install-data install-data-am \
-	install-doc_includeHEADERS install-dvi install-dvi-am \
+	clean-noinstPROGRAMS cscopelist-am ctags ctags-am distclean \
+	distclean-compile distclean-generic distclean-tags distdir dvi \
+	dvi-am html html-am info info-am install install-am \
+	install-data install-data-am install-dvi install-dvi-am \
 	install-exec install-exec-am install-html install-html-am \
 	install-info install-info-am install-man install-pdf \
 	install-pdf-am install-ps install-ps-am install-strip \
 	installcheck installcheck-am installdirs maintainer-clean \
-	maintainer-clean-generic mostlyclean mostlyclean-generic pdf \
-	pdf-am ps ps-am tags tags-am uninstall uninstall-am \
-	uninstall-doc_includeHEADERS
+	maintainer-clean-generic mostlyclean mostlyclean-compile \
+	mostlyclean-generic pdf pdf-am ps ps-am tags tags-am uninstall \
+	uninstall-am
 
 .PRECIOUS: Makefile
 
+
+.PHONY:$(dist_noinst_DATA)
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

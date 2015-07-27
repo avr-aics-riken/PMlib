@@ -37,8 +37,23 @@ Configure options:
 --prefix=INSTALL_DIR
    Install directory path.  If omitted, default is /usr/local/PMlib.
 
+--with-comp=(INTEL|FJ|GNU)
+   If Intel compiler is used, choose INTEL, and if Fujitsu compiler, specify FJ.
+   This option is mandatory when using both compilers.
+
 --with-example=(no|yes)
    Turn on to build examples. Default setting is 'no'.
+
+--with-impi=IntelMPI_DIR
+   If you use an IntelMPI library, specify this option and use wrapper compiler driver.
+   If you exploit to use mpiifort for FC or F90, configure script recognizes that you
+   specified this option.
+
+--with-mpich=MPICH_DIR
+   If you will use a MPICH library, specify the directory that MPICH library is
+   installed. Either --with-mpich of --with-ompi option will be required except.
+   If the wrapper compiler, e.g., mpic++ or mpicxx is used to compile, both options
+   can be eliminated.
 
 --with-ompi=OPENMPI_DIR
    If the OpenMPI library is used, specify the directory path that OpenMPI library is
@@ -50,10 +65,17 @@ Configure options:
    In the case of compilation on K front-end, sprcifiy the directory. Use 'yes' for when you
    compile on compute nodes.
 
+
 CXX=CXX_COMPILER
    Specify a C++ compiler, e.g., g++, icpc, xlc++ or others.
 
 CXXFLAGS=CXX_OPTIONS
+   Specify compiler options.
+
+F90=FORTRAN90_COMPILER
+   Specify a fortran90 compiler.
+
+F90FLAGS=FORTRAN90_OPTIONS
    Specify compiler options.
 
 
@@ -70,9 +92,17 @@ $ ../configure --prefix=${FFV_HOME}PMlib CXX=g++ CXXFLAGS="-O3 -fopenmp"
 $ ../configure --prefix=${FFV_HOME}/PMlib --with-ompi=/opt/openmpi CXX=icpc CXXFLAGS="-O3 -openmp"
 
 
-# Using a wrapper compiler (Intel)
+# Using a wrapper compiler (Intel) /w example
 
-$ ../configure --prefix=${FFV_HOME}/PMlib CXX=mpicxx CXXFLAGS="-O3 -openmp" CC=mpicc CFLAGS="-O3 -openmp"
+$ ../configure --prefix=${FFV_HOME}/PMlib \
+               --with-comp=INTEL \
+               --with-example=yes \
+               CXX=mpicxx \
+               CXXFLAGS="-O3 -openmp" \
+               CC=mpicc \
+               CFLAGS="-O3 -openmp" \
+               F90=mpif90 \
+               F90FLAGS="-O3 -openmp"
 
 
 # Using a wrapper compiler (Intel) with PAPI, examples
@@ -82,7 +112,9 @@ $ ../configure CXX=mpicxx \
                CC=mpicc \
                CFLAGS="-O3 -openmp" \
                --with-papi=/usr/local/papi/papi-5.2.0/intel \
-               --with-example=yes
+               --with-example=yes \
+               F90=mpif90 \
+               F90FLAGS=-O3
 
 
 # Using a wrapper compiler (GNU) with default install directory

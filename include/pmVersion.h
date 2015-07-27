@@ -20,6 +20,6 @@
  */
 
 #define PM_VERSION_NO  "4.0.1"
-#define PM_REVISION    "20150727_1300"
+#define PM_REVISION    "20150727_1700"
 
 #endif /* _PMLIB_VERSION_H_ */

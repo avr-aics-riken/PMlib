@@ -17,6 +17,8 @@ REVISION HISTORY
 --------------------------
 2015-07-27
 r34 change example build
+- build libPM.a or libPMmpi.a
+- fortran example
 
 --------------------------
 2015-07-24
