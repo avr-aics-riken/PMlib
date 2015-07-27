@@ -6,5 +6,5 @@ module list
 set -x
 SRC_DIR=${HOME}/pmlib/PMlib-develop
 cd $SRC_DIR; if [ $? != 0 ] ; then echo '@@@ Directory error @@@'; exit; fi
-ldd example/pmlib_test
-example/pmlib_test
+ldd example/test1
+example/test1

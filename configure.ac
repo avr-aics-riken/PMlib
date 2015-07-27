@@ -15,7 +15,7 @@
 
 AC_PREREQ([2.57])
 
-AC_INIT([PMlib], [4.0.0], [keno@riken.jp],[PMlib])
+AC_INIT([PMlib], [4.0.1], [keno@riken.jp],[PMlib])
 
 echo "----------------------------------------"
 echo "Running PMlib Configure Script"
@@ -64,7 +64,7 @@ AM_INIT_AUTOMAKE()
 # revision No.
 #
 
-PM_REVISION="20150724_1800"
+PM_REVISION="20150727_1300"
 AC_SUBST(PM_REVISION)
 
 
@@ -163,6 +163,9 @@ elif test x"$with_papi" != x"none" ; then
   enable_papi="yes"
 fi
 
+# PAPI_TARGET = true, if use papi
+AM_CONDITIONAL([PAPI_TARGET], [test "$enable_papi" = "yes"])
+
 
 #
 # example
@@ -207,7 +210,7 @@ MAKE_SUB_DIRS="$MAKE_SUB_DIRS"" src_papi_ext"
 fi
 
 if test x"$with_example" = x"yes" ; then
-MAKE_SUB_DIRS="$MAKE_SUB_DIRS"" example"
+MAKE_SUB_DIRS="$MAKE_SUB_DIRS"" example/test1"
 fi
 
 
@@ -240,7 +243,7 @@ AC_CHECK_FUNCS([gethostname gettimeofday sqrt])
 AC_CONFIG_FILES([Makefile \
                  src/Makefile \
                  src_papi_ext/Makefile \
-                 example/Makefile \
+                 example/test1/Makefile \
                  doc/Makefile \
                  pm-config \
                  include/pmVersion.h \
