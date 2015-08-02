@@ -1,4 +1,5 @@
 #ifdef _PM_WITHOUT_MPI_
+#include "mpi_stubs.h"
 #else
 #include <mpi.h>
 #endif
@@ -13,7 +14,7 @@ using namespace pm_lib;
 
 #define MATSIZE 1000
 int nsize;
-struct {
+struct matrix {
 	int nsize;
 	float a2[MATSIZE][MATSIZE];
 	float b2[MATSIZE][MATSIZE];

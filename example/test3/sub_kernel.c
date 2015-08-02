@@ -1,4 +1,3 @@
-#include <mpi.h>
 #include <stdio.h>
 #include <math.h>
 #ifdef _OPENMP

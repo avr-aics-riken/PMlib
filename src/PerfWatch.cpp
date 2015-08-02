@@ -183,7 +183,15 @@ namespace pm_lib {
         }
         // 排他測定(m_exclusive==true)では全ノードで測定回数が等しいことを仮定.
         // 等しくない場合(m_valid==fals)には、統計計算をスキップする.
-        if (!m_valid) return;
+        //
+        // version 4 以降の注意
+        // 計算が複雑になり負荷のアンバランスが生じると、区間の呼び出し回数は
+        // プロセス毎に異なる場合がありえる。
+        // このため変数 m_valid の意味合いは当初の設計からは修正が必要となる。
+
+        // Debug in progress..
+        //
+        //	if (!m_valid) return;
         
         // 平均値
         m_time_av = 0.0;

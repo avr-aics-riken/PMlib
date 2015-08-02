@@ -1,3 +1,14 @@
+#ifdef _PM_WITHOUT_MPI_
+#include <iostream>
+int main (int argc, char *argv[])
+{
+	std::cout << "This test program is aimed for MPI group." <<  std::endl;
+	std::cout << "Skipping the test..." <<  std::endl;
+	return 0;
+}
+
+#else
+
 #include <mpi.h>
 #include <stdio.h>
 #include <math.h>
@@ -7,8 +18,8 @@
 	char parallel_mode[] = "Hybrid";
 	//	char parallel_mode[] = "OpenMP";
 #else
+	char parallel_mode[] = "FlatMPI";
 	//	char parallel_mode[] = "Serial";
-	//	char parallel_mode[] = "FlatMPI";
 #endif
 #include <PerfMonitor.h>
 using namespace pm_lib;
@@ -20,12 +31,12 @@ extern "C" void set_array(), sub_kernel();
 
 int main (int argc, char *argv[])
 {
-	int my_id, npes, num_threads;
+	int my_id, num_process, num_threads;
 	int i, j, loop;
 
 	MPI_Init(&argc, &argv);
 	MPI_Comm_rank(MPI_COMM_WORLD, &my_id);
-	MPI_Comm_size(MPI_COMM_WORLD, &npes);
+	MPI_Comm_size(MPI_COMM_WORLD, &num_process);
 
 	MPI_Group my_group;
 	MPI_Comm_group(MPI_COMM_WORLD, &my_group);
@@ -42,7 +53,7 @@ int main (int argc, char *argv[])
 #endif
 
 	PM.initialize();
-	PM.setParallelMode(parallel_mode, num_threads, npes);
+	PM.setParallelMode(parallel_mode, num_threads, num_process);
 	PM.setRankInfo(my_id);
 	(void)PM.getVersionInfo();
 
@@ -70,15 +81,14 @@ int main (int argc, char *argv[])
 	int new_size1;
 	int* p1_my_id;
 
-	new_size1 = 4;
+	new_size1 = std::max(1,num_process/2);
 	p1_my_id = new int[new_size1];
-	//	for (i=0; i<new_size1; i++) { p1_my_id[i] = i; }
-	for (i=0; i<new_size1; i++) { p1_my_id[i] = i+2; }
+	for (i=0; i<new_size1; i++) { p1_my_id[i] = i; }
 	MPI_Group_incl(my_group, new_size1, p1_my_id, &new_group1);
 	MPI_Comm_create(MPI_COMM_WORLD, new_group1, &new_comm1);
 
 	PM.start("Second block");
-	if(my_id<4) {
+	if(my_id<new_size1) {
 		stream_copy();
 	} else {
 		stream_triad();
@@ -90,7 +100,6 @@ int main (int argc, char *argv[])
 	PM.printDetail(stdout);
 
 
-	// PM.printGroup(stdout, new_group1, new_comm1, p1_my_id);
 	PM.printGroup(stdout, new_group1, new_comm1, p1_my_id, 77);
 
 	MPI_Comm new_comm2;
@@ -100,6 +109,8 @@ int main (int argc, char *argv[])
 	int* p2_my_id;
 
 /*
+  void PerfMonitor::printGroup(FILE* fp, int p_group, int p_comm, int* pp_ranks)
+
   /// プロセスグループ単位でのHWPC計測結果、MPIランク別詳細レポート出力
   ///
   ///   @param[in] fp 出力ファイルポインタ
@@ -110,10 +121,10 @@ int main (int argc, char *argv[])
   ///   @note プロセスグループは呼び出しプログラムが定義する
   ///   @note MPI_Group型, MPI_Comm型は int *型とコンパチ
   ///
-  void PerfMonitor::printGroup(FILE* fp, int p_group, int p_comm, int* pp_ranks)
 */
 
 	MPI_Finalize();
 	return 0;
 }
 
+#endif

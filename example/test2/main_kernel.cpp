@@ -1,4 +1,9 @@
+#ifdef _PM_WITHOUT_MPI_
+#include "mpi_stubs.h"
+#else
 #include <mpi.h>
+#endif
+
 #include <stdio.h>
 #include <math.h>
 #include <string>

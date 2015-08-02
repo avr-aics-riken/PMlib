@@ -117,7 +117,7 @@ namespace pm_lib {
     parallel_mode = p_mode;
     if ((n_thread != num_threads) || (n_proc != num_process)) {
       if (my_rank == 0) {
-        fprintf (stderr, "\t*** <setProperties> Warning. check n_thread:%d and n_proc:%d\n", n_thread, n_proc);
+        fprintf (stderr, "\t*** <setParallelMode> Warning. check n_thread:%d and n_proc:%d\n", n_thread, n_proc);
       }
     num_threads   = n_thread;
     num_process   = n_proc;
@@ -187,19 +187,21 @@ namespace pm_lib {
       PerfWatch& w = m_watchArray[i];
       if (!w.m_exclusive) continue;   // 
       if (w.m_label.empty()) continue;  //
-      if (w.m_valid) {
+      //
+      // we no longer skip the unbalanced calling counts
+      //	if (w.m_valid) {
         for (int j=i+1; j<m_nWatch; j++) {
           PerfWatch& q = m_watchArray[j];
           if (!q.m_exclusive) continue;   // 
           if (q.m_label.empty()) continue;  //
-          if (q.m_valid) {
+          //	if (q.m_valid) {
             if ( m_tcost[i] < m_tcost[j] ) {
               tmp_d=m_tcost[i]; m_tcost[i]=m_tcost[j]; m_tcost[j]=tmp_d;
               tmp_u=m_order[i]; m_order[i]=m_order[j]; m_order[j]=tmp_u;
             }
-          }
+          //	}
         }
-      }
+      //	}
     }
 
   }
@@ -289,10 +291,12 @@ namespace pm_lib {
     fprintf(fp, "\n");
     fprintf(fp, "\tStatistics of the exclusive sections per process.\n");
     fprintf(fp, "\n");
-/*
- * Output format has been modified to reflect the selective printing rule.
- * See mail dated 2015/02/5.
- */
+
+    // 演算数やデータ移動量の測定方法として、ユーザが明示的に指定する方法と、
+    // HWPCによる自動測定が選択可能であるが、
+    // どのような基準で演算数やデータ移動量を測定し結果を出力するかは
+    // 2015/02/5 メールで交換されたテーブル(Excel spread sheet)に従う
+
     is_unit = m_total.statsSwitch();
 	fprintf(fp, "\t%-*s|    call  |        accumulated time[sec]           ", maxLabelLen, "Label");
     if ( (0 <= is_unit) && (is_unit <= 3) ) {
@@ -313,7 +317,6 @@ namespace pm_lib {
     } else {
       fprintf(fp, "\n");
     }
-
     
     // 表示
     double sum_time_av = 0.0;
@@ -332,10 +335,8 @@ namespace pm_lib {
       int i = m_order[j];
       PerfWatch& w = m_watchArray[i];
       if ( !w.m_exclusive || w.m_label.empty()) continue;
-      if ( !w.m_valid || !(w.m_count > 0) ) {
-        fprintf(fp, "\t%-*s: *** NA ***\n", maxLabelLen, w.m_label.c_str());
-        continue;
-      }
+      if ( !(w.m_count > 0) ) continue;
+      // if ( !w.m_valid ) { fprintf(fp, "\t%-*s: *** NA ***\n", maxLabelLen, w.m_label.c_str()); continue; }
 
       is_unit = w.statsSwitch();
       if (w.m_time_av == 0.0) {
@@ -455,7 +456,10 @@ namespace pm_lib {
     }
 
     if (my_rank == 0) {
-        m_total.printHWPCLegend(fp);
+        // Legend の出力方法はPerfMonitorクラスのメンバに修正する。
+        // とりあえずコメントアウトしておく。
+        //	m_total.printHWPCLegend(fp);
+        ;
     }
   }
   

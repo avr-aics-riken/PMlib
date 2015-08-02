@@ -1,4 +1,5 @@
 #ifdef _PM_WITHOUT_MPI_
+#include "mpi_stubs.h"
 #else
 #include <mpi.h>
 #endif
@@ -6,10 +7,7 @@
 #include <omp.h>
 #endif
 #include <stdio.h>
-//	#include <PerfMonitor.h>
 #include <string>
-//	using namespace pm_lib;
-//	PerfMonitor PM;
 #include <PerfMonitor.h>
 
 #include "stdlib.h"
@@ -196,13 +194,15 @@ void f_pm_gather_ (void)
 
 void f_pm_print_ (void)
 {
+//	#include <string.h>
 #ifdef DEBUG_FORT
 	fprintf(stderr, "<f_pm_print_> \n");
 #endif
 	std::string h;
 	std::string u="user";
   char hostname[512];
-  memset(hostname, 0x00, sizeof(char)*512);
+  hostname[0]='\0';
+  //	memset(hostname, 0x00, sizeof(char)*512);
 	if (gethostname(hostname, sizeof(hostname)) != 0) {
 		fprintf(stderr, "<f_pm_print_> hostname could not be obtained\n");
 		h="unknown";

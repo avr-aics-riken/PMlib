@@ -1,19 +1,32 @@
+#ifdef _PM_WITHOUT_MPI_
+	program check
+	write(6,'(a)') "This program is aimed for MPI Group only. Skip the test..."
+	end
+#else
 	program check
 	use omp_lib
-	parameter(msize=2000)
-	real(kind=8) :: a(msize,msize), b(msize,msize), c(msize,msize)
-
 	include 'mpif.h'
+	parameter(msize=1000)
+	!cx	real(kind=8) :: a(msize,msize), b(msize,msize), c(msize,msize)
+	real(kind=8), allocatable :: a(:,:),b(:,:),c(:,:)
+
 	double precision dptime_omp
 	double precision dpt1,dpt0
 	integer nWatch
 
+	allocate (a(msize,msize), b(msize,msize), c(msize,msize), stat=istat)
+	if (istat.ne.0) then
+		write(*,*) "*** Allocate() failed."
+		stop
+	endif
+
 	call mpi_init(ierr )
-	call mpi_comm_rank( MPI_COMM_WORLD, MYID, ierr )
+	call mpi_comm_rank( MPI_COMM_WORLD, myid, ierr )
 	call mpi_comm_size( MPI_COMM_WORLD, ncpus, ierr )
+	write(6,'(a,i3,a)') "<main> started process ", myid
 
 	n=msize
-    nWatch=10
+	nWatch=10
 	call f_pm_initialize (nWatch)
 
 	icalc=0         !cx 0:calc, 1:comm
@@ -35,8 +48,8 @@
 
 	dpt1=dptime_omp()
 	s=dpt1-dpt0
-	flops=real(loops)*dflop/s*1.e-6
-	write(6,'(f10.5,a, f10.2,a)') s, " seconds", flops, " MFLOPS"
+	flops=real(loops)*dflop/s*1.e-9
+	write(6,'(f10.5,a, f10.5,a)') s, " seconds", flops, " Gflops"
 	write(11,*)  'output for unit 11', c(1,11), c(msize,msize)
 
 	call f_pm_gather ()
@@ -48,12 +61,16 @@
 
 subroutine subinit (msize,n,a,b,c)
 real(kind=8) :: a(msize,msize), b(msize,msize), c(msize,msize)
-	do i=1, n
+!$omp parallel
+!$omp do 
 	do j=1, n
-	a(j,i)=sin(real(j)/n)
-	b(j,i)=cos(real(j)/n)
+	do i=1, n
+	a(i,j)=sin(real(i)/real(n))
+	b(i,j)=cos(real(i)/real(n))
 	end do
 	end do
+!$omp end do
+!$omp end parallel
 	return
 end
 	
@@ -65,11 +82,11 @@ real(kind=8) :: x
 	dflop=2.0*dble(n)**3
 !$omp parallel
 !$omp do private(x)
-	do i=1, n
 	do j=1, n
+	do i=1, n
 	x=0
 	do k=1, n
-	x=x+a(k,i)*b(k,j)
+	x=x+a(i,k)*b(k,j)
 	end do
 	c(i,j) = x
 	end do
@@ -81,8 +98,9 @@ end
 	
 	
 double precision function dptime_omp()
-	use omp_lib
-	dptime_omp = omp_get_wtime()
-!cx include 'mpif.h'
-!cx	dptime_omp = MPI_Wtime()
+!cx	use omp_lib
+!cx	dptime_omp = omp_get_wtime()
+	include 'mpif.h'
+	dptime_omp = MPI_Wtime()
 end
+#endif

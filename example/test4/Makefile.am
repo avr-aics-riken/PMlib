@@ -31,6 +31,7 @@ if PAPI_TARGET
 	  -L$(top_builddir)/src_papi_ext -lpapi_ext \
     @PM_LIBS@ \
 	  @MPI_LIBS@ \
+	  @MPI_FCLIBS@ \
 	  @MPI_LDFLAGS@ \
 	  -L@PAPI_DIR@/lib64 -lpapi \
 	  -L@PAPI_DIR@/lib64 -lpfm
@@ -39,6 +40,7 @@ else
     -L$(top_builddir)/src -lPM@MPI_EXT@ \
     @PM_LIBS@ \
     @MPI_LIBS@ \
+	  @MPI_FCLIBS@ \
     @MPI_LDFLAGS@
 endif
 

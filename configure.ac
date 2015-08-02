@@ -166,6 +166,7 @@ fi
 if test x"$enable_mpi" = x"none" ; then
   CXXFLAGS="$CXXFLAGS -D_PM_WITHOUT_MPI_"
   CFLAGS="$CFLAGS -D_PM_WITHOUT_MPI_"
+  FCFLAGS="$FCFLAGS -D_PM_WITHOUT_MPI_"
   MPI_EXT=""
 else
   MPI_EXT="mpi"
@@ -192,8 +193,11 @@ elif test x"$enable_mpi" = x"ompi" ; then
 elif test x"$enable_mpi" = x"impi" || test x"$FC" = x"mpiifort" || test x"$F90" = x"mpiifort" ; then
   MPI_LIBS="-lmpi -lmpicxx"
   MPI_FCLIBS="$MPI_LIBS"" -lmpifort"
+  # MPI_LIBS=""
+  # MPI_FCLIBS="$MPI_LIBS"
 else
   MPI_FCLIBS="$MPI_FCLIBS"" -lmpi_cxx"
+  #	MPI_FCLIBS="$MPI_FCLIBS"
 fi
 
 
@@ -269,6 +273,7 @@ if test x"$enable_papi" == x"yes" ; then
   PM_CFLAGS="$PM_CFLAGS"" -DUSE_PAPI"
   CXXFLAGS="$CXXFLAGS"" -DUSE_PAPI"
   CFLAGS="$CFLAGS"" -DUSE_PAPI"
+  FCFLAGS="$FCFLAGS"" -DUSE_PAPI"
   PM_LIBS="-lPM$MPI_EXT -L$PAPI_DIR/lib64 -lpapi -lpfm -L../src_papi_ext -lpapi_ext"
 else
   PM_LIBS="-lPM$MPI_EXT"

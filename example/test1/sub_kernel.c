@@ -1,7 +1,9 @@
-#include <mpi.h>
+#ifdef _OPENMP
+#include <omp.h>
+#endif
 #include <stdio.h>
 #include <math.h>
-#include <omp.h>
+
 #define MATSIZE 1000
 
 extern struct {
