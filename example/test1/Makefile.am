@@ -16,7 +16,7 @@ noinst_PROGRAMS=test1
 DISTCLEANFILES=*~
 CLEANFILES=data/*.log
 
-EXTRA_DIST= Makefile_hand.fx10.login Makefile_hand.intel x.sh
+EXTRA_DIST= Makefile_hand.fx10.login Makefile_hand.intel x.sh sub_kernel.c
 
 
 test1_SOURCES  = pmlib_test.cpp

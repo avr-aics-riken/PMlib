@@ -15,6 +15,15 @@ REVISION HISTORY
 ================
 
 --------------------------
+2015-08-03
+r35 bug fix for pull request #4
+- skip zero count measurement section in PerfMonitor::print()
+- Allow different call counts across MPI ranks
+- updated test programs to allow more compiles, such as intel 2013, intel 2015, gnu 4.8.5.
+- Verifed on Mac OS X 10.8.5
+- some Makefile.am files are updated.
+
+--------------------------
 2015-07-27
 r34 change example build
 - build libPM.a or libPMmpi.a

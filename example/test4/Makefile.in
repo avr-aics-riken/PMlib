@@ -290,7 +290,7 @@ DISTCLEANFILES = *~ test4
 CLEANFILES = data/*.log
 EXTRA_DIST = 
 test4_SOURCES = f_main.f90
-test4_FCFLAGS = -I$(top_srcdir)/include -I@PAPI_DIR@/include @MPI_CFLAGS@
+test4_FCFLAGS = -I$(top_srcdir)/include -I@PAPI_DIR@/include @MPI_CFLAGS@ -fpp
 test4_CXXFLAGS = -I$(top_srcdir)/include -I@PAPI_DIR@/include @MPI_CFLAGS@
 @PAPI_TARGET_FALSE@test4_LDADD = \
 @PAPI_TARGET_FALSE@    -L$(top_builddir)/src -lPM@MPI_EXT@ \
