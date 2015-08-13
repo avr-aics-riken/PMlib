@@ -126,8 +126,8 @@ AC_SUBST(MPI_FCLIBS)
 #
 
 # MPICH
+AC_ARG_WITH(mpich, [AC_HELP_STRING([--with-mpich=dir],[Specify MPICH install directory])], , with_mpich=none)
 if test x"$enable_mpi" = x"none" ; then
-  AC_ARG_WITH(mpich, [AC_HELP_STRING([--with-mpich=dir],[Specify MPICH install directory])], , with_mpich=none)
   if test x"$with_mpich" != x"none" ; then
     MPI_DIR=$with_mpich;
     MPI_CFLAGS=-I$MPI_DIR/include
@@ -136,9 +136,9 @@ if test x"$enable_mpi" = x"none" ; then
   fi
 fi
 
+AC_ARG_WITH(ompi, [AC_HELP_STRING([--with-ompi=dir],[Specify OpenMPI install directory])], , with_ompi=none)
 # OpenMPI // mpichが指定されておらず，かつ，ompiが指定されていれば変数をセット
 if test x"$enable_mpi" = x"none" ; then
-  AC_ARG_WITH(ompi, [AC_HELP_STRING([--with-ompi=dir],[Specify OpenMPI install directory])], , with_ompi=none)
   if test x"$with_ompi" != x"none" ; then
     MPI_DIR=$with_ompi;
     MPI_CFLAGS=-I$MPI_DIR/include
@@ -147,9 +147,9 @@ if test x"$enable_mpi" = x"none" ; then
   fi
 fi
 
+AC_ARG_WITH(impi, [AC_HELP_STRING([--with-impi=dir],[Specify IntelMPI install directory])], , with_impi=none)
 # IntelMPI // mpich/OpenMPIが指定されておらず，かつ，impiが指定されていれば変数をセット
 if test x"$enable_mpi" = x"none" ; then
-  AC_ARG_WITH(impi, [AC_HELP_STRING([--with-impi=dir],[Specify IntelMPI install directory])], , with_impi=none)
   if test x"$with_impi" != x"none" ; then
     MPI_DIR=$with_impi;
     MPI_CFLAGS=-I$MPI_DIR/include
@@ -193,12 +193,19 @@ elif test x"$enable_mpi" = x"ompi" ; then
 elif test x"$enable_mpi" = x"impi" || test x"$FC" = x"mpiifort" || test x"$F90" = x"mpiifort" ; then
   MPI_LIBS="-lmpi -lmpicxx"
   MPI_FCLIBS="$MPI_LIBS"" -lmpifort"
-  # MPI_LIBS=""
-  # MPI_FCLIBS="$MPI_LIBS"
 else
-  MPI_FCLIBS="$MPI_FCLIBS"" -lmpi_cxx"
-  #	MPI_FCLIBS="$MPI_FCLIBS"
+  if test x"$enable_mpi" = x"wrappermpi" ; then
+    # if test x"$with_mpich" != x"none" ; then
+    # fi
+    if test x"$with_ompi" != x"none" ; then
+      MPI_FCLIBS="$MPI_FCLIBS"" -lmpi_cxx"
+      MPI_FCLIBS="$MPI_FCLIBS"
+    fi
+    # if test x"$with_impi" != x"none" ; then
+    # fi
+  fi
 fi
+
 
 
 

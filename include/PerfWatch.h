@@ -176,7 +176,7 @@ namespace pm_lib {
     ///   @param[in] fp 出力ファイルポインタ
     ///   @param[in] totalTime 全排他測定区間での計算時間(平均値)の合計
     ///   @param[in] p_group プロセスグループ番号。0の時は全プロセスを対象とする
-    ///   @param[in] pp_ranks int**型 groupを構成するrank番号配列へのポインタ
+    ///   @param[in] pp_ranks int*型 groupを構成するrank番号配列へのポインタ
     ///
     ///   @note ランク0プロセスからのみ呼び出し可能
     ///
@@ -212,7 +212,7 @@ namespace pm_lib {
     ///   @param[in] fp 出力ファイルポインタ
     ///   @param[in] s_label 区間のラベル
     ///   @param[in] p_group プロセスグループ番号。0の時は全プロセスを対象とする
-    ///   @param[in] pp_ranks int**型 groupを構成するrank番号配列へのポインタ
+    ///   @param[in] pp_ranks int*型 groupを構成するrank番号配列へのポインタ
     ///
     ///   @note ランク0プロセスからのみ呼び出し可能
     ///

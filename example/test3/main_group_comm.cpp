@@ -97,6 +97,7 @@ int main (int argc, char *argv[])
 
 	PM.gather();
 	PM.print(stdout, "", "Mr. Bean");
+	//	PM.printDetail(stdout, 1);
 	PM.printDetail(stdout);
 
 
@@ -107,21 +108,6 @@ int main (int argc, char *argv[])
 	int i_group2;
 	int new_size2;
 	int* p2_my_id;
-
-/*
-  void PerfMonitor::printGroup(FILE* fp, int p_group, int p_comm, int* pp_ranks)
-
-  /// プロセスグループ単位でのHWPC計測結果、MPIランク別詳細レポート出力
-  ///
-  ///   @param[in] fp 出力ファイルポインタ
-  ///   @param[in] p_group MPI_Group型 groupのgroup handle
-  ///   @param[in] p_comm  MPI_Comm型 groupに対応するcommunicator
-  ///   @param[in] pp_ranks int**型 groupを構成するrank番号配列へのポインタ
-  ///
-  ///   @note プロセスグループは呼び出しプログラムが定義する
-  ///   @note MPI_Group型, MPI_Comm型は int *型とコンパチ
-  ///
-*/
 
 	MPI_Finalize();
 	return 0;

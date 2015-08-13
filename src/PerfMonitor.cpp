@@ -207,7 +207,7 @@ namespace pm_lib {
   }
 
 
-  /// 測定結果の基本統計情報を出力.
+  /// 測定結果の基本統計レポートを出力.
   ///
   ///   排他測定区間のみ
   ///   @param[in] fp           出力ファイルポインタ
@@ -408,21 +408,24 @@ namespace pm_lib {
   }
   
   
-  
-  /// HWPC計測結果、MPIランク別詳細レポートを出力. 非排他測定区間も出力
+  /// MPIランク別詳細レポート、HWPC詳細レポートを出力。 非排他測定区間も出力
   ///
   ///   @param[in] fp 出力ファイルポインタ
-  ///   @param[in] th2proc bool型 スレッドの値を親プロセスに合算する(true)
-  ///   @param[in] legend  bool型 Legendの表示を行なう(true)
+  ///   @param[in] legend HWPC 記号説明の表示(0:なし、1:表示する) (optional)
   ///
-  ///   @note 全プロセスの情報が PerfWatch::gather() によってrank 0に集計すみ
+  ///   @note 本APIよりも先にPerfWatch::gather()を呼び出しておく必要が有る
+  ///         HWPC値は各プロセス毎に子スレッドの値を合算して表示する
   ///
-  void PerfMonitor::printDetail(FILE* fp, bool th2proc, bool legend)
+  void PerfMonitor::printDetail(FILE* fp, int legend)
   {
+
+    //   全プロセスの情報が PerfWatch::gather() によりrank 0に集計ずみのはず
     if (!m_gathered) {
       fprintf(stderr, "\n\t*** PerfMonitor gather() must be called before printDetail().\n");
       PM_Exit(0);
     }
+    //        HWPC値を各スレッド毎にブレークダウンして表示する機能は今後開発
+    //        lsum2p HWPCのスレッド毎表示(0:なし、1:表示する)
 
     // 	I. MPIランク別詳細レポート: MPIランク別測定結果を出力
     if (my_rank == 0) {
@@ -456,10 +459,11 @@ namespace pm_lib {
     }
 
     if (my_rank == 0) {
-        // Legend の出力方法はPerfMonitorクラスのメンバに修正する。
-        // とりあえずコメントアウトしておく。
-        //	m_total.printHWPCLegend(fp);
+      // HWPC Legend の表示はPerfMonitorクラスメンバとして分離する方が良いかも
+      if (legend == 1) {
+        m_total.printHWPCLegend(fp);
         ;
+      }
     }
   }
   
@@ -467,15 +471,15 @@ namespace pm_lib {
   /// プロセスグループ単位でのHWPC計測結果、MPIランク別詳細レポート出力
   ///
   ///   @param[in] fp 出力ファイルポインタ
-  ///   @param[in] group    int型 group番号 (optional)
   ///   @param[in] p_group  MPI_Group型 groupのgroup handle
   ///   @param[in] p_comm   MPI_Comm型 groupに対応するcommunicator
-  ///   @param[in] pp_ranks int**型 groupを構成するrank番号配列へのポインタ
+  ///   @param[in] pp_ranks int*型 groupを構成するrank番号配列へのポインタ
+  ///   @param[in] group    int型 プロセスグループ番号 (optional)
+  ///   @param[in] legend   int型 HWPC 記号説明の表示(0:表示、1:無) (optional)
   ///
   ///   @note プロセスグループは呼び出しプログラムが定義する
-  ///   @note MPI_Group型, MPI_Comm型は int *型とコンパチ
   ///
-  void PerfMonitor::printGroup(FILE* fp, MPI_Group p_group, MPI_Comm p_comm, int* pp_ranks, int group)
+  void PerfMonitor::printGroup(FILE* fp, MPI_Group p_group, MPI_Comm p_comm, int* pp_ranks, int group, int legend)
   {
     if (!m_gathered) {
       fprintf(stderr, "\n\t*** PerfMonitor gather() must be called before printGroup().\n");
@@ -519,7 +523,11 @@ namespace pm_lib {
     }
 
     if (my_rank == 0) {
+      // HWPC Legend の表示はPerfMonitorクラスメンバとして分離する方が良いかも
+      if (legend == 1) {
         m_total.printHWPCLegend(fp);
+        ;
+      }
     }
 
   }

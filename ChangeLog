@@ -15,6 +15,12 @@ REVISION HISTORY
 ================
 
 --------------------------
+2015-08-13
+update for multi platform build.
+- configure.ac for multiplatform
+- fortran interface modified to cover different compilers
+
+--------------------------
 2015-07-27
 r34 change example build
 - build libPM.a or libPMmpi.a
