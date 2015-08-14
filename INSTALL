@@ -82,17 +82,10 @@ F90FLAGS=FORTRAN90_OPTIONS
 
 Here is examples.
 
-# Using GNU compiler, serial version
+===
+## INTEL COMPILER
 
-$ ../configure --prefix=${FFV_HOME}PMlib CXX=g++ CXXFLAGS="-O3 -fopenmp"
-
-
-# Specify install directory, mpi library and compiler
-
-$ ../configure --prefix=${FFV_HOME}/PMlib --with-ompi=/opt/openmpi CXX=icpc CXXFLAGS="-O3 -openmp"
-
-
-# Using a wrapper compiler (Intel) /w example
+# Using a wrapper compiler /w example
 
 $ ../configure --prefix=${FFV_HOME}/PMlib \
                --with-comp=INTEL \
@@ -105,23 +98,71 @@ $ ../configure --prefix=${FFV_HOME}/PMlib \
                F90FLAGS="-O3 -openmp"
 
 
-# Using a wrapper compiler (Intel) with PAPI, examples
+# Using a wrapper compiler with PAPI, examples
 
 $ ../configure CXX=mpicxx \
                CXXFLAGS="-O3 -openmp" \
                CC=mpicc \
                CFLAGS="-O3 -openmp" \
-               --with-papi=/usr/local/papi/papi-5.2.0/intel \
-               --with-example=yes \
                F90=mpif90 \
-               F90FLAGS=-O3
+               F90FLAGS="-O3 -openmp" \
+               --with-papi=/usr/local/papi/papi-5.2.0/intel \
+               --with-example=yes
 
 
-# Using a wrapper compiler (GNU) with default install directory
+# for serial /w example
 
-$ ../configure CXX=mpicxx CXXFLAGS="-O3 -fopenmp"
+$ ../configure --prefix=${FFV_HOME}/PMlib \
+               --with-comp=INTEL \
+               --with-example=yes \
+               CXX=icpc \
+               CXXFLAGS="-O3 -openmp" \
+               CC=icc \
+               CFLAGS="-O3 -openmp" \
+               F90=ifort \
+               F90FLAGS="-O3 -openmp"
 
 
+# Specify install directory, mpi library and compiler
+
+$ ../configure --prefix=${FFV_HOME}/PMlib
+               --with-comp=INTEL \
+               --with-ompi=/opt/openmpi \
+               CXX=icpc \
+               CXXFLAGS="-O3 -openmp" \
+               CC=icc \
+               CFLAGS="-O3 -openmp" \
+               F90=ifort \
+               F90FLAGS="-O3 -openmp"
+
+===
+## GNU compiler
+
+# serial version
+
+$ ../configure --prefix=${FFV_HOME}PMlib \
+               CXX=g++ \
+               CXXFLAGS="-O3 -fopenmp" \
+               CC=gcc \
+               CFLAGS="-O3 -fopenmp" \
+               F90=gfortran \
+               F90FLAGS="-O3 -fopenmp"
+
+
+# Using a wrapper compiler /w example
+
+$ ../configure --prefix=${FFV_HOME}/PMlib \
+               --with-comp=GNU \
+               --with-example=yes \
+               CXX=mpicxx \
+               CXXFLAGS="-O3 -fopenmp" \
+               CC=mpicc \
+               CFLAGS="-O3 -fopenmp" \
+               F90=mpif90 \
+               F90FLAGS="-O3 -fopenmp"
+
+===
+## FUJITSU
 
 # FX, K computer, compilation on compute nodes
 
@@ -132,7 +173,6 @@ $ ../configure --prefix=${FFV_HOME}/PMlib \
                CFLAGS="-Kfast,parallel,openmp -Nrt_notune" \
                CXX=mpiFCC \
                CXXFLAGS="-Kfast,parallel,openmp -Nrt_notune"
-
 
 
 # FX, K computer, compilation on login nodes

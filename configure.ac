@@ -15,7 +15,7 @@
 
 AC_PREREQ([2.57])
 
-AC_INIT([PMlib], [4.0.2], [keno@riken.jp],[PMlib])
+AC_INIT([PMlib], [4.1.0], [keno@riken.jp],[PMlib])
 
 echo "----------------------------------------"
 echo "Running PMlib Configure Script"
@@ -64,7 +64,7 @@ AM_INIT_AUTOMAKE()
 # revision No.
 #
 
-PM_REVISION="20150803_1200"
+PM_REVISION="20150814_1300"
 AC_SUBST(PM_REVISION)
 
 
@@ -196,8 +196,16 @@ elif test x"$enable_mpi" = x"impi" || test x"$FC" = x"mpiifort" || test x"$F90" 
   # MPI_LIBS=""
   # MPI_FCLIBS="$MPI_LIBS"
 else
-  MPI_FCLIBS="$MPI_FCLIBS"" -lmpi_cxx"
-  #	MPI_FCLIBS="$MPI_FCLIBS"
+  if test x"$enable_mpi" = x"wrappermpi" ; then
+    # if test x"$with_mpich" != x"none" ; then
+    # fi
+    if test x"$with_ompi" != x"none" ; then
+      MPI_FCLIBS="$MPI_FCLIBS"" -lmpi_cxx"
+      MPI_FCLIBS="$MPI_FCLIBS"
+    fi
+    # if test x"$with_impi" != x"none" ; then
+    # fi
+  fi
 fi
 
 

@@ -16,10 +16,10 @@ noinst_PROGRAMS=test1
 DISTCLEANFILES=*~
 CLEANFILES=data/*.log
 
-EXTRA_DIST= Makefile_hand.fx10.login Makefile_hand.intel x.sh sub_kernel.c
+EXTRA_DIST= Makefile_hand.fx10.login Makefile_hand.intel x.sh
 
 
-test1_SOURCES  = pmlib_test.cpp
+test1_SOURCES  = pmlib_test.cpp sub_kernel.c
 test1_CFLAGS = -I$(top_srcdir)/include -I@PAPI_DIR@/include @MPI_CFLAGS@
 test1_CXXFLAGS = -I$(top_srcdir)/include -I@PAPI_DIR@/include @MPI_CFLAGS@
 #     -std=c99 -g -DSTATIC_PAPI_EVENTS_TABLE -D_REENTRANT -D_GNU_SOURCE -DUSE_COMPILER_TLS  -DPAPI_NO_MEMORY_MANAGEMENT -DUSE_PAPI

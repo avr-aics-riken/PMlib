@@ -350,7 +350,7 @@ namespace pm_lib {
   ///   @param[in] fp 出力ファイルポインタ
   ///   @param[in] totalTime 全排他測定区間での計算時間(平均値)の合計
   ///   @param[in] p_group プロセスグループ番号。0の時は全プロセスを対象とする。
-  ///   @param[in] pp_ranks int**型 groupを構成するrank番号配列へのポインタ
+  ///   @param[in] pp_ranks int*型 groupを構成するrank番号配列へのポインタ
   ///
   ///   @note ノード0からのみ呼び出し可能
   ///
@@ -462,7 +462,7 @@ namespace pm_lib {
   ///   @param[in] fp 出力ファイルポインタ
   ///   @param[in] s_label 区間のラベル
   ///   @param[in] p_group プロセスグループ番号。0の時は全プロセスを対象とする。
-  ///   @param[in] pp_ranks int**型 groupを構成するrank番号配列へのポインタ
+  ///   @param[in] pp_ranks int*型 groupを構成するrank番号配列へのポインタ
   ///
   ///   @note ノード0からのみ呼び出し可能
   ///
@@ -593,12 +593,15 @@ namespace pm_lib {
 
   /// 測定区間ストップ.
   ///
-  ///   @param[in] flopPerTask 「タスク」あたりの計算量/通信量(バイト)
-  ///   @param[in] iterationCount  実行「タスク」数
+  ///   @param[in] flopPerTask 「タスク」あたりの計算量(Flop)または通信量(Byte)
+  ///   @param[in] iterationCount  「タスク」実行回数
   ///
-  ///   @note 引数はオプション
-  ///   指定されない場合はHWPC_CHOOSERの設定によりHWPC内部で自動計測する
-  ///   自動計測されたイベントは <sortPapiCounterList> で分析する
+  ///   @note  計算量または通信量をユーザが引数で明示的に指定する場合は、
+  ///          そのボリュームは１区間１回あたりでflopPerTask*iterationCount
+  ///          として算出される
+  ///          引数で指定されない場合はHWPC内部で自動計測する
+  ///          さらにHWPCも利用不可の場合は、ボリュームは0と算出される
+  ///          さらに詳細な説明がソースプログラム中にコメントされている
   ///
   void PerfWatch::stop(double flopPerTask, unsigned iterationCount)
   {
@@ -611,6 +614,43 @@ namespace pm_lib {
     m_count++;
     m_started = false;
     if (m_exclusive) ExclusiveStarted = false;
+
+    /*
+    出力レポートに表示される情報は以下の３つの組み合わせで決める
+    (1) ::setProperties(区間名, type, exclusive)
+	    第2引数typeはCALC:計算, COMM:通信で、ユーザ申告モードのみ有効
+	    ⇒　PAPI利用時には対応するモードが自動的に決まる
+    (2) ::stop (区間名, fP, iC)
+	    第2引数fpは測定量をあらわし、浮動小数点演算数あるいはデータ移動量
+    (3) 環境変数HWPC_CHOOSERの値: [FLOPS|VECTOR|BANDWIDTH|CACHE|NONE]
+	    値がNONE あるいは指定が無い場合にはユーザ申告値を利用するモードになる
+        さらに HWPC/PAPIが利用できるか否かでさらに選択の方針が増える
+        下記(A)(B)参照
+    (A) HWPC/PAPIが利用できないプラットフォームではユーザ申告値を利用する。
+        fp引数の有無により出力内容がかわる。
+        環境変数HWPC_CHOOSERは無視されHWPCレポートはない
+
+        setProperties()  stop()
+        type引数         fP引数     基本・詳細レポート出力
+        ---------------------------------------------------------
+        CALC	         指定あり   時間、fP引数によるFlops
+        COMM		     指定あり   時間、fP引数によるByte/s
+        任意             指定なし   時間のみ
+
+    (B) HWPC/PAPIが利用可能なプラットフォーム
+        環境変数HWPC_CHOOSERの値によりユーザ申告値を用いるかPAPI情報を用いるかを切り替える。
+
+        環境変数     setProperties()の  stop()の
+        HWPC_CHOOSER    type引数        fP引数       基本・詳細レポート出力      HWPCレポート出力
+        ------------------------------------------------------------------------------------------
+	    NONE (無指定)   CALC            指定値       時間、fP引数によるFlops	 なし
+	    NONE (無指定)   COMM            指定値       時間、fP引数によるByte/s    なし
+        FLOPS           無視            無視         時間、HWPC自動計測Flops     FLOPSに関連するHWPC統計情報
+        VECTOR          無視            無視         時間、HWPC自動計測SIMD率    VECTORに関連するHWPC統計情報
+        BANDWIDTH       無視            無視         時間、HWPC自動計測Byte/s    BANDWIDTHに関連するHWPC統計情報
+        CACHE           無視            無視         時間、HWPC自動計測L1$,L2$   CACHEに関連するHWPC統計情報
+     */
+
 
 #ifdef USE_PAPI
 	#pragma omp parallel
@@ -646,14 +686,15 @@ namespace pm_lib {
 		my_papi.accumu[i] += my_papi.values[i];
 	}
 
-	// Only the user provided arguments are checked here
-	if (flopPerTask > 0.0) {
-		// The user provided the flopPerTask value
+	// ユーザが引数で妥当な計算量を明示的に指定したかどうかのチェック
+	if (flopPerTask > 0.0 && iterationCount > 0) {
+		// 計算量または通信量をユーザが引数で明示的に指定した
     	m_flop += (double)flopPerTask * iterationCount;
 	} else {
-		// The user did not provide the flopPerTask value
+		// 引数での指定がない
+		// 自動計測されたHWPCイベントを後続の <sortPapiCounterList> で分析する
+		;
 	}
-
 
 	#ifdef DEBUG_PRINT_PAPI
     if (my_rank == 0) {

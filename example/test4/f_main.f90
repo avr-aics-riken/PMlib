@@ -36,14 +36,14 @@
 
 	call f_pm_start ("1-subinit")
 	call subinit (msize,n,a,b,c)
-	call f_pm_stop ("1-subinit")
+	call f_pm_stop ("1-subinit", 0.0, 0)
 
 	dpt0=dptime_omp()
 	loops=3
 	do i=1,loops
 	call f_pm_start ("2-submtxm")
 	call submtxm (msize,n,dflop,a,b,c)
-	call f_pm_stop ("2-submtxm")
+	call f_pm_stop ("2-submtxm", 0.0, 0)
 	end do
 
 	dpt1=dptime_omp()
@@ -53,8 +53,8 @@
 	write(11,*)  'output for unit 11', c(1,11), c(msize,msize)
 
 	call f_pm_gather ()
-	call f_pm_print ()
-	call f_pm_printdetail ()
+	call f_pm_print ("pmlib_report.txt")
+	call f_pm_printdetail ("pmlib_report.txt",1)
 	call MPI_Finalize( ierr )
 	stop
 	end

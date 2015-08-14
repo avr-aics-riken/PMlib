@@ -143,7 +143,7 @@ namespace pm_lib {
     }
 
     
-    /// 測定スタート.
+    /// 測定区間スタート
     ///
     ///   @param[in] label ラベル文字列。測定区間を識別するために用いる。
     ///
@@ -156,11 +156,11 @@ namespace pm_lib {
 		#endif
     }
     
-    /// 測定ストップ.
+    /// 測定区間ストップ
     ///
     ///   @param[in] label ラベル文字列。測定区間を識別するために用いる。
-    ///   @param[in] flopPerTask 「タスク」あたりの計算量/通信量(バイト) (ディフォルト0)
-    ///   @param[in] iterationCount  実行「タスク」数 (ディフォルト1)
+    ///   @param[in] flopPerTask あたりの計算量(Flop)または通信量(Byte):省略値0
+    ///   @param[in] iterationCount  「タスク」実行回数:省略値1
     ///
     void stop(const std::string& label, double flopPerTask=0.0, unsigned iterationCount=1) {
       int key = key_perf_label(label);
@@ -177,7 +177,7 @@ namespace pm_lib {
     void gather(void);
 
     
-    /// 測定結果の基本統計情報を出力.
+    /// 測定結果の基本統計レポートを出力.
     ///
     ///   排他測定区間のみ
     ///   @param[in] fp           出力ファイルポインタ
@@ -189,30 +189,30 @@ namespace pm_lib {
     void print(FILE* fp, const std::string hostname, const std::string operatorname);
 
     
-    /// 詳細な測定結果を出力.
-    /// MPIランク別詳細レポート、HWPC計測結果を出力. 非排他測定区間も出力
+    /// MPIランク別詳細レポート、HWPC詳細レポートを出力。 非排他測定区間も出力
     ///
     ///   @param[in] fp 出力ファイルポインタ
-    ///   @param[in] th2proc bool型 スレッドの値を親プロセスに合算する(true)
-    ///   @param[in] legend  bool型 Legendの表示を行なう(true)
+    ///   @param[in] legend HWPC 記号説明の表示(0:なし、1:表示する) (optional)
     ///
-    ///   @note 全プロセスの情報が PerfWatch::gather() によってrank 0に集計すみ
+    ///   @note 本APIよりも先にPerfWatch::gather()を呼び出しておく必要が有る
+    ///         HWPC値は各プロセス毎に子スレッドの値を合算して表示する
     ///
-    void printDetail(FILE* fp, bool th2proc=true, bool legend=true);
-    
+    void printDetail(FILE* fp, int legend=0);
 
-  /// プロセスグループ単位でのHWPC計測結果、MPIランク別詳細レポート出力
-  ///
-  ///   @param[in] fp 出力ファイルポインタ
-  ///   @param[in] p_group  MPI_Group型 groupのgroup handle
-  ///   @param[in] p_comm   MPI_Comm型 groupに対応するcommunicator
-  ///   @param[in] pp_ranks int**型 groupを構成するrank番号配列へのポインタ
-  ///   @param[in] group    int型 group番号 (optional)
-  ///
-  ///   @note プロセスグループは呼び出しプログラムが定義する
-  ///   @note MPI_Group型, MPI_Comm型は int *型とコンパチ
-  ///
-  void printGroup(FILE* fp, MPI_Group p_group, MPI_Comm p_comm, int* pp_ranks, int group=0);
+
+    
+    /// プロセスグループ単位でのMPIランク別詳細レポート、HWPC詳細レポート出力
+    ///
+    ///   @param[in] fp 出力ファイルポインタ
+    ///   @param[in] p_group  MPI_Group型 groupのgroup handle
+    ///   @param[in] p_comm   MPI_Comm型 groupに対応するcommunicator
+    ///   @param[in] pp_ranks int*型 groupを構成するrank番号配列へのポインタ
+    ///   @param[in] group    int型 プロセスグループ番号 (optional)
+    ///   @param[in] legend   int型 HWPC 記号説明の表示(0:表示、1:無) (optional)
+    ///
+    ///   @note プロセスグループは呼び出しプログラムが定義する
+    ///
+    void printGroup(FILE* fp, MPI_Group p_group, MPI_Comm p_comm, int* pp_ranks, int group=0, int legend=0);
 
     /**
      * @brief PMlibバージョン番号の文字列を返す
@@ -262,4 +262,5 @@ namespace pm_lib {
 } /* namespace pm_lib */
 
 #endif // _PM_PERFMONITOR_H_
+
 

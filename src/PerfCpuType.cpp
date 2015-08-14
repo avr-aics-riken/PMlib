@@ -517,7 +517,7 @@ void PerfWatch::outputPapiCounterList (FILE* fp)
   ///
   ///   @param[in] fp 出力ファイルポインタ
   ///   @param[in] p_group プロセスグループ番号。0の時は全プロセスを対象とする。
-  ///   @param[in] pp_ranks int**型 groupを構成するrank番号配列へのポインタ
+  ///   @param[in] pp_ranks int*型 groupを構成するrank番号配列へのポインタ
   ///
 void PerfWatch::outputPapiCounterGroup (FILE* fp, MPI_Group p_group, int* pp_ranks)
 {

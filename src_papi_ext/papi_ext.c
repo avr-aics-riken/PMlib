@@ -70,7 +70,7 @@ int my_papi_add_events ( int *events, int num_events)
 	#endif
 
 	if ( num_events == 0 ) {
-		fprintf(stderr,"*** info <my_papi_add_events> No event\n");
+		//	fprintf(stderr,"*** info <my_papi_add_events> No event\n");
 		return PAPI_OK;
 	}
 
