@@ -16,6 +16,8 @@ REVISION HISTORY
 
 --------------------------
 2015-08-14
+r37 modify INSTALL and test4/Makefile.am
+
 r36 update for multi platform build.
 - configure.ac for multiplatform
 - fortran interface modified to cover different compilers

@@ -95,7 +95,7 @@ $ ../configure --prefix=${FFV_HOME}/PMlib \
                CC=mpicc \
                CFLAGS="-O3 -openmp" \
                F90=mpif90 \
-               F90FLAGS="-O3 -openmp"
+               F90FLAGS="-fpp -O3 -openmp"
 
 
 # Using a wrapper compiler with PAPI, examples
@@ -105,7 +105,22 @@ $ ../configure CXX=mpicxx \
                CC=mpicc \
                CFLAGS="-O3 -openmp" \
                F90=mpif90 \
-               F90FLAGS="-O3 -openmp" \
+               F90FLAGS="-fpp -O3 -openmp" \
+               --with-comp=INTEL \
+               --with-papi=/usr/local/papi/papi-5.2.0/intel \
+               --with-example=yes
+
+
+# Using a wrapper compiler, intel MPI, with PAPI, examples
+
+$ ../configure CXX=mpicxx \
+               CXXFLAGS="-O3 -openmp" \
+               CC=mpicc \
+               CFLAGS="-O3 -openmp" \
+               F90=mpif90 \
+               F90FLAGS="-fpp -O3 -openmp" \
+               --with-impi \
+               --with-comp=INTEL \
                --with-papi=/usr/local/papi/papi-5.2.0/intel \
                --with-example=yes
 
@@ -120,7 +135,7 @@ $ ../configure --prefix=${FFV_HOME}/PMlib \
                CC=icc \
                CFLAGS="-O3 -openmp" \
                F90=ifort \
-               F90FLAGS="-O3 -openmp"
+               F90FLAGS="-fpp -O3 -openmp"
 
 
 # Specify install directory, mpi library and compiler
@@ -133,7 +148,7 @@ $ ../configure --prefix=${FFV_HOME}/PMlib
                CC=icc \
                CFLAGS="-O3 -openmp" \
                F90=ifort \
-               F90FLAGS="-O3 -openmp"
+               F90FLAGS="-fpp -O3 -openmp"
 
 ===
 ## GNU compiler
@@ -146,7 +161,7 @@ $ ../configure --prefix=${FFV_HOME}PMlib \
                CC=gcc \
                CFLAGS="-O3 -fopenmp" \
                F90=gfortran \
-               F90FLAGS="-O3 -fopenmp"
+               F90FLAGS="-fpp -O3 -fopenmp"
 
 
 # Using a wrapper compiler /w example
@@ -159,7 +174,7 @@ $ ../configure --prefix=${FFV_HOME}/PMlib \
                CC=mpicc \
                CFLAGS="-O3 -fopenmp" \
                F90=mpif90 \
-               F90FLAGS="-O3 -fopenmp"
+               F90FLAGS="-fpp -O3 -fopenmp"
 
 ===
 ## FUJITSU
