@@ -138,7 +138,20 @@ $ ../configure --prefix=${FFV_HOME}/PMlib \
                F90FLAGS="-fpp -O3 -openmp"
 
 
-# Specify install directory, mpi library and compiler
+# for serial /w example /wo openmp
+
+$ ../configure --prefix=/usr/local/PMlib \
+              --with-comp=INTEL \
+              --with-example=yes \
+              CXX=icpc \
+              CXXFLAGS="-O3" \
+              CC=icc \
+              CFLAGS="-O3" \
+              F90=ifort \
+              F90FLAGS="-fpp -O3"
+
+
+# Specify install directory, mpi library and compiler, alternattion /w MPI build
 
 $ ../configure --prefix=${FFV_HOME}/PMlib
                --with-comp=INTEL \

@@ -15,6 +15,10 @@ REVISION HISTORY
 ================
 
 --------------------------
+2015-08-16
+r38 modify configure.ac and update INSTALL
+
+--------------------------
 2015-08-14
 r37 modify INSTALL and test4/Makefile.am
 

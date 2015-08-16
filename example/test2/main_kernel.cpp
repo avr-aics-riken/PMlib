@@ -12,7 +12,7 @@
 	char parallel_mode[] = "Hybrid";
 	//	char parallel_mode[] = "OpenMP";
 #else
-	//	char parallel_mode[] = "Serial";
+	char parallel_mode[] = "Serial";
 	//	char parallel_mode[] = "FlatMPI";
 #endif
 #include <PerfMonitor.h>

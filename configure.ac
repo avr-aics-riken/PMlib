@@ -15,7 +15,7 @@
 
 AC_PREREQ([2.57])
 
-AC_INIT([PMlib], [4.1.1], [keno@riken.jp],[PMlib])
+AC_INIT([PMlib], [4.1.2], [keno@riken.jp],[PMlib])
 
 echo "----------------------------------------"
 echo "Running PMlib Configure Script"
@@ -64,7 +64,7 @@ AM_INIT_AUTOMAKE()
 # revision No.
 #
 
-PM_REVISION="20150814_1300"
+PM_REVISION="20150816_1700"
 AC_SUBST(PM_REVISION)
 
 
@@ -159,19 +159,6 @@ if test x"$enable_mpi" = x"none" ; then
 fi
 
 
-#
-# Serial / MPI
-#
-
-if test x"$enable_mpi" = x"none" ; then
-  CXXFLAGS="$CXXFLAGS -D_PM_WITHOUT_MPI_"
-  CFLAGS="$CFLAGS -D_PM_WITHOUT_MPI_"
-  FCFLAGS="$FCFLAGS -D_PM_WITHOUT_MPI_"
-  MPI_EXT=""
-else
-  MPI_EXT="mpi"
-fi
-
 
 #
 # MPI Library for fortran
@@ -246,7 +233,18 @@ if test x"_$FCFLAGS" = x"_"; then
 fi
 
 
+#
+# Serial / MPI
+#
 
+if test x"$enable_mpi" = x"none" ; then
+  CXXFLAGS="$CXXFLAGS -D_PM_WITHOUT_MPI_"
+  CFLAGS="$CFLAGS -D_PM_WITHOUT_MPI_"
+  FCFLAGS="$FCFLAGS -D_PM_WITHOUT_MPI_"
+  MPI_EXT=""
+else
+  MPI_EXT="mpi"
+fi
 
 
 #
