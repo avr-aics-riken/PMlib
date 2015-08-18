@@ -90,7 +90,13 @@ void f_pm_initialize_ (int& init_nWatch)
 ///
 void f_pm_setproperties_ (char* fc, int& f_type, int& f_exclusive, int fc_size)
 {
-	std::string s=fc;
+	//	Note on fortran character 2 C++ string
+	//	Although the auto appended fc_size argument value is correct,
+	//	fortran character string is not terminated with NUL
+	//	A simple conversion such as below is not safe.
+	//		std::string s=fc;
+	//	So, we do explicit string conversion here...
+	std::string s=std::string(fc,fc_size);
 	bool exclusive;
     PerfMonitor::Type arg_type; /// 測定対象タイプ from PerfMonitor.h
 
@@ -134,7 +140,7 @@ void f_pm_setproperties_ (char* fc, int& f_type, int& f_exclusive, int fc_size)
 ///
 void f_pm_start_ (char* fc, int fc_size)
 {
-	std::string s=fc;
+	std::string s=std::string(fc,fc_size);
 
 #ifdef DEBUG_FORT
 	fprintf(stderr, "<f_pm_start_> fc=%s, fc_size=%d\n", fc, fc_size);
@@ -169,7 +175,7 @@ void f_pm_start_ (char* fc, int fc_size)
 ///
 void f_pm_stop_ (char* fc, double& fpt, unsigned& tic, int fc_size)
 {
-	std::string s=fc;
+	std::string s=std::string(fc,fc_size);
 
 #ifdef DEBUG_FORT
 	fprintf(stderr, "<f_pm_stop_> fc=%s, fpt=%8.0lf, tic=%d, fc_size=%d\n", fc, fpt, tic, fc_size);
@@ -209,7 +215,7 @@ void f_pm_gather_ (void)
 void f_pm_print_ (char* fc, int fc_size)
 {
 	FILE *fp;
-	std::string s=fc;
+	std::string s=std::string(fc,fc_size);
 #ifdef DEBUG_FORT
 	fprintf(stderr, "<f_pm_print_> fc=%s, fc_size=%d\n", fc, fc_size);
 #endif
@@ -223,18 +229,27 @@ void f_pm_print_ (char* fc, int fc_size)
 	} else {
 		h=hostname;
 	}
-	if (s == "" || fc_size == 0) {
-		// filename is null. PMlib report is merged to stdout
+
+	int user_file;
+	if (s == "" || fc_size == 0) { // if filename is null, report to stdout
 		fp=stdout;
+		user_file=0;
 	} else {
-		fp=fopen(fc,"w+");
+		fp=fopen(fc,"a");
 		if (fp == NULL) {
 			fprintf(stderr, "*** warning <f_pm_print_> can not open: %s\n", fc);
 			fp=stdout;
+			user_file=0;
+		} else {
+			user_file=1;
 		}
 	}
-
 	PM.print(fp, h, u);
+
+	if (user_file == 1) {
+		fclose(fp);
+	}
+
 	return;
 }
 
@@ -252,22 +267,31 @@ void f_pm_print_ (char* fc, int fc_size)
 void f_pm_printdetail_ (char* fc, int& legend, int fc_size)
 {
 	FILE *fp;
-	std::string s=fc;
+	std::string s=std::string(fc,fc_size);
 #ifdef DEBUG_FORT
 	fprintf(stderr, "<f_pm_printdetail_> fc=%s, legend=%d, fc_size=%d \n", fc, legend, fc_size);
 #endif
 
-	if (s == "" || fc_size == 0) {
-		// filename is null. PMlib report is merged to stdout
+	int user_file;
+	if (s == "" || fc_size == 0) { // if filename is null, report to stdout
 		fp=stdout;
+		user_file=0;
 	} else {
-		fp=fopen(fc,"w+");
+		fp=fopen(fc,"a");
 		if (fp == NULL) {
 			fprintf(stderr, "*** warning <f_pm_printdetail_> can not open: %s\n", fc);
 			fp=stdout;
+			user_file=0;
+		} else {
+			user_file=1;
 		}
 	}
 	PM.printDetail(fp, legend);
+
+	if (user_file == 1) {
+		fclose(fp);
+	}
+
 	return;
 }
 
@@ -292,7 +316,7 @@ void f_pm_printgroup_ (char* fc, MPI_Group p_group, MPI_Comm p_comm, int* pp_ran
 
 {
 	FILE *fp;
-	std::string s=fc;
+	std::string s=std::string(fc,fc_size);
 #ifdef DEBUG_FORT
 	fprintf(stderr, "<f_pm_printdetail_> fc=%s, group=%d, legend=%d, fc_size=%d \n", fc, group, legend, fc_size);
 #endif
