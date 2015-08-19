@@ -64,7 +64,7 @@ AM_INIT_AUTOMAKE()
 # revision No.
 #
 
-PM_REVISION="20150818_1000"
+PM_REVISION="20150816_1700"
 AC_SUBST(PM_REVISION)
 
 
@@ -125,11 +125,9 @@ AC_SUBST(MPI_FCLIBS)
 # if wrapper compiler is specified, skip this part
 #
 
-AC_ARG_WITH(mpich, [AC_HELP_STRING([--with-mpich=dir],[Specify MPICH install directory])], , with_mpich=none)
-AC_ARG_WITH(ompi, [AC_HELP_STRING([--with-ompi=dir],[Specify OpenMPI install directory])], , with_ompi=none)
-AC_ARG_WITH(impi, [AC_HELP_STRING([--with-impi=dir],[Specify IntelMPI install directory])], , with_impi=none)
 # MPICH
 if test x"$enable_mpi" = x"none" ; then
+  AC_ARG_WITH(mpich, [AC_HELP_STRING([--with-mpich=dir],[Specify MPICH install directory])], , with_mpich=none)
   if test x"$with_mpich" != x"none" ; then
     MPI_DIR=$with_mpich;
     MPI_CFLAGS=-I$MPI_DIR/include
@@ -140,6 +138,7 @@ fi
 
 # OpenMPI // mpichが指定されておらず，かつ，ompiが指定されていれば変数をセット
 if test x"$enable_mpi" = x"none" ; then
+  AC_ARG_WITH(ompi, [AC_HELP_STRING([--with-ompi=dir],[Specify OpenMPI install directory])], , with_ompi=none)
   if test x"$with_ompi" != x"none" ; then
     MPI_DIR=$with_ompi;
     MPI_CFLAGS=-I$MPI_DIR/include
@@ -150,6 +149,7 @@ fi
 
 # IntelMPI // mpich/OpenMPIが指定されておらず，かつ，impiが指定されていれば変数をセット
 if test x"$enable_mpi" = x"none" ; then
+  AC_ARG_WITH(impi, [AC_HELP_STRING([--with-impi=dir],[Specify IntelMPI install directory])], , with_impi=none)
   if test x"$with_impi" != x"none" ; then
     MPI_DIR=$with_impi;
     MPI_CFLAGS=-I$MPI_DIR/include
@@ -158,19 +158,6 @@ if test x"$enable_mpi" = x"none" ; then
   fi
 fi
 
-
-#
-# Serial / MPI
-#
-
-if test x"$enable_mpi" = x"none" ; then
-  CXXFLAGS="$CXXFLAGS -D_PM_WITHOUT_MPI_"
-  CFLAGS="$CFLAGS -D_PM_WITHOUT_MPI_"
-  FCFLAGS="$FCFLAGS -D_PM_WITHOUT_MPI_"
-  MPI_EXT=""
-else
-  MPI_EXT="mpi"
-fi
 
 
 #
@@ -246,7 +233,18 @@ if test x"_$FCFLAGS" = x"_"; then
 fi
 
 
+#
+# Serial / MPI
+#
 
+if test x"$enable_mpi" = x"none" ; then
+  CXXFLAGS="$CXXFLAGS -D_PM_WITHOUT_MPI_"
+  CFLAGS="$CFLAGS -D_PM_WITHOUT_MPI_"
+  FCFLAGS="$FCFLAGS -D_PM_WITHOUT_MPI_"
+  MPI_EXT=""
+else
+  MPI_EXT="mpi"
+fi
 
 
 #
