@@ -1,5 +1,6 @@
 #ifdef _PM_WITHOUT_MPI_
-#include "mpi_stubs.h"
+//	Its not necessary to include "mpi_stubs.h" anymore
+//	#include "mpi_stubs.h"
 #else
 #include <mpi.h>
 #endif

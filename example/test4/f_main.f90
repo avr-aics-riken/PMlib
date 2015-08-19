@@ -23,7 +23,7 @@
 	call mpi_init(ierr )
 	call mpi_comm_rank( MPI_COMM_WORLD, myid, ierr )
 	call mpi_comm_size( MPI_COMM_WORLD, ncpus, ierr )
-	write(6,'(a,i3,a)') "<main> started process ", myid
+	write(6,'(a,i3,a)') "fortran <main> started process:", myid
 
 	n=msize
 	nWatch=10
@@ -53,8 +53,10 @@
 	write(11,*)  'output for unit 11', c(1,11), c(msize,msize)
 
 	call f_pm_gather ()
-	call f_pm_print ("pmlib_report.txt")
-	call f_pm_printdetail ("pmlib_report.txt",1)
+	!cx call f_pm_print ("pmlib_report.txt")
+	!cx call f_pm_printdetail ("pmlib_report.txt",1)
+	call f_pm_print ("")
+	call f_pm_printdetail ("",1)
 	call MPI_Finalize( ierr )
 	stop
 	end

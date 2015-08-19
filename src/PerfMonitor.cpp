@@ -99,6 +99,7 @@ namespace pm_lib {
 	}
     }
 
+    /// Start m_total
     /// m_total は PerfWatch classである(PerfMonitorではない)ことに留意
     m_total.initializeHWPC();
     m_total.setProperties("Total excution time", CALC, num_process, my_rank, false);
@@ -159,7 +160,7 @@ namespace pm_lib {
 
     // 測定結果の平均値・標準偏差などの基礎的な統計計算
     for (int i = 0; i < m_nWatch; i++) {
-        m_watchArray[i].statsAverage();
+      m_watchArray[i].statsAverage();
     }
 
     m_gathered = true;
@@ -188,20 +189,16 @@ namespace pm_lib {
       if (!w.m_exclusive) continue;   // 
       if (w.m_label.empty()) continue;  //
       //
-      // we no longer skip the unbalanced calling counts
-      //	if (w.m_valid) {
+      // we no longer skip the unbalanced calling counts, i.e. m_valid==false case
         for (int j=i+1; j<m_nWatch; j++) {
           PerfWatch& q = m_watchArray[j];
           if (!q.m_exclusive) continue;   // 
           if (q.m_label.empty()) continue;  //
-          //	if (q.m_valid) {
             if ( m_tcost[i] < m_tcost[j] ) {
               tmp_d=m_tcost[i]; m_tcost[i]=m_tcost[j]; m_tcost[j]=tmp_d;
               tmp_u=m_order[i]; m_order[i]=m_order[j]; m_order[j]=tmp_u;
             }
-          //	}
         }
-      //	}
     }
 
   }
@@ -264,10 +261,17 @@ namespace pm_lib {
     fprintf(fp, "MPI");
 #endif
 #ifdef _OPENMP
-    fprintf(fp, " and OpenMP\n");
+    fprintf(fp, ", OpenMP");
 #else
-    fprintf(fp, " and no-OpenMP\n");
+    fprintf(fp, ", no-OpenMP");
 #endif
+#ifdef USE_PAPI
+    fprintf(fp, ", HWPC\n");
+#else
+    fprintf(fp, ", no-HWPC\n");
+#endif
+
+
     fprintf(fp, "\tOperator  : %s\n", operatorname.c_str());
     fprintf(fp, "\tHost name : %s\n", hostname.c_str());
     fprintf(fp, "\tDate      : %04d/%02d/%02d : %02d:%02d:%02d\n", year, month, day, hour, minute, second);
@@ -289,22 +293,22 @@ namespace pm_lib {
     fprintf(fp, "\tTotal execution time            = %12.6e [sec]\n", m_total.m_time);
     fprintf(fp, "\tTotal time of measured sections = %12.6e [sec]\n", tot);
     fprintf(fp, "\n");
-    fprintf(fp, "\tStatistics of the exclusive sections per process.\n");
+    fprintf(fp, "\tExclusive sections Statistics per process and per job.\n");
     fprintf(fp, "\n");
 
     // 演算数やデータ移動量の測定方法として、ユーザが明示的に指定する方法と、
     // HWPCによる自動測定が選択可能であるが、
     // どのような基準で演算数やデータ移動量を測定し結果を出力するかは
-    // 2015/02/5 メールで交換されたテーブル(Excel spread sheet)に従う
+    // PerfWatch::stop() のコメントに詳しく書かれている
 
     is_unit = m_total.statsSwitch();
-	fprintf(fp, "\t%-*s|    call  |        accumulated time[sec]           ", maxLabelLen, "Label");
+	fprintf(fp, "\t%-*s|    call  |        accumulated time[sec]           ", maxLabelLen, "Section");
     if ( (0 <= is_unit) && (is_unit <= 3) ) {
-      fprintf(fp, "| [flop counts or message bytes ]\n");
+      fprintf(fp, "| [flop counts or byte counts ]\n");
     } else {
       fprintf(fp, "\n");
     }
-	fprintf(fp, "\t%-*s|          |      avr   avr[%%]      sdv   avr/call  ", maxLabelLen, "");
+	fprintf(fp, "\t%-*s|          |      avr   avr[%%]      sdv   avr/call  ", maxLabelLen, "Label");
     if ( (0 <= is_unit) && (is_unit <= 3) ) {
       fprintf(fp, "|      avr       sdv   speed\n");
     } else {
@@ -320,13 +324,15 @@ namespace pm_lib {
     
     // 表示
     double sum_time_av = 0.0;
-    double sum_flop_av = 0.0;
     double sum_time_comm = 0.0;
+    double sum_time_flop = 0.0;
+    double sum_time_other = 0.0;
+    double sum_comm = 0.0;
+    double sum_flop = 0.0;
+    double sum_other = 0.0;
     std::string unit;
-    double flop_serial=0.0;
-    double flop_job=0.0;
     double flops_w;
-    
+
     // 測定区間の時間と計算量を表示
     // タイムコスト順表示
     // 登録順で表示したい場合には for (int i=0; i<m_nWatch; i++) { の様に直接 i でループすれば良い
@@ -336,7 +342,6 @@ namespace pm_lib {
       PerfWatch& w = m_watchArray[i];
       if ( !w.m_exclusive || w.m_label.empty()) continue;
       if ( !(w.m_count > 0) ) continue;
-      // if ( !w.m_valid ) { fprintf(fp, "\t%-*s: *** NA ***\n", maxLabelLen, w.m_label.c_str()); continue; }
 
       is_unit = w.statsSwitch();
       if (w.m_time_av == 0.0) {
@@ -344,9 +349,21 @@ namespace pm_lib {
       } else {
         flops_w = (w.m_count==0) ? 0.0 : w.m_flop_av/w.m_time_av;
       }
+
       sum_time_av += w.m_time_av;
-      if ( (is_unit == 0) || (is_unit == 2) ) sum_time_comm += w.m_time_av;
-      if ( (0 <= is_unit) && (is_unit <= 3) ) sum_flop_av += w.m_flop_av;
+
+      if ( (is_unit == 0) || (is_unit == 2) ) {
+        sum_time_comm += w.m_time_av;
+        sum_comm += w.m_flop_av;
+      }
+      if ( (is_unit == 1) || (is_unit == 3) ) {
+        sum_time_flop += w.m_time_av;
+        sum_flop += w.m_flop_av;
+      }
+      if (  is_unit == 4 ) {
+        sum_time_other += w.m_time_av;
+        sum_other += w.m_flop_av;
+      }
 
       // "\t%-*s: %8ld   %9.3e %6.2f  %8.2e  %9.3e    %8.3e  %8.2e %6.2f %s\n"
       fprintf(fp, "\t%-*s: %8ld   %9.3e %6.2f  %8.2e  %9.3e",
@@ -377,33 +394,41 @@ namespace pm_lib {
 	  fprintf(fp, "\n");
     }
 
-    flop_serial = PerfWatch::unitFlop(sum_flop_av/sum_time_av, unit, true);
-    fprintf(fp, "\t%-*s %1s %9.3e", maxLabelLen+10, "Total per process", "", sum_time_av);
-	// COMM/CALC mix時はsum_flop_av/flop_serialの値が意味を失うので、
-	// speedの単位を（＊）と表示する。
-    if ( (0 <= is_unit) && (is_unit <= 3) ) {
-      fprintf(fp, "%30s  %8.3e          %7.2f", "", sum_flop_av, flop_serial );
-      if ( (is_unit==2) || (is_unit == 3) ) {
-        fprintf(fp, " %s", unit.c_str());
-      } else {
-        fprintf(fp, " %1.1s(*)", unit.c_str());
-      }
+    // Subtotal of the flop counts and/or byte counts
+    if ( sum_time_flop > 0.0 ) {
+      fprintf(fp, "\t%-*s %1s %9.3e", maxLabelLen+10, "Sections flop counts", "", sum_time_flop);
+      //	fprintf(fp, "\t%-*s %1s %9.3e", maxLabelLen+10, "Process flop counts ", "", sum_time_flop);
+      double flop_serial = PerfWatch::unitFlop(sum_flop/sum_time_flop, unit, 1);
+      fprintf(fp, "%30s  %8.3e          %7.2f %s\n", "", sum_flop, flop_serial, unit.c_str());
     }
-	fprintf(fp, "\n");
+    if ( sum_time_comm > 0.0 ) {
+      fprintf(fp, "\t%-*s %1s %9.3e", maxLabelLen+10, "Sections byte counts ", "", sum_time_comm);
+      //	fprintf(fp, "\t%-*s %1s %9.3e", maxLabelLen+10, "Process byte counts ", "", sum_time_comm);
+      double comm_serial = PerfWatch::unitFlop(sum_comm/sum_time_comm, unit, 0);
+      fprintf(fp, "%30s  %8.3e          %7.2f %s\n", "", sum_comm, comm_serial, unit.c_str());
+    }
+    
+    fputc('\t', fp); for (int i = 0; i < maxLabelLen; i++) fputc('-', fp);
+	fprintf(fp, "+----------+----------------------------------------");
+    if ( (0 <= is_unit) && (is_unit <= 3) ) {
+	  fprintf(fp, "+----------------------------\n");
+    } else {
+	  fprintf(fp, "\n");
+    }
 
-    // MPI 並列時には全プロセスの合計値も表示する
-    // 常に表示する
-    flop_job = PerfWatch::unitFlop((double)num_process*sum_flop_av/sum_time_av, unit, true);
-    fprintf(fp, "\t%-*s %1s %9.3e", maxLabelLen+10, "Total of the job", "", sum_time_av);
-    if ( (0 <= is_unit) && (is_unit <= 3) ) {
-      fprintf(fp, "%30s  %8.3e          %7.2f", "", (double)num_process*sum_flop_av, flop_job );
-      if ( (is_unit==2) || (is_unit == 3) ) {
-        fprintf(fp, " %s", unit.c_str());
-      } else {
-        fprintf(fp, " %1.1s(*)", unit.c_str());
-      }
+    // Job total flop counts and/or byte counts
+    if ( sum_time_flop > 0.0 ) {
+      fprintf(fp, "\t%-*s %1s %9.3e", maxLabelLen+10, "Job total flop counts", "", sum_time_flop);
+      double sum_flop_job = (double)num_process*sum_flop;
+      double flop_job = PerfWatch::unitFlop(sum_flop_job/sum_time_flop, unit, 1);
+      fprintf(fp, "%30s  %8.3e          %7.2f %s\n", "", sum_flop_job, flop_job, unit.c_str());
     }
-	fprintf(fp, "\n");
+    if ( sum_time_comm > 0.0 ) {
+      fprintf(fp, "\t%-*s %1s %9.3e", maxLabelLen+10, "Job total byte counts", "", sum_time_comm);
+      double sum_comm_job = (double)num_process*sum_comm;
+      double comm_job = PerfWatch::unitFlop(sum_comm_job/sum_time_comm, unit, 0);
+      fprintf(fp, "%30s  %8.3e          %7.2f %s\n", "", sum_comm_job, comm_job, unit.c_str());
+    }
 
   }
   
@@ -446,6 +471,7 @@ namespace pm_lib {
       }
     }
 
+#ifdef USE_PAPI
     //	II. HWPC/PAPIレポート：HWPC計測結果を出力
     if (my_rank == 0) {
         fprintf(fp, "\n# PMlib hardware performance counter (HWPC) Report -------------------------\n");
@@ -465,6 +491,8 @@ namespace pm_lib {
         ;
       }
     }
+#endif
+
   }
   
   
@@ -511,6 +539,7 @@ namespace pm_lib {
       }
     }
 
+#ifdef USE_PAPI
     //	II. HWPC/PAPIレポート：HWPC計測結果を出力
     if (my_rank == 0) {
       fprintf(fp, "\n# PMlib Process Group [%5d] hardware performance counter (HWPC) Report ---\n", group);
@@ -529,6 +558,7 @@ namespace pm_lib {
         ;
       }
     }
+#endif
 
   }
 

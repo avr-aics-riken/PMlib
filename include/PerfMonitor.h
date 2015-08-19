@@ -16,7 +16,11 @@
 
 //! @file   PerfMonitor.h
 //! @brief  PerfMonitor class Header
-//! @version rev.2.2 dated 10/30/2014 
+//! @version rev.4.1.2
+
+#ifdef _PM_WITHOUT_MPI_
+#include "mpi_stubs.h"
+#endif
 
 #include "PerfWatch.h"
 #include <cstdio>

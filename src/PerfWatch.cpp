@@ -165,6 +165,8 @@ namespace pm_lib {
   }
 
   
+  /// Statistics among processes
+  /// Translate in Japanese later on...
   /// 測定結果の平均値・標準偏差などの基礎的な統計計算
   ///
   void PerfWatch::statsAverage()
@@ -183,15 +185,13 @@ namespace pm_lib {
         }
         // 排他測定(m_exclusive==true)では全ノードで測定回数が等しいことを仮定.
         // 等しくない場合(m_valid==fals)には、統計計算をスキップする.
+        //	if (!m_valid) return;
         //
         // version 4 以降の注意
         // 計算が複雑になり負荷のアンバランスが生じると、区間の呼び出し回数は
         // プロセス毎に異なる場合がありえる。
         // このため変数 m_valid の意味合いは当初の設計からは修正が必要となる。
-
-        // Debug in progress..
         //
-        //	if (!m_valid) return;
         
         // 平均値
         m_time_av = 0.0;
@@ -232,6 +232,13 @@ namespace pm_lib {
   
   
   /// 計算量の選択を行う
+  ///
+  /// @return  
+  ///   0: ユーザが引数で指定した通信量を採用する "Bytes/sec"
+  ///   1: ユーザが引数で指定した計算量を採用する "Flops"
+  ///   2: HWPC が自動的に測定する通信量を採用する	"Bytes/s (HWPC)"
+  ///   3: HWPC が自動的に測定する計算量を用いる	"Flops (HWPC)"
+  ///   4: HWPC が自動的に測定する他の測定量を用いる "events (HWPC)"
   ///
   /// @note
   /// 計算量としてユーザー申告値を用いるかHWPC計測値を用いるかの決定を行う
@@ -598,23 +605,10 @@ namespace pm_lib {
   ///
   ///   @note  計算量または通信量をユーザが引数で明示的に指定する場合は、
   ///          そのボリュームは１区間１回あたりでflopPerTask*iterationCount
-  ///          として算出される
-  ///          引数で指定されない場合はHWPC内部で自動計測する
-  ///          さらにHWPCも利用不可の場合は、ボリュームは0と算出される
-  ///          さらに詳細な説明がソースプログラム中にコメントされている
+  ///          として算出される。
+  ///          引数とは関係なくHWPC内部で自動計測する場合もある。
+  ///          レポート出力する情報の選択方法は以下の規則による。
   ///
-  void PerfWatch::stop(double flopPerTask, unsigned iterationCount)
-  {
-    if (!m_started) {
-      printError("PerfWatch::stop()",  "not started\n");
-      PM_Exit(0);
-    }
-
-    m_time += getTime() - m_startTime;
-    m_count++;
-    m_started = false;
-    if (m_exclusive) ExclusiveStarted = false;
-
     /*
     出力レポートに表示される情報は以下の３つの組み合わせで決める
     (1) ::setProperties(区間名, type, exclusive)
@@ -650,6 +644,17 @@ namespace pm_lib {
         BANDWIDTH       無視            無視         時間、HWPC自動計測Byte/s    BANDWIDTHに関連するHWPC統計情報
         CACHE           無視            無視         時間、HWPC自動計測L1$,L2$   CACHEに関連するHWPC統計情報
      */
+  void PerfWatch::stop(double flopPerTask, unsigned iterationCount)
+  {
+    if (!m_started) {
+      printError("PerfWatch::stop()",  "not started\n");
+      PM_Exit(0);
+    }
+
+    m_time += getTime() - m_startTime;
+    m_count++;
+    m_started = false;
+    if (m_exclusive) ExclusiveStarted = false;
 
 
 #ifdef USE_PAPI
