@@ -3046,12 +3046,6 @@ esac
 
 
 
-#
-# if wrapper compiler is specified, skip this part
-#
-
-# MPICH
-if test x"$enable_mpi" = x"none" ; then
 
 # Check whether --with-mpich was given.
 if test "${with_mpich+set}" = set; then :
@@ -3060,6 +3054,28 @@ else
   with_mpich=none
 fi
 
+
+# Check whether --with-ompi was given.
+if test "${with_ompi+set}" = set; then :
+  withval=$with_ompi;
+else
+  with_ompi=none
+fi
+
+
+# Check whether --with-impi was given.
+if test "${with_impi+set}" = set; then :
+  withval=$with_impi;
+else
+  with_impi=none
+fi
+
+#
+# if wrapper compiler is specified, skip this part
+#
+
+# MPICH
+if test x"$enable_mpi" = x"none" ; then
   if test x"$with_mpich" != x"none" ; then
     MPI_DIR=$with_mpich;
     MPI_CFLAGS=-I$MPI_DIR/include
@@ -3070,14 +3086,6 @@ fi
 
 # OpenMPI // mpichが指定されておらず，かつ，ompiが指定されていれば変数をセット
 if test x"$enable_mpi" = x"none" ; then
-
-# Check whether --with-ompi was given.
-if test "${with_ompi+set}" = set; then :
-  withval=$with_ompi;
-else
-  with_ompi=none
-fi
-
   if test x"$with_ompi" != x"none" ; then
     MPI_DIR=$with_ompi;
     MPI_CFLAGS=-I$MPI_DIR/include
@@ -3088,14 +3096,6 @@ fi
 
 # IntelMPI // mpich/OpenMPIが指定されておらず，かつ，impiが指定されていれば変数をセット
 if test x"$enable_mpi" = x"none" ; then
-
-# Check whether --with-impi was given.
-if test "${with_impi+set}" = set; then :
-  withval=$with_impi;
-else
-  with_impi=none
-fi
-
   if test x"$with_impi" != x"none" ; then
     MPI_DIR=$with_impi;
     MPI_CFLAGS=-I$MPI_DIR/include

@@ -85,7 +85,7 @@ namespace pm_lib {
     /// 測定区間数分の測定時計を準備.
     /// 最初にinit_nWatch区間分を確保し、不足したら動的にinit_nWatch追加する
     /// 全計算時間用測定時計をスタート.
-    /// @param[in] （引数はオプション） init_nWatch 最初に確保する測定区間数
+    /// @param[in] init_nWatch 最初に確保する測定区間数（C++では省略可能） 
     ///
     /// @note 測定区間数 m_nWatch は不足すると動的に増えていく
     ///
@@ -111,15 +111,16 @@ namespace pm_lib {
     }
 
     
-    /// 測定時計にプロパティを設定.
+    /// 測定区間にプロパティを設定.
     ///
-    ///   @param[in] label ラベル文字列
-    ///   @param[in] type  測定対象タイプ(COMM:通信, CALC:計算)
-    ///   @param[in] exclusive 排他測定フラグ(ディフォルトtrue)
+    ///   @param[in] label ラベルとなる文字列
+    ///   @param[in] type  測定対象タイプ(0:COMM:通信, 1:CALC:計算)
+    ///   @param[in] exclusive 排他測定フラグ。bool型(省略時true)、
+    ///                        Fortran仕様は整数型(0:false, 1:true)
     ///
     ///   @note labelラベル文字列は測定区間を識別するために用いる。
-    ///   各labelに対応したキー番号 key は各ラベル毎に内部で自動生成する
-    ///   最初に確保した区間数init_nWatchが不足したらさらにinit_nWatch区間追加する
+    ///   各ラベル毎に対応したキー番号 key を内部で自動生成する
+    ///   最初に確保した区間数init_nWatchが不足したら動的にinit_nWatch追加する
     ///
     void setProperties(const std::string& label, Type type, bool exclusive=true) {
       int key = add_perf_label(label);
@@ -181,16 +182,16 @@ namespace pm_lib {
     void gather(void);
 
     
-    /// 測定結果の基本統計レポートを出力.
+    /// 測定結果の基本統計レポートを出力。
+    ///   排他測定区間毎に出力。プロセスの平均値、ジョブ全体の統計値も出力。
     ///
-    ///   排他測定区間のみ
-    ///   @param[in] fp           出力ファイルポインタ
-    ///   @param[in] hostname     ホスト名
-    ///   @param[in] operatorname 作業者名
+    ///   @param[in] fp       出力ファイルポインタ
+    ///   @param[in] hostname ホスト名(省略時はrank 0 実行ホスト名)
+    ///   @param[in] comments 任意のコメント
     ///
     ///   @note ノード0以外は, 呼び出されてもなにもしない
     ///
-    void print(FILE* fp, const std::string hostname, const std::string operatorname);
+    void print(FILE* fp, const std::string hostname, const std::string comments);
 
     
     /// MPIランク別詳細レポート、HWPC詳細レポートを出力。 非排他測定区間も出力
