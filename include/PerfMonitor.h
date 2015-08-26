@@ -114,7 +114,7 @@ namespace pm_lib {
     /// 測定区間にプロパティを設定.
     ///
     ///   @param[in] label ラベルとなる文字列
-    ///   @param[in] type  測定対象タイプ(0:COMM:通信, 1:CALC:計算)
+    ///   @param[in] type  測定量のタイプ(0:COMM:通信, 1:CALC:計算)
     ///   @param[in] exclusive 排他測定フラグ。bool型(省略時true)、
     ///                        Fortran仕様は整数型(0:false, 1:true)
     ///
@@ -164,9 +164,10 @@ namespace pm_lib {
     /// 測定区間ストップ
     ///
     ///   @param[in] label ラベル文字列。測定区間を識別するために用いる。
-    ///   @param[in] flopPerTask あたりの計算量(Flop)または通信量(Byte):省略値0
-    ///   @param[in] iterationCount  「タスク」実行回数:省略値1
+    ///   @param[in] flopPerTask 測定区間の計算量(演算量Flopまたは通信量Byte):省略値0
+    ///   @param[in] iterationCount  計算量の乗数（反復回数）:省略値1
     ///
+    ///   @note  引数とレポート出力情報の関連はPerfWatch.hのコメントに詳しく説明されている。
     void stop(const std::string& label, double flopPerTask=0.0, unsigned iterationCount=1) {
       int key = key_perf_label(label);
       m_watchArray[key].stop(flopPerTask, iterationCount);

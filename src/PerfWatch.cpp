@@ -600,8 +600,8 @@ namespace pm_lib {
 
   /// 測定区間ストップ.
   ///
-  ///   @param[in] flopPerTask 「タスク」あたりの計算量(Flop)または通信量(Byte)
-  ///   @param[in] iterationCount  「タスク」実行回数
+  ///   @param[in] flopPerTask     測定区間の計算量(演算量Flopまたは通信量Byte)
+  ///   @param[in] iterationCount  計算量の乗数（反復回数）
   ///
   ///   @note  計算量または通信量をユーザが引数で明示的に指定する場合は、
   ///          そのボリュームは１区間１回あたりでflopPerTask*iterationCount
@@ -610,39 +610,44 @@ namespace pm_lib {
   ///          レポート出力する情報の選択方法は以下の規則による。
   ///
     /*
-    出力レポートに表示される情報は以下の３つの組み合わせで決める
-    (1) ::setProperties(区間名, type, exclusive)
-	    第2引数typeはCALC:計算, COMM:通信で、ユーザ申告モードのみ有効
-	    ⇒　PAPI利用時には対応するモードが自動的に決まる
-    (2) ::stop (区間名, fP, iC)
-	    第2引数fpは測定量をあらわし、浮動小数点演算数あるいはデータ移動量
-    (3) 環境変数HWPC_CHOOSERの値: [FLOPS|VECTOR|BANDWIDTH|CACHE|NONE]
-	    値がNONE あるいは指定が無い場合にはユーザ申告値を利用するモードになる
-        さらに HWPC/PAPIが利用できるか否かでさらに選択の方針が増える
-        下記(A)(B)参照
-    (A) HWPC/PAPIが利用できないプラットフォームではユーザ申告値を利用する。
-        fp引数の有無により出力内容がかわる。
-        環境変数HWPC_CHOOSERは無視されHWPCレポートはない
+    *
+    出力レポートに表示される情報はモード・引数の組み合わせで決める
+    (A) ユーザ申告モード
+      - HWPC APIが利用できないシステムや環境変数HWPC_CHOOSERが指定
+        されていないジョブでは自動的にユーザ申告モードで実行される。
+      - ユーザ申告モードでは(1):setProperties() と(2):stop()への引数により
+        出力内容が決定、HWPC詳細レポートは出力されない。
+      - (1) ::setProperties(区間名, type, exclusive)の第2引数typeは
+        測定量のタイプを指定する。計算(CALC)タイプか通信(COMM)タイプか
+        の選択を行なう、ユーザ申告モードで有効な引数。
+      - (2) ::stop (区間名, fPT, iC)の第2引数fPTは測定量。
+        計算（浮動小数点演算）あるいは通信（MPI通信やメモリロードストア
+        などデータ移動)の量を数値や式で与える。
 
         setProperties()  stop()
         type引数         fP引数     基本・詳細レポート出力
         ---------------------------------------------------------
-        CALC	         指定あり   時間、fP引数によるFlops
-        COMM		     指定あり   時間、fP引数によるByte/s
+        CALC             指定あり   時間、fPT引数によるFlops
+        COMM             指定あり   時間、fPT引数によるByte/s
         任意             指定なし   時間のみ
 
-    (B) HWPC/PAPIが利用可能なプラットフォーム
-        環境変数HWPC_CHOOSERの値によりユーザ申告値を用いるかPAPI情報を用いるかを切り替える。
+    (B) HWPCによる自動算出モード
+      - HWPC/PAPIが利用可能なプラットフォームで利用できる
+      - 環境変数HWPC_CHOOSERの値によりユーザ申告値を用いるかPAPI情報を
+        用いるかを切り替える。(FLOPS| BANDWIDTH| VECTOR| CACHE| CYCLE)
 
-        環境変数     setProperties()の  stop()の
-        HWPC_CHOOSER    type引数        fP引数       基本・詳細レポート出力      HWPCレポート出力
-        ------------------------------------------------------------------------------------------
-	    NONE (無指定)   CALC            指定値       時間、fP引数によるFlops	 なし
-	    NONE (無指定)   COMM            指定値       時間、fP引数によるByte/s    なし
-        FLOPS           無視            無視         時間、HWPC自動計測Flops     FLOPSに関連するHWPC統計情報
-        VECTOR          無視            無視         時間、HWPC自動計測SIMD率    VECTORに関連するHWPC統計情報
-        BANDWIDTH       無視            無視         時間、HWPC自動計測Byte/s    BANDWIDTHに関連するHWPC統計情報
-        CACHE           無視            無視         時間、HWPC自動計測L1$,L2$   CACHEに関連するHWPC統計情報
+    ユーザ申告モードかHWPC自動算出モードかは、内部的に下記表の組み合わせ
+    で決定される。
+
+    環境変数     setProperties()の  stop()の
+    HWPC_CHOOSER    type引数        fP引数       基本・詳細レポート出力      HWPCレポート出力
+    ------------------------------------------------------------------------------------------
+	NONE (無指定)   CALC            指定値       時間、fP引数によるFlops	 なし
+	NONE (無指定)   COMM            指定値       時間、fP引数によるByte/s    なし
+    FLOPS           無視            無視         時間、HWPC自動計測Flops     FLOPSに関連するHWPC統計情報
+    VECTOR          無視            無視         時間、HWPC自動計測SIMD率    VECTORに関連するHWPC統計情報
+    BANDWIDTH       無視            無視         時間、HWPC自動計測Byte/s    BANDWIDTHに関連するHWPC統計情報
+    CACHE           無視            無視         時間、HWPC自動計測L1$,L2$   CACHEに関連するHWPC統計情報
      */
   void PerfWatch::stop(double flopPerTask, unsigned iterationCount)
   {
