@@ -26,7 +26,7 @@
 
 #include "PerfMonitor.h"
 #include <time.h>
-
+#include <unistd.h> // for gethostname() of FX10/K
 
 namespace pm_lib {
   
@@ -82,6 +82,21 @@ namespace pm_lib {
 	#else
 	is_PAPI_enabled = false;
 	#endif
+
+    if( is_MPI_enabled == true) {
+      if( num_threads == 1) {
+        parallel_mode = "FlatMPI";
+      } else {
+        parallel_mode = "Hybrid";
+      }
+    }
+    if( is_MPI_enabled == false) {
+      if( num_threads == 1) {
+        parallel_mode = "Serial";
+      } else {
+        parallel_mode = "OpenMP";
+      }
+    }
 
 	// 環境変数PMLIB_PRINT_VERSION が指定された場合
 	// PMlibがインストールされた時に指定された、サポートすべきプログラムモデル
@@ -207,13 +222,13 @@ namespace pm_lib {
   /// 測定結果の基本統計レポートを出力.
   ///
   ///   排他測定区間のみ
-  ///   @param[in] fp           出力ファイルポインタ
-  ///   @param[in] hostname     ホスト名
-  ///   @param[in] operatorname 作業者名
+  ///   @param[in] fp       出力ファイルポインタ
+  ///   @param[in] hostname ホスト名(省略時はrank 0 実行ホスト名)
+  ///   @param[in] comments 任意のコメント
   ///
   ///   @note ノード0以外は, 呼び出されてもなにもしない
   ///
-  void PerfMonitor::print(FILE* fp, const std::string hostname, const std::string operatorname)
+  void PerfMonitor::print(FILE* fp, std::string hostname, const std::string comments)
   {
     if (my_rank != 0) return;
     
@@ -253,7 +268,7 @@ namespace pm_lib {
     
     fprintf(fp, "\n# PMlib Basic Report -------------------------------------------------------\n");
     fprintf(fp, "\n");
-    fprintf(fp, "\tReport of Timing Statistics PMlib version %s\n", PM_VERSION_NO);
+    fprintf(fp, "\tTiming Statistics Report from PMlib version %s\n", PM_VERSION_NO);
     fprintf(fp, "\tLinked PMlib supports: ");
 #ifdef _PM_WITHOUT_MPI_
     fprintf(fp, "no-MPI");
@@ -272,9 +287,19 @@ namespace pm_lib {
 #endif
 
 
-    fprintf(fp, "\tOperator  : %s\n", operatorname.c_str());
+    if (hostname == "") {
+      char hn[512];
+      hn[0]='\0';
+      if (gethostname(hn, sizeof(hn)) != 0) {
+        fprintf(stderr, "<print> can not obtain hostname\n");
+        hostname="unknown";
+      } else {
+        hostname=hn;
+      }
+    }
     fprintf(fp, "\tHost name : %s\n", hostname.c_str());
     fprintf(fp, "\tDate      : %04d/%02d/%02d : %02d:%02d:%02d\n", year, month, day, hour, minute, second);
+    fprintf(fp, "\t%s\n", comments.c_str());
 
     fprintf(fp, "\tParallel Mode:   %s ", parallel_mode.c_str());
     if (parallel_mode == "Serial") {
@@ -396,14 +421,12 @@ namespace pm_lib {
 
     // Subtotal of the flop counts and/or byte counts
     if ( sum_time_flop > 0.0 ) {
-      fprintf(fp, "\t%-*s %1s %9.3e", maxLabelLen+10, "Sections flop counts", "", sum_time_flop);
-      //	fprintf(fp, "\t%-*s %1s %9.3e", maxLabelLen+10, "Process flop counts ", "", sum_time_flop);
+      fprintf(fp, "\t%-*s %1s %9.3e", maxLabelLen+10, "Per Process flop sections", "", sum_time_flop);
       double flop_serial = PerfWatch::unitFlop(sum_flop/sum_time_flop, unit, 1);
       fprintf(fp, "%30s  %8.3e          %7.2f %s\n", "", sum_flop, flop_serial, unit.c_str());
     }
     if ( sum_time_comm > 0.0 ) {
-      fprintf(fp, "\t%-*s %1s %9.3e", maxLabelLen+10, "Sections byte counts ", "", sum_time_comm);
-      //	fprintf(fp, "\t%-*s %1s %9.3e", maxLabelLen+10, "Process byte counts ", "", sum_time_comm);
+      fprintf(fp, "\t%-*s %1s %9.3e", maxLabelLen+10, "Per Process byte sections", "", sum_time_comm);
       double comm_serial = PerfWatch::unitFlop(sum_comm/sum_time_comm, unit, 0);
       fprintf(fp, "%30s  %8.3e          %7.2f %s\n", "", sum_comm, comm_serial, unit.c_str());
     }
@@ -418,13 +441,13 @@ namespace pm_lib {
 
     // Job total flop counts and/or byte counts
     if ( sum_time_flop > 0.0 ) {
-      fprintf(fp, "\t%-*s %1s %9.3e", maxLabelLen+10, "Job total flop counts", "", sum_time_flop);
+      fprintf(fp, "\t%-*s %1s %9.3e", maxLabelLen+10, "Job Total flop sections", "", sum_time_flop);
       double sum_flop_job = (double)num_process*sum_flop;
       double flop_job = PerfWatch::unitFlop(sum_flop_job/sum_time_flop, unit, 1);
       fprintf(fp, "%30s  %8.3e          %7.2f %s\n", "", sum_flop_job, flop_job, unit.c_str());
     }
     if ( sum_time_comm > 0.0 ) {
-      fprintf(fp, "\t%-*s %1s %9.3e", maxLabelLen+10, "Job total byte counts", "", sum_time_comm);
+      fprintf(fp, "\t%-*s %1s %9.3e", maxLabelLen+10, "Job Total byte sections", "", sum_time_comm);
       double sum_comm_job = (double)num_process*sum_comm;
       double comm_job = PerfWatch::unitFlop(sum_comm_job/sum_time_comm, unit, 0);
       fprintf(fp, "%30s  %8.3e          %7.2f %s\n", "", sum_comm_job, comm_job, unit.c_str());
@@ -466,7 +489,8 @@ namespace pm_lib {
         }
       }
       for (int i = 0; i < m_nWatch; i++) {
-        if (!m_watchArray[i].m_exclusive) continue;
+        //	report both exclusive and non-exclusive sections
+        //	if (!m_watchArray[i].m_exclusive) continue;
         m_watchArray[i].printDetailRanks(fp, tot);
       }
     }
@@ -480,7 +504,8 @@ namespace pm_lib {
     }
 
     for (int i = 0; i < m_nWatch; i++) {
-        if (!m_watchArray[i].m_exclusive) continue;
+        //	report both exclusive and non-exclusive sections
+        //	if (!m_watchArray[i].m_exclusive) continue;
         m_watchArray[i].printDetailHWPCsums(fp, m_watchArray[i].m_label);
     }
 
