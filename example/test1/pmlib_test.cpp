@@ -1,6 +1,5 @@
 #ifdef _PM_WITHOUT_MPI_
 //	Its not necessary to include "mpi_stubs.h" anymore
-//	#include "mpi_stubs.h"
 #else
 #include <mpi.h>
 #endif
@@ -25,7 +24,6 @@ void set_array();
 void subkerel();
 double my_timer_(void);
 int my_id, npes, num_threads;
-// parallel_mode[] should be "Serial", "OpenMP", "FlatMPI", or "Hybrid"
 
 PerfMonitor PM;
 
@@ -45,19 +43,6 @@ int main (int argc, char *argv[])
 #endif
 
 
-#ifdef _PM_WITHOUT_MPI_
-	#ifdef _OPENMP
-   	char parallel_mode[] = "OpenMP";
-	#else
-   	char parallel_mode[] = "Serial";
-	#endif
-#else
-	#ifdef _OPENMP
-   	char parallel_mode[] = "Hybrid";
-	#else
-   	char parallel_mode[] = "FlatMPI";
-	#endif
-#endif
 #ifdef _OPENMP
 	char* c_env = std::getenv("OMP_NUM_THREADS");
 	if (c_env == NULL) {
@@ -77,9 +62,6 @@ int main (int argc, char *argv[])
 	fprintf(stderr, "\t<main> starting process %d/%d\n", my_id, npes);
 
 	PM.initialize();
-	PM.setRankInfo(my_id);
-
-	PM.setParallelMode(parallel_mode, num_threads, npes);
 
 	PM.setProperties("First location", PerfMonitor::CALC);
 	PM.setProperties("Second location", PerfMonitor::CALC);
@@ -109,7 +91,7 @@ int main (int argc, char *argv[])
 
 	PM.start("Third location");
 	subkerel();
-	bandwidth_count=pow (dsize, 3.0)*2.0 + dsize*dsize*2.0;
+	bandwidth_count= (pow(dsize, 3.0)*4.0 + dsize*dsize*2.0) * 4.0;
 	PM.stop ("Third location", bandwidth_count, 1);
 
 

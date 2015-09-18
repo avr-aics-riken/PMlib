@@ -80,8 +80,8 @@ void f_pm_initialize_ (int& init_nWatch)
 /// 測定区間にプロパティを設定.
 ///
 ///   @param[in] char* fc ラベルとなる character文字列
-///   @param[in] int f_type  測定対象タイプ(COMM:通信, CALC:計算)
-///   @param[in] int f_exclusive 排他測定フラグ(ディフォルトtrue)
+///   @param[in] int f_type  測定対象タイプ(0:COMM:通信, 1:CALC:計算)
+///   @param[in] int f_exclusive 排他測定フラグ(0:false, 1:true)
 ///   @param[in] int fc_size  character文字列ラベルの長さ（文字数）
 ///        注意：fc_sizeはFortranコンパイラが自動的に追加してしまう引数
 ///

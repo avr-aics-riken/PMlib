@@ -121,13 +121,15 @@ AC_SUBST(MPI_LIBS)
 AC_SUBST(MPI_FCLIBS)
 
 
+AC_ARG_WITH(mpich, [AC_HELP_STRING([--with-mpich=dir],[Specify MPICH install directory])], , with_mpich=none)
+AC_ARG_WITH(ompi, [AC_HELP_STRING([--with-ompi=dir],[Specify OpenMPI install directory])], , with_ompi=none)
+AC_ARG_WITH(impi, [AC_HELP_STRING([--with-impi=dir],[Specify IntelMPI install directory])], , with_impi=none)
 #
 # if wrapper compiler is specified, skip this part
 #
 
 # MPICH
 if test x"$enable_mpi" = x"none" ; then
-  AC_ARG_WITH(mpich, [AC_HELP_STRING([--with-mpich=dir],[Specify MPICH install directory])], , with_mpich=none)
   if test x"$with_mpich" != x"none" ; then
     MPI_DIR=$with_mpich;
     MPI_CFLAGS=-I$MPI_DIR/include
@@ -138,7 +140,6 @@ fi
 
 # OpenMPI // mpichが指定されておらず，かつ，ompiが指定されていれば変数をセット
 if test x"$enable_mpi" = x"none" ; then
-  AC_ARG_WITH(ompi, [AC_HELP_STRING([--with-ompi=dir],[Specify OpenMPI install directory])], , with_ompi=none)
   if test x"$with_ompi" != x"none" ; then
     MPI_DIR=$with_ompi;
     MPI_CFLAGS=-I$MPI_DIR/include
@@ -149,7 +150,6 @@ fi
 
 # IntelMPI // mpich/OpenMPIが指定されておらず，かつ，impiが指定されていれば変数をセット
 if test x"$enable_mpi" = x"none" ; then
-  AC_ARG_WITH(impi, [AC_HELP_STRING([--with-impi=dir],[Specify IntelMPI install directory])], , with_impi=none)
   if test x"$with_impi" != x"none" ; then
     MPI_DIR=$with_impi;
     MPI_CFLAGS=-I$MPI_DIR/include
