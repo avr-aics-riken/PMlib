@@ -477,38 +477,20 @@ void PerfWatch::outputPapiCounterHeader (FILE* fp, std::string s_label)
 void PerfWatch::outputPapiCounterList (FILE* fp)
 {
 #ifdef USE_PAPI
-	int iret, m_np;
-	m_np = num_process;
-	if ( m_np == 1 ) {
-		gather_sorted = my_papi.v_sorted;
-	} else {
-		iret = MPI_Barrier(MPI_COMM_WORLD);
-		if (!(gather_sorted  = new double[m_np * my_papi.num_sorted])) {
-			fprintf (fp, "  gather_sorted failed.\n");
-			PM_Exit(0);
-		}
-		iret =
-		MPI_Gather (my_papi.v_sorted, my_papi.num_sorted, MPI_DOUBLE,
-					gather_sorted, my_papi.num_sorted, MPI_DOUBLE,
-					0, MPI_COMM_WORLD);
-		if ( iret != 0 ) {
-			fprintf (fp, "  *** MPI_Gather failed.\n");
-			PM_Exit(0);
-		}
-	}
+	int iret;
+	// HWPC data collection using MPI_Gather() has been moved to gatherHWPC()
 
 	if (my_rank == 0) {
-	// print the event values and their derived values
-	for (int i=0; i<m_np; i++) {
+	// print the HWPC event values and their derived values
+	for (int i=0; i<num_process; i++) {
 		fprintf(fp, "Rank %5d :", i);
-
 		for(int n=0; n<my_papi.num_sorted; n++) {
 			fprintf (fp, "  %9.3e", fabs(gather_sorted[i*my_papi.num_sorted + n]));
 		}
 		fprintf (fp, "\n");
 	}
 	}
-	iret = MPI_Barrier(MPI_COMM_WORLD);
+
 #endif // USE_PAPI
 }
 
@@ -516,19 +498,24 @@ void PerfWatch::outputPapiCounterList (FILE* fp)
   ///   Groupに含まれるMPIプロセスのHWPC測定結果を区間毎に出力
   ///
   ///   @param[in] fp 出力ファイルポインタ
-  ///   @param[in] p_group プロセスグループ番号。0の時は全プロセスを対象とする。
+  ///   @param[in] p_group プロセスグループ番号。
   ///   @param[in] pp_ranks int*型 groupを構成するrank番号配列へのポインタ
   ///
 void PerfWatch::outputPapiCounterGroup (FILE* fp, MPI_Group p_group, int* pp_ranks)
 {
 #ifdef USE_PAPI
-	int iret, m_np, ip;
-	MPI_Group_size(p_group, &m_np);
+	int iret, g_np, ip;
+	iret =
+	MPI_Group_size(p_group, &g_np);
+	if (iret != MPI_SUCCESS) {
+			fprintf (fp, "  *** <outputPapiCounterGroup> MPI_Group_size failed. %x \n", p_group);
+			//	PM_Exit(0);
+			return;
+	}
 	if (my_rank == 0) {
-	for (int i=0; i<m_np; i++) {
+	for (int i=0; i<g_np; i++) {
 		ip = pp_ranks[i];
 		fprintf(fp, "Rank %5d :", ip);
-
 		for(int n=0; n<my_papi.num_sorted; n++) {
 			fprintf (fp, "  %9.3e", fabs(gather_sorted[ip*my_papi.num_sorted + n]));
 		}
@@ -557,7 +544,8 @@ void PerfWatch::outputPapiCounterLegend (FILE* fp)
 	fprintf(fp, "\n\tDetected CPU architecture:\n" );
 	fprintf(fp, "\t\t%s\n", hwinfo->vendor_string);
 	fprintf(fp, "\t\t%s\n", hwinfo->model_string);
-	fprintf(fp, "\t\tThe available HWPC events on this CPU architecture is limited.\n");
+	fprintf(fp, "\t\tThe available PMlib HWPC events for this CPU are shown below.\n");
+	fprintf(fp, "\t\tThe values for each process as the sum of threads.\n");
 
 	fprintf(fp, "\tHWPC events legend: \n");
 	fprintf(fp, "\t\tFP_OPS: floating point operations\n");

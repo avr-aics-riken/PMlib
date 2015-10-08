@@ -99,8 +99,8 @@ POST_INSTALL = :
 NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
-noinst_PROGRAMS = test4$(EXEEXT)
-subdir = example/test4
+noinst_PROGRAMS = test5$(EXEEXT)
+subdir = example/test5
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
@@ -112,10 +112,11 @@ CONFIG_HEADER = $(top_builddir)/config.h
 CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
 PROGRAMS = $(noinst_PROGRAMS)
-am_test4_OBJECTS = test4-f_main.$(OBJEXT)
-test4_OBJECTS = $(am_test4_OBJECTS)
-test4_DEPENDENCIES =
-test4_LINK = $(FCLD) $(test4_FCFLAGS) $(FCFLAGS) $(AM_LDFLAGS) \
+am_test5_OBJECTS = test5-main_split_comm.$(OBJEXT) \
+	test5-sub_copy.$(OBJEXT) test5-sub_kernel.$(OBJEXT)
+test5_OBJECTS = $(am_test5_OBJECTS)
+test5_DEPENDENCIES =
+test5_LINK = $(CXXLD) $(test5_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) \
 	$(LDFLAGS) -o $@
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
@@ -130,24 +131,40 @@ am__v_at_ = $(am__v_at_@AM_DEFAULT_V@)
 am__v_at_0 = @
 am__v_at_1 = 
 DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)
+depcomp = $(SHELL) $(top_srcdir)/config/depcomp
+am__depfiles_maybe = depfiles
+am__mv = mv -f
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
 am__v_lt_0 = --silent
 am__v_lt_1 = 
-FCCOMPILE = $(FC) $(AM_FCFLAGS) $(FCFLAGS)
-AM_V_FC = $(am__v_FC_@AM_V@)
-am__v_FC_ = $(am__v_FC_@AM_DEFAULT_V@)
-am__v_FC_0 = @echo "  FC      " $@;
-am__v_FC_1 = 
-FCLD = $(FC)
-FCLINK = $(FCLD) $(AM_FCFLAGS) $(FCFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o \
-	$@
-AM_V_FCLD = $(am__v_FCLD_@AM_V@)
-am__v_FCLD_ = $(am__v_FCLD_@AM_DEFAULT_V@)
-am__v_FCLD_0 = @echo "  FCLD    " $@;
-am__v_FCLD_1 = 
-SOURCES = $(test4_SOURCES)
-DIST_SOURCES = $(test4_SOURCES)
+COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
+	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
+AM_V_CC = $(am__v_CC_@AM_V@)
+am__v_CC_ = $(am__v_CC_@AM_DEFAULT_V@)
+am__v_CC_0 = @echo "  CC      " $@;
+am__v_CC_1 = 
+CCLD = $(CC)
+LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
+AM_V_CCLD = $(am__v_CCLD_@AM_V@)
+am__v_CCLD_ = $(am__v_CCLD_@AM_DEFAULT_V@)
+am__v_CCLD_0 = @echo "  CCLD    " $@;
+am__v_CCLD_1 = 
+CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
+	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
+AM_V_CXX = $(am__v_CXX_@AM_V@)
+am__v_CXX_ = $(am__v_CXX_@AM_DEFAULT_V@)
+am__v_CXX_0 = @echo "  CXX     " $@;
+am__v_CXX_1 = 
+CXXLD = $(CXX)
+CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
+	-o $@
+AM_V_CXXLD = $(am__v_CXXLD_@AM_V@)
+am__v_CXXLD_ = $(am__v_CXXLD_@AM_DEFAULT_V@)
+am__v_CXXLD_0 = @echo "  CXXLD   " $@;
+am__v_CXXLD_1 = 
+SOURCES = $(test5_SOURCES)
+DIST_SOURCES = $(test5_SOURCES)
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -173,7 +190,7 @@ am__define_uniq_tagged_files = \
   done | $(am__uniquify_input)`
 ETAGS = etags
 CTAGS = ctags
-am__DIST_COMMON = $(srcdir)/Makefile.in
+am__DIST_COMMON = $(srcdir)/Makefile.in $(top_srcdir)/config/depcomp
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = @ACLOCAL@
 AMTAR = @AMTAR@
@@ -286,25 +303,22 @@ target_alias = @target_alias@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-DISTCLEANFILES = *~ test4
+DISTCLEANFILES = *~ test5
 CLEANFILES = data/*.log
 EXTRA_DIST = 
-test4_SOURCES = f_main.f90
-test4_FCFLAGS = -I$(top_srcdir)/include -I@PAPI_DIR@/include @MPI_CFLAGS@
-test4_CXXFLAGS = -I$(top_srcdir)/include -I@PAPI_DIR@/include @MPI_CFLAGS@
-@PAPI_TARGET_FALSE@test4_LDADD = \
+test5_SOURCES = main_split_comm.cpp sub_copy.c sub_kernel.c
+test5_CFLAGS = -I$(top_srcdir)/include -I@PAPI_DIR@/include @MPI_CFLAGS@
+test5_CXXFLAGS = -I$(top_srcdir)/include -I@PAPI_DIR@/include @MPI_CFLAGS@
+@PAPI_TARGET_FALSE@test5_LDADD = \
 @PAPI_TARGET_FALSE@    -L$(top_builddir)/src -lPM@MPI_EXT@ \
-@PAPI_TARGET_FALSE@    @PM_LIBS@ \
 @PAPI_TARGET_FALSE@    @MPI_LIBS@ \
-@PAPI_TARGET_FALSE@	  @MPI_FCLIBS@ \
 @PAPI_TARGET_FALSE@    @MPI_LDFLAGS@
 
-@PAPI_TARGET_TRUE@test4_LDADD = \
+#     -std=c99 -g -DSTATIC_PAPI_EVENTS_TABLE -D_REENTRANT -D_GNU_SOURCE -DUSE_COMPILER_TLS  -DPAPI_NO_MEMORY_MANAGEMENT -DUSE_PAPI
+@PAPI_TARGET_TRUE@test5_LDADD = \
 @PAPI_TARGET_TRUE@	  -L$(top_builddir)/src -lPM@MPI_EXT@ \
 @PAPI_TARGET_TRUE@	  -L$(top_builddir)/src_papi_ext -lpapi_ext \
-@PAPI_TARGET_TRUE@    @PM_LIBS@ \
 @PAPI_TARGET_TRUE@	  @MPI_LIBS@ \
-@PAPI_TARGET_TRUE@	  @MPI_FCLIBS@ \
 @PAPI_TARGET_TRUE@	  @MPI_LDFLAGS@ \
 @PAPI_TARGET_TRUE@	  -L@PAPI_DIR@/lib64 -lpapi \
 @PAPI_TARGET_TRUE@	  -L@PAPI_DIR@/lib64 -lpfm
@@ -313,7 +327,7 @@ dist_noinst_DATA =
 all: all-am
 
 .SUFFIXES:
-.SUFFIXES: .f90 .o .obj
+.SUFFIXES: .c .cpp .o .obj
 $(srcdir)/Makefile.in:  $(srcdir)/Makefile.am  $(am__configure_deps)
 	@for dep in $?; do \
 	  case '$(am__configure_deps)' in \
@@ -323,9 +337,9 @@ $(srcdir)/Makefile.in:  $(srcdir)/Makefile.am  $(am__configure_deps)
 	      exit 1;; \
 	  esac; \
 	done; \
-	echo ' cd $(top_srcdir) && $(AUTOMAKE) --gnu example/test4/Makefile'; \
+	echo ' cd $(top_srcdir) && $(AUTOMAKE) --gnu example/test5/Makefile'; \
 	$(am__cd) $(top_srcdir) && \
-	  $(AUTOMAKE) --gnu example/test4/Makefile
+	  $(AUTOMAKE) --gnu example/test5/Makefile
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	@case '$?' in \
 	  *config.status*) \
@@ -347,9 +361,9 @@ $(am__aclocal_m4_deps):
 clean-noinstPROGRAMS:
 	-test -z "$(noinst_PROGRAMS)" || rm -f $(noinst_PROGRAMS)
 
-test4$(EXEEXT): $(test4_OBJECTS) $(test4_DEPENDENCIES) $(EXTRA_test4_DEPENDENCIES) 
-	@rm -f test4$(EXEEXT)
-	$(AM_V_FCLD)$(test4_LINK) $(test4_OBJECTS) $(test4_LDADD) $(LIBS)
+test5$(EXEEXT): $(test5_OBJECTS) $(test5_DEPENDENCIES) $(EXTRA_test5_DEPENDENCIES) 
+	@rm -f test5$(EXEEXT)
+	$(AM_V_CXXLD)$(test5_LINK) $(test5_OBJECTS) $(test5_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -357,17 +371,79 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-.f90.o:
-	$(AM_V_FC)$(FCCOMPILE) -c -o $@ $<
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test5-main_split_comm.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test5-sub_copy.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test5-sub_kernel.Po@am__quote@
 
-.f90.obj:
-	$(AM_V_FC)$(FCCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
+.c.o:
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(COMPILE) -c -o $@ $<
 
-test4-f_main.o: f_main.f90
-	$(AM_V_FC)$(FC) $(test4_FCFLAGS) $(FCFLAGS) -c -o test4-f_main.o `test -f 'f_main.f90' || echo '$(srcdir)/'`f_main.f90
+.c.obj:
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ `$(CYGPATH_W) '$<'`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(COMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
 
-test4-f_main.obj: f_main.f90
-	$(AM_V_FC)$(FC) $(test4_FCFLAGS) $(FCFLAGS) -c -o test4-f_main.obj `if test -f 'f_main.f90'; then $(CYGPATH_W) 'f_main.f90'; else $(CYGPATH_W) '$(srcdir)/f_main.f90'; fi`
+test5-sub_copy.o: sub_copy.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test5_CFLAGS) $(CFLAGS) -MT test5-sub_copy.o -MD -MP -MF $(DEPDIR)/test5-sub_copy.Tpo -c -o test5-sub_copy.o `test -f 'sub_copy.c' || echo '$(srcdir)/'`sub_copy.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/test5-sub_copy.Tpo $(DEPDIR)/test5-sub_copy.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='sub_copy.c' object='test5-sub_copy.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test5_CFLAGS) $(CFLAGS) -c -o test5-sub_copy.o `test -f 'sub_copy.c' || echo '$(srcdir)/'`sub_copy.c
+
+test5-sub_copy.obj: sub_copy.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test5_CFLAGS) $(CFLAGS) -MT test5-sub_copy.obj -MD -MP -MF $(DEPDIR)/test5-sub_copy.Tpo -c -o test5-sub_copy.obj `if test -f 'sub_copy.c'; then $(CYGPATH_W) 'sub_copy.c'; else $(CYGPATH_W) '$(srcdir)/sub_copy.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/test5-sub_copy.Tpo $(DEPDIR)/test5-sub_copy.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='sub_copy.c' object='test5-sub_copy.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test5_CFLAGS) $(CFLAGS) -c -o test5-sub_copy.obj `if test -f 'sub_copy.c'; then $(CYGPATH_W) 'sub_copy.c'; else $(CYGPATH_W) '$(srcdir)/sub_copy.c'; fi`
+
+test5-sub_kernel.o: sub_kernel.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test5_CFLAGS) $(CFLAGS) -MT test5-sub_kernel.o -MD -MP -MF $(DEPDIR)/test5-sub_kernel.Tpo -c -o test5-sub_kernel.o `test -f 'sub_kernel.c' || echo '$(srcdir)/'`sub_kernel.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/test5-sub_kernel.Tpo $(DEPDIR)/test5-sub_kernel.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='sub_kernel.c' object='test5-sub_kernel.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test5_CFLAGS) $(CFLAGS) -c -o test5-sub_kernel.o `test -f 'sub_kernel.c' || echo '$(srcdir)/'`sub_kernel.c
+
+test5-sub_kernel.obj: sub_kernel.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test5_CFLAGS) $(CFLAGS) -MT test5-sub_kernel.obj -MD -MP -MF $(DEPDIR)/test5-sub_kernel.Tpo -c -o test5-sub_kernel.obj `if test -f 'sub_kernel.c'; then $(CYGPATH_W) 'sub_kernel.c'; else $(CYGPATH_W) '$(srcdir)/sub_kernel.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/test5-sub_kernel.Tpo $(DEPDIR)/test5-sub_kernel.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='sub_kernel.c' object='test5-sub_kernel.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test5_CFLAGS) $(CFLAGS) -c -o test5-sub_kernel.obj `if test -f 'sub_kernel.c'; then $(CYGPATH_W) 'sub_kernel.c'; else $(CYGPATH_W) '$(srcdir)/sub_kernel.c'; fi`
+
+.cpp.o:
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXXCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXXCOMPILE) -c -o $@ $<
+
+.cpp.obj:
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXXCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ `$(CYGPATH_W) '$<'`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
+
+test5-main_split_comm.o: main_split_comm.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test5_CXXFLAGS) $(CXXFLAGS) -MT test5-main_split_comm.o -MD -MP -MF $(DEPDIR)/test5-main_split_comm.Tpo -c -o test5-main_split_comm.o `test -f 'main_split_comm.cpp' || echo '$(srcdir)/'`main_split_comm.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/test5-main_split_comm.Tpo $(DEPDIR)/test5-main_split_comm.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='main_split_comm.cpp' object='test5-main_split_comm.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test5_CXXFLAGS) $(CXXFLAGS) -c -o test5-main_split_comm.o `test -f 'main_split_comm.cpp' || echo '$(srcdir)/'`main_split_comm.cpp
+
+test5-main_split_comm.obj: main_split_comm.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test5_CXXFLAGS) $(CXXFLAGS) -MT test5-main_split_comm.obj -MD -MP -MF $(DEPDIR)/test5-main_split_comm.Tpo -c -o test5-main_split_comm.obj `if test -f 'main_split_comm.cpp'; then $(CYGPATH_W) 'main_split_comm.cpp'; else $(CYGPATH_W) '$(srcdir)/main_split_comm.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/test5-main_split_comm.Tpo $(DEPDIR)/test5-main_split_comm.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='main_split_comm.cpp' object='test5-main_split_comm.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test5_CXXFLAGS) $(CXXFLAGS) -c -o test5-main_split_comm.obj `if test -f 'main_split_comm.cpp'; then $(CYGPATH_W) 'main_split_comm.cpp'; else $(CYGPATH_W) '$(srcdir)/main_split_comm.cpp'; fi`
 
 ID: $(am__tagged_files)
 	$(am__define_uniq_tagged_files); mkid -fID $$unique
@@ -492,6 +568,7 @@ clean: clean-am
 clean-am: clean-generic clean-noinstPROGRAMS mostlyclean-am
 
 distclean: distclean-am
+	-rm -rf ./$(DEPDIR)
 	-rm -f Makefile
 distclean-am: clean-am distclean-compile distclean-generic \
 	distclean-tags
@@ -537,6 +614,7 @@ install-ps-am:
 installcheck-am:
 
 maintainer-clean: maintainer-clean-am
+	-rm -rf ./$(DEPDIR)
 	-rm -f Makefile
 maintainer-clean-am: distclean-am maintainer-clean-generic
 

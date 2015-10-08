@@ -1,13 +1,53 @@
 #ifdef _PM_WITHOUT_MPI_
-	program check
-	write(6,'(a)') "This program is aimed for MPI Group only. Skip the test..."
-	end
+program check
+	use omp_lib
+	parameter(msize=1000)
+	real(kind=8), allocatable :: a(:,:),b(:,:),c(:,:)
+
+	double precision dptime_omp
+	double precision dpt1,dpt0
+	integer nWatch
+
+	write(6,'(a)') "<main> starting."
+	allocate (a(msize,msize), b(msize,msize), c(msize,msize), stat=istat)
+	if (istat.ne.0) then
+		write(*,*) "*** Allocate() failed."
+		stop
+	endif
+
+	n=msize
+	nWatch=10
+	call f_pm_initialize (nWatch)
+
+	icalc=1         !cx 1:calc, 0:comm
+	iexclusive=1    !cx 1:true, 2:false
+	call f_pm_setproperties ("1st section", icalc, iexclusive)
+	call f_pm_setproperties ("2nd section", icalc, iexclusive)
+
+	call f_pm_start ("1st section")
+	call subinit (msize,n,a,b,c)
+	call f_pm_stop ("1st section", 0.0, 0)
+
+	dpt0=dptime_omp()
+	loops=3
+	do i=1,loops
+	call f_pm_start ("2nd section")
+	call submtxm (msize,n,dflop,a,b,c)
+	call f_pm_stop ("2nd section", dflop, 0)
+	end do
+	write(6,'(a)') "<main> finished computing submxm."
+
+	call f_pm_gather ()
+	call f_pm_print ("")
+	call f_pm_printdetail ("",1)
+	stop
+end
+
 #else
-	program check
+program check
 	use omp_lib
 	include 'mpif.h'
 	parameter(msize=1000)
-	!cx	real(kind=8) :: a(msize,msize), b(msize,msize), c(msize,msize)
 	real(kind=8), allocatable :: a(:,:),b(:,:),c(:,:)
 
 	double precision dptime_omp
@@ -43,14 +83,14 @@
 	do i=1,loops
 	call f_pm_start ("2-submtxm")
 	call submtxm (msize,n,dflop,a,b,c)
-	call f_pm_stop ("2-submtxm", 0.0, 0)
+	call f_pm_stop ("2-submtxm", dflop, 0)
 	end do
 
 	dpt1=dptime_omp()
 	s=dpt1-dpt0
 	flops=real(loops)*dflop/s*1.e-9
 	write(6,'(f10.5,a, f10.5,a)') s, " seconds", flops, " Gflops"
-	write(11,*)  'output for unit 11', c(1,11), c(msize,msize)
+	!cx	write(11,*)  'output for unit 11', c(1,11), c(msize,msize)
 
 	call f_pm_gather ()
 	!cx call f_pm_print ("pmlib_report.txt")
@@ -59,31 +99,32 @@
 	call f_pm_printdetail ("",1)
 	call MPI_Finalize( ierr )
 	stop
-	end
+end
+#endif
 
 subroutine subinit (msize,n,a,b,c)
-real(kind=8) :: a(msize,msize), b(msize,msize), c(msize,msize)
-!$omp parallel
-!$omp do 
+	real(kind=8) :: a(msize,msize), b(msize,msize), c(msize,msize)
+	!$omp parallel
+	!$omp do 
 	do j=1, n
 	do i=1, n
 	a(i,j)=sin(real(i)/real(n))
 	b(i,j)=cos(real(i)/real(n))
 	end do
 	end do
-!$omp end do
-!$omp end parallel
+	!$omp end do
+	!$omp end parallel
 	return
 end
 	
 subroutine submtxm (msize,n,dflop,a,b,c)
-use omp_lib
-real(kind=8) :: a(msize,msize), b(msize,msize), c(msize,msize)
-real(kind=8) :: x
+	use omp_lib
+	real(kind=8) :: a(msize,msize), b(msize,msize), c(msize,msize)
+	real(kind=8) :: x
 	
 	dflop=2.0*dble(n)**3
-!$omp parallel
-!$omp do private(x)
+	!$omp parallel
+	!$omp do private(x)
 	do j=1, n
 	do i=1, n
 	x=0
@@ -93,15 +134,19 @@ real(kind=8) :: x
 	c(i,j) = x
 	end do
 	end do
-!$omp end do
-!$omp end parallel
+	!$omp end do
+	!$omp end parallel
 	return
 end
 	
 	
+#ifdef _PM_WITHOUT_MPI_
 double precision function dptime_omp()
-!cx	use omp_lib
-!cx	dptime_omp = omp_get_wtime()
+	use omp_lib
+	dptime_omp = omp_get_wtime()
+end
+#else
+double precision function dptime_omp()
 	include 'mpif.h'
 	dptime_omp = MPI_Wtime()
 end

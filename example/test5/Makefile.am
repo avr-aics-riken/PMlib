@@ -10,34 +10,32 @@
 #
 ##############################################################################
 
-noinst_PROGRAMS = test4
+noinst_PROGRAMS = test5
 
 
-DISTCLEANFILES=*~ test4
+DISTCLEANFILES=*~ test5
 CLEANFILES=data/*.log
 
 EXTRA_DIST=
 
-test4_SOURCES  = f_main.f90
-test4_FCFLAGS = -I$(top_srcdir)/include -I@PAPI_DIR@/include @MPI_CFLAGS@
-test4_CXXFLAGS = -I$(top_srcdir)/include -I@PAPI_DIR@/include @MPI_CFLAGS@
+
+test5_SOURCES  = main_split_comm.cpp sub_copy.c sub_kernel.c
+test5_CFLAGS = -I$(top_srcdir)/include -I@PAPI_DIR@/include @MPI_CFLAGS@
+test5_CXXFLAGS = -I$(top_srcdir)/include -I@PAPI_DIR@/include @MPI_CFLAGS@
+#     -std=c99 -g -DSTATIC_PAPI_EVENTS_TABLE -D_REENTRANT -D_GNU_SOURCE -DUSE_COMPILER_TLS  -DPAPI_NO_MEMORY_MANAGEMENT -DUSE_PAPI
 
 if PAPI_TARGET
-  test4_LDADD = \
+  test5_LDADD = \
 	  -L$(top_builddir)/src -lPM@MPI_EXT@ \
 	  -L$(top_builddir)/src_papi_ext -lpapi_ext \
-    @PM_LIBS@ \
 	  @MPI_LIBS@ \
-	  @MPI_FCLIBS@ \
 	  @MPI_LDFLAGS@ \
 	  -L@PAPI_DIR@/lib64 -lpapi \
 	  -L@PAPI_DIR@/lib64 -lpfm
 else
-  test4_LDADD = \
+  test5_LDADD = \
     -L$(top_builddir)/src -lPM@MPI_EXT@ \
-    @PM_LIBS@ \
     @MPI_LIBS@ \
-	  @MPI_FCLIBS@ \
     @MPI_LDFLAGS@
 endif
 

@@ -14,15 +14,11 @@
 ///@file   PerfMonitor.cpp
 ///@brief  PerfMonitor class
 
-//
-// 2015/2/2 Note for Debug. Delete the following comment lines later on.
-// Shall we maintain two source files, one with MPI and another without MPI?
-//
-#ifdef _PM_WITHOUT_MPI_
-#include "mpi_stubs.h"
-#else
-#include <mpi.h>
-#endif
+//	#ifdef _PM_WITHOUT_MPI_
+//	#include "mpi_stubs.h"
+//	#else
+//	#include <mpi.h>
+//	#endif
 
 #include "PerfMonitor.h"
 #include <time.h>
@@ -225,10 +221,11 @@ namespace pm_lib {
   ///   @param[in] fp       出力ファイルポインタ
   ///   @param[in] hostname ホスト名(省略時はrank 0 実行ホスト名)
   ///   @param[in] comments 任意のコメント
+  ///   @param[in] seqSections (省略可)測定区間の表示順 (0:経過時間順、1:登録順で表示)
   ///
   ///   @note ノード0以外は, 呼び出されてもなにもしない
   ///
-  void PerfMonitor::print(FILE* fp, std::string hostname, const std::string comments)
+  void PerfMonitor::print(FILE* fp, std::string hostname, const std::string comments, int seqSections)
   {
     if (my_rank != 0) return;
     
@@ -314,11 +311,17 @@ namespace pm_lib {
       fprintf(fp, "\n\tError : invalid Parallel mode \n");
       PM_Exit(0);
     }
+#ifdef USE_PAPI
+    m_total.printHWPCHeader(fp);
+#else
+    fprintf(fp, "\n");
+#endif
+
     fprintf(fp, "\n");
     fprintf(fp, "\tTotal execution time            = %12.6e [sec]\n", m_total.m_time);
     fprintf(fp, "\tTotal time of measured sections = %12.6e [sec]\n", tot);
     fprintf(fp, "\n");
-    fprintf(fp, "\tExclusive sections Statistics per process and per job.\n");
+    fprintf(fp, "\tExclusive Sections statistics per process and total job.\n");
     fprintf(fp, "\n");
 
     // 演算数やデータ移動量の測定方法として、ユーザが明示的に指定する方法と、
@@ -359,11 +362,16 @@ namespace pm_lib {
     double flops_w;
 
     // 測定区間の時間と計算量を表示
-    // タイムコスト順表示
     // 登録順で表示したい場合には for (int i=0; i<m_nWatch; i++) { の様に直接 i でループすれば良い
     
     for (int j = 0; j < m_nWatch; j++) {
-      int i = m_order[j];
+      int i;
+      if (seqSections == 0) {
+        i = m_order[j]; //	0:経過時間順
+      } else {
+        i = j; //	1:登録順で表示
+      }
+
       PerfWatch& w = m_watchArray[i];
       if ( !w.m_exclusive || w.m_label.empty()) continue;
       if ( !(w.m_count > 0) ) continue;
@@ -421,12 +429,13 @@ namespace pm_lib {
 
     // Subtotal of the flop counts and/or byte counts
     if ( sum_time_flop > 0.0 ) {
-      fprintf(fp, "\t%-*s %1s %9.3e", maxLabelLen+10, "Per Process flop sections", "", sum_time_flop);
+      //	fprintf(fp, "\t%-*s %1s %9.3e", maxLabelLen+10, "Total per Process", "", sum_time_flop);
+      fprintf(fp, "\t%-*s %1s %9.3e", maxLabelLen+10, "Sections per process", "", sum_time_flop);
       double flop_serial = PerfWatch::unitFlop(sum_flop/sum_time_flop, unit, 1);
       fprintf(fp, "%30s  %8.3e          %7.2f %s\n", "", sum_flop, flop_serial, unit.c_str());
     }
     if ( sum_time_comm > 0.0 ) {
-      fprintf(fp, "\t%-*s %1s %9.3e", maxLabelLen+10, "Per Process byte sections", "", sum_time_comm);
+      fprintf(fp, "\t%-*s %1s %9.3e", maxLabelLen+10, "Sections per process", "", sum_time_comm);
       double comm_serial = PerfWatch::unitFlop(sum_comm/sum_time_comm, unit, 0);
       fprintf(fp, "%30s  %8.3e          %7.2f %s\n", "", sum_comm, comm_serial, unit.c_str());
     }
@@ -441,13 +450,13 @@ namespace pm_lib {
 
     // Job total flop counts and/or byte counts
     if ( sum_time_flop > 0.0 ) {
-      fprintf(fp, "\t%-*s %1s %9.3e", maxLabelLen+10, "Job Total flop sections", "", sum_time_flop);
+      fprintf(fp, "\t%-*s %1s %9.3e", maxLabelLen+10, "Sections total job", "", sum_time_flop);
       double sum_flop_job = (double)num_process*sum_flop;
       double flop_job = PerfWatch::unitFlop(sum_flop_job/sum_time_flop, unit, 1);
       fprintf(fp, "%30s  %8.3e          %7.2f %s\n", "", sum_flop_job, flop_job, unit.c_str());
     }
     if ( sum_time_comm > 0.0 ) {
-      fprintf(fp, "\t%-*s %1s %9.3e", maxLabelLen+10, "Job Total byte sections", "", sum_time_comm);
+      fprintf(fp, "\t%-*s %1s %9.3e", maxLabelLen+10, "Sections total job", "", sum_time_comm);
       double sum_comm_job = (double)num_process*sum_comm;
       double comm_job = PerfWatch::unitFlop(sum_comm_job/sum_time_comm, unit, 0);
       fprintf(fp, "%30s  %8.3e          %7.2f %s\n", "", sum_comm_job, comm_job, unit.c_str());
@@ -459,12 +468,14 @@ namespace pm_lib {
   /// MPIランク別詳細レポート、HWPC詳細レポートを出力。 非排他測定区間も出力
   ///
   ///   @param[in] fp 出力ファイルポインタ
-  ///   @param[in] legend HWPC 記号説明の表示(0:なし、1:表示する) (optional)
+  ///   @param[in] legend int型 (省略可) HWPC記号説明の表示(0:なし、1:表示する)
+  ///   @param[in] seqSections (省略可)測定区間の表示順 (0:経過時間順、1:登録順で表示)
   ///
   ///   @note 本APIよりも先にPerfWatch::gather()を呼び出しておく必要が有る
   ///         HWPC値は各プロセス毎に子スレッドの値を合算して表示する
   ///
-  void PerfMonitor::printDetail(FILE* fp, int legend)
+
+  void PerfMonitor::printDetail(FILE* fp, int legend, int seqSections)
   {
 
     //   全プロセスの情報が PerfWatch::gather() によりrank 0に集計ずみのはず
@@ -488,7 +499,13 @@ namespace pm_lib {
           tot +=  m_watchArray[i].m_time_av;
         }
       }
-      for (int i = 0; i < m_nWatch; i++) {
+      for (int j = 0; j < m_nWatch; j++) {
+        int i;
+        if (seqSections == 0) {
+          i = m_order[j]; //	0:経過時間順
+        } else {
+          i = j; //	1:登録順で表示
+        }
         //	report both exclusive and non-exclusive sections
         //	if (!m_watchArray[i].m_exclusive) continue;
         m_watchArray[i].printDetailRanks(fp, tot);
@@ -499,11 +516,15 @@ namespace pm_lib {
     //	II. HWPC/PAPIレポート：HWPC計測結果を出力
     if (my_rank == 0) {
         fprintf(fp, "\n# PMlib hardware performance counter (HWPC) Report -------------------------\n");
-
-        m_total.printHWPCHeader(fp);
     }
 
-    for (int i = 0; i < m_nWatch; i++) {
+    for (int j = 0; j < m_nWatch; j++) {
+        int i;
+        if (seqSections == 0) {
+          i = m_order[j]; //	0:経過時間順
+        } else {
+          i = j; //	1:登録順で表示
+        }
         //	report both exclusive and non-exclusive sections
         //	if (!m_watchArray[i].m_exclusive) continue;
         m_watchArray[i].printDetailHWPCsums(fp, m_watchArray[i].m_label);
@@ -527,12 +548,17 @@ namespace pm_lib {
   ///   @param[in] p_group  MPI_Group型 groupのgroup handle
   ///   @param[in] p_comm   MPI_Comm型 groupに対応するcommunicator
   ///   @param[in] pp_ranks int*型 groupを構成するrank番号配列へのポインタ
-  ///   @param[in] group    int型 プロセスグループ番号 (optional)
-  ///   @param[in] legend   int型 HWPC 記号説明の表示(0:表示、1:無) (optional)
+  ///   @param[in] group  int型 (省略可) プロセスグループ番号
+  ///   @param[in] legend int型 (省略可) HWPC記号説明の表示(0:なし、1:表示する)
+  ///   @param[in] seqSections (省略可)測定区間の表示順 (0:経過時間順、1:登録順で表示)
   ///
-  ///   @note プロセスグループは呼び出しプログラムが定義する
+  ///   @note プロセスグループはp_group によって定義され、p_groupの値は
+  ///   MPIライブラリが内部で定める大きな整数値を基準に決定されるため、
+  ///   利用者にとって識別しずらい場合がある。
+  ///   別に1,2,3,..等の昇順でプロセスグループ番号 groupをつけておくと
+  ///   レポートが識別しやすくなる。
   ///
-  void PerfMonitor::printGroup(FILE* fp, MPI_Group p_group, MPI_Comm p_comm, int* pp_ranks, int group, int legend)
+  void PerfMonitor::printGroup(FILE* fp, MPI_Group p_group, MPI_Comm p_comm, int* pp_ranks, int group, int legend, int seqSections)
   {
     if (!m_gathered) {
       fprintf(stderr, "\n\t*** PerfMonitor gather() must be called before printGroup().\n");
@@ -544,10 +570,13 @@ namespace pm_lib {
     MPI_Group_size(p_group, &new_size);
     MPI_Group_rank(p_group, &new_id);
 
-    //	if (my_rank == 0) {
-    //	fprintf(fp, "<printGroup> group %d has %d ranks\n", group, new_size);
-    //	for (int i = 0; i < new_size; i++) { fprintf(fp, "%3d ", pp_ranks[i]); }
-    //	}
+//  #define DEBUG_PRINT_MPI_GROUP 1
+#ifdef DEBUG_PRINT_MPI_GROUP
+    if (my_rank == 0) {
+    	fprintf(fp, "<printGroup> MPI group:%d, ranks:%d \n", group, new_size);
+    	for (int i = 0; i < new_size; i++) { fprintf(fp, "%3d ", pp_ranks[i]); }
+    }
+#endif
 
     // 	I. MPIランク別詳細レポート: MPIランク別測定結果を出力
     if (my_rank == 0) {
@@ -558,7 +587,13 @@ namespace pm_lib {
           tot +=  m_watchArray[i].m_time_av;
         }
       }
-      for (int i = 0; i < m_nWatch; i++) {
+      for (int j = 0; j < m_nWatch; j++) {
+        int i;
+        if (seqSections == 0) {
+          i = m_order[j]; //	0:経過時間順
+        } else {
+          i = j; //	1:登録順で表示
+        }
         if (!m_watchArray[i].m_exclusive) continue;
         m_watchArray[i].printGroupRanks(fp, tot, p_group, pp_ranks);
       }
@@ -568,10 +603,15 @@ namespace pm_lib {
     //	II. HWPC/PAPIレポート：HWPC計測結果を出力
     if (my_rank == 0) {
       fprintf(fp, "\n# PMlib Process Group [%5d] hardware performance counter (HWPC) Report ---\n", group);
-      m_total.printHWPCHeader(fp);
     }
 
-    for (int i = 0; i < m_nWatch; i++) {
+    for (int j = 0; j < m_nWatch; j++) {
+      int i;
+      if (seqSections == 0) {
+        i = m_order[j]; //	0:経過時間順
+      } else {
+        i = j; //	1:登録順で表示
+      }
       if (!m_watchArray[i].m_exclusive) continue;
       m_watchArray[i].printGroupHWPCsums(fp, m_watchArray[i].m_label, p_group, pp_ranks);
     }
@@ -587,5 +627,87 @@ namespace pm_lib {
 
   }
 
+
+  /// 単位でのHWPC計測結果、MPIランク別詳細レポート出力
+  /// for communicators created by MPI_Comm_split()
+  ///
+  ///   @param[in] fp 出力ファイルポインタ
+  ///   @param[in] p_comm   MPI_Comm型 対応するcommunicator
+  ///   @param[in] icolor int型 MPI_Comm_split()のカラー変数
+  ///   @param[in] key    int型 MPI_Comm_split()のkey変数
+  ///   @param[in] legend int型 (省略可) HWPC記号説明の表示(0:なし、1:表示する)
+  ///   @param[in] seqSections (省略可)測定区間の表示順 (0:経過時間順、1:登録順で表示)
+  ///
+  void PerfMonitor::printComm (FILE* fp, MPI_Comm new_comm, int icolor, int key, int legend, int seqSections)
+  {
+
+	int my_id, num_process;
+	MPI_Group my_group;
+	MPI_Comm_group(MPI_COMM_WORLD, &my_group);
+	MPI_Comm_rank(MPI_COMM_WORLD, &my_id);
+	MPI_Comm_size(MPI_COMM_WORLD, &num_process);
+
+	int ngroups;
+	int *g_icolor;
+	g_icolor = new int[num_process]();
+	MPI_Gather(&icolor,1,MPI_INT, g_icolor,1,MPI_INT, 0, MPI_COMM_WORLD);
+
+	if(my_id != 0) return;
+
+	int *g_myid;
+	int *p_gid;
+	int *p_color;
+	int *p_size;
+	g_myid = new int[num_process]();
+	p_gid  = new int[num_process]();
+	p_color = new int[num_process]();
+	p_size = new int[num_process]();
+
+	std::list<int> c_list;
+	std::list<int>::iterator it;
+	for (int i=0; i<num_process; i++) {
+		c_list.push_back(g_icolor[i]);
+	}
+	c_list.sort();
+	c_list.unique();
+	ngroups = c_list.size();
+
+	int ip = 0;
+	int gid = 0;
+	for (it=c_list.begin(); it!=c_list.end(); it++ ) {
+		int c = *it;
+		p_gid[gid] = ip;
+		p_color[gid] = c;
+
+		for (int i=0; i<num_process; i++) {
+			if( g_icolor[i] == c) { g_myid[ip++] = i; }
+		}
+		p_size[gid] = ip - p_gid[gid];
+		gid++;
+	}
+//	#define DEBUG_PRINT_MPI_GROUP 1
+#ifdef DEBUG_PRINT_MPI_GROUP
+	fprintf(stderr, "<main> The number of produced MPI groups=%d\n", ngroups);
+	for (int i=0; i<ngroups; i++) {
+		fprintf(stderr, "group:%d, color=%d, size=%d, g_myid[%d]:",
+			i, p_color[i], p_size[i], p_gid[i] );
+		for (int j=0; j<p_size[i]; j++) {
+			fprintf(stderr, " %d,", g_myid[p_gid[i]+j]);
+		}
+		fprintf(stderr, "\n");
+	}
+#endif
+
+	MPI_Group new_group;
+	for (int i=0; i<ngroups; i++) {
+		int *p = &g_myid[p_gid[i]];
+		MPI_Group_incl(my_group, p_size[i], p, &new_group);
+		//	printGroup(stdout, new_group, new_comm, p, i);
+		PerfMonitor::printGroup (stdout, new_group, new_comm, p, i, 0, seqSections);
+	}
+
+  }
+
 } /* namespace pm_lib */
+
 
