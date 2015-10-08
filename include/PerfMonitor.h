@@ -20,6 +20,8 @@
 
 #ifdef _PM_WITHOUT_MPI_
 #include "mpi_stubs.h"
+#else
+#include <mpi.h>
 #endif
 
 #include "PerfWatch.h"
@@ -27,6 +29,7 @@
 #include <cstdlib>
 #include "pmVersion.h"
 #include <map>
+#include <list>
 
 
 namespace pm_lib {
@@ -47,8 +50,8 @@ namespace pm_lib {
     
     /// 測定対象タイプ
     enum Type {
-      COMM,  ///< 0:通信
-      CALC,  ///< 1:計算
+      COMM,  ///< 通信（あるいはメモリ転送）
+      CALC,  ///< 計算
     };
     
     /// 測定レベル制御変数.
@@ -98,12 +101,17 @@ namespace pm_lib {
     /// @param[in] n_thread
     /// @param[in] n_proc
     ///
+    /// @note 並列モードはPMlib内部で自動的に識別可能なため、
+    ///       利用者は通常このAPIを呼び出す必要はない。
+    ///
     void setParallelMode(const std::string& p_mode, const int n_thread, const int n_proc);
 
     
     /// ランク番号の通知
     ///
     /// @param[in] myID MPI process ID
+    ///
+    /// @note ランク番号はPMlib内部で自動的に識別される。
     ///
     void setRankInfo(const int myID) {
       //	This function is redundant, and is now silently ignored.
@@ -114,7 +122,7 @@ namespace pm_lib {
     /// 測定区間にプロパティを設定.
     ///
     ///   @param[in] label ラベルとなる文字列
-    ///   @param[in] type  測定量のタイプ(0:COMM:通信, 1:CALC:計算)
+    ///   @param[in] type  測定量のタイプ(COMM:通信, CALC:計算)
     ///   @param[in] exclusive 排他測定フラグ。bool型(省略時true)、
     ///                        Fortran仕様は整数型(0:false, 1:true)
     ///
@@ -189,21 +197,23 @@ namespace pm_lib {
     ///   @param[in] fp       出力ファイルポインタ
     ///   @param[in] hostname ホスト名(省略時はrank 0 実行ホスト名)
     ///   @param[in] comments 任意のコメント
+    ///   @param[in] seqSections (省略可)測定区間の表示順 (0:経過時間順、1:登録順で表示)
     ///
     ///   @note ノード0以外は, 呼び出されてもなにもしない
     ///
-    void print(FILE* fp, const std::string hostname, const std::string comments);
+    void print(FILE* fp, const std::string hostname, const std::string comments, int seqSections=0);
 
     
     /// MPIランク別詳細レポート、HWPC詳細レポートを出力。 非排他測定区間も出力
     ///
     ///   @param[in] fp 出力ファイルポインタ
-    ///   @param[in] legend HWPC 記号説明の表示(0:なし、1:表示する) (optional)
+    ///   @param[in] legend   int型 (省略可) HWPC 記号説明の表示 (0:なし、1:表示する)
+    ///   @param[in] seqSections (省略可)測定区間の表示順 (0:経過時間順、1:登録順で表示)
     ///
     ///   @note 本APIよりも先にPerfWatch::gather()を呼び出しておく必要が有る
     ///         HWPC値は各プロセス毎に子スレッドの値を合算して表示する
     ///
-    void printDetail(FILE* fp, int legend=0);
+    void printDetail(FILE* fp, int legend=0, int seqSections=0);
 
 
     
@@ -213,12 +223,32 @@ namespace pm_lib {
     ///   @param[in] p_group  MPI_Group型 groupのgroup handle
     ///   @param[in] p_comm   MPI_Comm型 groupに対応するcommunicator
     ///   @param[in] pp_ranks int*型 groupを構成するrank番号配列へのポインタ
-    ///   @param[in] group    int型 プロセスグループ番号 (optional)
-    ///   @param[in] legend   int型 HWPC 記号説明の表示(0:表示、1:無) (optional)
+    ///   @param[in] group  int型 (省略可)プロセスグループ番号
+    ///   @param[in] legend int型 (省略可)HWPC記号説明の表示(0:なし、1:表示する)
+    ///   @param[in] seqSections int型 (省略可)測定区間の表示順 (0:経過時間順、1:登録順で表示)
     ///
-    ///   @note プロセスグループは呼び出しプログラムが定義する
+    ///   @note プロセスグループはp_group によって定義され、p_groupの値は
+    ///   MPIライブラリが内部で定める大きな整数値を基準に決定されるため、
+    ///   利用者にとって識別しずらい場合がある。
+    ///   別に1,2,3,..等の昇順でプロセスグループ番号 groupをつけておくと
+    ///   レポートが識別しやすくなる。
     ///
-    void printGroup(FILE* fp, MPI_Group p_group, MPI_Comm p_comm, int* pp_ranks, int group=0, int legend=0);
+    void printGroup(FILE* fp, MPI_Group p_group, MPI_Comm p_comm, int* pp_ranks, int group=0, int legend=0, int seqSections=0);
+
+
+    
+    /// MPI communicatorから自動グループ化したMPIランク別詳細レポート、HWPC詳細レポートを出力
+    ///
+    ///   @param[in] fp 出力ファイルポインタ
+    ///   @param[in] p_comm   MPI_Comm型 MPI_Comm_split()で対応つけられたcommunicator
+    ///   @param[in] icolor int型 MPI_Comm_split()のカラー変数
+    ///   @param[in] key    int型 MPI_Comm_split()のkey変数
+    ///   @param[in] legend int型 (省略可)HWPC記号説明の表示(0:なし、1:表示する)
+    ///   @param[in] seqSections int型 (省略可)測定区間の表示順 (0:経過時間順、1:登録順で表示)
+    ///
+    void printComm (FILE* fp, MPI_Comm new_comm, int icolor, int key, int legend=0, int seqSections=0);
+
+
 
     /**
      * @brief PMlibバージョン番号の文字列を返す
@@ -268,5 +298,4 @@ namespace pm_lib {
 } /* namespace pm_lib */
 
 #endif // _PM_PERFMONITOR_H_
-
 

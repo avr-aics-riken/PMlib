@@ -15,7 +15,7 @@
 
 AC_PREREQ([2.57])
 
-AC_INIT([PMlib], [4.1.3], [keno@riken.jp],[PMlib])
+AC_INIT([PMlib], [4.1.4], [keno@riken.jp],[PMlib])
 
 echo "----------------------------------------"
 echo "Running PMlib Configure Script"
@@ -64,7 +64,7 @@ AM_INIT_AUTOMAKE()
 # revision No.
 #
 
-PM_REVISION="20150819_1600"
+PM_REVISION="20151005_1600"
 AC_SUBST(PM_REVISION)
 
 
@@ -303,6 +303,9 @@ elif test x"$with_comp" = x"INTEL" ; then
   PM_LIBS="$PM_LIBS"" -lstdc++ -lifport -lifcore"
 elif test x"$with_comp" = x"GNU" ; then
   PM_LIBS="$PM_LIBS"" -lstdc++"
+elif test x"$PM_FC_LD" = x"gfortran" ; then
+  # a rare combination clang+gfortran on MacOSX
+  PM_LIBS="$PM_LIBS"" -lstdc++"
 fi
 
 
@@ -318,7 +321,7 @@ MAKE_SUB_DIRS="$MAKE_SUB_DIRS"" src_papi_ext"
 fi
 
 if test x"$with_example" = x"yes" ; then
-MAKE_SUB_DIRS="$MAKE_SUB_DIRS"" example/test1 example/test2 example/test3 example/test4"
+MAKE_SUB_DIRS="$MAKE_SUB_DIRS"" example/test1 example/test2 example/test3 example/test4 example/test5"
 fi
 
 
@@ -355,6 +358,7 @@ AC_CONFIG_FILES([Makefile \
                  example/test2/Makefile \
                  example/test3/Makefile \
                  example/test4/Makefile \
+                 example/test5/Makefile \
                  src_papi_ext/Makefile \
                  doc/Makefile \
                  pm-config \

@@ -93,6 +93,18 @@ namespace pm_lib {
     *rank = 0;
     return 0;
   }
+
+  inline int MPI_Group_incl(MPI_Group group, int n, const int ranks[], MPI_Group *newgroup)
+  {
+    *newgroup = 0;
+    return 0;
+  }
+
+  inline int MPI_Comm_group(MPI_Comm comm, int *group)
+  {
+    *group = 0;
+    return 0;
+  }
   
 }
 

@@ -130,9 +130,28 @@ namespace pm_lib {
 		m_flop = my_papi.v_sorted[my_papi.num_sorted-1] * m_time;
 	}
 
+	int iret;
+	if ( num_process > 1 ) {
+		iret = MPI_Barrier(MPI_COMM_WORLD);
+		if (!(gather_sorted  = new double[num_process * my_papi.num_sorted])) {
+			printError("gatherHWPC()",  "new memory failed. %d x %d x 8 \n",
+				num_process, my_papi.num_sorted);
+			PM_Exit(0);
+		}
+		iret =
+		MPI_Gather (my_papi.v_sorted, my_papi.num_sorted, MPI_DOUBLE,
+					gather_sorted, my_papi.num_sorted, MPI_DOUBLE,
+					0, MPI_COMM_WORLD);
+		if ( iret != 0 ) {
+			printError("gatherHWPC()", " MPI_Gather failed.\n");
+			PM_Exit(0);
+		}
+	} else {
+		gather_sorted = my_papi.v_sorted;
+	}
 #endif
   }
-  
+
   
   /// 測定結果情報をノード０に集約.
   ///
@@ -374,10 +393,11 @@ namespace pm_lib {
     MPI_Group_rank(p_group, &new_id);
 #ifdef DEBUG_PRINT_PAPI
     if (my_rank == 0) {
-      fprintf(fp, "<printGroupRanks> pp_ranks[] has %d ranks\n", m_np);
+      fprintf(fp, "<printGroupRanks> pp_ranks[] has %d ranks:", m_np);
       for (int i = 0; i < m_np; i++) {
 		fprintf(fp, "%3d ", pp_ranks[i]);
       }
+      fprintf(fp, "\n");
     }
 #endif
 
@@ -453,9 +473,6 @@ namespace pm_lib {
     if (c_env == NULL) return;
     if (papi.num_events == 0) return;
     if (!m_exclusive) return;
-    #ifdef DEBUG_PRINT_PAPI
-    fprintf(fp, "\t<printDetailHWPCsums> my_rank=%d, m_count=%lu, m_count_sum=%lu\n", my_rank, m_count, m_count_sum);
-    #endif
     if ( m_count_sum == 0 ) return;
     if (my_rank == 0) outputPapiCounterHeader (fp, s_label);
     outputPapiCounterList (fp);
@@ -468,7 +485,7 @@ namespace pm_lib {
   ///
   ///   @param[in] fp 出力ファイルポインタ
   ///   @param[in] s_label 区間のラベル
-  ///   @param[in] p_group プロセスグループ番号。0の時は全プロセスを対象とする。
+  ///   @param[in] p_group プロセスグループ番号。
   ///   @param[in] pp_ranks int*型 groupを構成するrank番号配列へのポインタ
   ///
   ///   @note ノード0からのみ呼び出し可能
@@ -500,12 +517,10 @@ namespace pm_lib {
 	char* c_env = std::getenv("HWPC_CHOOSER");
 
 	if (c_env == NULL) {
-	  fprintf(fp, "\tHWPC_CHOOSER environment variable was not given.");
-	  fprintf(fp, " So there will be no HWPC output.\n");
+	  fprintf(fp, "\tThe environment variable HWPC_CHOOSER is not provided. No HWPC report.\n");
       return;
     } else {
-	  fprintf(fp, "\tHWPC_CHOOSER=%s statistics were collected.\n", c_env);
-	  fprintf(fp, "\tThe values of each process are the sum of threads.\n\n");
+	  fprintf(fp, "\tThe environment variable HWPC_CHOOSER=%s is provided.\n", c_env);
     }
 
 #endif
