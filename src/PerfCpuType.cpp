@@ -182,7 +182,7 @@ void PerfWatch::createPapiCounterList ()
 			 Native Code[2]: 0x4000001f |SIMD_FP_256:PACKED_SINGLE| 256-bit packed
 			PAPI_FP_OPS == un-packed operations only. useless. (PAPI_FP_OPS == PAPI_FP_INS)
 		*/
-		if (hwpc_group.platform == "Xeon" || hwpc_group.platform == "Core" ) {
+		if (hwpc_group.platform == "Xeon" ) { // Intel Xeon E5 specific 
 			hwpc_group.number[I_flops] += 2;
 			papi.s_name[ip] = "SP_OPS"; papi.events[ip] = PAPI_SP_OPS; ip++;
 			papi.s_name[ip] = "DP_OPS"; papi.events[ip] = PAPI_DP_OPS; ip++;
@@ -204,7 +204,7 @@ void PerfWatch::createPapiCounterList ()
 		hwpc_group.index[I_vector] = ip;
 		hwpc_group.number[I_vector] = 0;
 
-		if (hwpc_group.platform == "Xeon" || hwpc_group.platform == "Core" ) {
+		if (hwpc_group.platform == "Xeon" ) {
 			hwpc_group.number[I_vector] += 2;
 			papi.s_name[ip] = "VEC_SP"; papi.events[ip] = PAPI_VEC_SP; ip++;
 			papi.s_name[ip] = "VEC_DP"; papi.events[ip] = PAPI_VEC_DP; ip++;
@@ -222,7 +222,7 @@ void PerfWatch::createPapiCounterList ()
 		hwpc_group.index[I_bandwidth] = ip;
 		hwpc_group.number[I_bandwidth] = 0;
 
-		if (hwpc_group.platform == "Xeon" || hwpc_group.platform == "Core" ) {
+		if (hwpc_group.platform == "Xeon" ) {
 		// Bandwidth related event counting with PAPI on Xeon E5 is quite complex,
 		// If offcore events can be measured, the bandwidth should be calculated as
 		// sum of offcore(demand read/write, prefetch, write back) * linesize *1.0e-9 / time
@@ -278,7 +278,7 @@ void PerfWatch::createPapiCounterList ()
 		papi.s_name[ip] = "L1_TCM"; papi.events[ip] = PAPI_L1_TCM; ip++;
 		papi.s_name[ip] = "L2_TCM"; papi.events[ip] = PAPI_L2_TCM; ip++;
 
-		if (hwpc_group.platform == "Xeon" || hwpc_group.platform == "Core" ) {
+		if (hwpc_group.platform == "Xeon" ) { // Intel Xeon E5 specific 
 			hwpc_group.number[I_cache] += 2;
 			papi.s_name[ip] = "L3_TCM"; papi.events[ip] = PAPI_L3_TCM; ip++;
 			//	following events are native events
@@ -386,7 +386,7 @@ void PerfWatch::sortPapiCounterList (void)
 			counts += my_papi.v_sorted[jp] = my_papi.accumu[ip] ;
 			ip++;jp++;
 			}
-	if (hwpc_group.platform == "Xeon" || hwpc_group.platform == "Core" ) {
+    	if (hwpc_group.platform == "Xeon" ) {
 			// See notes in createPapiCounterList ()
 			// Xeon E5 has 64 Byte L2 $ lines
 			// BandWidth = (L2 demad read miss + L2 RFO(write) miss + L2 prefetch miss + L2 WB) x 64 *1.0e-9 / time
@@ -549,7 +549,7 @@ void PerfWatch::outputPapiCounterLegend (FILE* fp)
 
 	fprintf(fp, "\tHWPC events legend: \n");
 	fprintf(fp, "\t\tFP_OPS: floating point operations\n");
-	if (hwpc_group.platform == "Xeon" || hwpc_group.platform == "Core" ) {
+	if (hwpc_group.platform == "Xeon" ) { // Intel Xeon E5 specific 
 	fprintf(fp, "\t\tSP_OPS: single precision floating point operations\n");
 	fprintf(fp, "\t\tDP_OPS: double precision floating point operations\n");
 	fprintf(fp, "\t\tVEC_SP: single precision vector floating point operations\n");
@@ -561,7 +561,7 @@ void PerfWatch::outputPapiCounterLegend (FILE* fp)
 	}
 	fprintf(fp, "\t\tLD_INS: memory load instructions\n");
 	fprintf(fp, "\t\tSR_INS: memory store instructions\n");
-	if (hwpc_group.platform == "Xeon" || hwpc_group.platform == "Core" ) {
+	if (hwpc_group.platform == "Xeon" ) { // Intel Xeon E5 specific 
 	fprintf(fp, "\t\tL1_HIT: level 1 cache hit\n");
 	fprintf(fp, "\t\tL2_HIT: level 2 cache hit\n");
 	fprintf(fp, "\t\tL3_HIT: level 3 cache hit\n");
@@ -569,7 +569,7 @@ void PerfWatch::outputPapiCounterLegend (FILE* fp)
 	}
 
 	fprintf(fp, "\t\tL1_TCM: level 1 cache miss\n");
-	if (hwpc_group.platform == "Xeon" || hwpc_group.platform == "Core" ) {
+	if (hwpc_group.platform == "Xeon" ) { // Intel Xeon E5 specific 
 	fprintf(fp, "\t\tL2_TCM: level 2 cache miss\n");
 	fprintf(fp, "\t\tL3_TCM: level 3 cache miss by demand\n");
 	fprintf(fp, "\t\tOFFCORE: demand and prefetch request cache miss \n");
