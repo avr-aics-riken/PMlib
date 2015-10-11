@@ -174,7 +174,7 @@ $ ../configure --prefix=${FFV_HOME}PMlib \
                CC=gcc \
                CFLAGS="-O3 -fopenmp" \
                F90=gfortran \
-               F90FLAGS="-fpp -O3 -fopenmp"
+               F90FLAGS="-cpp -O3 -fopenmp --free-line-length-none"
 
 
 # Using a wrapper compiler /w example
@@ -187,7 +187,7 @@ $ ../configure --prefix=${FFV_HOME}/PMlib \
                CC=mpicc \
                CFLAGS="-O3 -fopenmp" \
                F90=mpif90 \
-               F90FLAGS="-fpp -O3 -fopenmp"
+               F90FLAGS="-cpp -O3 -fopenmp --free-line-length-none"
 
 ===
 ## FUJITSU
