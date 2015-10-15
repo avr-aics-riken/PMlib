@@ -409,10 +409,11 @@ namespace pm_lib {
               (w.m_count==0) ? 0.0 : w.m_time_av/w.m_count); // 1回あたりの時間
 
       if ( (0 <= is_unit) && (is_unit <= 3) ) {
+        double uF = w.unitFlop(flops_w, unit, w.get_typeCalc());
         fprintf(fp, "    %8.3e  %8.2e %6.2f %s\n",
               w.m_flop_av,          // 測定区間の計算量(全プロセスの平均値)
               w.m_flop_sd,          // 計算量の標準偏差(全プロセスの平均値)
-              w.unitFlop(flops_w, unit, w.get_typeCalc()), // 測定区間の計算速度(全プロセスの平均値)
+              uF,                   // 測定区間の計算速度(全プロセスの平均値)
               unit.c_str());		// 計算速度の単位
       } else {
         fprintf(fp, "\n");
@@ -429,7 +430,6 @@ namespace pm_lib {
 
     // Subtotal of the flop counts and/or byte counts
     if ( sum_time_flop > 0.0 ) {
-      //	fprintf(fp, "\t%-*s %1s %9.3e", maxLabelLen+10, "Total per Process", "", sum_time_flop);
       fprintf(fp, "\t%-*s %1s %9.3e", maxLabelLen+10, "Sections per process", "", sum_time_flop);
       double flop_serial = PerfWatch::unitFlop(sum_flop/sum_time_flop, unit, 1);
       fprintf(fp, "%30s  %8.3e          %7.2f %s\n", "", sum_flop, flop_serial, unit.c_str());
