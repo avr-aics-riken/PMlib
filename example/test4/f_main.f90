@@ -1,6 +1,5 @@
 #ifdef _PM_WITHOUT_MPI_
 program check
-	use omp_lib
 	parameter(msize=1000)
 	real(kind=8), allocatable :: a(:,:),b(:,:),c(:,:)
 
@@ -38,14 +37,13 @@ program check
 	write(6,'(a)') "<main> finished computing submxm."
 
 	call f_pm_gather ()
-	call f_pm_print ("")
-	call f_pm_printdetail ("",1)
+	call f_pm_print ("", 0)
+	call f_pm_printdetail ("", 0, 0)
 	stop
 end
 
 #else
 program check
-	use omp_lib
 	include 'mpif.h'
 	parameter(msize=1000)
 	real(kind=8), allocatable :: a(:,:),b(:,:),c(:,:)
@@ -93,10 +91,8 @@ program check
 	!cx	write(11,*)  'output for unit 11', c(1,11), c(msize,msize)
 
 	call f_pm_gather ()
-	!cx call f_pm_print ("pmlib_report.txt")
-	!cx call f_pm_printdetail ("pmlib_report.txt",1)
-	call f_pm_print ("")
-	call f_pm_printdetail ("",1)
+	call f_pm_print ("", 0)
+	call f_pm_printdetail ("", 0, 0)
 	call MPI_Finalize( ierr )
 	stop
 end
@@ -118,10 +114,8 @@ subroutine subinit (msize,n,a,b,c)
 end
 	
 subroutine submtxm (msize,n,dflop,a,b,c)
-	use omp_lib
 	real(kind=8) :: a(msize,msize), b(msize,msize), c(msize,msize)
 	real(kind=8) :: x
-	
 	dflop=2.0*dble(n)**3
 	!$omp parallel
 	!$omp do private(x)
@@ -141,10 +135,18 @@ end
 	
 	
 #ifdef _PM_WITHOUT_MPI_
+#ifdef _OPENMP
 double precision function dptime_omp()
 	use omp_lib
 	dptime_omp = omp_get_wtime()
 end
+#else
+double precision function dptime_omp()
+	integer(8) :: cv,cr
+	call system_clock(count=cv,count_rate=cr)
+	dptime_omp = real(cv,8)/real(cr,8)
+end
+#endif
 #else
 double precision function dptime_omp()
 	include 'mpif.h'

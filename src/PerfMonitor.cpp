@@ -628,11 +628,11 @@ namespace pm_lib {
   }
 
 
-  /// 単位でのHWPC計測結果、MPIランク別詳細レポート出力
+  /// MPI_Comm_split分離単位でのHWPC計測結果、MPIランク別詳細レポート出力
   /// for communicators created by MPI_Comm_split()
   ///
   ///   @param[in] fp 出力ファイルポインタ
-  ///   @param[in] p_comm   MPI_Comm型 対応するcommunicator
+  ///   @param[in] new_comm   MPI_Comm型 対応するcommunicator
   ///   @param[in] icolor int型 MPI_Comm_split()のカラー変数
   ///   @param[in] key    int型 MPI_Comm_split()のkey変数
   ///   @param[in] legend int型 (省略可) HWPC記号説明の表示(0:なし、1:表示する)

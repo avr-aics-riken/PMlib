@@ -129,6 +129,8 @@ namespace pm_lib {
     ///   @note labelラベル文字列は測定区間を識別するために用いる。
     ///   各ラベル毎に対応したキー番号 key を内部で自動生成する
     ///   最初に確保した区間数init_nWatchが不足したら動的にinit_nWatch追加する
+    ///   第１引数は必須。第２引数は明示的な自己申告モードの場合に必須。
+    ///   第３引数は省略可
     ///
     void setProperties(const std::string& label, Type type, bool exclusive=true) {
       int key = add_perf_label(label);
