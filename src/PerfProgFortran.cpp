@@ -83,10 +83,10 @@ void f_pm_initialize_ (int& init_nWatch)
 ///   @param[in] int f_type  測定対象タイプ(0:COMM:通信, 1:CALC:計算)
 ///   @param[in] int f_exclusive 排他測定フラグ(0:false, 1:true)
 ///   @param[in] int fc_size  character文字列ラベルの長さ（文字数）
-///        注意：fc_sizeはFortranコンパイラが自動的に追加してしまう引数
 ///
 ///   @note ラベルは測定区間を識別するために用いる。
-///   各labelに対応したキー番号 key は各ラベル毎に内部で自動生成する
+///   		各labelに対応したキー番号 key は各ラベル毎に内部で自動生成する
+///   @note  Fortranコンパイラはfc_size引数を自動的に追加してしまう
 ///
 void f_pm_setproperties_ (char* fc, int& f_type, int& f_exclusive, int fc_size)
 {
@@ -136,7 +136,8 @@ void f_pm_setproperties_ (char* fc, int& f_type, int& f_exclusive, int fc_size)
 ///
 ///   @param[in] label ラベル文字列。測定区間を識別するために用いる。
 ///   @param[in] int fc_size  character文字列ラベルの長さ（文字数）
-///        注意：fc_sizeはFortranコンパイラが自動的に追加してしまう引数
+///
+///   @note  Fortranコンパイラはfc_size引数を自動的に追加してしまう
 ///
 void f_pm_start_ (char* fc, int fc_size)
 {
@@ -165,13 +166,13 @@ void f_pm_start_ (char* fc, int fc_size)
 ///   @param[in] fpt 「タスク」あたりの計算量(Flop)または通信量(Byte)
 ///   @param[in] tic  「タスク」実行回数
 ///   @param[in] int fc_size  character文字列ラベルの長さ（文字数）
-///        注意：fc_sizeはFortranコンパイラが自動的に追加してしまう引数
 ///
 ///   @note  計算量または通信量をユーザが明示的に指定する場合は、
 ///          そのボリュームは１区間１回あたりでfpt*ticとして算出される
 ///   @note  Fortran PMlib インタフェイスでは引数を省略する事はできない。
 ///          引数値 fpt*tic が非0の場合はその数値が採用され、値が0の場合は
 ///          HWPC自動計測値が採用される。
+///   @note  Fortranコンパイラはfc_size引数を自動的に追加してしまう
 ///
 void f_pm_stop_ (char* fc, double& fpt, unsigned& tic, int fc_size)
 {
@@ -209,18 +210,21 @@ void f_pm_gather_ (void)
 /// 測定結果の基本統計レポートを出力
 ///
 ///   @param[in] char* fc 出力ファイル名(character文字列)
+///   @param[in] int psort 測定区間の表示順
+///						(0:経過時間順にソート後表示、1:登録順で表示)
 ///   @param[in] int fc_size  出力ファイル名の文字数
-///        注意：fc_sizeはFortranコンパイラが自動的に追加してしまう引数
 ///
-void f_pm_print_ (char* fc, int fc_size)
+///   @note  Fortranコンパイラはfc_size引数を自動的に追加してしまう
+///
+void f_pm_print_ (char* fc, int &psort, int fc_size)
 {
 	FILE *fp;
 	std::string s=std::string(fc,fc_size);
 #ifdef DEBUG_FORT
-	fprintf(stderr, "<f_pm_print_> fc=%s, fc_size=%d\n", fc, fc_size);
+	fprintf(stderr, "<f_pm_print_> fc=%s, psort=%d, fc_size=%d\n", fc, psort, fc_size);
 #endif
 	std::string h;
-	std::string u="user";
+	std::string u="Fortran API";
 	char hostname[512];
 	hostname[0]='\0';
 	if (gethostname(hostname, sizeof(hostname)) != 0) {
@@ -244,7 +248,9 @@ void f_pm_print_ (char* fc, int fc_size)
 			user_file=1;
 		}
 	}
-	PM.print(fp, h, u);
+	if (psort != 0 && psort != 1) psort = 0;
+
+	PM.print(fp, h, u, psort);
 
 	if (user_file == 1) {
 		fclose(fp);
@@ -258,18 +264,18 @@ void f_pm_print_ (char* fc, int fc_size)
 ///
 ///   @param[in] char* fc 出力ファイル名(character文字列)
 ///   @param[in] legend  HWPC 記号説明の表示(0:表示する、1:表示しない)
+///   @param[in] int psort 測定区間の表示順
+///                       (0:経過時間順にソート後表示、1:登録順で表示)
 ///   @param[in] int fc_size  出力ファイル名の文字数
-///        注意：fc_sizeはFortranコンパイラが自動的に追加してしまう引数
 ///
-///   @note  Fortran とC++間のインタフェイスでは引数を省略する事はできないため、
-///          PMlib C++の引数仕様と異なる事に注意
+///   @note  Fortranコンパイラはfc_size引数を自動的に追加してしまう
 ///
-void f_pm_printdetail_ (char* fc, int& legend, int fc_size)
+void f_pm_printdetail_ (char* fc, int& legend, int &psort, int fc_size)
 {
 	FILE *fp;
 	std::string s=std::string(fc,fc_size);
 #ifdef DEBUG_FORT
-	fprintf(stderr, "<f_pm_printdetail_> fc=%s, legend=%d, fc_size=%d \n", fc, legend, fc_size);
+	fprintf(stderr, "<f_pm_printdetail_> fc=%s, legend=%d, psort=%d, fc_size=%d \n", fc, legend, psort, fc_size);
 #endif
 
 	int user_file;
@@ -286,7 +292,9 @@ void f_pm_printdetail_ (char* fc, int& legend, int fc_size)
 			user_file=1;
 		}
 	}
-	PM.printDetail(fp, legend);
+	if (psort != 0 && psort != 1) psort = 0;
+
+	PM.printDetail(fp, legend, psort);
 
 	if (user_file == 1) {
 		fclose(fp);
@@ -305,20 +313,21 @@ void f_pm_printdetail_ (char* fc, int& legend, int fc_size)
 ///   @param[in] pp_ranks int**型 groupを構成するrank番号配列へのポインタ
 ///   @param[in] group    int型 プロセスグループ番号
 ///   @param[in] legend   int型 HWPC 記号説明の表示 (0:表示する、1:表示しない)
+///   @param[in] int psort 測定区間の表示順
+///                       (0:経過時間順にソート後表示、1:登録順で表示)
 ///   @param[in] int fc_size  character文字列ラベルの長さ（文字数）
-///        注意：fc_sizeはFortranコンパイラが自動的に追加してしまう引数
 ///
-///   @note  Fortran とC++間のインタフェイスでは引数を省略する事はできないため、
-///          PMlib C++の引数仕様と異なる事に注意
-///          MPI_Group, MPI_Comm型は呼び出すFortran側では integer 型である
+///   @note  MPI_Group, MPI_Comm型は呼び出すFortran側では integer 型である
+///   @note  Fortranコンパイラはfc_size引数を自動的に追加してしまう
 ///
-void f_pm_printgroup_ (char* fc, MPI_Group p_group, MPI_Comm p_comm, int* pp_ranks, int& group, int& legend, int fc_size)
+void f_pm_printgroup_ (char* fc, MPI_Group p_group, MPI_Comm p_comm, int* pp_ranks, int& group, int& legend, int &psort, int fc_size)
+
 
 {
 	FILE *fp;
 	std::string s=std::string(fc,fc_size);
 #ifdef DEBUG_FORT
-	fprintf(stderr, "<f_pm_printdetail_> fc=%s, group=%d, legend=%d, fc_size=%d \n", fc, group, legend, fc_size);
+	fprintf(stderr, "<f_pm_printgroup_> fc=%s, group=%d, legend=%d, psort=%d, fc_size=%d \n", fc, group, legend, psort, fc_size);
 #endif
 
 	if (s == "" || fc_size == 0) {
@@ -331,11 +340,18 @@ void f_pm_printgroup_ (char* fc, MPI_Group p_group, MPI_Comm p_comm, int* pp_ran
 			fp=stdout;
 		}
 	}
-	PM.printGroup(fp, p_group, p_comm, pp_ranks, group, legend);
+	if (psort != 0 && psort != 1) psort = 0;
+
+	PM.printGroup(fp, p_group, p_comm, pp_ranks, group, legend, psort);
 
 	return;
 }
 
 
 }
+
+/// PMlib Fortran インタフェイス
+/// 今後開発が必要なfortran API ルーチン (C++バージョンのAPIは開発済み)
+/// MPI_Comm_splitで分離されたMPIランクグループ毎に詳細レポート出力を行う。
+///	void f_pm_printcomm_ ( ... )
 

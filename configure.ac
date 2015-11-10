@@ -166,11 +166,13 @@ fi
 
 if test x"$with_comp" = x"FJ" ; then
   MPI_LIBS=""
+  if test x"$enable_mpi" != x"none" ; then
   case "$host" in
   sparc*)
     MPI_FCLIBS="$MPI_LIBS"" -lmpi_f77 -lmpi_f90"
     ;;
   esac
+  fi
 elif test x"$enable_mpi" = x"mpich" ; then
   MPI_LIBS="-lmpich"
   MPI_FCLIBS="$MPI_LIBS"" -lfmpich"

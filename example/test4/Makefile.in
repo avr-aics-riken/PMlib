@@ -115,8 +115,6 @@ PROGRAMS = $(noinst_PROGRAMS)
 am_test4_OBJECTS = test4-f_main.$(OBJEXT)
 test4_OBJECTS = $(am_test4_OBJECTS)
 test4_DEPENDENCIES =
-test4_LINK = $(FCLD) $(test4_FCFLAGS) $(FCFLAGS) $(AM_LDFLAGS) \
-	$(LDFLAGS) -o $@
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
 am__v_P_0 = false
@@ -292,6 +290,7 @@ EXTRA_DIST =
 test4_SOURCES = f_main.f90
 test4_FCFLAGS = -I$(top_srcdir)/include -I@PAPI_DIR@/include @MPI_CFLAGS@
 test4_CXXFLAGS = -I$(top_srcdir)/include -I@PAPI_DIR@/include @MPI_CFLAGS@
+test4_LINK = $(PM_FC_LD) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 @PAPI_TARGET_FALSE@test4_LDADD = \
 @PAPI_TARGET_FALSE@    -L$(top_builddir)/src -lPM@MPI_EXT@ \
 @PAPI_TARGET_FALSE@    @PM_LIBS@ \
@@ -299,6 +298,7 @@ test4_CXXFLAGS = -I$(top_srcdir)/include -I@PAPI_DIR@/include @MPI_CFLAGS@
 @PAPI_TARGET_FALSE@	  @MPI_FCLIBS@ \
 @PAPI_TARGET_FALSE@    @MPI_LDFLAGS@
 
+#     -std=c99 -g -DSTATIC_PAPI_EVENTS_TABLE -D_REENTRANT -D_GNU_SOURCE -DUSE_COMPILER_TLS  -DPAPI_NO_MEMORY_MANAGEMENT -DUSE_PAPI
 @PAPI_TARGET_TRUE@test4_LDADD = \
 @PAPI_TARGET_TRUE@	  -L$(top_builddir)/src -lPM@MPI_EXT@ \
 @PAPI_TARGET_TRUE@	  -L$(top_builddir)/src_papi_ext -lpapi_ext \
@@ -349,7 +349,7 @@ clean-noinstPROGRAMS:
 
 test4$(EXEEXT): $(test4_OBJECTS) $(test4_DEPENDENCIES) $(EXTRA_test4_DEPENDENCIES) 
 	@rm -f test4$(EXEEXT)
-	$(AM_V_FCLD)$(test4_LINK) $(test4_OBJECTS) $(test4_LDADD) $(LIBS)
+	$(AM_V_GEN)$(test4_LINK) $(test4_OBJECTS) $(test4_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)

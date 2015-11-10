@@ -13,5 +13,6 @@
 doc_includedir = $(prefix)/doc
 doc_include_HEADERS = \
     $(top_srcdir)/doc/PMlib.pdf \
-    $(top_srcdir)/doc/How_to_use_PMlib.pdf
+    $(top_srcdir)/doc/Tutorial-slide1-overview.pdf \
+    $(top_srcdir)/doc/Tutorial-slide2-installation.pdf
 

@@ -14,6 +14,12 @@
  * ############################################################################
  */
 
+/// PMlib private クラスからPAPI low level関数へのインタフェイスC関数
+/// extern "C" int my_papi_bind_start ( int *, long long *, int );
+/// extern "C" int my_papi_bind_stop  ( int *, long long *, int );
+/// extern "C" int my_papi_add_events ( int *, int);
+/// extern "C" void my_papi_name_to_code ( const char *, int *);
+/// 
 /// @file pmlib_papi.h
 /// @brief Header block for PMlib - PAPI interface class
 ///
@@ -25,6 +31,10 @@ extern "C" int my_papi_bind_stop  ( int *, long long *, int );
 extern "C" int my_papi_add_events ( int *, int);
 extern "C" void my_papi_name_to_code ( const char *, int *);
 #endif
+
+/// HWPC counter情報の記憶配列
+/// struct hwpc_group_chooser{}
+/// struct pmlib_papi_chooser{}
 
 enum hwpc_output_group {
 	I_elapse= 0,
