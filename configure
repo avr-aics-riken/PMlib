@@ -2376,8 +2376,8 @@ ac_configure="$SHELL $ac_aux_dir/configure"  # Please don't use this var.
 #
 
 if test -e configure.ac ; then
-echo "Please run configure from a separate build directory. It is not allowd to run configure in the source directory."
-echo "Pleaes try ..."
+echo "Please run configure from a separate build directory. It is not allowed to run configure in the source directory."
+echo "Please try ..."
 echo " "
 echo "$ cd BUILD_DIR"
 echo "$ ../configure options"
@@ -2982,7 +2982,7 @@ fi
 # revision No.
 #
 
-PM_REVISION="20151012_0500"
+PM_REVISION="20151119_1700"
 
 
 

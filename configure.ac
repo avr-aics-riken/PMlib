@@ -37,8 +37,8 @@ AC_CONFIG_AUX_DIR(config)
 #
 
 if test -e configure.ac ; then
-echo "Please run configure from a separate build directory. It is not allowd to run configure in the source directory."
-echo "Pleaes try ..."
+echo "Please run configure from a separate build directory. It is not allowed to run configure in the source directory."
+echo "Please try ..."
 echo " "
 echo "$ cd BUILD_DIR"
 echo "$ ../configure [options]"
@@ -64,7 +64,7 @@ AM_INIT_AUTOMAKE()
 # revision No.
 #
 
-PM_REVISION="20151012_0500"
+PM_REVISION="20151119_1700"
 AC_SUBST(PM_REVISION)
 
 
