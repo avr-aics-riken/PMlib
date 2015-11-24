@@ -15,6 +15,11 @@ REVISION HISTORY
 ================
 
 --------------------------
+2015-11-24
+r41 modify Makefile.am in test4
+- add -lmpi_cxx explicitly
+
+--------------------------
 2015-11-19
 r40 update package
 

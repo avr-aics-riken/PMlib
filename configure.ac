@@ -15,7 +15,7 @@
 
 AC_PREREQ([2.57])
 
-AC_INIT([PMlib], [4.2.0], [keno@riken.jp],[PMlib])
+AC_INIT([PMlib], [4.2.1], [keno@riken.jp],[PMlib])
 
 echo "----------------------------------------"
 echo "Running PMlib Configure Script"
@@ -64,7 +64,7 @@ AM_INIT_AUTOMAKE()
 # revision No.
 #
 
-PM_REVISION="20151119_1700"
+PM_REVISION="20151124_2300"
 AC_SUBST(PM_REVISION)
 
 

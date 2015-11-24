@@ -34,14 +34,16 @@ if PAPI_TARGET
 	  @MPI_FCLIBS@ \
 	  @MPI_LDFLAGS@ \
 	  -L@PAPI_DIR@/lib64 -lpapi \
-	  -L@PAPI_DIR@/lib64 -lpfm
+	  -L@PAPI_DIR@/lib64 -lpfm \
+    -lmpi_cxx
 else
   test4_LDADD = \
     -L$(top_builddir)/src -lPM@MPI_EXT@ \
     @PM_LIBS@ \
     @MPI_LIBS@ \
 	  @MPI_FCLIBS@ \
-    @MPI_LDFLAGS@
+    @MPI_LDFLAGS@ \
+    -lmpi_cxx
 endif
 
 dist_noinst_DATA=
