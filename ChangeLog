@@ -15,6 +15,11 @@ REVISION HISTORY
 ================
 
 --------------------------
+2015-11-28
+r42 --with-comp becomes essential
+- change configure.ac, INSTALL, and NEWS
+
+--------------------------
 2015-11-24
 r41 modify Makefile.am in test4
 - add -lmpi_cxx explicitly

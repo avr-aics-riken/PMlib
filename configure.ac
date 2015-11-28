@@ -15,7 +15,7 @@
 
 AC_PREREQ([2.57])
 
-AC_INIT([PMlib], [4.2.1], [keno@riken.jp],[PMlib])
+AC_INIT([PMlib], [4.2.2], [keno@riken.jp],[PMlib])
 
 echo "----------------------------------------"
 echo "Running PMlib Configure Script"
@@ -64,7 +64,7 @@ AM_INIT_AUTOMAKE()
 # revision No.
 #
 
-PM_REVISION="20151124_2300"
+PM_REVISION="20151128_1300"
 AC_SUBST(PM_REVISION)
 
 
@@ -84,7 +84,9 @@ fi
 # compiler
 #
 AC_ARG_WITH(comp, [AC_HELP_STRING([--with-comp=(INTEL|FJ|GNU)],[Specify Compiler type])], , with_comp=none)
-
+if test x"$with_ompi" = x"none" ; then
+  AC_MSG_ERROR("ERROR: Kind of compiler is not specified!")
+fi
 
 
 #

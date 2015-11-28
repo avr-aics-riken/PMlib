@@ -26,7 +26,7 @@ $ export FFV_HOME=hogehoge
 $ cd BUILD_DIR
 $ ../configure [options]
 $ make
-$ make install
+$ sudo make install
 
 
 Configure options:
@@ -80,26 +80,49 @@ F90FLAGS=FORTRAN90_OPTIONS
 
 
 
-Here is examples.
+2) Configure Examples
 
-===
-## INTEL COMPILER
+# INTEL compiler
 
-# Using a wrapper compiler /w example
+## Serial
 
+### with example
 $ ../configure --prefix=${FFV_HOME}/PMlib \
                --with-comp=INTEL \
                --with-example=yes \
+               CXX=icpc \
+               CXXFLAGS="-O3 -openmp" \
+               CC=icc \
+               CFLAGS="-O3 -openmp" \
+               F90=ifort \
+               F90FLAGS="-fpp -O3 -openmp"
+
+### /w example, /wo openmp
+$ ../configure --prefix=/usr/local/PMlib \
+               --with-comp=INTEL \
+               --with-example=yes \
+               CXX=icpc \
+               CXXFLAGS="-O3" \
+               CC=icc \
+               CFLAGS="-O3" \
+               F90=ifort \
+               F90FLAGS="-fpp -O3"
+
+
+## MPI by a wrapper
+
+### /w example
+$ ../configure --prefix=${FFV_HOME}/PMlib \
+               --with-comp=INTEL \
                CXX=mpicxx \
                CXXFLAGS="-O3 -openmp" \
                CC=mpicc \
                CFLAGS="-O3 -openmp" \
                F90=mpif90 \
-               F90FLAGS="-fpp -O3 -openmp"
+               F90FLAGS="-fpp -O3 -openmp" \
+               --with-example=yes
 
-
-# Using a wrapper compiler with PAPI, examples
-
+### /w PAPI, examples
 $ ../configure CXX=mpicxx \
                CXXFLAGS="-O3 -openmp" \
                CC=mpicc \
@@ -110,9 +133,7 @@ $ ../configure CXX=mpicxx \
                --with-papi=/usr/local/papi/papi-5.2.0/intel \
                --with-example=yes
 
-
-# Using a wrapper compiler, intel MPI, with PAPI, examples
-
+### Intel MPI, with PAPI, examples
 $ ../configure CXX=mpicxx \
                CXXFLAGS="-O3 -openmp" \
                CC=mpicc \
@@ -124,35 +145,7 @@ $ ../configure CXX=mpicxx \
                --with-papi=/usr/local/papi/papi-5.2.0/intel \
                --with-example=yes
 
-
-# for serial /w example
-
-$ ../configure --prefix=${FFV_HOME}/PMlib \
-               --with-comp=INTEL \
-               --with-example=yes \
-               CXX=icpc \
-               CXXFLAGS="-O3 -openmp" \
-               CC=icc \
-               CFLAGS="-O3 -openmp" \
-               F90=ifort \
-               F90FLAGS="-fpp -O3 -openmp"
-
-
-# for serial /w example /wo openmp
-
-$ ../configure --prefix=/usr/local/PMlib \
-              --with-comp=INTEL \
-              --with-example=yes \
-              CXX=icpc \
-              CXXFLAGS="-O3" \
-              CC=icc \
-              CFLAGS="-O3" \
-              F90=ifort \
-              F90FLAGS="-fpp -O3"
-
-
-# Specify install directory, mpi library and compiler, alternattion /w MPI build
-
+### Specify install directory, mpi library and compiler, alternattion of MPI build
 $ ../configure --prefix=${FFV_HOME}/PMlib
                --with-comp=INTEL \
                --with-ompi=/opt/openmpi \
@@ -163,11 +156,11 @@ $ ../configure --prefix=${FFV_HOME}/PMlib
                F90=ifort \
                F90FLAGS="-fpp -O3 -openmp"
 
-===
-## GNU compiler
 
-# serial version
 
+# GNU compiler
+
+## Serial
 $ ../configure --prefix=${FFV_HOME}PMlib \
                CXX=g++ \
                CXXFLAGS="-O3 -fopenmp" \
@@ -177,8 +170,7 @@ $ ../configure --prefix=${FFV_HOME}PMlib \
                F90FLAGS="-cpp -O3 -fopenmp --free-line-length-none"
 
 
-# Using a wrapper compiler /w example
-
+## MPI using a wrapper compiler
 $ ../configure --prefix=${FFV_HOME}/PMlib \
                --with-comp=GNU \
                --with-example=yes \
@@ -189,34 +181,13 @@ $ ../configure --prefix=${FFV_HOME}/PMlib \
                F90=mpif90 \
                F90FLAGS="-cpp -O3 -fopenmp --free-line-length-none"
 
-===
-## FUJITSU
-
-# FX, K computer, compilation on compute nodes
-
-$ ../configure --prefix=${FFV_HOME}/PMlib \
-               --with-papi=yes \
-               --with-example=yes \
-               CC=mpifcc \
-               CFLAGS="-Kfast,parallel,openmp -Nrt_notune" \
-               CXX=mpiFCC \
-               CXXFLAGS="-Kfast,parallel,openmp -Nrt_notune"
 
 
-# FX, K computer, compilation on login nodes
+# FUJITSU compiler / FX, K computer
 
-$ ../configure --prefix=${FFV_HOME}/PMlib \
-               --host=sparc64-unknown-linux-gnu \
-               --with-papi=/opt/FJSVXosDevkit/sparc64fx/V01L02E07 \
-               --with-example=yes \
-               CC=mpifccpx \
-               CFLAGS="-Kfast,parallel,openmp -Nrt_notune" \
-               CXX=mpiFCCpx \
-               CXXFLAGS="-Kfast,parallel,openmp -Nrt_notune"
+## Serial
 
-
-# FX, K computer, Serial, compilation on login nodes
-
+### Compilation on login nodes
 $ ../configure --prefix=${FFV_HOME}/PMlib \
                --host=sparc64-unknown-linux-gnu \
                --with-papi=/opt/FJSVXosDevkit/sparc64fx/V01L02E07 \
@@ -227,11 +198,34 @@ $ ../configure --prefix=${FFV_HOME}/PMlib \
                CXX=mpiFCCpx \
                CXXFLAGS="-Kfast,parallel,openmp -Nrt_notune"
 
+
+## MPI
+
+### Compilation on compute nodes
+$ ../configure --prefix=${FFV_HOME}/PMlib \
+               --with-papi=yes \
+               --with-example=yes \
+               CC=mpifcc \
+               CFLAGS="-Kfast,parallel,openmp -Nrt_notune" \
+               CXX=mpiFCC \
+               CXXFLAGS="-Kfast,parallel,openmp -Nrt_notune"
+
+### Compilation on login nodes
+$ ../configure --prefix=${FFV_HOME}/PMlib \
+               --host=sparc64-unknown-linux-gnu \
+               --with-papi=/opt/FJSVXosDevkit/sparc64fx/V01L02E07 \
+               --with-example=yes \
+               CC=mpifccpx \
+               CFLAGS="-Kfast,parallel,openmp -Nrt_notune" \
+               CXX=mpiFCCpx \
+               CXXFLAGS="-Kfast,parallel,openmp -Nrt_notune"
+
+
 If you try to install process again, execute 'make distclean' then configure.
 
 
 
-2) Hand compile
+3) Hand compile
 
 Edit environmental variables in a Makefile_hand file for a target machine. Then, 'make'.
 A compiled module libPM.a will be placed in $(PM_DIR)/lib/ directory.
