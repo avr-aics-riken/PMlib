@@ -3281,11 +3281,16 @@ elif test x"$with_comp" = x"INTEL" ; then
   PM_LIBS="$PM_LIBS"" -lstdc++ -lifport -lifcore"
 elif test x"$with_comp" = x"GNU" ; then
   PM_LIBS="$PM_LIBS"" -lstdc++"
-elif test x"$PM_FC_LD" = x"gfortran" ; then
-  # a rare combination clang+gfortran on MacOSX
-  PM_LIBS="$PM_LIBS"" -lstdc++"
 fi
 
+# MacOSX 10.11+ special case with clang compiler and gfortran linker
+OS_KERNEL=`uname -s`
+if [ "${OS_KERNEL}" == "Darwin" ] && [ "$PM_FC_LD" == "gfortran" ] ; then
+  OSX_LEVEL=`sw_vers| grep ProductVersion| cut -f2 | cut -f2 -d'.'`
+  if [ "${OSX_LEVEL}" -ge 11 ]; then
+    PM_LIBS="$PM_LIBS -lc++"
+  fi
+fi
 
 
 #

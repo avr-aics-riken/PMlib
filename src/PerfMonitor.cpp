@@ -153,11 +153,19 @@ namespace pm_lib {
   ///
   void PerfMonitor::gather(void)
   {
+    // current implementation does now allow multiple gather() calls.
     if (m_gathered) {
         fprintf(stderr, "\tPerfMonitor::gather() error, already gathered\n");
         PM_Exit(0);
     }
     m_total.stop(0.0, 1);
+
+    if (m_nWatch == 0) {
+      //	No section has been defined via setProperties()
+      //	ignore this gather() call, do nothing
+      //	PM_Exit(0);
+      return;
+    }
 
     // 各測定区間のHWPCによるイベントカウンターの統計値を取得する
     for (int i=0; i<m_nWatch; i++) {
@@ -228,12 +236,15 @@ namespace pm_lib {
   void PerfMonitor::print(FILE* fp, std::string hostname, const std::string comments, int seqSections)
   {
     if (my_rank != 0) return;
-    
+    if (m_nWatch == 0) {
+      fprintf(fp, "\n# PMlib print():: No section has been defined via setProperties().\n");
+      return;
+    }
     if (!m_gathered) {
       fprintf(stderr, "\tPerfMonitor::print() error, call gather() before print()\n");
       PM_Exit(0);
     }
-    
+
     // タイムスタンプの取得
     struct tm *date;
     time_t now;
@@ -478,6 +489,12 @@ namespace pm_lib {
   void PerfMonitor::printDetail(FILE* fp, int legend, int seqSections)
   {
 
+    if (m_nWatch == 0) {
+      if (my_rank == 0) {
+      fprintf(fp, "\n# PMlib printDetail():: No section has been defined via setProperties().\n");
+      }
+      return;
+    }
     //   全プロセスの情報が PerfWatch::gather() によりrank 0に集計ずみのはず
     if (!m_gathered) {
       fprintf(stderr, "\n\t*** PerfMonitor gather() must be called before printDetail().\n");
