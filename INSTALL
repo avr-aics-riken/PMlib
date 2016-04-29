@@ -221,6 +221,38 @@ $ ../configure --prefix=${FFV_HOME}/PMlib \
                CXXFLAGS="-Kfast,parallel,openmp -Nrt_notune"
 
 
+
+# Apple Mac OSX LLVM/clang compiler
+
+## Serial
+$ ../configure --prefix=${FFV_HOME}/PMlib \
+               --with-papi=none \
+               --with-example=yes \
+               CXX=c++ \
+               CXXFLAGS="" \
+               CC=cc  \
+               CFLAGS=""  \
+               FC=gfortran \
+               FCFLAGS="-cpp"
+
+               #   note: c++ points to clang++, cc points to clang
+
+
+## MPI (OpenMPI wrapper)
+$ ../configure --prefix=${FFV_HOME}/PMlib \
+               --with-papi=none \
+               --with-example=yes \
+               --with-ompi=/opt/openmpi \
+               CXX=mpicxx \
+               CXXFLAGS="" \
+               CC=mpicc  \
+               CFLAGS=""  \
+               FC=mpifort \
+               FCFLAGS="-cpp"
+
+               #   note: --with-omp path may be different for each Mac
+
+
 If you try to install process again, execute 'make distclean' then configure.
 
 
