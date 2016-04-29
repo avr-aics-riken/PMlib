@@ -15,6 +15,11 @@ REVISION HISTORY
 ================
 
 --------------------------
+2016-04-20
+r44 candidate
+- Support for generating Open Trace Format files.
+
+--------------------------
 2016-03-01
 r43 candidate
 - Support for Mac OSX 10.11, conditionally -lc++ option for linking

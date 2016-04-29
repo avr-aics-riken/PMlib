@@ -16,7 +16,7 @@
 
 //! @file   PerfWatch.h
 //! @brief  PerfWatch class Header
-//! @version rev.2.2 dated 10/30/2014 
+//! @version rev.5.0.0
 
 
 #include <cassert>
@@ -28,7 +28,14 @@
 #ifdef _OPENMP
 	#include <omp.h>
 #endif
+
+//	#ifdef USE_PAPI
 #include "pmlib_papi.h"
+//	#endif
+
+#ifdef USE_OTF
+#include "pmlib_otf.h"
+#endif
 
 #ifndef _WIN32
 #include <sys/time.h>
@@ -51,8 +58,9 @@ namespace pm_lib {
   public:
     
     // プロパティ
-    std::string m_label;   ///< ラベル
-    int m_typeCalc;       ///< 測定対象タイプ (0:通信, 1:計算)
+    std::string m_label;   ///< 測定区間のラベル
+    int m_id;             ///< 測定区間のラベルに対応する番号
+    int m_typeCalc;        ///< 測定対象タイプ (0:通信, 1:計算)
     bool m_exclusive;      ///< 排他測定フラグ
     
     // 測定値の積算量
@@ -67,7 +75,13 @@ namespace pm_lib {
     double m_flop_sd;    ///< 浮動小数点演算量or通信量の標準偏差(ランク0のみ)
     double m_time_comm;  ///< 通信部分の最大値（ランク0のみ）
     
-    bool m_valid;        ///< 測定回数が全ランクで等しいかどうかのフラグ(ランク0のみ)
+    bool m_valid;        ///< 測定回数が全ランクで等しいかのフラグ(使用しない)
+    int m_is_OTF;	     ///< OTF tracing 出力のフラグ 0(no), 1(yes), 2(full)
+    std::string otf_filename;    ///< OTF filename headings
+                        //	master 		: otf_filename + .otf
+                        //	definition	: otf_filename + .mdID + .def
+                        //	event		: otf_filename + .mdID + .events
+                        //	marker		: otf_filename + .mdID + .marker
     
 	struct pmlib_papi_chooser my_papi;
 
@@ -91,8 +105,9 @@ namespace pm_lib {
     int num_process;
     int my_rank;
     
-    /// 測定区間が初めてstartされる場合かどうかのフラグ
-    bool m_is_first;      /// true if the first instance
+    /// bool値：  true/false
+    bool m_is_first;      /// 測定区間が初めてstartされる場合かどうかのフラグ
+
 
   public:
     /// コンストラクタ.
@@ -112,22 +127,33 @@ namespace pm_lib {
     
     /// 測定区間にプロパティを設定.
     ///
-    ///   @param[in] label ラベル
+    ///   @param[in] label     ラベル
+    ///   @param[in] id       ラベルに対応する番号
     ///   @param[in] typeCalc  測定量のタイプ(0:通信, 1:計算)
-    ///   @param[in] myID      ランク番号
+    ///   @param[in] nPEs      プロセス数
+    ///   @param[in] my_rank   自ランク番号
     ///   @param[in] exclusive 排他測定フラグ
     ///
-    void setProperties(const std::string& label, const int typeCalc, const int nPEs, const int myID, bool exclusive) {
-      m_label = label;
-      m_typeCalc = typeCalc;
-      m_exclusive =  exclusive;
-      num_process = nPEs;
-      my_rank = myID;
-    }
+    void setProperties(const std::string& label, int id, int typeCalc, int nPEs, int my_rank, bool exclusive);
+
     
     /// HWPCイベントを初期化する
     ///
     void initializeHWPC(void);
+    
+    /// OTF 用の初期化
+    ///
+    void initializeOTF(void);
+    
+    /// 測定区間のラベル情報をOTF に出力
+    ///   @param[in] label     ラベル
+    ///   @param[in] id       ラベルに対応する番号
+    ///
+    void labelOTF(const std::string& label, int id);
+    
+    /// OTF 出力処理を終了する
+    ///
+    void finalizeOTF(void);
 
     /// 測定スタート.
     ///
@@ -202,12 +228,18 @@ namespace pm_lib {
 
     /// 計算量としてユーザー申告値を用いるかHWPC計測値を用いるかの決定を行う
     ///
-    ///   @return  戻り値とその意味合い
-    ///		0: user set bandwidth
-    /// 	1: user set flop counts
-    /// 	2: HWPC base bandwidth
-    /// 	3: HWPC base flop counts
-    /// 	4: other HWPC base statistics
+    /// @return  戻り値とその意味合い
+    ///   0: ユーザが引数で指定した通信量を採用する "Bytes/sec"
+    ///   1: ユーザが引数で指定した計算量を採用する "Flops"
+    ///   2: HWPC が自動的に測定する通信量を採用する	"Bytes/s (HWPC)"
+    ///   3: HWPC が自動的に測定する計算量を用いる	"Flops (HWPC)"
+    ///   4: HWPC が自動的に測定する他の測定量を用いる "events (HWPC)"
+    ///
+    /// @note
+    ///   計算量としてユーザー申告値を用いるかHWPC計測値を用いるかの決定を行う
+    ///   もし環境変数HWPC_CHOOSERの値がFLOPSやBANDWIDTHに
+    ///   指定されている場合はそれが優先される
+    ///
     int statsSwitch(void);
 
     /// MPIランク別測定結果を出力. 非排他測定区間も出力
@@ -271,11 +303,18 @@ namespace pm_lib {
     ///   @param[in] fops 浮動小数演算数/通信量(バイト)
     ///   @param[out] unit 単位の文字列
     ///   @param[in] typeCalc  測定対象タイプ(0:通信, 1:計算)
+    ///   @param[in] is_unit ユーザー申告値かHWPC自動測定値かの指定
+    ///              = 0: ユーザが引数で指定した通信量"Bytes/sec"
+    ///              = 1: ユーザが引数で指定した計算量"Flops"
+    ///              = 2: HWPC が自動測定する通信量"Bytes/s (HWPC)"
+    ///              = 3: HWPC が自動測定する計算量"Flops (HWPC)"
+    ///              = 4: HWPC が自動測定する他の測定量"events (HWPC)"
     ///   @return  単位変換後の数値
     ///
-    static double unitFlop(double fops, std::string &unit, int typeCalc);
+    ///   @note is_unitは通常PerfWatch::statsSwitch()で事前に決定されている
+    ///
+    static double unitFlop(double fops, std::string &unit, int typeCalc, int is_unit);
     
-  private:
     /// 時刻を取得.
     ///
     ///   Unix/Linux: gettimeofdayシステムコールを使用.
@@ -283,8 +322,9 @@ namespace pm_lib {
     ///
     ///   @return 時刻値(秒)
     ///
-    double getTime();
+    static double getTime();
     
+  private:
     /// エラーメッセージ出力.
     ///
     ///   @param[in] func メソッド名

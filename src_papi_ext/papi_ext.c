@@ -62,17 +62,15 @@ int my_papi_add_events ( int *events, int num_events)
 	HighLevelInfo *state = NULL;
 	int i, retval;
 
+	if ( num_events == 0 ) {
+		return PAPI_OK;
+	}
 	#ifdef DEBUG_PRINT_PAPI
-	fprintf(stderr,"\t <my_papi_add_events> starts. num_events=%d\n", num_events);
+	fprintf(stderr,"\t <my_papi_add_events> num_events=%d\n", num_events);
 	for (i=0; i<num_events; i++){
 		fprintf(stderr, "  i:%d events[i]:%u\n", i,events[i]);
 	}
 	#endif
-
-	if ( num_events == 0 ) {
-		//	fprintf(stderr,"*** info <my_papi_add_events> No event\n");
-		return PAPI_OK;
-	}
 
 	if ( ( retval = _internal_check_state( &state ) ) != PAPI_OK ) {
 		fprintf(stderr,"*** error. <my_papi_add_events> :: <_state>\n");
@@ -95,14 +93,13 @@ int my_papi_bind_start ( int *events, long long *values, int num_events)
 {
 	HighLevelInfo *state = NULL;
 	int retval;
-	#ifdef DEBUG_PRINT_PAPI
-	fprintf(stderr,"\t <my_papi_bind_start> starts\n");
-	#endif
 
 	if ( num_events == 0 ) {
-		//	fprintf(stderr,"*** info <my_papi_bind_start> No event\n");
 		return PAPI_OK;
 	}
+	#ifdef DEBUG_PRINT_PAPI
+	fprintf(stderr,"\t <my_papi_bind_start> num_events=%d\n", num_events);
+	#endif
 
 	if ( ( retval = _internal_check_state( &state ) ) != PAPI_OK ) {
 		fprintf(stderr,"*** error. <my_papi_bind_start> :: <_state>\n");
@@ -120,9 +117,6 @@ int my_papi_bind_start ( int *events, long long *values, int num_events)
 		}
 	}
 	state->running = HL_START;
-	#ifdef DEBUG_PRINT_PAPI
-	fprintf(stderr,"\t <my_papi_bind_start> returns\n");
-	#endif
 
 	return PAPI_OK;
 }
@@ -132,14 +126,13 @@ int my_papi_bind_stop ( int *events, long long *values, int num_events)
 {
 	HighLevelInfo *state = NULL;
 	int retval;
-	#ifdef DEBUG_PRINT_PAPI
-	fprintf(stderr,"\t <my_papi_bind_stop> starts\n");
-	#endif
 
 	if ( num_events == 0 ) {
-		//	fprintf(stderr,"*** info <my_papi_bind_stop> No event\n");
 		return PAPI_OK;
 	}
+	#ifdef DEBUG_PRINT_PAPI
+	fprintf(stderr,"\t <my_papi_bind_stop> num_events=%d\n", num_events);
+	#endif
 
 	if ( ( retval = _internal_check_state( &state ) ) != PAPI_OK ) {
 		fprintf(stderr,"*** error. <my_papi_bind_stop> :: <_state>\n");
@@ -163,14 +156,13 @@ int my_papi_bind_read ( int *events, long long *values, int num_events)
 {
 	HighLevelInfo *state = NULL;
 	int retval;
-	#ifdef DEBUG_PRINT_PAPI
-	fprintf(stderr,"\t <my_papi_bind_read> starts\n");
-	#endif
 
 	if ( num_events == 0 ) {
-		//	fprintf(stderr,"*** info <my_papi_bind_read> No event\n");
 		return PAPI_OK;
 	}
+	#ifdef DEBUG_PRINT_PAPI
+	fprintf(stderr,"\t <my_papi_bind_read> \n");
+	#endif
 
 	if ( ( retval = _internal_check_state( &state ) ) != PAPI_OK ) {
 		fprintf(stderr,"*** error. <my_papi_bind_read> :: <_state> \n");

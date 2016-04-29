@@ -30,4 +30,5 @@ Makefile_hand          Building PMlib by hand compile
 README                 This document
 src/                   Source codes
 src_papi_ext/          Extension of Papi interface 
+src_otf_ext/           Extension of Open Tracer Format interface 
 
