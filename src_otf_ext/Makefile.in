@@ -28,6 +28,7 @@
 #
 ##############################################################################
 ###
+#	OTF_DIR = /home/ra000004/mikami/otf/install_dir
 
 
 VPATH = @srcdir@
@@ -47,7 +48,7 @@ POST_INSTALL = :
 NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
-subdir = src_papi_ext
+subdir = src_otf_ext
 DIST_COMMON = $(nobase_include_HEADERS) $(srcdir)/Makefile.am \
 	$(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -83,10 +84,10 @@ am__installdirs = "$(DESTDIR)$(libdir)" "$(DESTDIR)$(includedir)"
 LIBRARIES = $(lib_LIBRARIES)
 AR = ar
 ARFLAGS = cru
-libpapi_ext_a_AR = $(AR) $(ARFLAGS)
-libpapi_ext_a_LIBADD =
-am_libpapi_ext_a_OBJECTS = libpapi_ext_a-papi_ext.$(OBJEXT)
-libpapi_ext_a_OBJECTS = $(am_libpapi_ext_a_OBJECTS)
+libotf_ext_a_AR = $(AR) $(ARFLAGS)
+libotf_ext_a_LIBADD =
+am_libotf_ext_a_OBJECTS = libotf_ext_a-otf_ext.$(OBJEXT)
+libotf_ext_a_OBJECTS = $(am_libotf_ext_a_OBJECTS)
 DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
@@ -95,8 +96,8 @@ COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
 CCLD = $(CC)
 LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
-SOURCES = $(libpapi_ext_a_SOURCES)
-DIST_SOURCES = $(libpapi_ext_a_SOURCES)
+SOURCES = $(libotf_ext_a_SOURCES)
+DIST_SOURCES = $(libotf_ext_a_SOURCES)
 HEADERS = $(nobase_include_HEADERS)
 ETAGS = etags
 CTAGS = ctags
@@ -211,12 +212,11 @@ target_alias = @target_alias@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-lib_LIBRARIES = libpapi_ext.a
-libpapi_ext_a_CXXFLAGS = -I$(top_srcdir)/include -I@PAPI_DIR@/include
-libpapi_ext_a_CFLAGS = -I$(top_srcdir)/include -I@PAPI_DIR@/include
-libpapi_ext_a_SOURCES = papi_ext.c
+lib_LIBRARIES = libotf_ext.a
+libotf_ext_a_CXXFLAGS = -I$(top_srcdir)/include -I@OTF_DIR@/include/open-trace-format
+libotf_ext_a_CFLAGS = -I$(top_srcdir)/include -I@OTF_DIR@/include/open-trace-format
+libotf_ext_a_SOURCES = otf_ext.c
 nobase_include_HEADERS = 
-EXTRA_DIST = Makefile_hand
 all: all-am
 
 .SUFFIXES:
@@ -230,9 +230,9 @@ $(srcdir)/Makefile.in:  $(srcdir)/Makefile.am  $(am__configure_deps)
 	      exit 1;; \
 	  esac; \
 	done; \
-	echo ' cd $(top_srcdir) && $(AUTOMAKE) --gnu src_papi_ext/Makefile'; \
+	echo ' cd $(top_srcdir) && $(AUTOMAKE) --gnu src_otf_ext/Makefile'; \
 	$(am__cd) $(top_srcdir) && \
-	  $(AUTOMAKE) --gnu src_papi_ext/Makefile
+	  $(AUTOMAKE) --gnu src_otf_ext/Makefile
 .PRECIOUS: Makefile
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	@case '$?' in \
@@ -283,10 +283,10 @@ uninstall-libLIBRARIES:
 
 clean-libLIBRARIES:
 	-test -z "$(lib_LIBRARIES)" || rm -f $(lib_LIBRARIES)
-libpapi_ext.a: $(libpapi_ext_a_OBJECTS) $(libpapi_ext_a_DEPENDENCIES) 
-	-rm -f libpapi_ext.a
-	$(libpapi_ext_a_AR) libpapi_ext.a $(libpapi_ext_a_OBJECTS) $(libpapi_ext_a_LIBADD)
-	$(RANLIB) libpapi_ext.a
+libotf_ext.a: $(libotf_ext_a_OBJECTS) $(libotf_ext_a_DEPENDENCIES) 
+	-rm -f libotf_ext.a
+	$(libotf_ext_a_AR) libotf_ext.a $(libotf_ext_a_OBJECTS) $(libotf_ext_a_LIBADD)
+	$(RANLIB) libotf_ext.a
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -294,7 +294,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libpapi_ext_a-papi_ext.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libotf_ext_a-otf_ext.Po@am__quote@
 
 .c.o:
 @am__fastdepCC_TRUE@	$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
@@ -310,19 +310,19 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(COMPILE) -c `$(CYGPATH_W) '$<'`
 
-libpapi_ext_a-papi_ext.o: papi_ext.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libpapi_ext_a_CFLAGS) $(CFLAGS) -MT libpapi_ext_a-papi_ext.o -MD -MP -MF $(DEPDIR)/libpapi_ext_a-papi_ext.Tpo -c -o libpapi_ext_a-papi_ext.o `test -f 'papi_ext.c' || echo '$(srcdir)/'`papi_ext.c
-@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/libpapi_ext_a-papi_ext.Tpo $(DEPDIR)/libpapi_ext_a-papi_ext.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='papi_ext.c' object='libpapi_ext_a-papi_ext.o' libtool=no @AMDEPBACKSLASH@
+libotf_ext_a-otf_ext.o: otf_ext.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libotf_ext_a_CFLAGS) $(CFLAGS) -MT libotf_ext_a-otf_ext.o -MD -MP -MF $(DEPDIR)/libotf_ext_a-otf_ext.Tpo -c -o libotf_ext_a-otf_ext.o `test -f 'otf_ext.c' || echo '$(srcdir)/'`otf_ext.c
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/libotf_ext_a-otf_ext.Tpo $(DEPDIR)/libotf_ext_a-otf_ext.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='otf_ext.c' object='libotf_ext_a-otf_ext.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libpapi_ext_a_CFLAGS) $(CFLAGS) -c -o libpapi_ext_a-papi_ext.o `test -f 'papi_ext.c' || echo '$(srcdir)/'`papi_ext.c
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libotf_ext_a_CFLAGS) $(CFLAGS) -c -o libotf_ext_a-otf_ext.o `test -f 'otf_ext.c' || echo '$(srcdir)/'`otf_ext.c
 
-libpapi_ext_a-papi_ext.obj: papi_ext.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libpapi_ext_a_CFLAGS) $(CFLAGS) -MT libpapi_ext_a-papi_ext.obj -MD -MP -MF $(DEPDIR)/libpapi_ext_a-papi_ext.Tpo -c -o libpapi_ext_a-papi_ext.obj `if test -f 'papi_ext.c'; then $(CYGPATH_W) 'papi_ext.c'; else $(CYGPATH_W) '$(srcdir)/papi_ext.c'; fi`
-@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/libpapi_ext_a-papi_ext.Tpo $(DEPDIR)/libpapi_ext_a-papi_ext.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='papi_ext.c' object='libpapi_ext_a-papi_ext.obj' libtool=no @AMDEPBACKSLASH@
+libotf_ext_a-otf_ext.obj: otf_ext.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libotf_ext_a_CFLAGS) $(CFLAGS) -MT libotf_ext_a-otf_ext.obj -MD -MP -MF $(DEPDIR)/libotf_ext_a-otf_ext.Tpo -c -o libotf_ext_a-otf_ext.obj `if test -f 'otf_ext.c'; then $(CYGPATH_W) 'otf_ext.c'; else $(CYGPATH_W) '$(srcdir)/otf_ext.c'; fi`
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/libotf_ext_a-otf_ext.Tpo $(DEPDIR)/libotf_ext_a-otf_ext.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='otf_ext.c' object='libotf_ext_a-otf_ext.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libpapi_ext_a_CFLAGS) $(CFLAGS) -c -o libpapi_ext_a-papi_ext.obj `if test -f 'papi_ext.c'; then $(CYGPATH_W) 'papi_ext.c'; else $(CYGPATH_W) '$(srcdir)/papi_ext.c'; fi`
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libotf_ext_a_CFLAGS) $(CFLAGS) -c -o libotf_ext_a-otf_ext.obj `if test -f 'otf_ext.c'; then $(CYGPATH_W) 'otf_ext.c'; else $(CYGPATH_W) '$(srcdir)/otf_ext.c'; fi`
 install-nobase_includeHEADERS: $(nobase_include_HEADERS)
 	@$(NORMAL_INSTALL)
 	test -z "$(includedir)" || $(MKDIR_P) "$(DESTDIR)$(includedir)"
@@ -547,6 +547,8 @@ uninstall-am: uninstall-libLIBRARIES uninstall-nobase_includeHEADERS
 	uninstall-am uninstall-libLIBRARIES \
 	uninstall-nobase_includeHEADERS
 
+
+#	EXTRA_DIST = Makefile_hand
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

@@ -16,7 +16,7 @@
 
 //! @file   PerfMonitor.h
 //! @brief  PerfMonitor class Header
-//! @version rev.4.1.2
+//! @version rev.5.0.0
 
 #ifdef _PM_WITHOUT_MPI_
 #include "mpi_stubs.h"
@@ -75,6 +75,7 @@ namespace pm_lib {
     bool is_MPI_enabled;	     ///< PMlibの対応動作可能フラグ:MPI
     bool is_OpenMP_enabled;	   ///< PMlibの対応動作可能フラグ:OpenMP
     bool is_PAPI_enabled;	     ///< PMlibの対応動作可能フラグ:PAPI
+    bool is_OTF_enabled;	   ///< 対応動作可能フラグ:OTF tracing 出力
 
   public:
     /// コンストラクタ.
@@ -107,15 +108,17 @@ namespace pm_lib {
     void setParallelMode(const std::string& p_mode, const int n_thread, const int n_proc);
 
     
-    /// ランク番号の通知
+    /// ランク番号の通知 : This function is obsolete and is silently ignored.
     ///
-    /// @param[in] myID MPI process ID
+    /// @param[in] MPI process ID
     ///
     /// @note ランク番号はPMlib内部で自動的に識別される。
+    /// @note This function is obsolete and is silently ignored.
+    /// It stays here only for the compatibility with old versions.
     ///
-    void setRankInfo(const int myID) {
-      //	This function is redundant, and is now silently ignored.
-      //	my_rank = myID;
+    void setRankInfo(const int my_rank_ID) {
+      //	my_rank = my_rank_ID;
+      fprintf(stderr, "Remark. <setRankInfo> function is obsolete, and is silently ignored.\n");
     }
 
     
@@ -127,35 +130,12 @@ namespace pm_lib {
     ///                        Fortran仕様は整数型(0:false, 1:true)
     ///
     ///   @note labelラベル文字列は測定区間を識別するために用いる。
-    ///   各ラベル毎に対応したキー番号 key を内部で自動生成する
+    ///   各ラベル毎に対応した区間番号を内部で自動生成する
     ///   最初に確保した区間数init_nWatchが不足したら動的にinit_nWatch追加する
     ///   第１引数は必須。第２引数は明示的な自己申告モードの場合に必須。
     ///   第３引数は省略可
     ///
-    void setProperties(const std::string& label, Type type, bool exclusive=true) {
-      int key = add_perf_label(label);
-      if (m_nWatch < 0) {
-        fprintf(stderr, "\tPerfMonitor::setProperties() error. key=%u \n", key);
-        PM_Exit(0);
-      }
-      #ifdef DEBUG_PRINT_LABEL
-      fprintf(stderr, "<setProperties> %s type:%d key:%d\n",
-                             label.c_str(), type, key);
-      #endif
-
-      m_nWatch++;
-      if (m_nWatch > researved_nWatch) {
-        PerfWatch* watch_more = new PerfWatch[2*researved_nWatch ];
-        for (int i = 0; i < researved_nWatch; i++) {
-            watch_more[i] = m_watchArray[i];
-        }
-        delete [] m_watchArray;
-        m_watchArray = watch_more;
-        watch_more = NULL;
-        researved_nWatch = 2*researved_nWatch;
-      }
-      m_watchArray[key].setProperties(label, type, num_process, my_rank, exclusive);
-    }
+    void setProperties(const std::string& label, Type type, bool exclusive=true);
 
     
     /// 測定区間スタート
@@ -163,13 +143,8 @@ namespace pm_lib {
     ///   @param[in] label ラベル文字列。測定区間を識別するために用いる。
     ///
     ///
-    void start (const std::string& label) {
-      int key = key_perf_label(label);
-      m_watchArray[key].start();
-		#ifdef DEBUG_PRINT_LABEL
-    	fprintf(stderr, "<start> %s : %d\n", label.c_str(), key);
-		#endif
-    }
+    void start (const std::string& label);
+
     
     /// 測定区間ストップ
     ///
@@ -178,13 +153,8 @@ namespace pm_lib {
     ///   @param[in] iterationCount  計算量の乗数（反復回数）:省略値1
     ///
     ///   @note  引数とレポート出力情報の関連はPerfWatch.hのコメントに詳しく説明されている。
-    void stop(const std::string& label, double flopPerTask=0.0, unsigned iterationCount=1) {
-      int key = key_perf_label(label);
-      m_watchArray[key].stop(flopPerTask, iterationCount);
-		#ifdef DEBUG_PRINT_LABEL
-    	fprintf(stderr, "<stop>  %s : %d\n", label.c_str(), key);
-		#endif
-    }
+    void stop(const std::string& label, double flopPerTask=0.0, unsigned iterationCount=1);
+
     
     /// 全プロセスの全測定結果情報をマスタープロセス(0)に集約.
     ///
@@ -201,12 +171,13 @@ namespace pm_lib {
     ///   @param[in] comments 任意のコメント
     ///   @param[in] seqSections (省略可)測定区間の表示順 (0:経過時間順、1:登録順で表示)
     ///
-    ///   @note ノード0以外は, 呼び出されてもなにもしない
+    ///   @note 基本統計レポートは排他測定区間, 非排他測定区間をともに出力する。
+    ///   MPIの場合、rank0プロセスの測定回数が１以上の区間のみを表示する。
     ///
     void print(FILE* fp, const std::string hostname, const std::string comments, int seqSections=0);
 
     
-    /// MPIランク別詳細レポート、HWPC詳細レポートを出力。 非排他測定区間も出力
+    /// MPIランク別詳細レポート、HWPC詳細レポートを出力。
     ///
     ///   @param[in] fp 出力ファイルポインタ
     ///   @param[in] legend   int型 (省略可) HWPC 記号説明の表示 (0:なし、1:表示する)
@@ -214,9 +185,9 @@ namespace pm_lib {
     ///
     ///   @note 本APIよりも先にPerfWatch::gather()を呼び出しておく必要が有る
     ///         HWPC値は各プロセス毎に子スレッドの値を合算して表示する
+    ///   @note 詳細レポートは排他測定区間のみを出力する
     ///
     void printDetail(FILE* fp, int legend=0, int seqSections=0);
-
 
     
     /// プロセスグループ単位でのMPIランク別詳細レポート、HWPC詳細レポート出力
@@ -238,7 +209,6 @@ namespace pm_lib {
     void printGroup(FILE* fp, MPI_Group p_group, MPI_Comm p_comm, int* pp_ranks, int group=0, int legend=0, int seqSections=0);
 
 
-    
     /// MPI communicatorから自動グループ化したMPIランク別詳細レポート、HWPC詳細レポートを出力
     ///
     ///   @param[in] fp 出力ファイルポインタ
@@ -251,7 +221,6 @@ namespace pm_lib {
     void printComm (FILE* fp, MPI_Comm new_comm, int icolor, int key, int legend=0, int seqSections=0);
 
 
-
     /**
      * @brief PMlibバージョン番号の文字列を返す
      */
@@ -259,9 +228,9 @@ namespace pm_lib {
 
 
   private:
-	std::map<std::string, int > array_of_symbols;
+    std::map<std::string, int > array_of_symbols;
 
-    /// labelに対応した計測区間のkey番号を追加作成する
+    /// 測定区間のラベルに対応する区間番号を追加作成する
     ///
     ///   @param[in] 測定区間のラベル
     ///
@@ -277,25 +246,61 @@ namespace pm_lib {
     	return ip;
     }
 
-    /// labelに対応するkey番号を取得
+    /// 測定区間のラベルに対応する区間番号を取得
     ///
     ///   @param[in] 測定区間のラベル
     ///
-    int key_perf_label(std::string arg_st)
+    int find_perf_label(std::string arg_st)
     {
-    	int pair_value;
+    	int p_id;
     	if (array_of_symbols.find(arg_st) == array_of_symbols.end()) {
-    		pair_value = -1;
+    		p_id = -1;
     	} else {
-    		pair_value = array_of_symbols[arg_st] ;
+    		p_id = array_of_symbols[arg_st] ;
     	}
 		#ifdef DEBUG_PRINT_LABEL
-    	fprintf(stderr, "<key_perf_label> %s : %d\n", arg_st.c_str(), pair_value);
+    	fprintf(stderr, "<find_perf_label> %s : %d\n", arg_st.c_str(), p_id);
 		#endif
-    	return pair_value;
+    	return p_id;
     }
 
-  };
+    /// 測定区間の区間番号に対応するラベルを取得
+    ///
+    ///   @param[in] ip 測定区間の区間番号
+    ///   @param[in] label ラベルとなる文字列
+    ///
+    void loop_perf_label(const int ip, std::string& p_label)
+    {
+		std::map<std::string, int>::const_iterator it;
+		int p_id;
+
+		for(it = array_of_symbols.begin(); it != array_of_symbols.end(); ++it) {
+			p_label = it->first;
+			p_id = it->second;
+			if (p_id == ip) {
+				//	fprintf(stderr, "\t\t <%s> : %d\n", p_label.c_str(), p_id);
+				return;
+			}
+		}
+	}
+
+    /// 全測定区間のラベルと番号を登録順で表示
+    ///
+    void check_all_perf_label(void)
+    {
+		std::map<std::string, int>::const_iterator it;
+		std::string p_label;
+		int p_id;
+		fprintf(stderr, "<check_all_perf_label> internal map: label, value\n");
+		//	fprintf(stderr, "\t\t %s, %d\n", "<Root Section>:", 0);
+		for(it = array_of_symbols.begin(); it != array_of_symbols.end(); ++it) {
+			p_label = it->first;
+			p_id = it->second;
+			fprintf(stderr, "\t\t <%s> : %d\n", p_label.c_str(), p_id);
+		}
+    }
+
+  }; // end of class PerfMonitor //
 
 } /* namespace pm_lib */
 
