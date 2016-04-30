@@ -85,7 +85,7 @@ void f_pm_initialize_ (int& init_nWatch)
 ///   @param[in] int fc_size  character文字列ラベルの長さ（文字数）
 ///
 ///   @note ラベルは測定区間を識別するために用いる。
-///   		各labelに対応したキー番号 key は各ラベル毎に内部で自動生成する
+///   		各ラベル毎に対応した区間番号は内部で自動生成する
 ///   @note  Fortranコンパイラはfc_size引数を自動的に追加してしまう
 ///
 void f_pm_setproperties_ (char* fc, int& f_type, int& f_exclusive, int fc_size)
@@ -354,4 +354,3 @@ void f_pm_printgroup_ (char* fc, MPI_Group p_group, MPI_Comm p_comm, int* pp_ran
 /// 今後開発が必要なfortran API ルーチン (C++バージョンのAPIは開発済み)
 /// MPI_Comm_splitで分離されたMPIランクグループ毎に詳細レポート出力を行う。
 ///	void f_pm_printcomm_ ( ... )
-

@@ -1,3 +1,4 @@
+
 /* ##################################################################
  *
  * PMlib - Performance Monitor library
@@ -45,21 +46,25 @@ namespace pm_lib {
   
   bool PerfWatch::ExclusiveStarted = false;
   
-  
+
   /// 単位変換.
   ///
   ///   @param[in] fops 浮動小数演算数/通信量(バイト)
   ///   @param[out] unit 単位の文字列
-  ///   @param[in] typeCalc 測定対象タイプ (0:通信, 1:計算)
+  ///   @param[in] typeCalc  測定対象タイプ(0:通信, 1:計算)
+  ///   @param[in] is_unit ユーザー申告値かHWPC自動測定値かの指定
+  ///              = 0: ユーザが引数で指定した通信量"Bytes/sec"
+  ///              = 1: ユーザが引数で指定した計算量"Flops"
+  ///              = 2: HWPC が自動測定する通信量"Bytes/s (HWPC)"
+  ///              = 3: HWPC が自動測定する計算量"Flops (HWPC)"
+  ///              = 4: HWPC が自動測定する他の測定量"events (HWPC)"
   ///   @return  単位変換後の数値
   ///
-  double PerfWatch::unitFlop(double fops, std::string &unit, const int typeCalc)
+  ///   @note is_unitは通常PerfWatch::statsSwitch()で事前に決定されている
+  ///
+
+  double PerfWatch::unitFlop(double fops, std::string &unit, const int typeCalc, int is_unit)
   {
-    int is_unit;
-    if (typeCalc == 0) is_unit=0;
-    if (typeCalc == 1) is_unit=1;
-    if (hwpc_group.number[I_bandwidth] > 0) is_unit=0;
-    if (hwpc_group.number[I_flops] > 0) is_unit=1;
 
     double P, T, G, M, K, ret=0.0;
     K = 1000.0;
@@ -68,7 +73,7 @@ namespace pm_lib {
     T = 1000.0*G;
     P = 1000.0*T;
 
-    if (is_unit == 0) {
+    if ((is_unit == 0) || (is_unit == 2))  {
       if      ( fops > P ) {
         ret = fops / P;
         unit = "PB/sec";
@@ -87,7 +92,7 @@ namespace pm_lib {
       }
     }
 
-    if (is_unit == 1) {
+    if ((is_unit == 1) || (is_unit == 3))  {
       if      ( fops > P ) {
         ret = fops / P;
         unit = "Pflops";
@@ -106,6 +111,25 @@ namespace pm_lib {
       }
     }
 
+    if ((is_unit == 4))  {
+      if      ( fops > P ) {
+        ret = fops / P;
+        unit = "Peta/sec";
+      }
+      else if ( fops > T ) {
+        ret = fops / T;
+        unit = "Tera/sec";
+      }
+      else if ( fops > G ) {
+        ret = fops / G;
+        unit = "Giga/sec";
+      }
+      else {
+        ret = fops / M;
+        unit = "Mega/sec";
+      }
+    }
+
     return ret;
   }
 
@@ -117,15 +141,31 @@ namespace pm_lib {
   void PerfWatch::gatherHWPC()
   {
 #ifdef USE_PAPI
-	if (!m_exclusive) return;
 	if ( papi.num_events == 0 ) return;
+
+	int np = num_process * my_papi.num_sorted;
+
+	// Following code block was used to zero out the inclusive section report.
+	// We no longer zero out the inclusive section.
+	//    if (!m_exclusive) {
+	//      gather_sorted  = new double[np];
+	//      if (!gather_sorted) {
+	//        printError("gatherHWPC()",  "new memory failed. %d Bytes\n", np*8);
+	//        PM_Exit(0);
+	//      }
+	//      for (int i=0; i<np ; i++) {
+	//        gather_sorted[i] = 0.0;
+	//      }
+	//      return;
+	//    }
 
 	sortPapiCounterList ();
 
     int is_unit = statsSwitch();
 
 	// if conditions meet, overwrite the user values with HWPC measured values
-	if ( (is_unit == 2) || (is_unit == 3) )
+	//	if ( (is_unit == 2) || (is_unit == 3) )
+	if ( (2 <= is_unit ) && (is_unit <= 4) )
 	{
 		m_flop = my_papi.v_sorted[my_papi.num_sorted-1] * m_time;
 	}
@@ -149,6 +189,12 @@ namespace pm_lib {
 	} else {
 		gather_sorted = my_papi.v_sorted;
 	}
+	#ifdef DEBUG_PRINT_WATCH
+    if (my_rank == 0) {
+		fprintf(stderr, "\t<gatherHWPC> num_sorted=%d, m_time=%e\n",
+			my_papi.num_sorted, m_time );
+    }
+	#endif
 #endif
   }
 
@@ -157,10 +203,17 @@ namespace pm_lib {
   ///
   void PerfWatch::gather()
   {
+	//	if (!m_exclusive) return;
     if (m_gathered) {
       printError("PerfWatch::gather()",  "already gathered\n");
       PM_Exit(0);
     }
+	#ifdef DEBUG_PRINT_WATCH
+    if (my_rank == 0) {
+		fprintf(stderr, "\t<gather> my_rank=%d, num_process=%d, m_time=%e, m_flop=%e, m_count=%lu\n",
+			my_rank, num_process, m_time, m_flop, m_count );
+    }
+	#endif
     
     int m_np;
     m_np = num_process;
@@ -191,61 +244,56 @@ namespace pm_lib {
   void PerfWatch::statsAverage()
   {
 
-    int m_np;
-    m_np = num_process;
-
     if (my_rank == 0) {
-      if (m_exclusive) {
+      //	if (m_exclusive) {
         
-        // check call count
-        int n = m_countArray[0];
-        for (int i = 1; i < m_np; i++) {
-          if (m_countArray[i] != n) m_valid = false;
-        }
-        // 排他測定(m_exclusive==true)では全ノードで測定回数が等しいことを仮定.
-        // 等しくない場合(m_valid==fals)には、統計計算をスキップする.
-        //	if (!m_valid) return;
+        // version 4 以降
+        // 計算が複雑になり負荷のアンバランスが生じると、
+        // 排他測定(m_exclusive==true)でも
+        // 区間の呼び出し回数はプロセス毎に異なる場合がありえるため
+        // 測定回数が全ノードで等しいことの checkはnasi
+        // int n = m_countArray[0];
+        // for (int i = 1; i < num_process; i++) {
+        //   if (m_countArray[i] != n) m_valid = false;
+        // }
+        // if (!m_valid) return;
         //
-        // version 4 以降の注意
-        // 計算が複雑になり負荷のアンバランスが生じると、区間の呼び出し回数は
-        // プロセス毎に異なる場合がありえる。
-        // このため変数 m_valid の意味合いは当初の設計からは修正が必要となる。
-        //
+
         
         // 平均値
         m_time_av = 0.0;
         m_flop_av = 0.0;
-        for (int i = 0; i < m_np; i++) {
+        for (int i = 0; i < num_process; i++) {
           m_time_av += m_timeArray[i];
           m_flop_av += m_flopArray[i];
         }
-        m_time_av /= m_np;
-        m_flop_av /= m_np;
+        m_time_av /= num_process;
+        m_flop_av /= num_process;
         
         // 標準偏差
         m_time_sd = 0.0;
         m_flop_sd = 0.0;
-        if (m_np > 1) {
-          for (int i = 0; i < m_np; i++) {
+        if (num_process > 1) {
+          for (int i = 0; i < num_process; i++) {
             double d_time = m_timeArray[i] - m_time_av;
             double d_flop = m_flopArray[i] - m_flop_av;
             m_time_sd += d_time*d_time;
             m_flop_sd += d_flop*d_flop;
           }
-          m_time_sd = sqrt(m_time_sd / (m_np-1));
-          m_flop_sd = sqrt(m_flop_sd / (m_np-1));
+          m_time_sd = sqrt(m_time_sd / (num_process-1));
+          m_flop_sd = sqrt(m_flop_sd / (num_process-1));
         }
         
         // 通信の場合，各ノードの通信時間の最大値
         m_time_comm = 0.0;
         if (m_typeCalc == 0) {
           double comm_max = 0.0;
-          for (int i = 0; i < m_np; i++) {
+          for (int i = 0; i < num_process; i++) {
             if (m_timeArray[i] > comm_max) comm_max = m_timeArray[i];
           }
           m_time_comm = comm_max; 
         }
-      } // m_exclusive
+      //	} // m_exclusive
     } // my_rank == 0
   }
   
@@ -278,11 +326,20 @@ namespace pm_lib {
     if (m_typeCalc == 0) { is_unit=0; }
     if (m_typeCalc == 1) { is_unit=1; }
 #ifdef USE_PAPI
-    if (hwpc_group.number[I_bandwidth] > 0) { is_unit=2; }
-    if (hwpc_group.number[I_flops]  > 0) { is_unit=3; }
-    if (( hwpc_group.number[I_vector]
-        + hwpc_group.number[I_cache]
-        + hwpc_group.number[I_cycle]) >0) { is_unit=4; }
+// If HWPC is available, initializeHWPC() and createPapiCounterList()
+// should have created the HWPC table
+
+    if (hwpc_group.number[I_bandwidth] > 0) {
+      is_unit=2;
+    } else if (hwpc_group.number[I_flops]  > 0) {
+      is_unit=3;
+    } else if (( hwpc_group.number[I_vector]
+               + hwpc_group.number[I_cache]
+               + hwpc_group.number[I_cycle]) >0) {
+      is_unit=4;
+    } else {
+      // No more switch for this version. return (-1)
+    }
 #endif
 
     return is_unit;
@@ -335,9 +392,10 @@ namespace pm_lib {
     unsigned long total_count = 0;
     for (int i = 0; i < m_np; i++) total_count += m_countArray[i];
     
-    if ( total_count > 0 && is_unit <= 3) {
+    if ( total_count > 0 && is_unit <= 4) {
       fprintf(fp, "Label  %s%s\n", m_exclusive ? "" : "*", m_label.c_str());
-      fprintf(fp, "Header ID  :     call   time[s] time[%%]  t_wait[s]  t[s]/call   flop|msg    speed              \n");
+      // fprintf(fp, "Header ID  :     call   time[s] time[%%]  t_wait[s]  t[s]/call   flop|msg    speed              \n");
+      fprintf(fp, "Header ID  :     call   time[s] time[%%]  t_wait[s]  t[s]/call   counter     speed              \n");
       for (int i = 0; i < m_np; i++) {
 		t_per_call = (m_countArray[i]==0) ? 0.0: m_timeArray[i]/m_countArray[i];
 		perf_rate = (m_countArray[i]==0) ? 0.0 : m_flopArray[i]/m_timeArray[i];
@@ -353,7 +411,7 @@ namespace pm_lib {
 			unit.c_str()     // スピードの単位
 			);
       }
-    } else if ( total_count > 0 && is_unit > 3) {
+    } else if ( total_count > 0 && is_unit > 4) {
       fprintf(fp, "Label  %s%s\n", m_exclusive ? "" : "*", m_label.c_str());
       fprintf(fp, "Header ID  :     call   time[s] time[%%]  t_wait[s]  t[s]/call   \n");
       for (int i = 0; i < m_np; i++) {
@@ -391,7 +449,7 @@ namespace pm_lib {
 
     MPI_Group_size(p_group, &m_np);
     MPI_Group_rank(p_group, &new_id);
-#ifdef DEBUG_PRINT_PAPI
+#ifdef DEBUG_PRINT_WATCH
     if (my_rank == 0) {
       fprintf(fp, "<printGroupRanks> pp_ranks[] has %d ranks:", m_np);
       for (int i = 0; i < m_np; i++) {
@@ -420,9 +478,10 @@ namespace pm_lib {
     unsigned long total_count = 0;
     for (int i = 0; i < m_np; i++) total_count += m_countArray[pp_ranks[i]];
     
-    if ( total_count > 0 && is_unit <= 3) {
+    if ( total_count > 0 && is_unit <= 4) {
       fprintf(fp, "Label  %s%s\n", m_exclusive ? "" : "*", m_label.c_str());
-      fprintf(fp, "Header ID  :     call   time[s] time[%%]  t_wait[s]  t[s]/call   flop|msg    speed              \n");
+      // fprintf(fp, "Header ID  :     call   time[s] time[%%]  t_wait[s]  t[s]/call   flop|msg    speed              \n");
+      fprintf(fp, "Header ID  :     call   time[s] time[%%]  t_wait[s]  t[s]/call   counter     speed              \n");
       for (int i = 0; i < m_np; i++) {
 	ip = pp_ranks[i];
 	t_per_call = (m_countArray[ip]==0) ? 0.0: m_timeArray[ip]/m_countArray[ip];
@@ -439,7 +498,7 @@ namespace pm_lib {
 			unit.c_str()     // スピードの単位
 			);
       }
-    } else if ( total_count > 0 && is_unit > 3) {
+    } else if ( total_count > 0 && is_unit > 4) {
       fprintf(fp, "Label  %s%s\n", m_exclusive ? "" : "*", m_label.c_str());
       fprintf(fp, "Header ID  :     call   time[s] time[%%]  t_wait[s]  t[s]/call   \n");
       for (int i = 0; i < m_np; i++) {
@@ -560,6 +619,123 @@ namespace pm_lib {
   }
   
   
+  /// 測定区間にプロパティを設定.
+  ///
+  ///   @param[in] label     ラベル
+  ///   @param[in] id       ラベルに対応する番号
+  ///   @param[in] typeCalc  測定量のタイプ(0:通信, 1:計算)
+  ///   @param[in] my_rank_ID      ランク番号
+  ///   @param[in] exclusive 排他測定フラグ
+  ///
+  void PerfWatch::setProperties(const std::string& label, int id, int typeCalc, int nPEs, int my_rank_ID, bool exclusive)
+  {
+    m_label = label;
+    m_id = id;
+    m_typeCalc = typeCalc;
+    m_exclusive =  exclusive;
+    num_process = nPEs;
+    my_rank = my_rank_ID;
+#ifdef DEBUG_PRINT_WATCH
+    if (my_rank == 0) {
+    fprintf(stderr, "<PerfWatch::setProperties> %s : id=%d, typeCalc=%d, nPEs=%d, my_rank_ID=%d, exclusive=%s\n", label.c_str(), id, typeCalc, nPEs, my_rank_ID, exclusive?"true":"false");
+    }
+#endif
+
+    m_is_OTF = 0;
+#ifdef USE_OTF
+	// 環境変数OTF_TRACING が指定された場合
+	// OTF_TRACING = none(default) | yes | on | full
+    std::string s;
+    char* c_env;
+    c_env = std::getenv("OTF_TRACING");
+    if (c_env != NULL) {
+      s = c_env;
+      if ((s == "yes") || (s == "on") ) {
+        m_is_OTF = 1;
+      } else if ((s == "full")) {
+        m_is_OTF = 2;
+      }
+      #ifdef DEBUG_PRINT_WATCH
+      if (my_rank == 0) {
+	    fprintf(stderr, "\t<getenv> OTF_TRACING=%s is provided.\n", c_env);
+      }
+      #endif
+    }
+
+#endif
+  }
+
+
+
+  /// OTF tracing 出力用の初期化
+  ///
+  void PerfWatch::initializeOTF(void)
+  {
+#ifdef USE_OTF
+    if (m_is_OTF == 0) return;
+
+	// 環境変数 OTF_FILENAME が指定された場合
+    std::string s;
+    char* c_env = std::getenv("OTF_FILENAME");
+    if (c_env != NULL) {
+      s = c_env;
+      otf_filename = s;
+    } else {
+      otf_filename = "pmlib_optional_otf_files";
+    }
+    double baseT = PerfWatch::getTime();
+    my_otf_initialize(num_process, my_rank, otf_filename.c_str(), baseT);
+
+#endif
+  }
+
+
+  /// 測定区間のラベル情報をOTF に出力
+  ///
+  ///   @param[in] label     ラベル
+  ///   @param[in] id       ラベルに対応する番号
+  ///
+  void PerfWatch::labelOTF(const std::string& label, int id)
+  {
+#ifdef USE_OTF
+    if (m_is_OTF != 0) {
+      my_otf_event_label(num_process, my_rank, id+1, label.c_str());
+    }
+#endif
+  }
+
+  
+  /// OTF 出力処理を終了する
+  ///
+  void PerfWatch::finalizeOTF(void)
+  {
+#ifdef USE_OTF
+    std::string s_group, s_counter, s_unit;
+
+	s_group = "PMlib-OTF counter group" ;
+
+    int is_unit = statsSwitch();
+	if ( (is_unit == 0) ) {
+		s_counter =  "User Defined Values" ;
+		s_unit =  "unit : Flops";
+	} else if ( (is_unit == 1) ) {
+		s_counter =  "User Defined Values" ;
+		s_unit =  "unit : Bytes/sec";
+	} else if ( (2 <= is_unit) && (is_unit <= 4) ) {
+		s_counter =  "HWPC" ;
+		s_unit =  my_papi.s_sorted[my_papi.num_sorted-1] ;
+	}
+
+
+    if (m_is_OTF != 0) {
+      (void) MPI_Barrier(MPI_COMM_WORLD);
+      my_otf_finalize (num_process, my_rank, otf_filename.c_str(),
+                    s_group.c_str(), s_counter.c_str(), s_unit.c_str());
+    }
+#endif
+  }
+
+
 
   /// 測定区間スタート.
   ///
@@ -583,11 +759,6 @@ namespace pm_lib {
     m_startTime = getTime();
 
 #ifdef USE_PAPI
-  #ifdef DEBUG_PRINT_PAPI
-    if ((my_rank == 0) && (m_is_first))
-		fprintf (stderr, "\t<PerfWatch::start> The first <%s> num_events=%d\n",
-						m_label.c_str(), my_papi.num_events);
-  #endif
 
 	if (m_is_first) {
 		my_papi = papi;
@@ -608,8 +779,19 @@ namespace pm_lib {
 			PM_Exit(0);
 		}
 	}
+    #ifdef DEBUG_PRINT_PAPI
+    if (my_rank == 0)
+		fprintf (stderr, "\t<PerfWatch::start> <%s> \n", m_label.c_str());
+    #endif
 
 #endif // USE_PAPI
+
+#ifdef USE_OTF
+    if (m_is_OTF != 0) {
+      my_otf_event_start(my_rank, m_startTime, m_id);
+	}
+#endif
+
   }
   
 
@@ -671,7 +853,10 @@ namespace pm_lib {
       PM_Exit(0);
     }
 
-    m_time += getTime() - m_startTime;
+	double w;
+    double m_stopTime;
+    m_stopTime = getTime();
+    m_time += m_stopTime - m_startTime;
     m_count++;
     m_started = false;
     if (m_exclusive) ExclusiveStarted = false;
@@ -693,9 +878,25 @@ namespace pm_lib {
 			my_papi.values[i] += th_papi.values[i];
 			}
 		}
+	}
 
+	for (int i=0; i<papi.num_events; i++) {
+		my_papi.accumu[i] += my_papi.values[i];
+	}
+
+	#ifdef DEBUG_PRINT_PAPI
+    if (my_rank == 0) {
+		int n_thread = omp_get_max_threads();
+		fprintf (stderr, "   my_papi : num_events=%d, sum of %d threads \n",
+				my_papi.num_events, n_thread);
+		for (int i=0; i<my_papi.num_events; i++) {
+			fprintf (stderr, "  event i=%d, value=%llu, accumu=%llu\n",
+				i, my_papi.values[i], my_papi.accumu[i]);
+		}
 		#ifdef DEBUG_PRINT_PAPI_THREADS
-    	if (my_rank == 0) {
+		#pragma omp parallel
+		{
+			struct pmlib_papi_chooser th_papi = my_papi;
 			#pragma omp critical
 			{
 			int i_thread = omp_get_thread_num();
@@ -706,37 +907,39 @@ namespace pm_lib {
 		}
 		#endif
 	}
-
-	for (int i=0; i<papi.num_events; i++) {
-		my_papi.accumu[i] += my_papi.values[i];
-	}
-
-	// ユーザが引数で妥当な計算量を明示的に指定したかどうかのチェック
-	if (flopPerTask > 0.0 && iterationCount > 0) {
-		// 計算量または通信量をユーザが引数で明示的に指定した
-    	m_flop += (double)flopPerTask * iterationCount;
-	} else {
-		// 引数での指定がない
-		// 自動計測されたHWPCイベントを後続の <sortPapiCounterList> で分析する
-		;
-	}
-
-	#ifdef DEBUG_PRINT_PAPI
-    if (my_rank == 0) {
-		int n_thread = omp_get_max_threads();
-		fprintf (stderr, "   my_papi : sum of %d threads \n", n_thread);
-		for (int i=0; i<my_papi.num_events; i++) {
-			fprintf (stderr, "  event i=%d, value=%llu, accumu=%llu\n", i, my_papi.values[i], my_papi.accumu[i]);
-		}
-		fprintf (stderr, "\t<PerfWatch::stop> <%s> flopPerTask=%f, iterationCount=%u, time=%f, flop=%.1f, count=%lu\n"
-			, m_label.c_str(), flopPerTask, iterationCount, m_time, m_flop, m_count);
-	}
 	#endif
-
-#else
-    m_flop += (double)flopPerTask * iterationCount;
 #endif
 
+    int is_unit = statsSwitch();
+	if ( (is_unit == 0) || (is_unit == 1) ) {
+		// ユーザが引数で指定した計算量
+		m_flop += flopPerTask * (double)iterationCount;
+	}
+
+	#ifdef USE_OTF
+	if (m_is_OTF == 1) {
+		// Only the timer information will be recorded
+		w = 0.0;
+
+	} else if (m_is_OTF == 2) {
+		if ( (is_unit == 0) || (is_unit == 1) ) {
+			// ユーザが引数で指定した計算量/time
+    		w = (flopPerTask * (double)iterationCount) / m_time;
+		} else if ( (2 <= is_unit) && (is_unit <= 4) ) {
+			// 自動計測されたHWPCイベントを分析した計算量(speed)
+			sortPapiCounterList ();
+			w = my_papi.v_sorted[my_papi.num_sorted-1] ;
+		}
+	}
+	my_otf_event_stop(my_rank, m_stopTime, m_id, m_typeCalc, w);
+	#endif
+
+#ifdef DEBUG_PRINT_WATCH
+    if (my_rank == 0) {
+		fprintf (stderr, "\t<PerfWatch::stop> <%s> fPT(arg1)=%f, itC(arg2)=%u, w=%e, m_time=%f, m_flop=%e, m_count=%lu\n"
+			, m_label.c_str(), flopPerTask, iterationCount, w, m_time, m_flop, m_count);
+    }
+#endif
   }
 
 } /* namespace pm_lib */
