@@ -65,11 +65,12 @@ namespace pm_lib {
     int num_process;           ///< 並列プロセス数
     int my_rank;               ///< 自ランク番号
     std::string parallel_mode; ///< 並列動作モード（"Serial", "OpenMP", "FlatMPI", "Hybrid"）
-    PerfWatch* m_watchArray;   ///< 測定時計配列
-    PerfWatch  m_total;        ///< 全計算時間用測定時計
-    // 注意 PerfWatchのインスタンスは全部で m_nWatch + 1 生成される
-    // ユーザーが定義する各区間 m_watchArray[m_nWatch] と
-    // 全区間を含む合計用に pmlibが独自に作成する m_totalとがある
+    PerfWatch* m_watchArray;   ///< 測定区間の配列
+    PerfWatch  m_total;        ///< Root区間の別称。v5.0以降では使用しない
+      // PerfWatchのインスタンスは全部で m_nWatch 生成され、その番号対応は以下
+      // m_watchArray[0]  :PMlibが定義するRoot区間 
+      // m_watchArray[1 .. m_nWatch] :ユーザーが定義する各区間
+
     unsigned *m_order;         ///< 経過時間でソートした測定区間のリストm_order[m_nWatch]
     int researved_nWatch;      ///< 測定区間用にリザーブされたブロックの大きさ
     bool is_MPI_enabled;	     ///< PMlibの対応動作可能フラグ:MPI
