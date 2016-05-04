@@ -23,8 +23,6 @@
 #include "PerfMonitor.h"
 #include <time.h>
 #include <unistd.h> // for gethostname() of FX10/K
-#include <mpi.h>
-
 
 namespace pm_lib {
   
