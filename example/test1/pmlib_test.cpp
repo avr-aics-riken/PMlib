@@ -1,6 +1,4 @@
-#ifdef _PM_WITHOUT_MPI_
-//	Its not necessary to include "mpi_stubs.h" anymore
-#else
+#ifndef _PM_WITHOUT_MPI_
 #include <mpi.h>
 #endif
 #ifdef _OPENMP
@@ -29,7 +27,7 @@ PerfMonitor PM;
 
 int main (int argc, char *argv[])
 {
-	double flop_count, bandwidth_count, dsize;
+	double flop_count, byte_count, dsize;
 	double t1, t2;
 	int i, j, loop, num_threads;
 
@@ -91,12 +89,12 @@ int main (int argc, char *argv[])
 
 	PM.start("Third location");
 	subkerel();
-	bandwidth_count= (pow(dsize, 3.0)*4.0 + dsize*dsize*2.0) * 4.0;
-	PM.stop ("Third location", bandwidth_count, 1);
+	byte_count= (pow(dsize, 3.0)*4.0 + dsize*dsize*2.0) * 4.0;
+	PM.stop ("Third location", byte_count, 1);
 
 
 	if(my_id == 0) {
-		fprintf(stderr, "<main> Third - count in the source code: %15.0f\n\n", bandwidth_count);
+		fprintf(stderr, "<main> Third - count in the source code: %15.0f\n\n", byte_count);
 	}
 
 	PM.gather();

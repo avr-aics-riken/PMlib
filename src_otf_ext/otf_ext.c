@@ -10,12 +10,13 @@
 	static OTF_Writer* writer;
 	static OTF_MasterControl* master;
 	static double otf_base_time;
-	static uint32_t otf_counterid= 5;
-	static uint32_t otf_counterGroup= 63;
+	static uint32_t otf_counterGroup= 60;
+	static uint32_t otf_counterid= 50;
 
+// Initialize the OTF manager, and open the stream files
+//
 // num_process	並列プロセス数
 // my_rank	自ランク番号
-// m_type	測定対象タイプ (0:通信, 1:計算)
 // otf_filename	OTF filename header 文字列
 // baseT	base time to start recording from.
 
@@ -56,11 +57,15 @@ void my_otf_initialize(int num_process, int my_rank, char* otf_filename, double 
 }
 
 
+// write the event start time stamp with 0 counter value
+//
 // my_rank	自ランク番号
 // time		the event start time
 // m_id		the number mapped to the section label (1,2,..,m_nWatch)
-
-void my_otf_event_start(int my_rank, double time, int m_id)
+// m_shift	optional shift value for the counter id
+//			= 1: 計算量をユーザがPMlib引数で指定し、そのタイプがCALCの場合
+//			= 0: それ以外の場合
+void my_otf_event_start(int my_rank, double time, int m_id, int m_shift)
 {
 	// Write the counter zero value and leave with starting time stamp
 	// this function is called by PerfWatch::start()
@@ -69,39 +74,45 @@ void my_otf_event_start(int my_rank, double time, int m_id)
 	// so the numbers given from PMlib are +1 biased.
 
 	uint64_t m_sec = (uint64_t)((time-otf_base_time)*1.0e6);
+	uint32_t u_cid = otf_counterid + (uint32_t)m_shift;
 	uint64_t u_w = (uint64_t)0;
-	OTF_WStream_writeEnter(wstream, m_sec, m_id+1, my_rank+1, (uint32_t)0);
-	OTF_WStream_writeCounter (wstream, m_sec, my_rank+1, otf_counterid, u_w);
+	OTF_WStream_writeEnter(wstream, m_sec, m_id+1, my_rank+1, 0);
+	OTF_WStream_writeCounter (wstream, m_sec, my_rank+1, u_cid, u_w);
 
 	#ifdef DEBUG_PRINT_OTF
-	fprintf(stderr, "\t<my_otf_event_start> my_rank=%d, time=%f, m_sec=%lu, m_id=%d\n", my_rank, time, m_sec, m_id);
+	fprintf(stderr, "\t<my_otf_event_start> my_rank=%d, time=%f, m_sec=%lu, m_id=%d, m_shift=%d\n", my_rank, time, m_sec, m_id, m_shift);
 	#endif
 }
 
 
 
+// write the event ending time stamp with accumulated counter value
+//
 // my_rank	自ランク番号
 // time		the event start time
 // m_id		the number mapped to the section label (1,2,..,m_nWatch)
-// m_type	測定対象タイプ (0:通信, 1:計算)
+// m_shift	optional shift value for the counter id
 // w		測定値 (ユーザ指定値 or HWPC自動測定値)
 
-void my_otf_event_stop(int my_rank, double time, int m_id, int m_type, double w)
+void my_otf_event_stop(int my_rank, double time, int m_id, int m_shift, double w)
 {
 	// Write the counter value and leave with ending time stamp
 	// this function is called by PerfWatch::stop()
 	uint64_t m_sec = (uint64_t)((time-otf_base_time)*1.0e6);
+	uint32_t u_cid = otf_counterid + (uint32_t)m_shift;
 	uint64_t u_w = (uint64_t)w;
 
-	OTF_WStream_writeCounter (wstream, m_sec, my_rank+1, otf_counterid, u_w);
-	OTF_WStream_writeLeave(wstream, m_sec, m_id+1, my_rank+1, (uint32_t)0);
+	OTF_WStream_writeCounter (wstream, m_sec, my_rank+1, u_cid, u_w);
+	OTF_WStream_writeLeave(wstream, m_sec, m_id+1, my_rank+1, 0);
 
 	#ifdef DEBUG_PRINT_OTF
-	fprintf(stderr, "\t<my_otf_event_stop> my_rank=%d, time=%f, m_id=%d, m_sec=%lu, w=%e, u_w=%lu \n", my_rank, time, m_id, m_sec, w, u_w);
+	fprintf(stderr, "\t<my_otf_event_stop> my_rank=%d, time=%f, m_id=%d, u_cid=%u, m_sec=%lu, w=%e, u_w=%lu \n", my_rank, time, m_id, u_cid, m_sec, w, u_w);
 	#endif
 }
 
 
+// create OTF *.def file
+//
 // num_process	並列プロセス数
 // my_rank	自ランク番号
 // id		the number mapped to the section label (1,2,..,m_nWatch)
@@ -109,7 +120,6 @@ void my_otf_event_stop(int my_rank, double time, int m_id, int m_type, double w)
 
 void my_otf_event_label(int num_process, int my_rank, int id, char* c_label)
 {
-	// create OTF *.def file
 	if (my_rank != 0) return;
 
 	#ifdef DEBUG_PRINT_OTF
@@ -144,6 +154,10 @@ void my_otf_event_label(int num_process, int my_rank, int id, char* c_label)
 }
 
 
+// Write the master OTF file, 
+// Add the counter definition records,
+// Close the OTF files.
+//
 // num_process	並列プロセス数
 // my_rank	自ランク番号
 // otf_filename	OTF filename header 文字列
@@ -151,23 +165,48 @@ void my_otf_event_label(int num_process, int my_rank, int id, char* c_label)
 // c_counter	測定counter name 文字列
 // c_unit		測定unit name 文字列
 
-void my_otf_finalize(int num_process, int my_rank, char* otf_filename,
-					char* c_group, char* c_counter, char* c_unit)
+void my_otf_finalize(int num_process, int my_rank, int is_unit,
+			char* otf_filename, char* c_group,
+			char* c_counter, char* c_unit)
 {
 	#ifdef DEBUG_PRINT_OTF
 	if (my_rank == 0) {
-	fprintf(stderr, "\t<my_otf_finalize> num_process=%d, my_rank=%d, otf_filename=%s \n", num_process, my_rank, otf_filename);
+	fprintf(stderr, "\t<my_otf_finalize> num_process=%d, my_rank=%d, is_unit=%d \n", num_process, my_rank, is_unit);
+	fprintf(stderr, "\t\t otf_filename=%s \n", otf_filename);
+	fprintf(stderr, "\t\t c_group=%s, c_counter=%s, c_unit=%s \n", c_group, c_counter, c_unit);
 	}
 	#endif
 
 	if (my_rank == 0) {
-	OTF_Writer_writeDefCounterGroup( writer, OTF_STREAM_0,
-        otf_counterGroup, c_group );
+		if (is_unit >= 2) {
+			OTF_Writer_writeDefCounterGroup( writer, OTF_STREAM_0,
+				otf_counterGroup, c_group );
 
-	OTF_Writer_writeDefCounter( writer, OTF_STREAM_0,
-        otf_counterid, c_counter,
-        OTF_COUNTER_TYPE_ABS | OTF_COUNTER_SCOPE_LAST,
-        otf_counterGroup, c_unit);
+			OTF_Writer_writeDefCounter( writer, OTF_STREAM_0,
+				otf_counterid, c_counter,
+				OTF_COUNTER_TYPE_ABS | OTF_COUNTER_SCOPE_LAST,
+				otf_counterGroup, c_unit);
+
+		} else {
+
+			OTF_Writer_writeDefCounterGroup( writer, OTF_STREAM_0,
+				otf_counterGroup+0, c_group );
+			c_counter = "User Defined COMM sections";
+			c_unit = "Bytes/sec";
+			OTF_Writer_writeDefCounter( writer, OTF_STREAM_0,
+				otf_counterid+0 /* COMM section */, c_counter,
+				OTF_COUNTER_TYPE_ABS | OTF_COUNTER_SCOPE_LAST,
+				otf_counterGroup+0, c_unit);
+
+			OTF_Writer_writeDefCounterGroup( writer, OTF_STREAM_0,
+				otf_counterGroup+1, c_group );
+			c_counter = "User Defined CALC sections";
+			c_unit = "Flops";
+			OTF_Writer_writeDefCounter( writer, OTF_STREAM_0,
+				otf_counterid+1 /* CALC section */, c_counter,
+				OTF_COUNTER_TYPE_ABS | OTF_COUNTER_SCOPE_LAST,
+				otf_counterGroup+1, c_unit);
+		}
 	}
 
 	OTF_WStream_close(wstream);

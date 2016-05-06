@@ -715,23 +715,21 @@ namespace pm_lib {
 	s_group = "PMlib-OTF counter group" ;
 
     int is_unit = statsSwitch();
-	if ( (is_unit == 0) ) {
-		s_counter =  "User Defined Values" ;
-		s_unit =  "unit : Flops";
-	} else if ( (is_unit == 1) ) {
-		s_counter =  "User Defined Values" ;
-		s_unit =  "unit : Bytes/sec";
+	if ( (is_unit == 0) || (is_unit == 1) ) {
+		s_counter =  "User Defined COMM/CALC values" ;
+		s_unit =  "unit: Bytes/sec or Flops";
 	} else if ( (2 <= is_unit) && (is_unit <= 4) ) {
-		s_counter =  "HWPC" ;
+		s_counter =  "HWPC measured values" ;
 		s_unit =  my_papi.s_sorted[my_papi.num_sorted-1] ;
 	}
 
 
-    if (m_is_OTF != 0) {
-      (void) MPI_Barrier(MPI_COMM_WORLD);
-      my_otf_finalize (num_process, my_rank, otf_filename.c_str(),
-                    s_group.c_str(), s_counter.c_str(), s_unit.c_str());
-    }
+	if (m_is_OTF != 0) {
+		(void) MPI_Barrier(MPI_COMM_WORLD);
+		my_otf_finalize (num_process, my_rank, is_unit,
+			otf_filename.c_str(), s_group.c_str(),
+			s_counter.c_str(), s_unit.c_str());
+	}
 #endif
   }
 
@@ -788,7 +786,14 @@ namespace pm_lib {
 
 #ifdef USE_OTF
     if (m_is_OTF != 0) {
-      my_otf_event_start(my_rank, m_startTime, m_id);
+    int is_unit = statsSwitch();
+    int i_shift;
+	if (is_unit == 1) {
+    	i_shift = 1;
+	} else {
+    	i_shift = 0;
+	}
+      my_otf_event_start(my_rank, m_startTime, m_id, i_shift);
 	}
 #endif
 
@@ -931,7 +936,13 @@ namespace pm_lib {
 			w = my_papi.v_sorted[my_papi.num_sorted-1] ;
 		}
 	}
-	my_otf_event_stop(my_rank, m_stopTime, m_id, m_typeCalc, w);
+    int i_shift;
+	if (is_unit == 1) {
+    	i_shift = 1;
+	} else {
+    	i_shift = 0;
+	}
+	my_otf_event_stop(my_rank, m_stopTime, m_id, i_shift, w);
 	#endif
 
 #ifdef DEBUG_PRINT_WATCH
