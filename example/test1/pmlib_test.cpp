@@ -1,13 +1,11 @@
-#ifndef _PM_WITHOUT_MPI_
-#include <mpi.h>
-#endif
+//	#include <mpi.h>
 #ifdef _OPENMP
 #include <omp.h>
 #endif
 #include <stdio.h>
 #include <math.h>
-#include <PerfMonitor.h>
 #include <string>
+#include <PerfMonitor.h>
 using namespace pm_lib;
 
 #define MATSIZE 1000
@@ -19,8 +17,8 @@ struct matrix {
 	float c2[MATSIZE][MATSIZE];
 } matrix;
 void set_array();
-void subkerel();
-double my_timer_(void);
+void somekernel();
+void spacer();
 int my_id, npes, num_threads;
 
 PerfMonitor PM;
@@ -29,17 +27,11 @@ int main (int argc, char *argv[])
 {
 	double flop_count, byte_count, dsize;
 	double t1, t2;
-	int i, j, loop, num_threads;
+	int i, j, num_threads;
 
-#ifdef _PM_WITHOUT_MPI_
-	my_id=0;
-	npes=1;
-#else
 	MPI_Init(&argc, &argv);
 	MPI_Comm_rank(MPI_COMM_WORLD, &my_id);
 	MPI_Comm_size(MPI_COMM_WORLD, &npes);
-#endif
-
 
 #ifdef _OPENMP
 	char* c_env = std::getenv("OMP_NUM_THREADS");
@@ -55,77 +47,65 @@ int main (int argc, char *argv[])
 	matrix.nsize = nsize;
 	dsize = (double)nsize;
 	if(my_id == 0) {
-		fprintf(stderr, "\t<main> MATSIZE=%d max_threads=%d\n", MATSIZE, num_threads);
+		fprintf(stderr, "\t<main> starts. npes=%d, MATSIZE=%d max_threads=%d\n",
+			npes, MATSIZE, num_threads);
 	}
-	fprintf(stderr, "\t<main> starting process %d/%d\n", my_id, npes);
+	fprintf(stderr, "\t\tstarting process:%d\n", my_id);
 
 	PM.initialize();
 
-	PM.setProperties("First location", PerfMonitor::CALC);
-	PM.setProperties("Second location", PerfMonitor::CALC);
-	PM.setProperties("Third location", PerfMonitor::COMM);
+	PM.setProperties("First section", PerfMonitor::CALC);
+	PM.setProperties("Second section", PerfMonitor::CALC, false);
+	PM.setProperties("Subsection X", PerfMonitor::COMM);
+	PM.setProperties("Subsection Y", PerfMonitor::CALC);
+	// Remard that "Second section" is not exclusive, i.e. inclusive
 
-	if(my_id == 0) fprintf(stderr, "\t<main> starting the measurement\n");
 
 	set_array();
 
-	loop=3;
-	for (i=1; i<=loop; i++){
-	PM.start("First location");
-		t1=my_timer_();
-		subkerel();
-		t2=my_timer_();
-		if(my_id == 0) { fprintf(stderr, "<main> step %d finished in %f seconds\n", i,t2-t1);}
-	PM.stop ("First location");
-	}
-
-	PM.start("Second location");
-	subkerel();
+	PM.start("First section");
+	somekernel();
 	flop_count=pow (dsize, 3.0)*4.0;
-	PM.stop ("Second location", flop_count, 1);
-	if(my_id == 0) {
-		fprintf(stderr, "<main> Second - flop count in the source code: %15.0f\n\n", flop_count);
-	}
+	//	flop_count=3000.0;
+	PM.stop ("First section", flop_count, 1);
+	spacer();
 
-	PM.start("Third location");
-	subkerel();
-	byte_count= (pow(dsize, 3.0)*4.0 + dsize*dsize*2.0) * 4.0;
-	PM.stop ("Third location", byte_count, 1);
+	PM.start("Second section");
+	spacer();
 
+	PM.start("Subsection X");
+	somekernel();
+	byte_count=pow (dsize, 3.0)*4.0*4.0;
+	//	byte_count=2000.0;
+	PM.stop ("Subsection X", byte_count, 1);
+	spacer();
 
-	if(my_id == 0) {
-		fprintf(stderr, "<main> Third - count in the source code: %15.0f\n\n", byte_count);
-	}
+	PM.start("Subsection Y");
+	somekernel();
+	flop_count=pow (dsize, 3.0)*4.0 * 1.2;	// somewhat inflated number ...
+	//	flop_count=5000.0;
+	PM.stop ("Subsection Y", flop_count, 1);
+	spacer();
+
+	somekernel();
+	flop_count=pow (dsize, 3.0)*4.0 * 1.5;	// somewhat inflated number ...
+	//	flop_count=1000.0;
+	PM.stop("Second section", flop_count, 1);
+	spacer();
 
 	PM.gather();
-	PM.print(stdout, "", "Mr. Bean");
+	PM.print(stdout, "", "Mr. Bean", 1);
 	PM.printDetail(stdout);
 
-#ifndef _PM_WITHOUT_MPI_
 	MPI_Finalize();
-#endif
-
 	return 0;
 }
-
-// timer routine for both MPI and serial model
-// remark that the timer resolution of gettimeofday is only millisecond order
-#include        <sys/time.h>
-double my_timer_()
-{
-	struct timeval s_val;
-	gettimeofday(&s_val,0);
-	return ((double) s_val.tv_sec + 0.000001*s_val.tv_usec);
-}
-
 
 
 void set_array()
 {
 int i, j, nsize;
-
 nsize = matrix.nsize;
-
 #pragma omp parallel
 #pragma omp for
 	for (i=0; i<nsize; i++){
@@ -137,7 +117,8 @@ nsize = matrix.nsize;
 	}
 }
 
-void subkerel()
+// some computing kernel
+void somekernel()
 {
 int i, j, k, nsize;
 float c1,c2,c3;
@@ -157,3 +138,8 @@ nsize = matrix.nsize;
 	}
 }
 
+// add some meaningless space, for easier debug with visualization package
+void spacer()
+{
+	for (int i=0; i<10; i++){ set_array(); }
+}
