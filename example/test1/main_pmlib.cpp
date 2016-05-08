@@ -1,3 +1,4 @@
+#include <PerfMonitor.h>
 //	#include <mpi.h>
 #ifdef _OPENMP
 #include <omp.h>
@@ -5,8 +6,8 @@
 #include <stdio.h>
 #include <math.h>
 #include <string>
-#include <PerfMonitor.h>
 using namespace pm_lib;
+PerfMonitor PM;
 
 #define MATSIZE 1000
 int nsize;
@@ -21,7 +22,6 @@ void somekernel();
 void spacer();
 int my_id, npes, num_threads;
 
-PerfMonitor PM;
 
 int main (int argc, char *argv[])
 {

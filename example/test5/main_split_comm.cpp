@@ -2,23 +2,24 @@
 #include <iostream>
 int main (int argc, char *argv[])
 {
-    std::cout << "This test program is aimed for MPI split." <<  std::endl;
-    std::cout << "Skipping the test..." <<  std::endl;
+	using namespace std;
+    cout << "This test program is aimed for MPI_Comm_split()." << endl;
+	cout << "To run this test, PMlib must be built with MPI." <<  endl;
+	cout << "Skipping this test..." <<  endl;
     return 0;
 }
-#else
 
-#include <mpi.h>
+#else
+#include <PerfMonitor.h>
+//	#include <mpi.h>
 #include <stdio.h>
 #include <math.h>
 #include <string>
-#include <iostream>
 #include <cstdlib>
 #include <list>
 #ifdef _OPENMP
 	#include <omp.h>
 #endif
-#include <PerfMonitor.h>
 using namespace pm_lib;
 PerfMonitor PM;
 

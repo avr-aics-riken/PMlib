@@ -70,7 +70,6 @@ void f_pm_initialize_ (int& init_nWatch)
 	num_threads  = 1;
 #endif
 
-	PM.setRankInfo(my_rank);
 	PM.setParallelMode(parallel_mode, num_threads, num_process);
 	return;
 }

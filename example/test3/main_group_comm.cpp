@@ -2,20 +2,23 @@
 #include <iostream>
 int main (int argc, char *argv[])
 {
-	std::cout << "This test program is aimed for MPI group." <<  std::endl;
-	std::cout << "Skipping the test..." <<  std::endl;
+	using namespace std;
+	cout << "This test program is aimed for MPI group management " <<  endl;
+	cout << "such as MPI_Group_incl(), MPI_Comm_create(), etc." << endl;
+	cout << "To run this test, PMlib must be built with MPI." <<  endl;
+	cout << "Skipping this test..." <<  endl;
 	return 0;
 }
-#else
 
-#include <mpi.h>
+#else
+#include <PerfMonitor.h>
+//	#include <mpi.h>
 #include <stdio.h>
 #include <math.h>
 #include <string>
 #ifdef _OPENMP
 	#include <omp.h>
 #endif
-#include <PerfMonitor.h>
 using namespace pm_lib;
 PerfMonitor PM;
 
@@ -25,6 +28,7 @@ extern "C" void set_array(), sub_kernel();
 
 int main (int argc, char *argv[])
 {
+
 	int my_id, num_process, num_threads;
 	int i, j, loop;
 
@@ -107,5 +111,5 @@ int main (int argc, char *argv[])
 	MPI_Finalize();
 	return 0;
 }
-
 #endif
+

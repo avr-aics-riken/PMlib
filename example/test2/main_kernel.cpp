@@ -1,24 +1,14 @@
-#ifdef _PM_WITHOUT_MPI_
-//  Its not necessary to include "mpi_stubs.h" anymore
-//	#include "mpi_stubs.h"
-#else
-#include <mpi.h>
-#endif
-
+#include <PerfMonitor.h>
+//	#include <mpi.h>
 #include <stdio.h>
 #include <math.h>
 #include <string>
 #ifdef _OPENMP
 	#include <omp.h>
-	char parallel_mode[] = "Hybrid";
-	//	char parallel_mode[] = "OpenMP";
-#else
-	char parallel_mode[] = "Serial";
-	//	char parallel_mode[] = "FlatMPI";
 #endif
-#include <PerfMonitor.h>
 using namespace pm_lib;
 PerfMonitor PM;
+
 extern "C" void set_array(), sub_kernel();
 
 int main (int argc, char *argv[])
@@ -39,9 +29,6 @@ int main (int argc, char *argv[])
 #endif
 
 	PM.initialize();
-	PM.setParallelMode(parallel_mode, num_threads, npes);
-	PM.setRankInfo(my_id);
-	(void)PM.getVersionInfo();
 
 	PM.setProperties("First location", PerfMonitor::CALC);
 	PM.setProperties("Second location", PerfMonitor::CALC);

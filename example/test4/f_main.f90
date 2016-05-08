@@ -1,5 +1,5 @@
 #ifdef _PM_WITHOUT_MPI_
-program check
+program test4_main
 	parameter(msize=1000)
 	real(kind=8), allocatable :: a(:,:),b(:,:),c(:,:)
 
@@ -7,7 +7,7 @@ program check
 	double precision dpt1,dpt0
 	integer nWatch
 
-	write(6,'(a)') "<main> starting."
+	write(6,'(a)') "<test4_main> starting."
 	allocate (a(msize,msize), b(msize,msize), c(msize,msize), stat=istat)
 	if (istat.ne.0) then
 		write(*,*) "*** Allocate() failed."
@@ -34,7 +34,7 @@ program check
 	call submtxm (msize,n,dflop,a,b,c)
 	call f_pm_stop ("2nd section", dflop, 0)
 	end do
-	write(6,'(a)') "<main> finished computing submxm."
+	write(6,'(a)') "<test4_main> finished computing submxm."
 
 	call f_pm_gather ()
 	call f_pm_print ("", 0)
@@ -43,7 +43,7 @@ program check
 end
 
 #else
-program check
+program test4_main
 	include 'mpif.h'
 	parameter(msize=1000)
 	real(kind=8), allocatable :: a(:,:),b(:,:),c(:,:)
@@ -61,7 +61,7 @@ program check
 	call mpi_init(ierr )
 	call mpi_comm_rank( MPI_COMM_WORLD, myid, ierr )
 	call mpi_comm_size( MPI_COMM_WORLD, ncpus, ierr )
-	write(6,'(a,i3,a)') "fortran <main> started process:", myid
+	write(6,'(a,i3,a)') "fortran <test4_main> started process:", myid
 
 	n=msize
 	nWatch=10
@@ -88,7 +88,8 @@ program check
 	s=dpt1-dpt0
 	flops=real(loops)*dflop/s*1.e-9
 	write(6,'(f10.5,a, f10.5,a)') s, " seconds", flops, " Gflops"
-	!cx	write(11,*)  'output for unit 11', c(1,11), c(msize,msize)
+	!cx	write(6,*)  'dummy for enforcing', c(1,11), c(msize,msize)
+	write(6,'(a,i3,a)') "fortran <test4_main> finished process:", myid
 
 	call f_pm_gather ()
 	call f_pm_print ("", 0)
