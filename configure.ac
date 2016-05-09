@@ -15,7 +15,7 @@
 
 AC_PREREQ([2.57])
 
-AC_INIT([PMlib], [4.2.2], [keno@riken.jp],[PMlib])
+AC_INIT([PMlib], [5.0.0], [keno@riken.jp],[PMlib])
 
 echo "----------------------------------------"
 echo "Running PMlib Configure Script"
@@ -64,7 +64,7 @@ AM_INIT_AUTOMAKE()
 # revision No.
 #
 
-PM_REVISION="20151128_1300"
+PM_REVISION="20160505_1300"
 AC_SUBST(PM_REVISION)
 
 
@@ -270,6 +270,23 @@ fi
 AM_CONDITIONAL([PAPI_TARGET], [test "$enable_papi" = "yes"])
 
 
+#
+# Open Tracer Format (OTF) environment
+#
+enable_otf="none"
+
+AC_SUBST(OTF_DIR)
+
+AC_ARG_WITH( otf, [AC_HELP_STRING([--with-otf=dir],[Specify OTF install directory])], , with_otf=none)
+if test x"$with_otf" == x"yes" ; then
+  enable_otf="yes"
+elif test x"$with_otf" != x"none" ; then
+  OTF_DIR=$with_otf;
+  enable_otf="yes"
+fi
+
+# OTF_TARGET = true, if use otf
+AM_CONDITIONAL([OTF_TARGET], [test "$enable_otf" = "yes"])
 
 
 #
@@ -278,16 +295,24 @@ AM_CONDITIONAL([PAPI_TARGET], [test "$enable_papi" = "yes"])
 PM_CFLAGS="-I$PM_INST_DIR/include"
 AC_SUBST(PM_CFLAGS)
 
+PM_LIBS="-lPM$MPI_EXT"
 
 if test x"$enable_papi" == x"yes" ; then
   PM_CFLAGS="$PM_CFLAGS"" -DUSE_PAPI"
   CXXFLAGS="$CXXFLAGS"" -DUSE_PAPI"
   CFLAGS="$CFLAGS"" -DUSE_PAPI"
   FCFLAGS="$FCFLAGS"" -DUSE_PAPI"
-  PM_LIBS="-lPM$MPI_EXT -L$PAPI_DIR/lib64 -lpapi -lpfm -L../src_papi_ext -lpapi_ext"
-else
-  PM_LIBS="-lPM$MPI_EXT"
+  PM_LIBS+=" -L$PAPI_DIR/lib64 -lpapi -lpfm -L../src_papi_ext -lpapi_ext"
 fi
+
+if test x"$enable_otf" == x"yes" ; then
+  PM_CFLAGS="$PM_CFLAGS"" -DUSE_OTF"
+  CXXFLAGS="$CXXFLAGS"" -DUSE_OTF"
+  CFLAGS="$CFLAGS"" -DUSE_OTF"
+  FCFLAGS="$FCFLAGS"" -DUSE_OTF"
+  PM_LIBS+=" -L$OTF_DIR/lib -lopen-trace-format -L../src_otf_ext -lotf_ext"
+fi
+
 
 AC_SUBST(PM_LIBS)
 
@@ -327,6 +352,10 @@ MAKE_SUB_DIRS="src doc"
 
 if test x"$enable_papi" == x"yes" ; then
 MAKE_SUB_DIRS="$MAKE_SUB_DIRS"" src_papi_ext"
+fi
+
+if test x"$enable_otf" == x"yes" ; then
+MAKE_SUB_DIRS="$MAKE_SUB_DIRS"" src_otf_ext"
 fi
 
 if test x"$with_example" = x"yes" ; then
@@ -369,6 +398,7 @@ AC_CONFIG_FILES([Makefile \
                  example/test4/Makefile \
                  example/test5/Makefile \
                  src_papi_ext/Makefile \
+                 src_otf_ext/Makefile \
                  doc/Makefile \
                  pm-config \
                  include/pmVersion.h \

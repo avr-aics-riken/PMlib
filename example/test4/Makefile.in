@@ -100,6 +100,14 @@ NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
 noinst_PROGRAMS = test4$(EXEEXT)
+@PAPI_TARGET_TRUE@am__append_1 = \
+@PAPI_TARGET_TRUE@	  -L$(top_builddir)/src_papi_ext -lpapi_ext \
+@PAPI_TARGET_TRUE@	  -L@PAPI_DIR@/lib64 -lpapi -lpfm
+
+@OTF_TARGET_TRUE@am__append_2 = \
+@OTF_TARGET_TRUE@	-L$(top_builddir)/src_otf_ext -lotf_ext \
+@OTF_TARGET_TRUE@	-L@OTF_DIR@/lib -lopen-trace-format
+
 subdir = example/test4
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/configure.ac
@@ -114,7 +122,8 @@ CONFIG_CLEAN_VPATH_FILES =
 PROGRAMS = $(noinst_PROGRAMS)
 am_test4_OBJECTS = test4-f_main.$(OBJEXT)
 test4_OBJECTS = $(am_test4_OBJECTS)
-test4_DEPENDENCIES =
+am__DEPENDENCIES_1 =
+test4_DEPENDENCIES = $(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
 am__v_P_0 = false
@@ -218,6 +227,7 @@ MPI_FCLIBS = @MPI_FCLIBS@
 MPI_LDFLAGS = @MPI_LDFLAGS@
 MPI_LIBS = @MPI_LIBS@
 OBJEXT = @OBJEXT@
+OTF_DIR = @OTF_DIR@
 PACKAGE = @PACKAGE@
 PACKAGE_BUGREPORT = @PACKAGE_BUGREPORT@
 PACKAGE_NAME = @PACKAGE_NAME@
@@ -291,24 +301,10 @@ test4_SOURCES = f_main.f90
 test4_FCFLAGS = -I$(top_srcdir)/include -I@PAPI_DIR@/include @MPI_CFLAGS@
 test4_CXXFLAGS = -I$(top_srcdir)/include -I@PAPI_DIR@/include @MPI_CFLAGS@
 test4_LINK = $(PM_FC_LD) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
-@PAPI_TARGET_FALSE@test4_LDADD = \
-@PAPI_TARGET_FALSE@    -L$(top_builddir)/src -lPM@MPI_EXT@ \
-@PAPI_TARGET_FALSE@    @PM_LIBS@ \
-@PAPI_TARGET_FALSE@    @MPI_LIBS@ \
-@PAPI_TARGET_FALSE@	  @MPI_FCLIBS@ \
-@PAPI_TARGET_FALSE@    @MPI_LDFLAGS@
-
 #     -std=c99 -g -DSTATIC_PAPI_EVENTS_TABLE -D_REENTRANT -D_GNU_SOURCE -DUSE_COMPILER_TLS  -DPAPI_NO_MEMORY_MANAGEMENT -DUSE_PAPI
-@PAPI_TARGET_TRUE@test4_LDADD = \
-@PAPI_TARGET_TRUE@	  -L$(top_builddir)/src -lPM@MPI_EXT@ \
-@PAPI_TARGET_TRUE@	  -L$(top_builddir)/src_papi_ext -lpapi_ext \
-@PAPI_TARGET_TRUE@    @PM_LIBS@ \
-@PAPI_TARGET_TRUE@	  @MPI_LIBS@ \
-@PAPI_TARGET_TRUE@	  @MPI_FCLIBS@ \
-@PAPI_TARGET_TRUE@	  @MPI_LDFLAGS@ \
-@PAPI_TARGET_TRUE@	  -L@PAPI_DIR@/lib64 -lpapi \
-@PAPI_TARGET_TRUE@	  -L@PAPI_DIR@/lib64 -lpfm
-
+test4_LDADD = -L$(top_builddir)/src -lPM@MPI_EXT@ @PM_LIBS@ \
+	@MPI_FCLIBS@ @MPI_LIBS@ @MPI_LDFLAGS@ $(am__append_1) \
+	$(am__append_2)
 dist_noinst_DATA = 
 all: all-am
 
@@ -571,8 +567,6 @@ uninstall-am:
 
 .PRECIOUS: Makefile
 
-
-.PHONY:$(dist_noinst_DATA)
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

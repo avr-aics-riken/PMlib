@@ -85,9 +85,6 @@ void PerfWatch::initializeHWPC ()
 		}
 	}
 
-	#ifdef DEBUG_PRINT_PAPI
-	fprintf (stderr, " <initializeHWPC> ends\n\n");
-	#endif
 #endif // USE_PAPI
 }
 
@@ -108,9 +105,7 @@ void PerfWatch::createPapiCounterList ()
 	using namespace std;
 	int my_id;
 	int i_papi;
-	#ifdef DEBUG_PRINT_PAPI
-	fprintf (stderr, " <createPapiCounterList> starts\n" );
-	#endif
+
 	MPI_Comm_rank(MPI_COMM_WORLD, &my_id);
 
 // 1. Identify the CPU architecture
@@ -374,6 +369,9 @@ void PerfWatch::sortPapiCounterList (void)
 			counts += my_papi.v_sorted[jp] = my_papi.accumu[ip] ;
 			ip++;jp++;
 		}
+		my_papi.s_sorted[jp] = "[VEC+FMA]" ;
+		my_papi.v_sorted[jp] = counts / m_time ; // * 1.0e-9;
+		jp++;
 	}
 
 // if (BANDWIDTH)

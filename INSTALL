@@ -15,6 +15,7 @@ SOFTWARE REQUIREMENT
 ====================
 - MPI library
 - PAPI library (option)
+- OTF library (option)
 
 
 HOW TO COMPILE
@@ -39,41 +40,61 @@ Configure options:
 
 --with-comp=(INTEL|FJ|GNU)
    If Intel compiler is used, choose INTEL, and if Fujitsu compiler, specify FJ.
-   This option is mandatory when using both compilers.
+   This option is mandatory when using these compilers.
 
 --with-example=(no|yes)
-   Turn on to build examples. Default setting is 'no'.
+   Set 'yes' to build example programs. Default setting is 'no'.
 
 --with-impi=IntelMPI_DIR
-   If you use an IntelMPI library, specify this option and use wrapper compiler driver.
-   If you exploit to use mpiifort for FC or F90, configure script recognizes that you
-   specified this option.
+   If you use IntelMPI library, specify this option with IntelMPI_DIR value
+   pointing to the IntelMPI library installed directory.
+   This option is required only when using native compilers.
+   If you use MPI wrapper compiler for CXX, CC, F90, the MPI library is
+   automatically detected, and this options can be omitted.
 
 --with-mpich=MPICH_DIR
-   If you will use a MPICH library, specify the directory that MPICH library is
-   installed. Either --with-mpich of --with-ompi option will be required except.
-   If the wrapper compiler, e.g., mpic++ or mpicxx is used to compile, both options
-   can be eliminated.
+   If you use MPICH library, specify this option with MPICH_DIR value
+   pointing to the MPICH library installed directory.
+   This option is required only when using native compilers.
+   If you use MPI wrapper compiler for CXX, CC, F90, the MPI library is
+   automatically detected, and this options can be omitted.
 
 --with-ompi=OPENMPI_DIR
-   If the OpenMPI library is used, specify the directory path that OpenMPI library is
-   installed. This option will be required to use a native compiler. Instead, if the
-   wrapper compiler, e.g., mpicxx, is used to compile, this options can be eliminated.
+   If you use OpenMPI library, specify this option with OPENMPI_DIR value
+   pointing to the OpenMPI library installed directory.
+   This option is required only when using native compilers.
+   If you use MPI wrapper compiler for CXX, CC, F90, the MPI library is
+   automatically detected, and this options can be omitted.
 
---with-papi=PAPI_DIR or yes
-   If you want to use the PAPI library, specify the directory where the library is installed.
-   In the case of compilation on K front-end, sprcifiy the directory. Use 'yes' for when you
-   compile on compute nodes.
+--with-papi=PAPI_DIR or --with-papi=yes
+   If you use PAPI library, specify this option with PAPI_DIR value
+   pointing to the PAPI library installed directory.
+   On K computer compute node, use --with-papi=yes form. K computer has
+   different paths between front-end nodes and compute nodes, and PMlib
+   configure script automatically detects the path on compute nodes.
+
+--with-otf=OTF_DIR
+   If you use OTF library, specify this option with OTF_DIR value
+   pointing to the OTF library installed directory.
 
 
 CXX=CXX_COMPILER
-   Specify a C++ compiler, e.g., g++, icpc, xlc++ or others.
+   Specify a native C++ compiler, e.g., g++, icpc, c++ or MPI wrapper
+   compiler, e.g. mpicxx.
 
 CXXFLAGS=CXX_OPTIONS
    Specify compiler options.
 
+CC=CC_COMPILER
+   Specify a native C compiler, e.g., gcc, icc, clang or MPI wrapper
+   compiler, e.g. mpicc.
+
+CFLAGS=CC_OPTIONS
+   Specify compiler options.
+
 F90=FORTRAN90_COMPILER
-   Specify a fortran90 compiler.
+   Specify a native fortran90 compiler, e.g., gfortran, ifort, or MPI wrapper
+   compiler, e.g. mpif90.
 
 F90FLAGS=FORTRAN90_OPTIONS
    Specify compiler options.
@@ -84,12 +105,19 @@ F90FLAGS=FORTRAN90_OPTIONS
 
 # INTEL compiler
 
-## Serial
+## Serial version
 
-### with example
-$ ../configure --prefix=${FFV_HOME}/PMlib \
-               --with-comp=INTEL \
+### minimum options for a quick check
+$ ../configure --with-comp=INTEL \
+               CXX=icpc \
+               CC=icc \
+               F90=ifort \
+               F90FLAGS="-fpp"
+
+### useful basic options with example, openmp, installation directory
+$ ../configure --with-comp=INTEL \
                --with-example=yes \
+               --prefix=${FFV_HOME}/PMlib \
                CXX=icpc \
                CXXFLAGS="-O3 -openmp" \
                CC=icc \
@@ -97,57 +125,37 @@ $ ../configure --prefix=${FFV_HOME}/PMlib \
                F90=ifort \
                F90FLAGS="-fpp -O3 -openmp"
 
-### /w example, /wo openmp
-$ ../configure --prefix=/usr/local/PMlib \
-               --with-comp=INTEL \
+## MPI version using wrapper commands (mpicxx, mpicc, mpif90)
+
+### useful basic options with example, Intel MPI, openmp, installation directory
+$ ../configure --with-comp=INTEL \
                --with-example=yes \
-               CXX=icpc \
-               CXXFLAGS="-O3" \
-               CC=icc \
-               CFLAGS="-O3" \
-               F90=ifort \
-               F90FLAGS="-fpp -O3"
-
-
-## MPI by a wrapper
-
-### /w example
-$ ../configure --prefix=${FFV_HOME}/PMlib \
-               --with-comp=INTEL \
+               --prefix=${FFV_HOME}/PMlib \
+               --with-impi \
                CXX=mpicxx \
                CXXFLAGS="-O3 -openmp" \
                CC=mpicc \
                CFLAGS="-O3 -openmp" \
                F90=mpif90 \
-               F90FLAGS="-fpp -O3 -openmp" \
-               --with-example=yes
+               F90FLAGS="-fpp -O3 -openmp" 
 
-### /w PAPI, examples
-$ ../configure CXX=mpicxx \
-               CXXFLAGS="-O3 -openmp" \
-               CC=mpicc \
-               CFLAGS="-O3 -openmp" \
-               F90=mpif90 \
-               F90FLAGS="-fpp -O3 -openmp" \
-               --with-comp=INTEL \
+### with PAPI/HWPC library
+$ ../configure --with-comp=INTEL \
+               --with-example=yes \
                --with-papi=/usr/local/papi/papi-5.2.0/intel \
-               --with-example=yes
-
-### Intel MPI, with PAPI, examples
-$ ../configure CXX=mpicxx \
-               CXXFLAGS="-O3 -openmp" \
-               CC=mpicc \
-               CFLAGS="-O3 -openmp" \
-               F90=mpif90 \
-               F90FLAGS="-fpp -O3 -openmp" \
                --with-impi \
-               --with-comp=INTEL \
-               --with-papi=/usr/local/papi/papi-5.2.0/intel \
-               --with-example=yes
+               CXX=mpicxx \
+               CXXFLAGS="-O3 -openmp" \
+               CC=mpicc \
+               CFLAGS="-O3 -openmp" \
+               F90=mpif90 \
+               F90FLAGS="-fpp -O3 -openmp" 
 
-### Specify install directory, mpi library and compiler, alternattion of MPI build
-$ ../configure --prefix=${FFV_HOME}/PMlib
-               --with-comp=INTEL \
+
+### native compilers, Link OpenMPI instead of Intel MPI, with PAPI/HWPC
+$ ../configure --with-comp=INTEL \
+               --with-example=yes \
+               --with-papi=/usr/local/papi/papi-5.2.0/intel \
                --with-ompi=/opt/openmpi \
                CXX=icpc \
                CXXFLAGS="-O3 -openmp" \
@@ -160,8 +168,11 @@ $ ../configure --prefix=${FFV_HOME}/PMlib
 
 # GNU compiler
 
-## Serial
-$ ../configure --prefix=${FFV_HOME}PMlib \
+## Serial version
+
+### useful basic options with example, openmp
+$ ../configure --with-comp=GNU \
+               --with-example=yes \
                CXX=g++ \
                CXXFLAGS="-O3 -fopenmp" \
                CC=gcc \
@@ -169,10 +180,10 @@ $ ../configure --prefix=${FFV_HOME}PMlib \
                F90=gfortran \
                F90FLAGS="-cpp -O3 -fopenmp --free-line-length-none"
 
+## MPI version using wrapper commands (mpicxx, mpicc, mpif90)
 
-## MPI using a wrapper compiler
-$ ../configure --prefix=${FFV_HOME}/PMlib \
-               --with-comp=GNU \
+### useful basic options with example, Intel MPI, openmp, installation directory
+$ ../configure --with-comp=GNU \
                --with-example=yes \
                CXX=mpicxx \
                CXXFLAGS="-O3 -fopenmp" \
@@ -185,7 +196,7 @@ $ ../configure --prefix=${FFV_HOME}/PMlib \
 
 # FUJITSU compiler / FX, K computer
 
-## Serial
+## Serial version
 
 ### Compilation on login nodes
 $ ../configure --prefix=${FFV_HOME}/PMlib \
@@ -199,7 +210,7 @@ $ ../configure --prefix=${FFV_HOME}/PMlib \
                CXXFLAGS="-Kfast,parallel,openmp -Nrt_notune"
 
 
-## MPI
+## MPI version
 
 ### Compilation on compute nodes
 $ ../configure --prefix=${FFV_HOME}/PMlib \
@@ -223,10 +234,12 @@ $ ../configure --prefix=${FFV_HOME}/PMlib \
 
 
 # Apple Mac OSX LLVM/clang compiler
+				note :PAPI/HWPC is not supported on Apple Mac OSX.
 
-## Serial
-$ ../configure --prefix=${FFV_HOME}/PMlib \
-               --with-papi=none \
+## Serial version
+
+###  minimum options. note: c++ points to clang++, cc points to clang
+$ ../configure --with-papi=none \
                --with-example=yes \
                CXX=c++ \
                CXXFLAGS="" \
@@ -235,13 +248,9 @@ $ ../configure --prefix=${FFV_HOME}/PMlib \
                FC=gfortran \
                FCFLAGS="-cpp"
 
-               #   note: c++ points to clang++, cc points to clang
 
-
-## MPI (OpenMPI wrapper)
-$ ../configure --prefix=${FFV_HOME}/PMlib \
-               --with-papi=none \
-               --with-example=yes \
+## MPI version (OpenMPI wrapper)
+$ ../configure --with-example=yes \
                --with-ompi=/opt/openmpi \
                CXX=mpicxx \
                CXXFLAGS="" \
@@ -249,8 +258,6 @@ $ ../configure --prefix=${FFV_HOME}/PMlib \
                CFLAGS=""  \
                FC=mpifort \
                FCFLAGS="-cpp"
-
-               #   note: --with-omp path may be different for each Mac
 
 
 If you try to install process again, execute 'make distclean' then configure.
@@ -261,4 +268,36 @@ If you try to install process again, execute 'make distclean' then configure.
 
 Edit environmental variables in a Makefile_hand file for a target machine. Then, 'make'.
 A compiled module libPM.a will be placed in $(PM_DIR)/lib/ directory.
+
+
+RUN TIME ENVIRONMENT VARIABLES
+==============================
+When running applications linked with PMlib, the following
+environment variables can be set to the shell.
+
+HWPC_CHOOSER=(FLOPS|BANDWIDTH|VECTOR|CACHE|CYCLE)
+  If this environment variable is set, PMlib automatically detects
+  the PAPI based hardware counters.
+  If this environment variable is not set, the HWPC counters are not reported.
+
+OTF_TRACING=(off|on|full)
+  If this environment variable is set, PMlib automatically generates
+  the Open Trace Format files for post processing.
+  There will be three type of OTF files.
+  ${OTF_TRACING}.otf
+  ${OTF_TRACING}.0.def
+  ${OTF_TRACING}.(1|2|..|N).events
+  See the next environment variable OTF_FILENAME.
+  If the value is "off" or not defined, the OTF files are not produced.
+  If the value is "on", the OTF files will contain the timer information only.
+  If the value is "full", the OTF files will contain the counter information
+  as well as the timer information.
+  Remark that OTF_TRACING=full may yield the heavy overhead, if the measuring
+  sections are repeated many times.
+
+OTF_FILENAME="some file name"
+  The value of ${OTF_FILENAME} is used to prefix the OTF file names if the
+  value of previous ${OTF_TRACING} has been set to "on" or "full".
+  If this environment variable is not set, the default value of
+  "pmlib_optional_otf_files" is used to prefix the OTF file names.
 

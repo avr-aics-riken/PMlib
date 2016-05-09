@@ -37,7 +37,7 @@ void f_pm_initialize_ (int& init_nWatch)
     int num_process;
     int my_rank;
 
-#ifdef DEBUG_FORT
+#ifdef DEBUG_PRINT_MONITOR
 	fprintf(stderr, "<f_pm_initialize_> init_nWatch=%d\n", init_nWatch);
 #endif
 
@@ -70,7 +70,6 @@ void f_pm_initialize_ (int& init_nWatch)
 	num_threads  = 1;
 #endif
 
-	PM.setRankInfo(my_rank);
 	PM.setParallelMode(parallel_mode, num_threads, num_process);
 	return;
 }
@@ -85,7 +84,7 @@ void f_pm_initialize_ (int& init_nWatch)
 ///   @param[in] int fc_size  character文字列ラベルの長さ（文字数）
 ///
 ///   @note ラベルは測定区間を識別するために用いる。
-///   		各labelに対応したキー番号 key は各ラベル毎に内部で自動生成する
+///   		各ラベル毎に対応した区間番号は内部で自動生成する
 ///   @note  Fortranコンパイラはfc_size引数を自動的に追加してしまう
 ///
 void f_pm_setproperties_ (char* fc, int& f_type, int& f_exclusive, int fc_size)
@@ -100,7 +99,7 @@ void f_pm_setproperties_ (char* fc, int& f_type, int& f_exclusive, int fc_size)
 	bool exclusive;
     PerfMonitor::Type arg_type; /// 測定対象タイプ from PerfMonitor.h
 
-#ifdef DEBUG_FORT
+#ifdef DEBUG_PRINT_MONITOR
 	fprintf(stderr, "<f_pm_setproperties_> fc=%s, f_type=%d, f_exclusive=%d, fc_size=%d\n", fc, f_type, f_exclusive, fc_size);
 #endif
 	if (s == "" || fc_size == 0) {
@@ -143,7 +142,7 @@ void f_pm_start_ (char* fc, int fc_size)
 {
 	std::string s=std::string(fc,fc_size);
 
-#ifdef DEBUG_FORT
+#ifdef DEBUG_PRINT_MONITOR
 	fprintf(stderr, "<f_pm_start_> fc=%s, fc_size=%d\n", fc, fc_size);
 #endif
 	if (s == "") {
@@ -178,7 +177,7 @@ void f_pm_stop_ (char* fc, double& fpt, unsigned& tic, int fc_size)
 {
 	std::string s=std::string(fc,fc_size);
 
-#ifdef DEBUG_FORT
+#ifdef DEBUG_PRINT_MONITOR
 	fprintf(stderr, "<f_pm_stop_> fc=%s, fpt=%8.0lf, tic=%d, fc_size=%d\n", fc, fpt, tic, fc_size);
 #endif
 	if (s == "") {
@@ -198,7 +197,7 @@ void f_pm_stop_ (char* fc, double& fpt, unsigned& tic, int fc_size)
 ///
 void f_pm_gather_ (void)
 {
-#ifdef DEBUG_FORT
+#ifdef DEBUG_PRINT_MONITOR
 	fprintf(stderr, "<f_pm_gather_> \n");
 #endif
 	PM.gather();
@@ -220,7 +219,7 @@ void f_pm_print_ (char* fc, int &psort, int fc_size)
 {
 	FILE *fp;
 	std::string s=std::string(fc,fc_size);
-#ifdef DEBUG_FORT
+#ifdef DEBUG_PRINT_MONITOR
 	fprintf(stderr, "<f_pm_print_> fc=%s, psort=%d, fc_size=%d\n", fc, psort, fc_size);
 #endif
 	std::string h;
@@ -274,7 +273,7 @@ void f_pm_printdetail_ (char* fc, int& legend, int &psort, int fc_size)
 {
 	FILE *fp;
 	std::string s=std::string(fc,fc_size);
-#ifdef DEBUG_FORT
+#ifdef DEBUG_PRINT_MONITOR
 	fprintf(stderr, "<f_pm_printdetail_> fc=%s, legend=%d, psort=%d, fc_size=%d \n", fc, legend, psort, fc_size);
 #endif
 
@@ -326,7 +325,7 @@ void f_pm_printgroup_ (char* fc, MPI_Group p_group, MPI_Comm p_comm, int* pp_ran
 {
 	FILE *fp;
 	std::string s=std::string(fc,fc_size);
-#ifdef DEBUG_FORT
+#ifdef DEBUG_PRINT_MONITOR
 	fprintf(stderr, "<f_pm_printgroup_> fc=%s, group=%d, legend=%d, psort=%d, fc_size=%d \n", fc, group, legend, psort, fc_size);
 #endif
 
@@ -354,4 +353,3 @@ void f_pm_printgroup_ (char* fc, MPI_Group p_group, MPI_Comm p_comm, int* pp_ran
 /// 今後開発が必要なfortran API ルーチン (C++バージョンのAPIは開発済み)
 /// MPI_Comm_splitで分離されたMPIランクグループ毎に詳細レポート出力を行う。
 ///	void f_pm_printcomm_ ( ... )
-

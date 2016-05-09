@@ -100,6 +100,14 @@ NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
 noinst_PROGRAMS = test1$(EXEEXT)
+@PAPI_TARGET_TRUE@am__append_1 = \
+@PAPI_TARGET_TRUE@	  -L$(top_builddir)/src_papi_ext -lpapi_ext \
+@PAPI_TARGET_TRUE@	  -L@PAPI_DIR@/lib64 -lpapi -lpfm
+
+@OTF_TARGET_TRUE@am__append_2 = \
+@OTF_TARGET_TRUE@	  -L$(top_builddir)/src_otf_ext -lotf_ext \
+@OTF_TARGET_TRUE@	  -L@OTF_DIR@/lib -lopen-trace-format
+
 subdir = example/test1
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/configure.ac
@@ -112,9 +120,10 @@ CONFIG_HEADER = $(top_builddir)/config.h
 CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
 PROGRAMS = $(noinst_PROGRAMS)
-am_test1_OBJECTS = test1-pmlib_test.$(OBJEXT)
+am_test1_OBJECTS = test1-main_pmlib.$(OBJEXT)
 test1_OBJECTS = $(am_test1_OBJECTS)
-test1_DEPENDENCIES =
+am__DEPENDENCIES_1 =
+test1_DEPENDENCIES = $(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
 test1_LINK = $(CXXLD) $(test1_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) \
 	$(LDFLAGS) -o $@
 AM_V_P = $(am__v_P_@AM_V@)
@@ -224,6 +233,7 @@ MPI_FCLIBS = @MPI_FCLIBS@
 MPI_LDFLAGS = @MPI_LDFLAGS@
 MPI_LIBS = @MPI_LIBS@
 OBJEXT = @OBJEXT@
+OTF_DIR = @OTF_DIR@
 PACKAGE = @PACKAGE@
 PACKAGE_BUGREPORT = @PACKAGE_BUGREPORT@
 PACKAGE_NAME = @PACKAGE_NAME@
@@ -293,23 +303,12 @@ top_srcdir = @top_srcdir@
 DISTCLEANFILES = *~
 CLEANFILES = data/*.log
 EXTRA_DIST = Makefile_hand.fx10.login Makefile_hand.intel
-test1_SOURCES = pmlib_test.cpp
+test1_SOURCES = main_pmlib.cpp
 test1_CFLAGS = -I$(top_srcdir)/include -I@PAPI_DIR@/include @MPI_CFLAGS@
 test1_CXXFLAGS = -I$(top_srcdir)/include -I@PAPI_DIR@/include @MPI_CFLAGS@
-@PAPI_TARGET_FALSE@test1_LDADD = \
-@PAPI_TARGET_FALSE@    -L$(top_builddir)/src -lPM@MPI_EXT@ \
-@PAPI_TARGET_FALSE@    @MPI_LIBS@ \
-@PAPI_TARGET_FALSE@    @MPI_LDFLAGS@
-
 #     -std=c99 -g -DSTATIC_PAPI_EVENTS_TABLE -D_REENTRANT -D_GNU_SOURCE -DUSE_COMPILER_TLS  -DPAPI_NO_MEMORY_MANAGEMENT -DUSE_PAPI
-@PAPI_TARGET_TRUE@test1_LDADD = \
-@PAPI_TARGET_TRUE@	  -L$(top_builddir)/src -lPM@MPI_EXT@ \
-@PAPI_TARGET_TRUE@	  -L$(top_builddir)/src_papi_ext -lpapi_ext \
-@PAPI_TARGET_TRUE@	  @MPI_LIBS@ \
-@PAPI_TARGET_TRUE@	  @MPI_LDFLAGS@ \
-@PAPI_TARGET_TRUE@	  -L@PAPI_DIR@/lib64 -lpapi \
-@PAPI_TARGET_TRUE@	  -L@PAPI_DIR@/lib64 -lpfm
-
+test1_LDADD = -L$(top_builddir)/src -lPM@MPI_EXT@ @MPI_LIBS@ \
+	@MPI_LDFLAGS@ $(am__append_1) $(am__append_2)
 dist_noinst_DATA = 
 all: all-am
 
@@ -358,7 +357,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test1-pmlib_test.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test1-main_pmlib.Po@am__quote@
 
 .cpp.o:
 @am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXXCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
@@ -374,19 +373,19 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
 
-test1-pmlib_test.o: pmlib_test.cpp
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test1_CXXFLAGS) $(CXXFLAGS) -MT test1-pmlib_test.o -MD -MP -MF $(DEPDIR)/test1-pmlib_test.Tpo -c -o test1-pmlib_test.o `test -f 'pmlib_test.cpp' || echo '$(srcdir)/'`pmlib_test.cpp
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/test1-pmlib_test.Tpo $(DEPDIR)/test1-pmlib_test.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='pmlib_test.cpp' object='test1-pmlib_test.o' libtool=no @AMDEPBACKSLASH@
+test1-main_pmlib.o: main_pmlib.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test1_CXXFLAGS) $(CXXFLAGS) -MT test1-main_pmlib.o -MD -MP -MF $(DEPDIR)/test1-main_pmlib.Tpo -c -o test1-main_pmlib.o `test -f 'main_pmlib.cpp' || echo '$(srcdir)/'`main_pmlib.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/test1-main_pmlib.Tpo $(DEPDIR)/test1-main_pmlib.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='main_pmlib.cpp' object='test1-main_pmlib.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test1_CXXFLAGS) $(CXXFLAGS) -c -o test1-pmlib_test.o `test -f 'pmlib_test.cpp' || echo '$(srcdir)/'`pmlib_test.cpp
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test1_CXXFLAGS) $(CXXFLAGS) -c -o test1-main_pmlib.o `test -f 'main_pmlib.cpp' || echo '$(srcdir)/'`main_pmlib.cpp
 
-test1-pmlib_test.obj: pmlib_test.cpp
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test1_CXXFLAGS) $(CXXFLAGS) -MT test1-pmlib_test.obj -MD -MP -MF $(DEPDIR)/test1-pmlib_test.Tpo -c -o test1-pmlib_test.obj `if test -f 'pmlib_test.cpp'; then $(CYGPATH_W) 'pmlib_test.cpp'; else $(CYGPATH_W) '$(srcdir)/pmlib_test.cpp'; fi`
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/test1-pmlib_test.Tpo $(DEPDIR)/test1-pmlib_test.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='pmlib_test.cpp' object='test1-pmlib_test.obj' libtool=no @AMDEPBACKSLASH@
+test1-main_pmlib.obj: main_pmlib.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test1_CXXFLAGS) $(CXXFLAGS) -MT test1-main_pmlib.obj -MD -MP -MF $(DEPDIR)/test1-main_pmlib.Tpo -c -o test1-main_pmlib.obj `if test -f 'main_pmlib.cpp'; then $(CYGPATH_W) 'main_pmlib.cpp'; else $(CYGPATH_W) '$(srcdir)/main_pmlib.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/test1-main_pmlib.Tpo $(DEPDIR)/test1-main_pmlib.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='main_pmlib.cpp' object='test1-main_pmlib.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test1_CXXFLAGS) $(CXXFLAGS) -c -o test1-pmlib_test.obj `if test -f 'pmlib_test.cpp'; then $(CYGPATH_W) 'pmlib_test.cpp'; else $(CYGPATH_W) '$(srcdir)/pmlib_test.cpp'; fi`
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test1_CXXFLAGS) $(CXXFLAGS) -c -o test1-main_pmlib.obj `if test -f 'main_pmlib.cpp'; then $(CYGPATH_W) 'main_pmlib.cpp'; else $(CYGPATH_W) '$(srcdir)/main_pmlib.cpp'; fi`
 
 ID: $(am__tagged_files)
 	$(am__define_uniq_tagged_files); mkid -fID $$unique

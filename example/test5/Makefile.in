@@ -100,6 +100,14 @@ NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
 noinst_PROGRAMS = test5$(EXEEXT)
+@PAPI_TARGET_TRUE@am__append_1 = \
+@PAPI_TARGET_TRUE@	  -L$(top_builddir)/src_papi_ext -lpapi_ext \
+@PAPI_TARGET_TRUE@	  -L@PAPI_DIR@/lib64 -lpapi -lpfm
+
+@OTF_TARGET_TRUE@am__append_2 = \
+@OTF_TARGET_TRUE@	-L$(top_builddir)/src_otf_ext -lotf_ext \
+@OTF_TARGET_TRUE@	-L@OTF_DIR@/lib -lopen-trace-format
+
 subdir = example/test5
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/configure.ac
@@ -115,7 +123,8 @@ PROGRAMS = $(noinst_PROGRAMS)
 am_test5_OBJECTS = test5-main_split_comm.$(OBJEXT) \
 	test5-sub_copy.$(OBJEXT) test5-sub_kernel.$(OBJEXT)
 test5_OBJECTS = $(am_test5_OBJECTS)
-test5_DEPENDENCIES =
+am__DEPENDENCIES_1 =
+test5_DEPENDENCIES = $(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
 test5_LINK = $(CXXLD) $(test5_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) \
 	$(LDFLAGS) -o $@
 AM_V_P = $(am__v_P_@AM_V@)
@@ -237,6 +246,7 @@ MPI_FCLIBS = @MPI_FCLIBS@
 MPI_LDFLAGS = @MPI_LDFLAGS@
 MPI_LIBS = @MPI_LIBS@
 OBJEXT = @OBJEXT@
+OTF_DIR = @OTF_DIR@
 PACKAGE = @PACKAGE@
 PACKAGE_BUGREPORT = @PACKAGE_BUGREPORT@
 PACKAGE_NAME = @PACKAGE_NAME@
@@ -309,20 +319,9 @@ EXTRA_DIST =
 test5_SOURCES = main_split_comm.cpp sub_copy.c sub_kernel.c
 test5_CFLAGS = -I$(top_srcdir)/include -I@PAPI_DIR@/include @MPI_CFLAGS@
 test5_CXXFLAGS = -I$(top_srcdir)/include -I@PAPI_DIR@/include @MPI_CFLAGS@
-@PAPI_TARGET_FALSE@test5_LDADD = \
-@PAPI_TARGET_FALSE@    -L$(top_builddir)/src -lPM@MPI_EXT@ \
-@PAPI_TARGET_FALSE@    @MPI_LIBS@ \
-@PAPI_TARGET_FALSE@    @MPI_LDFLAGS@
-
 #     -std=c99 -g -DSTATIC_PAPI_EVENTS_TABLE -D_REENTRANT -D_GNU_SOURCE -DUSE_COMPILER_TLS  -DPAPI_NO_MEMORY_MANAGEMENT -DUSE_PAPI
-@PAPI_TARGET_TRUE@test5_LDADD = \
-@PAPI_TARGET_TRUE@	  -L$(top_builddir)/src -lPM@MPI_EXT@ \
-@PAPI_TARGET_TRUE@	  -L$(top_builddir)/src_papi_ext -lpapi_ext \
-@PAPI_TARGET_TRUE@	  @MPI_LIBS@ \
-@PAPI_TARGET_TRUE@	  @MPI_LDFLAGS@ \
-@PAPI_TARGET_TRUE@	  -L@PAPI_DIR@/lib64 -lpapi \
-@PAPI_TARGET_TRUE@	  -L@PAPI_DIR@/lib64 -lpfm
-
+test5_LDADD = -L$(top_builddir)/src -lPM@MPI_EXT@ @MPI_LIBS@ \
+	@MPI_LDFLAGS@ $(am__append_1) $(am__append_2)
 dist_noinst_DATA = 
 all: all-am
 
