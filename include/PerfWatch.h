@@ -144,16 +144,6 @@ namespace pm_lib {
     /// OTF 用の初期化
     ///
     void initializeOTF(void);
-    
-    /// 測定区間のラベル情報をOTF に出力
-    ///   @param[in] label     ラベル
-    ///   @param[in] id       ラベルに対応する番号
-    ///
-    void labelOTF(const std::string& label, int id);
-    
-    /// OTF 出力処理を終了する
-    ///
-    void finalizeOTF(void);
 
     /// 測定スタート.
     ///
@@ -218,7 +208,7 @@ namespace pm_lib {
     ///
     void gather(void);
 
-    /// HWPCイベントの測定値を収集する
+    /// HWPCによるイベントカウンターの測定値を PAPI APIで取得収集する
     ///
     void gatherHWPC(void);
 
@@ -241,6 +231,33 @@ namespace pm_lib {
     ///   指定されている場合はそれが優先される
     ///
     int statsSwitch(void);
+
+    /// 計算量の単位変換.
+    ///
+    ///   @param[in] fops 浮動小数演算数/通信量(バイト)
+    ///   @param[out] unit 単位の文字列
+    ///   @param[in] typeCalc  測定対象タイプ(0:通信, 1:計算)
+    ///   @param[in] is_unit ユーザー申告値かHWPC自動測定値かの指定
+    ///              = 0: ユーザが引数で指定した通信量"Bytes/sec"
+    ///              = 1: ユーザが引数で指定した計算量"Flops"
+    ///              = 2: HWPC が自動測定する通信量"Bytes/s (HWPC)"
+    ///              = 3: HWPC が自動測定する計算量"Flops (HWPC)"
+    ///              = 4: HWPC が自動測定する他の測定量"events (HWPC)"
+    ///   @return  単位変換後の数値
+    ///
+    ///   @note is_unitは通常PerfWatch::statsSwitch()で事前に決定されている
+    ///
+    static double unitFlop(double fops, std::string &unit, int typeCalc, int is_unit);
+    
+    /// 測定区間のラベル情報をOTF に出力
+    ///   @param[in] label     ラベル
+    ///   @param[in] id       ラベルに対応する番号
+    ///
+    void labelOTF(const std::string& label, int id);
+    
+    /// OTF 出力処理を終了する
+    ///
+    void finalizeOTF(void);
 
     /// MPIランク別測定結果を出力. 非排他測定区間も出力
     ///
@@ -297,23 +314,6 @@ namespace pm_lib {
     ///   @note ランク0プロセスからのみ呼び出し可能
     ///
     void printGroupHWPCsums(FILE* fp, std::string s_label, MPI_Group p_group, int* pp_ranks);
-
-    /// 単位変換.
-    ///
-    ///   @param[in] fops 浮動小数演算数/通信量(バイト)
-    ///   @param[out] unit 単位の文字列
-    ///   @param[in] typeCalc  測定対象タイプ(0:通信, 1:計算)
-    ///   @param[in] is_unit ユーザー申告値かHWPC自動測定値かの指定
-    ///              = 0: ユーザが引数で指定した通信量"Bytes/sec"
-    ///              = 1: ユーザが引数で指定した計算量"Flops"
-    ///              = 2: HWPC が自動測定する通信量"Bytes/s (HWPC)"
-    ///              = 3: HWPC が自動測定する計算量"Flops (HWPC)"
-    ///              = 4: HWPC が自動測定する他の測定量"events (HWPC)"
-    ///   @return  単位変換後の数値
-    ///
-    ///   @note is_unitは通常PerfWatch::statsSwitch()で事前に決定されている
-    ///
-    static double unitFlop(double fops, std::string &unit, int typeCalc, int is_unit);
     
     /// 時刻を取得.
     ///
