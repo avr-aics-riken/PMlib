@@ -15,6 +15,14 @@ REVISION HISTORY
 ================
 
 --------------------------
+2016-05-27
+r45 
+- updated user guide in doc/
+- updated the description of INSTALL file
+- revised report format
+- additional control for OTF output
+
+--------------------------
 2016-04-20
 r44 candidate
 - Support for generating Open Trace Format files.
