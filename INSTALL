@@ -284,9 +284,9 @@ OTF_TRACING=(off|on|full)
   If this environment variable is set, PMlib automatically generates
   the Open Trace Format files for post processing.
   There will be three type of OTF files.
-  ${OTF_TRACING}.otf
-  ${OTF_TRACING}.0.def
-  ${OTF_TRACING}.(1|2|..|N).events
+  ${OTF_FILENAME}.otf
+  ${OTF_FILENAME}.0.def
+  ${OTF_FILENAME}.(1|2|..|N).events
   See the next environment variable OTF_FILENAME.
   If the value is "off" or not defined, the OTF files are not produced.
   If the value is "on", the OTF files will contain the timer information only.
