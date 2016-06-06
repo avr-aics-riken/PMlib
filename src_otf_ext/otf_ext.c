@@ -12,6 +12,12 @@
 	static double otf_base_time;
 	static uint32_t otf_counterGroup= 60;
 	static uint32_t otf_counterid= 50;
+	static OTF_KeyValueList* key_exclusive;
+	static OTF_KeyValueList* key_inclusive;
+	static uint32_t property_key=1;
+	static uint32_t u_inclusive=10; // i_exclusive (0:false, 1:true) + 10
+	static uint32_t u_exclusive=11;
+
 
 // Initialize the OTF manager, and open the stream files
 //
@@ -44,6 +50,14 @@ void my_otf_initialize(int num_process, int my_rank, char* otf_filename, double 
 		fprintf(stderr, "\t*** internal error. <my_otf_initialize> OTF_Writer_open() failed. \n");
 		return;
 	}
+	key_exclusive = OTF_KeyValueList_new();
+	key_inclusive = OTF_KeyValueList_new();
+	if ((key_exclusive == 0)||(key_inclusive == 0)) {
+		fprintf(stderr, "\t*** internal error. <my_otf_initialize> OTF_KeyValueList_new() failed. \n");
+		return;
+	}
+	OTF_KeyValueList_appendUint32(key_exclusive, property_key, u_exclusive);
+	OTF_KeyValueList_appendUint32(key_inclusive, property_key, u_inclusive);
 	//	}
 
 	wstream = OTF_WStream_open(otf_filename, my_rank+1, manager);
@@ -53,6 +67,7 @@ void my_otf_initialize(int num_process, int my_rank, char* otf_filename, double 
 	}
 
 	otf_base_time = baseT;
+
 
 }
 
@@ -114,16 +129,17 @@ void my_otf_event_stop(int my_rank, double time, int m_id, int m_shift, double w
 // create OTF *.def file
 //
 // num_process	並列プロセス数
-// my_rank	自ランク番号
-// id		the number mapped to the section label (1,2,..,m_nWatch)
-// c_label	測定区間のラベル文字列
-
-void my_otf_event_label(int num_process, int my_rank, int id, char* c_label)
+// my_rank		自ランク番号
+// id			測定区間のラベルに対応する番号 (1,2,..,m_nWatch)
+// c_label		測定区間のラベル文字列
+// i_exclusive	排他測定のフラグ (0:false, 1:true)
+//
+void my_otf_event_label(int num_process, int my_rank, int id, char* c_label, int i_exclusive)
 {
 	if (my_rank != 0) return;
 
 	#ifdef DEBUG_PRINT_OTF
-	fprintf(stderr, "\t<my_otf_event_label> id=%d, c_label=%s\n", id, c_label);
+	fprintf(stderr, "\t<my_otf_event_label> id=%d, c_label=%s, i_exclusive=%d\n", id, c_label, i_exclusive);
 	#endif
 
 	if (id == 1) {
@@ -142,14 +158,22 @@ void my_otf_event_label(int num_process, int my_rank, int id, char* c_label)
 			( writer, OTF_STREAM_0, 16, "Root Section");
 		OTF_Writer_writeDefFunctionGroup
 			( writer, OTF_STREAM_0, 17, "User Initialized Sections");
-		OTF_Writer_writeDefFunction( writer, OTF_STREAM_0, id, c_label, 16, 0);
+		//	OTF_Writer_writeDefFunction( writer, OTF_STREAM_0, id, c_label, 16, 0);
+		OTF_Writer_writeDefFunctionKV( writer, OTF_STREAM_0, id, c_label, 16, 0, key_inclusive);
 
 	} else {
-		OTF_Writer_writeDefFunction( writer, OTF_STREAM_0, id, c_label, 17, 0);
+		//	OTF_Writer_writeDefFunction( writer, OTF_STREAM_0, id, c_label, 17, 0);
+		if (i_exclusive == 0) {
+		OTF_KeyValueList_appendUint32(key_inclusive, property_key, u_inclusive);
+		OTF_Writer_writeDefFunctionKV( writer, OTF_STREAM_0, id, c_label, 17, 0, key_inclusive);
+		} else {
+		OTF_KeyValueList_appendUint32(key_exclusive, property_key, u_exclusive);
+		OTF_Writer_writeDefFunctionKV( writer, OTF_STREAM_0, id, c_label, 17, 0, key_exclusive);
+		}
 	}
 
 	#ifdef DEBUG_PRINT_OTF
-	fprintf(stderr, "\t<my_otf_event_label> my_rank=%d returns.\n", my_rank);
+	// fprintf(stderr, "\t<my_otf_event_label> my_rank=%d returns.\n", my_rank);
 	#endif
 }
 
@@ -212,6 +236,8 @@ void my_otf_finalize(int num_process, int my_rank, int is_unit,
 	OTF_WStream_close(wstream);
 	//	if (my_rank == 0) {
 	OTF_Writer_close(writer);
+	OTF_KeyValueList_close(key_exclusive);
+	OTF_KeyValueList_close(key_inclusive);
 	//	}
 
 	if (my_rank == 0) {

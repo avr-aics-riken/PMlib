@@ -339,7 +339,7 @@ namespace pm_lib {
       std::string label;
       for (int i=0; i<m_nWatch; i++) {
         loop_perf_label(i, label);
-        m_watchArray[0].labelOTF (label, i);
+        m_watchArray[i].labelOTF (label, i);
       }
       m_watchArray[0].finalizeOTF();
     }

@@ -25,7 +25,7 @@
 extern "C" void my_otf_initialize  (int, int, const char*, double);
 extern "C" void my_otf_event_start (int, double, int, int);
 extern "C" void my_otf_event_stop  (int, double, int, int, double);
-extern "C" void my_otf_event_label (int, int, int, const char*);
+extern "C" void my_otf_event_label (int, int, int, const char*, int);
 extern "C" void my_otf_finalize    (int, int, int, const char*, const char*, const char*, const char*);
 #endif
 
