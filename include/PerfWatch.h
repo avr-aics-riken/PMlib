@@ -61,7 +61,7 @@ namespace pm_lib {
     std::string m_label;   ///< 測定区間のラベル
     int m_id;             ///< 測定区間のラベルに対応する番号
     int m_typeCalc;        ///< 測定対象タイプ (0:通信, 1:計算)
-    bool m_exclusive;      ///< 排他測定フラグ
+    bool m_exclusive;      ///< 排他測定フラグ (false, true)
     
     // 測定値の積算量
     double m_time;         ///< 時間(秒)

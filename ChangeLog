@@ -15,6 +15,11 @@ REVISION HISTORY
 ================
 
 --------------------------
+2016-06-06
+r46 
+- replaced OTF global API to add exclusive flag to *.def file
+
+--------------------------
 2016-05-27
 r45 
 - updated user guide in doc/

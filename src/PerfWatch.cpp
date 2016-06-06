@@ -700,7 +700,14 @@ namespace pm_lib {
   {
 #ifdef USE_OTF
     if (m_is_OTF == 0) return;
-    my_otf_event_label(num_process, my_rank, id+1, label.c_str());
+    //	my_otf_event_label(num_process, my_rank, id+1, label.c_str());
+    my_otf_event_label(num_process, my_rank, id+1, label.c_str(), m_exclusive);
+#ifdef DEBUG_PRINT_OTF
+    if (my_rank == 0) {
+		fprintf(stderr, "\t<labelOTF> label=%s, m_exclusive=%d\n",
+			label.c_str(), m_exclusive);
+    }
+#endif
 #endif
   }
 
