@@ -1,13 +1,10 @@
-#include <PerfMonitor.h>
-//	#include <mpi.h>
-#ifdef _OPENMP
+#include <mpi.h>
 #include <omp.h>
-#endif
 #include <stdio.h>
 #include <math.h>
+#include <PerfMonitor.h>
 #include <string>
 using namespace pm_lib;
-PerfMonitor PM;
 
 #define MATSIZE 1000
 int nsize;
@@ -22,6 +19,7 @@ void somekernel();
 void spacer();
 int my_id, npes, num_threads;
 
+PerfMonitor PM;
 
 int main (int argc, char *argv[])
 {
@@ -58,43 +56,53 @@ int main (int argc, char *argv[])
 	PM.setProperties("Second section", PerfMonitor::CALC, false);
 	PM.setProperties("Subsection X", PerfMonitor::COMM);
 	PM.setProperties("Subsection Y", PerfMonitor::CALC);
-	// Remard that "Second section" is not exclusive, i.e. inclusive
-
 
 	set_array();
 
+// checking exclusive section
 	PM.start("First section");
-	somekernel();
+		somekernel();
 	flop_count=pow (dsize, 3.0)*4.0;
-	//	flop_count=3000.0;
 	PM.stop ("First section", flop_count, 1);
+	if(my_id == 0) {
+		fprintf(stderr, "\t<First section> flop_count=%15.0f\n", flop_count);
+	}
 	spacer();
 
+// checking non-exclusive section
 	PM.start("Second section");
 	spacer();
 
-	PM.start("Subsection X");
-	somekernel();
-	byte_count=pow (dsize, 3.0)*4.0*4.0;
-	//	byte_count=2000.0;
-	PM.stop ("Subsection X", byte_count, 1);
-	spacer();
+	for (i=0; i<3; i++){
+		PM.start("Subsection X");
+		somekernel();
+		byte_count=pow (dsize, 3.0)*4.0*4.0;
+		PM.stop ("Subsection X", byte_count, 1);
+		spacer();
+		if(my_id == 0) {
+			fprintf(stderr, "\t<Subsection X> byte_count=%15.0f\n", byte_count);
+		}
 
-	PM.start("Subsection Y");
-	somekernel();
-	flop_count=pow (dsize, 3.0)*4.0 * 1.2;	// somewhat inflated number ...
-	//	flop_count=5000.0;
-	PM.stop ("Subsection Y", flop_count, 1);
-	spacer();
+		PM.start("Subsection Y");
+		somekernel();
+		flop_count=pow (dsize, 3.0)*4.0 * 1.2;	// somewhat inflated number ...
+		PM.stop ("Subsection Y", flop_count, 1);
+		spacer();
+		if(my_id == 0) {
+			fprintf(stderr, "\t<Subsection Y> flop_count=%15.0f\n", flop_count);
+		}
+	}
+
 
 	somekernel();
-	flop_count=pow (dsize, 3.0)*4.0 * 1.5;	// somewhat inflated number ...
-	//	flop_count=1000.0;
+	flop_count=pow (dsize, 3.0)*4.0 * (2*3+1) * 0.7;	// no meaning
 	PM.stop("Second section", flop_count, 1);
 	spacer();
 
+	if(my_id == 0) fprintf(stderr, "\t<main> starting PM.gather().\n");
 	PM.gather();
-	PM.print(stdout, "", "Mr. Bean", 1);
+	if(my_id == 0) fprintf(stderr, "\t<main> starting PM.print().\n");
+	PM.print(stdout, "", "Mrs. Kobe", 1);
 	PM.printDetail(stdout);
 
 	MPI_Finalize();
