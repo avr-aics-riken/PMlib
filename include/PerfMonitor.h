@@ -16,7 +16,7 @@
 
 //! @file   PerfMonitor.h
 //! @brief  PerfMonitor class Header
-//! @version rev.5.0.0
+//! @version rev.5.0.3
 
 #ifdef _PM_WITHOUT_MPI_
 #include "mpi_stubs.h"
