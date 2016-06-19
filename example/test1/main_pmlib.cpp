@@ -1,9 +1,11 @@
 #include <mpi.h>
+#ifdef _OPENMP
 #include <omp.h>
+#endif
 #include <stdio.h>
 #include <math.h>
-#include <PerfMonitor.h>
 #include <string>
+#include <PerfMonitor.h>
 using namespace pm_lib;
 
 #define MATSIZE 1000
