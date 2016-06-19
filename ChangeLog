@@ -14,7 +14,12 @@
 REVISION HISTORY
 ================
 
+2016-06-09
+r47 package 5.0.3
+- Added OTF exclusive info and type of computed volume (calc/comm/HPWC/..) 
+
 --------------------------
+
 2016-06-06
 r46 
 - replaced OTF global API to add exclusive flag to *.def file

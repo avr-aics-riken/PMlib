@@ -319,7 +319,7 @@ namespace pm_lib {
     // 1: user set flop counts
     // 2: HWPC base bandwidth
     // 3: HWPC base flop counts
-    // 4: other HWPC base statistics
+    // 4: other HWPC base events
 
     is_unit=-1;
 
@@ -700,12 +700,13 @@ namespace pm_lib {
   {
 #ifdef USE_OTF
     if (m_is_OTF == 0) return;
-    //	my_otf_event_label(num_process, my_rank, id+1, label.c_str());
-    my_otf_event_label(num_process, my_rank, id+1, label.c_str(), m_exclusive);
+
+	int i_switch = statsSwitch();
+    my_otf_event_label(num_process, my_rank, id+1, label.c_str(), m_exclusive, i_switch);
 #ifdef DEBUG_PRINT_OTF
     if (my_rank == 0) {
-		fprintf(stderr, "\t<labelOTF> label=%s, m_exclusive=%d\n",
-			label.c_str(), m_exclusive);
+		fprintf(stderr, "\t<labelOTF> label=%s, m_exclusive=%d, i_switch=%d\n",
+			label.c_str(), m_exclusive, i_switch);
     }
 #endif
 #endif
