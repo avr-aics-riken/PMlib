@@ -4,8 +4,8 @@
 #endif
 #include <stdio.h>
 #include <math.h>
-#include <string>
 #include <PerfMonitor.h>
+#include <string>
 using namespace pm_lib;
 
 #define MATSIZE 1000
@@ -18,6 +18,7 @@ struct matrix {
 } matrix;
 void set_array();
 void somekernel();
+void slowkernel();
 void spacer();
 int my_id, npes, num_threads;
 
@@ -77,8 +78,9 @@ int main (int argc, char *argv[])
 
 	for (i=0; i<3; i++){
 		PM.start("Subsection X");
-		somekernel();
+		slowkernel();
 		byte_count=pow (dsize, 3.0)*4.0*4.0;
+	
 		PM.stop ("Subsection X", byte_count, 1);
 		spacer();
 		if(my_id == 0) {
@@ -87,7 +89,7 @@ int main (int argc, char *argv[])
 
 		PM.start("Subsection Y");
 		somekernel();
-		flop_count=pow (dsize, 3.0)*4.0 * 1.2;	// somewhat inflated number ...
+		flop_count=pow (dsize, 3.0)*4.0;
 		PM.stop ("Subsection Y", flop_count, 1);
 		spacer();
 		if(my_id == 0) {
@@ -97,15 +99,15 @@ int main (int argc, char *argv[])
 
 
 	somekernel();
-	flop_count=pow (dsize, 3.0)*4.0 * (2*3+1) * 0.7;	// no meaning
+	flop_count=pow (dsize, 3.0)*4.0 * (2*3+1) ;
 	PM.stop("Second section", flop_count, 1);
 	spacer();
 
 	if(my_id == 0) fprintf(stderr, "\t<main> starting PM.gather().\n");
 	PM.gather();
 	if(my_id == 0) fprintf(stderr, "\t<main> starting PM.print().\n");
-	PM.print(stdout, "", "Mrs. Kobe", 1);
-	PM.printDetail(stdout);
+	PM.print(stdout, "", "Mrs. Kobe", 0);
+	PM.printDetail(stdout, 1);
 
 	MPI_Finalize();
 	return 0;
@@ -138,6 +140,30 @@ nsize = matrix.nsize;
 	for (i=0; i<nsize; i++){
 	for (j=0; j<nsize; j++){
 		c1=0.0;
+		for (k=0; k<nsize; k++){
+		c2=matrix.a2[i][k] * matrix.a2[j][k];
+		c3=matrix.b2[i][k] * matrix.b2[j][k];
+		c1=c1 + c2+c3;
+		}
+		matrix.c2[i][j] = matrix.c2[i][j] + c1/(float)nsize;
+	}
+	}
+}
+
+// slow computing kernel
+void slowkernel()
+{
+int i, j, k, nsize;
+float c1,c2,c3;
+nsize = matrix.nsize;
+#pragma omp parallel
+#pragma omp for
+#pragma novector
+	for (i=0; i<nsize; i++){
+#pragma novector
+	for (j=0; j<nsize; j++){
+		c1=0.0;
+#pragma novector
 		for (k=0; k<nsize; k++){
 		c2=matrix.a2[i][k] * matrix.a2[j][k];
 		c3=matrix.b2[i][k] * matrix.b2[j][k];

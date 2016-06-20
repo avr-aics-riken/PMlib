@@ -87,8 +87,9 @@ namespace pm_lib {
 
   private:
     // 測定時の補助変数
-    double m_startTime;  ///< 測定開始時刻
-    bool m_started;      ///< 測定中フラグ
+    double m_startTime;  ///< 測定区間の測定開始時刻
+    double m_stopTime;   ///< 測定区間の測定終了時刻
+    bool m_started;      ///< 測定区間の測定中フラグ
     
     // 測定値集計時の補助変数
     double* m_timeArray;         ///< 「時間」集計用配列
