@@ -98,13 +98,14 @@ void my_otf_event_start(int my_rank, double time, int m_id, int m_shift)
 
 
 
-// write the event ending time stamp with accumulated counter value
+// write the event ending time stamp with the measured performance values
 //
 // my_rank	自ランク番号
-// time		the event start time
+// time		the event stop time
 // m_id		the number mapped to the section label (1,2,..,m_nWatch)
 // m_shift	optional shift value for the counter id
 // w		測定値 (ユーザ指定値 or HWPC自動測定値)
+//* Remark that w often contains the rate(speed) such as Flops or Bytes/sec,
 
 void my_otf_event_stop(int my_rank, double time, int m_id, int m_shift, double w)
 {

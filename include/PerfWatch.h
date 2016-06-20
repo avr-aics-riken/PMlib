@@ -16,7 +16,7 @@
 
 //! @file   PerfWatch.h
 //! @brief  PerfWatch class Header
-//! @version rev.5.0.3
+//! @version rev.5.0.4
 
 
 #include <cassert>
@@ -87,8 +87,9 @@ namespace pm_lib {
 
   private:
     // 測定時の補助変数
-    double m_startTime;  ///< 測定開始時刻
-    bool m_started;      ///< 測定中フラグ
+    double m_startTime;  ///< 測定区間の測定開始時刻
+    double m_stopTime;   ///< 測定区間の測定終了時刻
+    bool m_started;      ///< 測定区間の測定中フラグ
     
     // 測定値集計時の補助変数
     double* m_timeArray;         ///< 「時間」集計用配列
@@ -218,12 +219,12 @@ namespace pm_lib {
 
     /// 計算量としてユーザー申告値を用いるかHWPC計測値を用いるかの決定を行う
     ///
-    /// @return  戻り値とその意味合い
-    ///   0: ユーザが引数で指定した通信量を採用する "Bytes/sec"
-    ///   1: ユーザが引数で指定した計算量を採用する "Flops"
-    ///   2: HWPC が自動的に測定する通信量を採用する	"Bytes/s (HWPC)"
-    ///   3: HWPC が自動的に測定する計算量を用いる	"Flops (HWPC)"
-    ///   4: HWPC が自動的に測定する他の測定量を用いる "events (HWPC)"
+    /// @return  戻り値とその意味合い \n
+    ///   0: ユーザが引数で指定した通信量を採用する "Bytes/sec" \n
+    ///   1: ユーザが引数で指定した計算量を採用する "Flops" \n
+    ///   2: HWPC が自動的に測定する通信量を採用する	"Bytes/s (HWPC)" \n
+    ///   3: HWPC が自動的に測定する計算量を用いる	"Flops (HWPC)" \n
+    ///   4: HWPC が自動的に測定する他の測定量を用いる "events (HWPC)" \n
     ///
     /// @note
     ///   計算量としてユーザー申告値を用いるかHWPC計測値を用いるかの決定を行う
@@ -237,12 +238,12 @@ namespace pm_lib {
     ///   @param[in] fops 浮動小数演算数/通信量(バイト)
     ///   @param[out] unit 単位の文字列
     ///   @param[in] typeCalc  測定対象タイプ(0:通信, 1:計算)
-    ///   @param[in] is_unit ユーザー申告値かHWPC自動測定値かの指定
-    ///              = 0: ユーザが引数で指定した通信量"Bytes/sec"
-    ///              = 1: ユーザが引数で指定した計算量"Flops"
-    ///              = 2: HWPC が自動測定する通信量"Bytes/s (HWPC)"
-    ///              = 3: HWPC が自動測定する計算量"Flops (HWPC)"
-    ///              = 4: HWPC が自動測定する他の測定量"events (HWPC)"
+    ///   @param[in] is_unit ユーザー申告値かHWPC自動測定値かの指定 \n
+    ///              = 0: ユーザが引数で指定した通信量"Bytes/sec" \n
+    ///              = 1: ユーザが引数で指定した計算量"Flops" \n
+    ///              = 2: HWPC が自動測定する通信量"Bytes/s (HWPC)" \n
+    ///              = 3: HWPC が自動測定する計算量"Flops (HWPC)" \n
+    ///              = 4: HWPC が自動測定する他の測定量"events (HWPC)" \n
     ///   @return  単位変換後の数値
     ///
     ///   @note is_unitは通常PerfWatch::statsSwitch()で事前に決定されている

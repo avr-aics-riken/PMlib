@@ -16,7 +16,7 @@
 
 //! @file   PerfMonitor.h
 //! @brief  PerfMonitor class Header
-//! @version rev.5.0.3
+//! @version rev.5.0.4
 
 #ifdef _PM_WITHOUT_MPI_
 #include "mpi_stubs.h"
@@ -48,10 +48,10 @@ namespace pm_lib {
   class PerfMonitor {
   public:
     
-    /// 測定対象タイプ
+    /// 測定計算量のタイプ
     enum Type {
       COMM,  ///< 通信（あるいはメモリ転送）
-      CALC,  ///< 計算
+      CALC,  ///< 演算
     };
     
     /// 測定レベル制御変数.
@@ -86,47 +86,24 @@ namespace pm_lib {
     ~PerfMonitor() { if (m_watchArray) delete[] m_watchArray; }
     
 
-    /// 初期化.
-    /// 測定区間数分の測定時計を準備.
-    /// 最初にinit_nWatch区間分を確保し、不足したら動的にinit_nWatch追加する
-    /// 全計算時間用測定時計をスタート.
+    /// PMlibの内部初期化
+    /// 
+    /// 測定区間数分の内部領域を確保しする。並列動作モード、サポートオプション
+    /// の認識を行い、実行時のオプションによりHWPC、OTF出力用の初期化も行う。
+    /// 
     /// @param[in] init_nWatch 最初に確保する測定区間数（C++では省略可能） 
     ///
-    /// @note 測定区間数 m_nWatch は不足すると動的に増えていく
+    /// @note 
+    /// 測定区間数分の内部領域を最初にinit_nWatch区間分を確保する。
+    /// 測定区間数が不足したらその都度動的にinit_nWatch追加する。
     ///
     void initialize (int init_nWatch=100);
-
-
-    /// 並列モードを設定
-    ///
-    /// @param[in] p_mode 並列モード
-    /// @param[in] n_thread
-    /// @param[in] n_proc
-    ///
-    /// @note 並列モードはPMlib内部で自動的に識別可能なため、
-    ///       利用者は通常このAPIを呼び出す必要はない。
-    ///
-    void setParallelMode(const std::string& p_mode, const int n_thread, const int n_proc);
-
-    
-    /// ランク番号の通知 : This function is obsolete and is silently ignored.
-    ///
-    /// @param[in] MPI process ID
-    ///
-    /// @note ランク番号はPMlib内部で自動的に識別される。
-    /// @note This function is obsolete and is silently ignored.
-    /// It stays here only for the compatibility with old versions.
-    ///
-    void setRankInfo(const int my_rank_ID) {
-      //	my_rank = my_rank_ID;
-      fprintf(stderr, "Remark. <setRankInfo> function is obsolete, and is silently ignored.\n");
-    }
 
     
     /// 測定区間にプロパティを設定.
     ///
     ///   @param[in] label ラベルとなる文字列
-    ///   @param[in] type  測定量のタイプ(COMM:通信, CALC:計算)
+    ///   @param[in] type  測定計算量のタイプ(COMM:通信, CALC:演算)
     ///   @param[in] exclusive 排他測定フラグ。bool型(省略時true)、
     ///                        Fortran仕様は整数型(0:false, 1:true)
     ///
@@ -150,16 +127,69 @@ namespace pm_lib {
     /// 測定区間ストップ
     ///
     ///   @param[in] label ラベル文字列。測定区間を識別するために用いる。
-    ///   @param[in] flopPerTask 測定区間の計算量(演算量Flopまたは通信量Byte):省略値0
+    ///   @param[in] flopPerTask 測定区間の計算量(演算量Flopまたは通信量Byte)
+    ///   					:省略値0
     ///   @param[in] iterationCount  計算量の乗数（反復回数）:省略値1
     ///
-    ///   @note  引数とレポート出力情報の関連はPerfWatch.hのコメントに詳しく説明されている。
+    ///   @note  計算量のボリュームは次のように算出される。 \n
+    ///          (A) ユーザ申告モードの場合は １区間１回あたりで
+    ///          flopPerTask*iterationCount \n
+    ///          (B) HWPCによる自動算出モードの場合は引数とは関係なく
+    ///          HWPC内部値を利用
+    ///   @note  出力レポートに表示される計算量は測定のモード・引数の
+    ///          組み合わせで以下の規則により決定される。
+    ///   @verbatim
+    /**
+    (A) ユーザ申告モード
+      - HWPC APIが利用できないシステムや環境変数HWPC_CHOOSERが指定
+        されていないジョブでは自動的にユーザ申告モードで実行される。
+      - ユーザ申告モードでは(1):setProperties() と(2):stop()への引数により
+        出力内容が決定される。
+      - (1) ::setProperties(区間名, type, exclusive)の第2引数typeが
+        計算量のタイプを指定する。演算(CALC)タイプか通信(COMM)タイプか。
+      - (2) ::stop (区間名, fPT, iC)の第2引数fPTは測定計算量。
+        演算（浮動小数点演算）あるいは通信（MPI通信やメモリロードストア
+        などデータ移動)の量を数値や式で与える。
+
+        setProperties()  stop()
+        type引数         fP引数     基本・詳細レポート出力
+        ---------------------------------------------------------
+        CALC	         指定あり   時間、fPT引数によるFlops
+        COMM		     指定あり   時間、fPT引数によるByte/s
+        任意             指定なし   時間のみ
+
+    (B) HWPCによる自動算出モード
+      - HWPC/PAPIが利用可能なプラットフォームで利用できる
+      - 環境変数HWPC_CHOOSERの値によりユーザ申告値を用いるかPAPI情報を
+        用いるかを切り替える。(FLOPS| BANDWIDTH| VECTOR| CACHE| CYCLE)
+
+    ユーザ申告モードかHWPC自動算出モードかは、内部的に下記表の組み合わせ
+    で決定される。
+
+    環境変数     setProperties()の  stop()の
+    HWPC_CHOOSER    type引数        fP引数       基本・詳細レポート出力      HWPC詳細レポート出力
+    ------------------------------------------------------------------------------------------
+	NONE (無指定)   CALC            指定値       時間、fP引数によるFlops     なし
+	NONE (無指定)   COMM            指定値       時間、fP引数によるByte/s    なし
+    FLOPS           無視            無視         時間、HWPC自動計測Flops     FLOPSに関連するHWPC統計情報
+    VECTOR          無視            無視         時間、HWPC自動計測SIMD率    VECTORに関連するHWPC統計情報
+    BANDWIDTH       無視            無視         時間、HWPC自動計測Byte/s    BANDWIDTHに関連するHWPC統計情報
+    CACHE           無視            無視         時間、HWPC自動計測L1$,L2$   CACHEに関連するHWPC統計情報
+     **/
+    ///   @endverbatim
+    ///
     void stop(const std::string& label, double flopPerTask=0.0, unsigned iterationCount=1);
+    
 
     
-    /// 全プロセスの全測定結果情報をマスタープロセス(0)に集約.
+    /// 全プロセスの測定結果をマスタープロセス(0)に集約.
     ///
-    ///   全計算時間用測定時計をストップ.
+    ///   @note  以下の処理を行う。
+    /// 各測定区間の全プロセスの測定結果情報をノード０に集約。
+    /// 測定結果の平均値・標準偏差などの基礎的な統計計算。
+    /// 経過時間でソートした測定区間のリストm_order[m_nWatch] を作成する。
+    /// 各測定区間のHWPCイベントの統計値を取得する。
+    /// OTFポスト処理ファイルの終了処理。
     ///
     void gather(void);
 
@@ -226,6 +256,31 @@ namespace pm_lib {
      * @brief PMlibバージョン番号の文字列を返す
      */
     std::string getVersionInfo(void);
+
+
+    /// 旧バージョンとの互換用プレースホルダ(並列モードを設定)
+    ///
+    /// @param[in] p_mode 並列モード
+    /// @param[in] n_thread
+    /// @param[in] n_proc
+    ///
+    /// @note 並列モードはPMlib内部で自動的に識別可能なため、
+    ///       利用者は通常このAPIを呼び出す必要はない。
+    ///
+    void setParallelMode(const std::string& p_mode, const int n_thread, const int n_proc);
+
+    
+    /// 旧バージョンとの互換用プレースホルダ(ランク番号の通知)
+    ///
+    /// @param[in] MPI process ID
+    ///
+    /// @note ランク番号はPMlib内部で自動的に識別される。
+    /// @note 並列モードはPMlib内部で自動的に識別可能なため、
+    ///       利用者は通常このAPIを呼び出す必要はない。
+    ///
+    void setRankInfo(const int my_rank_ID) {
+      //	my_rank = my_rank_ID;
+    }
 
 
   private:
