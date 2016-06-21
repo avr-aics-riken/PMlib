@@ -108,7 +108,7 @@ void f_pm_setproperties_ (char* fc, int& f_type, int& f_exclusive, int fc_size)
 	}
 	if (f_exclusive == 1) {
 		exclusive=true;
-	} else if (f_exclusive == 2) {
+	} else if ((f_exclusive == 0)||(f_exclusive == 2)) {
 		exclusive=false;
 	} else {
 		fprintf(stderr, "<f_pm_setproperties> ");

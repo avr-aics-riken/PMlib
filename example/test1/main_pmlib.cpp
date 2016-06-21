@@ -158,9 +158,7 @@ float c1,c2,c3;
 nsize = matrix.nsize;
 #pragma omp parallel
 #pragma omp for
-#pragma novector
 	for (i=0; i<nsize; i++){
-#pragma novector
 	for (j=0; j<nsize; j++){
 		c1=0.0;
 #pragma novector
