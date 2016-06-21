@@ -865,8 +865,6 @@ namespace pm_lib {
       PM_Exit(0);
     }
 
-	double w;
-    double m_stopTime;
     m_stopTime = getTime();
     m_time += m_stopTime - m_startTime;
     m_count++;
@@ -930,6 +928,7 @@ namespace pm_lib {
 
 #ifdef USE_OTF
     int i_shift = 0;
+	double w;
 
 	if (m_is_OTF == 0) {
 		// OTFファイル出力なし
@@ -941,11 +940,12 @@ namespace pm_lib {
 
 	} else if (m_is_OTF == 2) {
 		if ( (is_unit == 0) || (is_unit == 1) ) {
-			// ユーザが引数で指定した計算量/time
-    		w = (flopPerTask * (double)iterationCount) / m_time;
+			// ユーザが引数で指定した計算量/time(計算speed)
+    		//	w = (flopPerTask * (double)iterationCount) / m_time;
+    		w = (flopPerTask * (double)iterationCount) / (m_stopTime-m_startTime);
 			if (is_unit == 1) i_shift = 1;
 		} else if ( (2 <= is_unit) && (is_unit <= 4) ) {
-			// 自動計測されたHWPCイベントを分析した計算量(speed)
+			// 自動計測されたHWPCイベントを分析した計算speed
 			sortPapiCounterList ();
 			w = my_papi.v_sorted[my_papi.num_sorted-1] ;
 		}
