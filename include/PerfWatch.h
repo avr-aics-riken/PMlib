@@ -67,6 +67,7 @@ namespace pm_lib {
     double m_time;         ///< 時間(秒)
     double m_flop;         ///< 浮動小数点演算量or通信量(バイト)
     unsigned long m_count; ///< 測定回数
+                           // 区間の呼び出し回数はプロセス毎に異なる場合がある
     
     // 統計量
     double m_time_av;    ///< 時間の平均値(ランク0のみ)
@@ -75,7 +76,6 @@ namespace pm_lib {
     double m_flop_sd;    ///< 浮動小数点演算量or通信量の標準偏差(ランク0のみ)
     double m_time_comm;  ///< 通信部分の最大値（ランク0のみ）
     
-    bool m_valid;        ///< 測定回数が全ランクで等しいかのフラグ(使用しない)
     int m_is_OTF;	     ///< OTF tracing 出力のフラグ 0(no), 1(yes), 2(full)
     std::string otf_filename;    ///< OTF filename headings
                         //	master 		: otf_filename + .otf
@@ -96,7 +96,6 @@ namespace pm_lib {
     double* m_flopArray;         ///< 「浮動小数点演算量or通信量」集計用配列
     unsigned long* m_countArray; ///< 「測定回数」集計用配列
     unsigned long  m_count_sum; ///< 「測定回数」summed over all MPI ranks
-    bool m_gathered;            ///< 集計済みフラグ
     double* gather_sorted;	///< HWPC集計後ソートされた配列のポインタ
     
     /// 排他測定実行中フラグ. 非排他測定では未使用
@@ -113,8 +112,8 @@ namespace pm_lib {
   public:
     /// コンストラクタ.
     PerfWatch() : m_time(0.0), m_flop(0.0), m_count(0), m_started(false), 
-    m_gathered(false), m_valid(true), my_rank(0),
-    m_timeArray(0), m_flopArray(0), m_countArray(0), m_is_first(true) {}
+      my_rank(0), m_timeArray(0), m_flopArray(0), m_countArray(0),
+      m_is_first(true) {}
     
     /// デストラクタ.
     ~PerfWatch() {

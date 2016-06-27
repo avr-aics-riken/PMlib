@@ -108,6 +108,7 @@ int main (int argc, char *argv[])
 	if(my_id == 0) fprintf(stderr, "\t<main> starting PM.print().\n");
 	PM.print(stdout, "", "Mrs. Kobe", 0);
 	PM.printDetail(stdout, 1);
+	PM.postTrace();
 
 	MPI_Finalize();
 	return 0;

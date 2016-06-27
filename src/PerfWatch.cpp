@@ -203,11 +203,6 @@ namespace pm_lib {
   ///
   void PerfWatch::gather()
   {
-	//	if (!m_exclusive) return;
-    if (m_gathered) {
-      printError("PerfWatch::gather()",  "already gathered\n");
-      PM_Exit(0);
-    }
 	#ifdef DEBUG_PRINT_WATCH
     if (my_rank == 0) {
 		fprintf(stderr, "\t<gather> my_rank=%d, num_process=%d, m_time=%e, m_flop=%e, m_count=%lu\n",
@@ -233,13 +228,13 @@ namespace pm_lib {
       if ( MPI_Gather(&m_count, 1, MPI_UNSIGNED_LONG, m_countArray, 1, MPI_UNSIGNED_LONG, 0, MPI_COMM_WORLD) != MPI_SUCCESS ) PM_Exit(0);
       if ( MPI_Allreduce(&m_count, &m_count_sum, 1, MPI_UNSIGNED_LONG, MPI_SUM, MPI_COMM_WORLD) != MPI_SUCCESS ) PM_Exit(0);
     }
-    m_gathered = true;
   }
 
   
   /// Statistics among processes
   /// Translate in Japanese later on...
   /// 測定結果の平均値・標準偏差などの基礎的な統計計算
+  /// 測定区間の呼び出し回数はプロセス毎に異なる場合がありえる
   ///
   void PerfWatch::statsAverage()
   {
@@ -247,18 +242,6 @@ namespace pm_lib {
     if (my_rank == 0) {
       //	if (m_exclusive) {
         
-        // version 4 以降
-        // 計算が複雑になり負荷のアンバランスが生じると、
-        // 排他測定(m_exclusive==true)でも
-        // 区間の呼び出し回数はプロセス毎に異なる場合がありえるため
-        // 測定回数が全ノードで等しいことの checkはnasi
-        // int n = m_countArray[0];
-        // for (int i = 1; i < num_process; i++) {
-        //   if (m_countArray[i] != n) m_valid = false;
-        // }
-        // if (!m_valid) return;
-        //
-
         
         // 平均値
         m_time_av = 0.0;
@@ -669,7 +652,7 @@ namespace pm_lib {
 
 
 
-  /// OTF tracing 出力用の初期化
+  /// ポスト処理用traceファイル出力用の初期化
   ///
   void PerfWatch::initializeOTF(void)
   {
@@ -703,6 +686,10 @@ namespace pm_lib {
 
 	int i_switch = statsSwitch();
     my_otf_event_label(num_process, my_rank, id+1, label.c_str(), m_exclusive, i_switch);
+
+    if (id != 0) {
+      m_is_OTF = 0;
+    }
 #ifdef DEBUG_PRINT_OTF
     if (my_rank == 0) {
 		fprintf(stderr, "\t<labelOTF> label=%s, m_exclusive=%d, i_switch=%d\n",
@@ -737,6 +724,8 @@ namespace pm_lib {
 	my_otf_finalize (num_process, my_rank, is_unit,
 		otf_filename.c_str(), s_group.c_str(),
 		s_counter.c_str(), s_unit.c_str());
+
+    m_is_OTF = 0;
 #endif
   }
 
@@ -865,6 +854,7 @@ namespace pm_lib {
       PM_Exit(0);
     }
 
+	double w;
     m_stopTime = getTime();
     m_time += m_stopTime - m_startTime;
     m_count++;
@@ -928,7 +918,6 @@ namespace pm_lib {
 
 #ifdef USE_OTF
     int i_shift = 0;
-	double w;
 
 	if (m_is_OTF == 0) {
 		// OTFファイル出力なし

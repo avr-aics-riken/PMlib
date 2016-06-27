@@ -26,12 +26,6 @@
 
 namespace pm_lib {
   
-  /// 測定レベル制御変数.
-  /// =0:測定なし
-  /// =1:排他測定のみ
-  /// =2:非排他測定も(ディフォルト)
-  unsigned PerfMonitor::TimingLevel = 2;
-
 
   /// 初期化.
   /// 測定区間数分の測定時計を準備.
@@ -253,7 +247,6 @@ namespace pm_lib {
   /// 測定結果の平均値・標準偏差などの基礎的な統計計算。
   /// 経過時間でソートした測定区間のリストm_order[m_nWatch] を作成する。
   /// 各測定区間のHWPCイベントの統計値を取得する。
-  /// OTFポスト処理ファイルの終了処理。
   ///
   void PerfMonitor::gather(void)
   {
@@ -265,8 +258,7 @@ namespace pm_lib {
     }
     m_watchArray[0].stop(0.0, 1);
 
-    if (m_nWatch == 0) return;
-
+    if (m_nWatch == 0) return; // No section defined with setProperties()
 
 #ifdef DEBUG_PRINT_MONITOR
     int iret = MPI_Barrier(MPI_COMM_WORLD);
@@ -279,12 +271,6 @@ namespace pm_lib {
       }
     }
 #endif
-
-
-    if (m_nWatch == 0) {
-      //	No section has been defined via setProperties()
-      return;
-    }
 
     // 各測定区間のHWPCによるイベントカウンターの統計値を取得する
     for (int i=0; i<m_nWatch; i++) {
@@ -339,17 +325,6 @@ namespace pm_lib {
       }
     }
 
-    // OTFポスト処理ファイルの終了処理
-#ifdef USE_OTF
-    if (is_OTF_enabled) {
-      std::string label;
-      for (int i=0; i<m_nWatch; i++) {
-        loop_perf_label(i, label);
-        m_watchArray[i].labelOTF (label, i);
-      }
-      m_watchArray[0].finalizeOTF();
-    }
-#endif
   }
 
 
@@ -902,6 +877,31 @@ namespace pm_lib {
 		PerfMonitor::printGroup (stdout, new_group, new_comm, p, i, 0, seqSections);
 	}
 
+  }
+
+
+  /// ポスト処理用traceファイルの出力終了処理
+  ///
+  /// @note current version supports OTF(Open Trace Format) v1.5
+  /// @note This API terminates producing post trace immediately, and will
+  ///       produce non-pairwise start()/stop() records.
+  ///
+  void PerfMonitor::postTrace(void)
+  {
+
+    if (m_nWatch == 0) return; // No section defined with setProperties()
+
+    // OTFポスト処理ファイルの終了処理
+#ifdef USE_OTF
+    if (is_OTF_enabled) {
+      std::string label;
+      for (int i=0; i<m_nWatch; i++) {
+        loop_perf_label(i, label);
+        m_watchArray[i].labelOTF (label, i);
+      }
+      m_watchArray[0].finalizeOTF();
+    }
+#endif
   }
 
 } /* namespace pm_lib */

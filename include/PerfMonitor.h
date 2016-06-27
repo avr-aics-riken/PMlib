@@ -34,33 +34,21 @@
 
 namespace pm_lib {
   
-  /// 排他測定用マクロ
-#define PM_TIMING__         if (PerfMonitor::TimingLevel > 0)
-  
-  
-  /// 排他測定＋非排他測定用マクロ
-#define PM_TIMING_DETAIL__  if (PerfMonitor::TimingLevel > 1)
-
-  
   /**
    * 計算性能測定管理クラス.
    */
   class PerfMonitor {
   public:
     
+    // TODO: we should change this enum choice style.
     /// 測定計算量のタイプ
     enum Type {
       COMM,  ///< 通信（あるいはメモリ転送）
       CALC,  ///< 演算
     };
     
-    /// 測定レベル制御変数.
-    /// =0:測定なし/=1:排他測定のみ/=2:非排他測定も(ディフォルト)
-    static unsigned TimingLevel;
-    
   private:
     unsigned m_nWatch;         ///< 測定区間数
-    bool m_gathered;           ///< 想定結果集計済みフラグ
     int num_threads;           ///< 並列スレッド数
     int num_process;           ///< 並列プロセス数
     int my_rank;               ///< 自ランク番号
@@ -77,6 +65,7 @@ namespace pm_lib {
     bool is_OpenMP_enabled;	   ///< PMlibの対応動作可能フラグ:OpenMP
     bool is_PAPI_enabled;	     ///< PMlibの対応動作可能フラグ:PAPI
     bool is_OTF_enabled;	   ///< 対応動作可能フラグ:OTF tracing 出力
+    bool m_gathered;           ///< 測定結果集計済みフラグ
 
   public:
     /// コンストラクタ.
@@ -189,7 +178,6 @@ namespace pm_lib {
     /// 測定結果の平均値・標準偏差などの基礎的な統計計算。
     /// 経過時間でソートした測定区間のリストm_order[m_nWatch] を作成する。
     /// 各測定区間のHWPCイベントの統計値を取得する。
-    /// OTFポスト処理ファイルの終了処理。
     ///
     void gather(void);
 
@@ -281,6 +269,13 @@ namespace pm_lib {
     void setRankInfo(const int my_rank_ID) {
       //	my_rank = my_rank_ID;
     }
+
+    
+    /// ポスト処理用traceファイルの出力終了処理
+    ///
+    /// @note current version supports OTF(Open Trace Format) v1.1
+    ///
+    void postTrace(void);
 
 
   private:

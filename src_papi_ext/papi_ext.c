@@ -83,7 +83,7 @@ int my_papi_add_events ( int *events, int num_events)
 		PAPI_cleanup_eventset( state->EventSet );
 		return retval;
 	}
-	print_state_HighLevelInfo(state);
+	//	print_state_HighLevelInfo(state);
 
 	return PAPI_OK;
 }
