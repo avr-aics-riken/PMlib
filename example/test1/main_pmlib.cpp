@@ -6,6 +6,7 @@
 #include <math.h>
 #include <PerfMonitor.h>
 #include <string>
+#include <sstream>
 using namespace pm_lib;
 
 #define MATSIZE 1000
@@ -29,6 +30,8 @@ int main (int argc, char *argv[])
 	double flop_count, byte_count, dsize;
 	double t1, t2;
 	int i, j, num_threads;
+	std::string comments;
+	std::ostringstream ouch;
 
 	MPI_Init(&argc, &argv);
 	MPI_Comm_rank(MPI_COMM_WORLD, &my_id);
@@ -81,7 +84,7 @@ int main (int argc, char *argv[])
 		slowkernel();
 		byte_count=pow (dsize, 3.0)*4.0*4.0;
 	
-		PM.stop ("Subsection X", byte_count, 1);
+		PM.stop ("Subsection X", byte_count);
 		spacer();
 		if(my_id == 0) {
 			fprintf(stderr, "\t<Subsection X> byte_count=%15.0f\n", byte_count);
@@ -90,24 +93,27 @@ int main (int argc, char *argv[])
 		PM.start("Subsection Y");
 		somekernel();
 		flop_count=pow (dsize, 3.0)*4.0;
-		PM.stop ("Subsection Y", flop_count, 1);
+		PM.stop ("Subsection Y", flop_count);
 		spacer();
 		if(my_id == 0) {
 			fprintf(stderr, "\t<Subsection Y> flop_count=%15.0f\n", flop_count);
 		}
+		//	comments = "loop" + std::to_string(i);	// for C++11
+		ouch.str(""); ouch << i; comments = "loop:" + ouch.str(); // old C++
+		PM.printProgress(stdout, comments, 1);
 	}
 
 
 	somekernel();
 	flop_count=pow (dsize, 3.0)*4.0 * (2*3+1) ;
-	PM.stop("Second section", flop_count, 1);
+	PM.stop("Second section", flop_count);
 	spacer();
 
 	if(my_id == 0) fprintf(stderr, "\t<main> starting PM.gather().\n");
 	PM.gather();
 	if(my_id == 0) fprintf(stderr, "\t<main> starting PM.print().\n");
 	PM.print(stdout, "", "Mrs. Kobe", 0);
-	PM.printDetail(stdout, 1);
+	PM.printDetail(stdout, 0);
 	PM.postTrace();
 
 	MPI_Finalize();

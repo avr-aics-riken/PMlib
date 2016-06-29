@@ -15,8 +15,8 @@
  */
 
 /// PMlib private クラスからPAPI low level関数へのインタフェイスC関数
-/// extern "C" int my_papi_bind_start ( int *, long long *, int );
-/// extern "C" int my_papi_bind_stop  ( int *, long long *, int );
+/// extern "C" int my_papi_bind_start ( long long *, int );
+/// extern "C" int my_papi_bind_stop  ( long long *, int );
 /// extern "C" int my_papi_add_events ( int *, int);
 /// extern "C" void my_papi_name_to_code ( const char *, int *);
 /// 
@@ -26,8 +26,9 @@
 
 #ifdef USE_PAPI
 #include "papi.h"
-extern "C" int my_papi_bind_start ( int *, long long *, int );
-extern "C" int my_papi_bind_stop  ( int *, long long *, int );
+extern "C" int my_papi_bind_start ( long long *, int );
+extern "C" int my_papi_bind_stop  ( long long *, int );
+extern "C" int my_papi_bind_read  ( long long *, int );
 extern "C" int my_papi_add_events ( int *, int);
 extern "C" void my_papi_name_to_code ( const char *, int *);
 #endif

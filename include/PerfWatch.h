@@ -96,7 +96,7 @@ namespace pm_lib {
     double* m_flopArray;         ///< 「浮動小数点演算量or通信量」集計用配列
     unsigned long* m_countArray; ///< 「測定回数」集計用配列
     unsigned long  m_count_sum; ///< 「測定回数」summed over all MPI ranks
-    double* gather_sorted;	///< HWPC集計後ソートされた配列のポインタ
+    double* sorted_hwpcArray;	///< HWPC集計後ソートされた配列のポインタ
     
     /// 排他測定実行中フラグ. 非排他測定では未使用
     static bool ExclusiveStarted;

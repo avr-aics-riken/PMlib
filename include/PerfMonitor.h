@@ -239,6 +239,23 @@ namespace pm_lib {
     ///
     void printComm (FILE* fp, MPI_Comm new_comm, int icolor, int key, int legend=0, int seqSections=0);
 
+    
+    /// 測定途中経過の状況レポートを出力。
+    ///
+    ///   @param[in] fp       出力ファイルポインタ
+    ///   @param[in] comments 任意のコメント
+    ///   @param[in] seqSections 測定区間の表示順 (0:経過時間順、1:登録順)
+    ///
+    ///   @note 基本レポートと同様なフォーマットで出力する。
+    ///      MPIの場合、rank0プロセスの測定回数が１以上の区間のみを表示する。
+    ///   @note  内部では以下の処理を行う。
+    ///    各測定区間の全プロセス途中経過状況を集約。 gather_and_sort();
+    ///    測定結果の平均値・標準偏差などの基礎的な統計計算。
+    ///    経過時間でソートした測定区間のリストm_order[m_nWatch] を作成する。
+    ///    各測定区間のHWPCイベントの統計値を取得する。
+    ///
+    void printProgress(FILE* fp, const std::string comments, int seqSections=0);
+
 
     /**
      * @brief PMlibバージョン番号の文字列を返す
@@ -350,6 +367,64 @@ namespace pm_lib {
 			fprintf(stderr, "\t\t <%s> : %d\n", p_label.c_str(), p_id);
 		}
     }
+    
+    /// 全プロセスの測定中経過情報を集約
+    ///
+    ///   @note  以下の処理を行う。
+    ///    各測定区間の全プロセス途中経過状況を集約。
+    ///    測定結果の平均値・標準偏差などの基礎的な統計計算。
+    ///    経過時間でソートした測定区間のリストm_order[m_nWatch] を作成する。
+    ///    各測定区間のHWPCイベントの統計値を取得する。
+    void gather_and_sort(void);
+
+    /// 基本統計レポートのヘッダ部分を出力。
+    ///
+    ///   @param[in] fp       出力ファイルポインタ
+    ///   @param[in] hostname ホスト名(省略時はrank 0 実行ホスト名)
+    ///   @param[in] comments 任意のコメント
+    ///   @param[in] tot      測定経過時間
+    ///
+    void printBasicHeader(FILE* fp, const std::string hostname, const std::string comments, double tot=0.0);
+
+    /// 基本統計レポートの各測定区間を出力
+    ///
+    ///   @param[in] fp        出力ファイルポインタ
+    ///   @param[in] maxLabelLen    ラベル文字長
+    ///   @param[in] tot       全経過時間
+    ///   @param[in] sum_time_flop  演算経過時間
+    ///   @param[in] sum_time_comm  通信経過時間
+    ///   @param[in] sum_time_other  その他経過時間
+    ///   @param[in] sum_flop  演算量
+    ///   @param[in] sum_comm  通信量
+    ///   @param[in] sum_other その他
+    ///   @param[in] unit      計算量の単位
+    ///   @param[in] seqSections (省略可)測定区間の表示順 (0:経過時間順、1:登録順)
+    ///
+    ///   @note   計算量（演算数やデータ移動量）選択方法は PerfWatch::stop() の
+    ///           コメントに詳しく説明されている。
+    ///
+    void printBasicSections(FILE* fp, int maxLabelLen, double& tot,
+              double& sum_flop, double& sum_comm, double& sum_other,
+              double& sum_time_flop, double& sum_time_comm, double& sum_time_other,
+              std::string unit, int seqSections=0);
+
+    /// 基本統計レポートのテイラー部分を出力。
+    ///
+    ///   @param[in] fp       出力ファイルポインタ
+    ///   @param[in] maxLabelLen    ラベル文字長
+    ///   @param[in] sum_time_flop  演算経過時間
+    ///   @param[in] sum_time_comm  通信経過時間
+    ///   @param[in] sum_time_other  その他経過時間
+    ///   @param[in] sum_flop  演算量
+    ///   @param[in] sum_comm  通信量
+    ///   @param[in] sum_other  その他
+    ///   @param[in] unit 計算量の単位
+    ///
+    void printBasicTailer(FILE* fp, int maxLabelLen,
+              double sum_flop, double sum_comm, double sum_other,
+              double sum_time_flop, double sum_time_comm, double sum_time_other,
+              const std::string unit);
+
 
   }; // end of class PerfMonitor //
 
