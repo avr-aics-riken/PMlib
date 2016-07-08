@@ -43,6 +43,7 @@ namespace pm_lib {
     m_watchArray = new PerfWatch[init_nWatch];
     m_gathered = false;
     m_nWatch = 0 ;
+    m_order = NULL;
     researved_nWatch = init_nWatch;
     MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
     MPI_Comm_size(MPI_COMM_WORLD, &num_process);
@@ -137,10 +138,18 @@ namespace pm_lib {
   ///
   void PerfMonitor::setProperties(const std::string& label, Type type, bool exclusive)
   {
+
+    if (label.empty()) {
+      printDiag("setProperties()",  "label is blank. Ignoring this call.\n");
+      return;
+    }
+
     int id = add_perf_label(label);
     if (m_nWatch < 0) {
-      fprintf(stderr, "\tPerfMonitor::setProperties() error. id=%u \n", id);
+      printDiag("setProperties()", "m_nWatch=%d, id=%d\n", m_nWatch, id);
+      printDiag("setProperties()", "This may be an internal bug.\n");
       PM_Exit(0);
+      //	return;
     }
 
     m_nWatch++;
@@ -184,25 +193,29 @@ namespace pm_lib {
   ///   @param[in] label ラベル文字列。測定区間を識別するために用いる。
   ///
   ///
-  void PerfMonitor::start (const std::string& label) {
-    int id = find_perf_label(label);
+  void PerfMonitor::start (const std::string& label)
+  {
+    int id;
+    if (label.empty()) {
+      printDiag("start()",  "label is blank. Ignored the call.\n");
+      return;
+    }
+    id = find_perf_label(label);
+    if (id < 0) {
+      printDiag("start()",  "label [%s] is undefined. This may lead to incorrect measurement or un-expected termination.\n",
+				label.c_str());
+      return;
+    }
 
+    m_watchArray[id].start();
+
+    //	last_started_label = label;
     #ifdef DEBUG_PRINT_MONITOR
     int iret = MPI_Barrier(MPI_COMM_WORLD);
     if (my_rank == 0) {
       fprintf(stderr, "<start> [%s] id=%d\n", label.c_str(), id);
     }
     #endif
-
-    if (id < 0) {
-      fprintf(stderr, "*** <start> Warning. undefined label [%s] is ignored.\n",
-				label.c_str());
-
-    } else {
-      m_watchArray[id].start();
-
-    }
-
   }
     
 
@@ -213,8 +226,20 @@ namespace pm_lib {
   ///   @param[in] iterationCount  計算量の乗数（反復回数）:省略値1
   ///
   ///   @note  引数とレポート出力情報の関連はPerfWatch::stop()に詳しく説明されている。
-  void PerfMonitor::stop(const std::string& label, double flopPerTask, unsigned iterationCount) {
-    int id = find_perf_label(label);
+  void PerfMonitor::stop(const std::string& label, double flopPerTask, unsigned iterationCount)
+  {
+    int id;
+    if (label.empty()) {
+      printDiag("stop()",  "label is blank. Ignored the call.\n");
+      return;
+    }
+    id = find_perf_label(label);
+    if (id < 0) {
+      printDiag("stop()",  "label [%s] is undefined. This may cause an incorrect measurement.\n",
+				label.c_str());
+      return;
+    }
+    m_watchArray[id].stop(flopPerTask, iterationCount);
 
     #ifdef DEBUG_PRINT_MONITOR
     int iret = MPI_Barrier(MPI_COMM_WORLD);
@@ -222,14 +247,6 @@ namespace pm_lib {
       fprintf(stderr, "<stop> [%s] id=%d\n", label.c_str(), id);
     }
     #endif
-
-    if (id < 0) {
-      fprintf(stderr, "\t*** <stop> Warning. PMlib ignores undefined label [%s].\n", label.c_str());
-
-    } else {
-      m_watchArray[id].stop(flopPerTask, iterationCount);
-
-    }
   }
 
 
@@ -245,28 +262,88 @@ namespace pm_lib {
 
   /// 全プロセスの測定結果をマスタープロセス(0)に集約.
   ///
-  ///   @note  以下の処理を行う。
+  ///   @note  gather() は以下の処理を行う。
   /// 各測定区間の全プロセスの測定結果情報をノード０に集約。
   /// 測定結果の平均値・標準偏差などの基礎的な統計計算。
   /// 経過時間でソートした測定区間のリストm_order[m_nWatch] を作成する。
   /// 各測定区間のHWPCイベントの統計値を取得する。
+  ///   @note  gather() は１回だけ呼び出し可能で、２回め以降は何もしない。
   ///
   void PerfMonitor::gather(void)
   {
-    // gather() should be called only once.
-    if (m_gathered) {
-        fprintf(stderr, "\tPerfMonitor::gather() error, already gathered\n");
-        PM_Exit(0);
-    }
+    if (m_gathered) return;
+
     m_watchArray[0].stop(0.0, 1);
+    gather_and_sort();
+    m_gathered = true;
+
+  }
+
+
+  /// 全プロセスの測定中経過情報を集約
+  ///
+  ///   @note  以下の処理を行う。
+  ///    各測定区間の全プロセス途中経過状況を集約。
+  ///    測定結果の平均値・標準偏差などの基礎的な統計計算。
+  ///    経過時間でソートした測定区間のリストm_order[m_nWatch] を作成する。
+  ///    各測定区間のHWPCイベントの統計値を取得する。
+  ///   @note  gather_and_sort() は複数回呼び出し可能。
+  ///
+
+  void PerfMonitor::gather_and_sort(void)
+  {
 
     if (m_nWatch == 0) return; // No section defined with setProperties()
 
-    gather_and_sort();	// gather_and_sort() can be called multiple times.
+    // 各測定区間のHWPCによるイベントカウンターの統計値を取得する
+    for (int i=0; i<m_nWatch; i++) {
+      m_watchArray[i].gatherHWPC();
+    }
+    // 各測定区間の測定結果情報をノード０に集約
+    for (int i = 0; i < m_nWatch; i++) {
+        m_watchArray[i].gather();
+    }
+    // 測定結果の平均値・標準偏差などの基礎的な統計計算
+    for (int i = 0; i < m_nWatch; i++) {
+      m_watchArray[i].statsAverage();
+    }
+    // 経過時間でソートした測定区間のリストm_order[m_nWatch] を作成する
+    // This delete/new may look redundant, but is needed if m_nWatch has
+    // increased since last call...
+    if ( m_order != NULL) { delete[] m_order; m_order = NULL; }
+    if ( !(m_order = new unsigned[m_nWatch]) ) PM_Exit(0);
 
-    // 全プロセスの測定結果の集約を終了
-    m_gathered = true;
-
+    for (int i=0; i<m_nWatch; i++) {
+      m_order[i] = i;
+    }
+    
+    double *m_tcost = NULL;
+    if ( !(m_tcost = new double[m_nWatch]) ) PM_Exit(0);
+    for (int i = 0; i < m_nWatch; i++) {
+      PerfWatch& w = m_watchArray[i];
+      //	if (!w.m_exclusive) continue;   // 
+      if ( w.m_count > 0 ) {
+        m_tcost[i] = w.m_time_av;
+      }
+    }
+    // 降順ソート O(n^2) Brute force　
+    double tmp_d;
+    unsigned tmp_u;
+    for (int i=0; i<m_nWatch-1; i++) {
+      PerfWatch& w = m_watchArray[i];
+      //	if (!w.m_exclusive) continue;   // 
+      if (w.m_label.empty()) continue;  //
+      for (int j=i+1; j<m_nWatch; j++) {
+        PerfWatch& q = m_watchArray[j];
+        //	if (!q.m_exclusive) continue;   // 
+        if (q.m_label.empty()) continue;  //
+        if ( m_tcost[i] < m_tcost[j] ) {
+          tmp_d=m_tcost[i]; m_tcost[i]=m_tcost[j]; m_tcost[j]=tmp_d;
+          tmp_u=m_order[i]; m_order[i]=m_order[j]; m_order[j]=tmp_u;
+        }
+      }
+    }
+    delete[] m_tcost;
   }
 
 
@@ -289,22 +366,23 @@ namespace pm_lib {
       return;
     }
     if (!m_gathered) {
-      fprintf(stderr, "\tPerfMonitor::print() error, call gather() before print()\n");
-      PM_Exit(0);
+      gather();
     }
 
     // 測定時間の分母
     // initialize()からgather()までの区間（==Root区間）の測定時間を分母とする
+    double tot = m_watchArray[0].m_time_av;
+
+    // Remark the difference of tot between print() and printProgress()
+    //  排他測定区間の合計 //  .not. 排他測定区間+非排他測定区間の合計
+    /* for printProgress()
     double tot = 0.0;
-    if (0 == 0) {
-      tot =  m_watchArray[0].m_time_av;
-    } else {
-      for (int i = 0; i < m_nWatch; i++) {
-        if (m_watchArray[i].m_exclusive) {
-          tot +=  m_watchArray[i].m_time_av;
-        }
+    for (int i = 0; i < m_nWatch; i++) {
+      if (m_watchArray[i].m_exclusive) {
+        tot +=  m_watchArray[i].m_time_av;
       }
     }
+    */
 
     int maxLabelLen = 0;
     for (int i = 0; i < m_nWatch; i++) {
@@ -363,8 +441,7 @@ namespace pm_lib {
     }
     //   全プロセスの情報が PerfWatch::gather() によりrank 0に集計ずみのはず
     if (!m_gathered) {
-      fprintf(stderr, "\n\t*** PerfMonitor gather() must be called before printDetail().\n");
-      PM_Exit(0);
+      gather();
     }
     //        HWPC値を各スレッド毎にブレークダウンして表示する機能は今後開発
     //        lsum2p HWPCのスレッド毎表示(0:なし、1:表示する)
@@ -429,7 +506,7 @@ namespace pm_lib {
       }
     }
 #endif
-
+    int iret = MPI_Barrier(MPI_COMM_WORLD);
   }
   
   
@@ -451,11 +528,11 @@ namespace pm_lib {
   ///
   void PerfMonitor::printGroup(FILE* fp, MPI_Group p_group, MPI_Comm p_comm, int* pp_ranks, int group, int legend, int seqSections)
   {
-    if (!m_gathered) {
-      fprintf(stderr, "\n\t*** PerfMonitor gather() must be called before printGroup().\n");
-      PM_Exit(0);
-    }
 
+    //   全プロセスの情報が PerfWatch::gather() によりrank 0に集計ずみのはず
+    if (!m_gathered) {
+      gather();
+    }
     // check the size of the group
     int new_size, new_id;
     MPI_Group_size(p_group, &new_size);
@@ -615,7 +692,7 @@ namespace pm_lib {
   ///   @note 基本レポートと同様なフォーマットで出力する。
   ///      MPIの場合、rank0プロセスの測定回数が１以上の区間のみを表示する。
   ///   @note  内部では以下の処理を行う。
-  ///    各測定区間の全プロセス途中経過状況を集約。 gather();
+  ///    各測定区間の全プロセス途中経過状況を集約。 gather_and_sort();
   ///    測定結果の平均値・標準偏差などの基礎的な統計計算。
   ///    経過時間でソートした測定区間のリストm_order[m_nWatch] を作成する。
   ///    各測定区間のHWPCイベントの統計値を取得する。
@@ -624,20 +701,17 @@ namespace pm_lib {
   {
     if (m_nWatch == 0) return; // No section defined with setProperties()
 
-    gather_and_sort();	// gather_and_sort() can be called multiple times.
+    gather_and_sort();
 
     if (my_rank != 0) return;
 
     // 測定時間の分母
-    // initialize()からgather()までの区間（==Root区間）の測定時間を分母とする
+    //  排他測定区間の合計
+    //  排他測定区間+非排他測定区間の合計
     double tot = 0.0;
-    if (0 == 0) {
-      tot =  m_watchArray[0].m_time_av;
-    } else {
-      for (int i = 0; i < m_nWatch; i++) {
-        if (m_watchArray[i].m_exclusive) {
-          tot +=  m_watchArray[i].m_time_av;
-        }
+    for (int i = 0; i < m_nWatch; i++) {
+      if (m_watchArray[i].m_exclusive) {
+        tot +=  m_watchArray[i].m_time_av;
       }
     }
 
@@ -678,6 +752,14 @@ namespace pm_lib {
 
     if (m_nWatch == 0) return; // No section defined with setProperties()
 
+#ifdef DEBUG_PRINT_MONITOR
+    if (my_rank == 0) {
+	  fprintf(stderr, "\t<postTrace> \n");
+    }
+#endif
+
+    gather_and_sort();
+
     // OTFポスト処理ファイルの終了処理
 #ifdef USE_OTF
     if (is_OTF_enabled) {
@@ -689,106 +771,12 @@ namespace pm_lib {
       m_watchArray[0].finalizeOTF();
     }
 #endif
-  }
-
-
-  /// 全プロセスの測定中経過情報を集約
-  ///
-  ///   @note  以下の処理を行う。
-  ///    各測定区間の全プロセス途中経過状況を集約。
-  ///    測定結果の平均値・標準偏差などの基礎的な統計計算。
-  ///    経過時間でソートした測定区間のリストm_order[m_nWatch] を作成する。
-  ///    各測定区間のHWPCイベントの統計値を取得する。
-  void PerfMonitor::gather_and_sort(void)
-  {
-
-    if (m_nWatch == 0) return; // No section defined with setProperties()
-
-    // 各測定区間のHWPCによるイベントカウンターの統計値を取得する
-    for (int i=0; i<m_nWatch; i++) {
-#ifdef DEBUG_PRINT_WATCH
-      if (my_rank == 0) {
-		std::string label;
-        loop_perf_label(i, label);
-		fprintf(stderr, "\t<gatherHWPC> %d : [%15s], ", i, label.c_str());
-      }
-#endif
-
-    // Development note:
-    // Curent PMlib version does not collect HWPC in the inclusive sections,
-    // i.e. all zero values for HWPC columns.
-    // See Development note in PerfWatch::stop() in PerfWatch.cpp .
-
-      if (m_watchArray[i].m_exclusive) {
-        m_watchArray[i].gatherHWPC();
-      }
-    }
-
-    // 各測定区間の測定結果情報をノード０に集約
-    for (int i = 0; i < m_nWatch; i++) {
-#ifdef DEBUG_PRINT_WATCH
-      if (my_rank == 0) {
-		std::string label;
-        loop_perf_label(i, label);
-		fprintf(stderr, "\t<gather> %d : [%15s], ", i, label.c_str());
-      }
-#endif
-        m_watchArray[i].gather();
-    }
-
-    // 測定結果の平均値・標準偏差などの基礎的な統計計算
-    for (int i = 0; i < m_nWatch; i++) {
-      m_watchArray[i].statsAverage();
-    }
-
-    // 経過時間でソートした測定区間のリストm_order[m_nWatch] を作成する
-    double *m_tcost = NULL;
-    if ( !(m_tcost = new double[m_nWatch]) ) PM_Exit(0);
-    for (int i = 0; i < m_nWatch; i++) {
-      PerfWatch& w = m_watchArray[i];
-      //	if (!w.m_exclusive) continue;   // 
-      if ( w.m_count > 0 ) {
-        m_tcost[i] = w.m_time_av;
-      }
-    }
-    
-    // 降順ソート O(n^2) Brute force　
-    if ( !(m_order = new unsigned[m_nWatch]) ) PM_Exit(0);
-    for (int i=0; i<m_nWatch; i++) {
-      m_order[i] = i;
-    }
-    
-    double tmp_d;
-    unsigned tmp_u;
-    for (int i=0; i<m_nWatch-1; i++) {
-      PerfWatch& w = m_watchArray[i];
-      //	if (!w.m_exclusive) continue;   // 
-      if (w.m_label.empty()) continue;  //
-      for (int j=i+1; j<m_nWatch; j++) {
-          PerfWatch& q = m_watchArray[j];
-          //	if (!q.m_exclusive) continue;   // 
-          if (q.m_label.empty()) continue;  //
-            if ( m_tcost[i] < m_tcost[j] ) {
-              tmp_d=m_tcost[i]; m_tcost[i]=m_tcost[j]; m_tcost[j]=tmp_d;
-              tmp_u=m_order[i]; m_order[i]=m_order[j]; m_order[j]=tmp_u;
-            }
-      }
-    }
-
-#ifdef DEBUG_PRINT_MONITOR
-/*
     int iret = MPI_Barrier(MPI_COMM_WORLD);
+#ifdef DEBUG_PRINT_MONITOR
     if (my_rank == 0) {
-      check_all_perf_label();
-      for (int i=0; i<m_nWatch; i++) {
-		std::string label;
-        loop_perf_label(i, label);
-		fprintf(stderr, "<gather> i=%d, %s \n", i, label.c_str());
-      }
+	  fprintf(stderr, "\t<postTrace> ends\n");
     }
- */
 #endif
-
   }
 
 

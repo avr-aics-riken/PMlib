@@ -57,6 +57,8 @@ void PerfWatch::initializeHWPC ()
 		papi.accumu[i] = 0;
 		}
 
+	read_cpu_clock_freq(); /// API for reading processor clock frequency.
+
 #ifdef USE_PAPI
 	unsigned long l_papi;
 	l_papi = PAPI_library_init( PAPI_VER_CURRENT );
@@ -481,7 +483,7 @@ void PerfWatch::outputPapiCounterList (FILE* fp)
 	for (int i=0; i<num_process; i++) {
 		fprintf(fp, "Rank %5d :", i);
 		for(int n=0; n<my_papi.num_sorted; n++) {
-			fprintf (fp, "  %9.3e", fabs(sorted_hwpcArray[i*my_papi.num_sorted + n]));
+			fprintf (fp, "  %9.3e", fabs(m_sortedArrayHWPC[i*my_papi.num_sorted + n]));
 		}
 		fprintf (fp, "\n");
 	}
@@ -513,7 +515,7 @@ void PerfWatch::outputPapiCounterGroup (FILE* fp, MPI_Group p_group, int* pp_ran
 		ip = pp_ranks[i];
 		fprintf(fp, "Rank %5d :", ip);
 		for(int n=0; n<my_papi.num_sorted; n++) {
-			fprintf (fp, "  %9.3e", fabs(sorted_hwpcArray[ip*my_papi.num_sorted + n]));
+			fprintf (fp, "  %9.3e", fabs(m_sortedArrayHWPC[ip*my_papi.num_sorted + n]));
 		}
 		fprintf (fp, "\n");
 	}

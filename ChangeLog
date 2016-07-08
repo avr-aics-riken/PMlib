@@ -14,6 +14,12 @@
 REVISION HISTORY
 ================
 
+2016-07-08
+r49 package 5.1.0
+- Added a new user API printProgress()
+- Added high precision timer for some platforms (Intel Xeon, K, FX100)
+
+--------------------------
 2016-06-19
 r48 package 5.0.4
 - Updated Doxygen documentations under doc/

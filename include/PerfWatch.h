@@ -40,9 +40,12 @@
 #ifndef _WIN32
 #include <sys/time.h>
 #else
-#include "sph_win32_util.h"   // for win32
+#include "sph_win32_util.h"   // for Windows win32 GetSystemTimeAsFileTime API?
 #endif
 
+#if defined(__x86_64__)
+#include <string.h>
+#endif
 
 namespace pm_lib {
 
@@ -95,8 +98,8 @@ namespace pm_lib {
     double* m_timeArray;         ///< 「時間」集計用配列
     double* m_flopArray;         ///< 「浮動小数点演算量or通信量」集計用配列
     unsigned long* m_countArray; ///< 「測定回数」集計用配列
-    unsigned long  m_count_sum; ///< 「測定回数」summed over all MPI ranks
-    double* sorted_hwpcArray;	///< HWPC集計後ソートされた配列のポインタ
+    unsigned long  m_count_sum;  ///< 「測定回数」summed over all MPI ranks
+    double* m_sortedArrayHWPC;   ///< 集計後ソートされたHWPC配列のポインタ
     
     /// 排他測定実行中フラグ. 非排他測定では未使用
     static bool ExclusiveStarted;
@@ -107,19 +110,20 @@ namespace pm_lib {
     
     /// bool値：  true/false
     bool m_is_first;      /// 測定区間が初めてstartされる場合かどうかのフラグ
-
+    bool m_is_healthy;    /// 測定区間に排他性・非排他性の矛盾がないかのフラグ
 
   public:
     /// コンストラクタ.
     PerfWatch() : m_time(0.0), m_flop(0.0), m_count(0), m_started(false), 
       my_rank(0), m_timeArray(0), m_flopArray(0), m_countArray(0),
-      m_is_first(true) {}
+      m_sortedArrayHWPC(0), m_is_first(true), m_is_healthy(true) {}
     
     /// デストラクタ.
     ~PerfWatch() {
-      if (m_timeArray)  delete[] m_timeArray;
-      if (m_flopArray)  delete[] m_flopArray;
-      if (m_countArray) delete[] m_countArray;
+      //	if (m_timeArray)  delete[] m_timeArray;
+      //	if (m_flopArray)  delete[] m_flopArray;
+      //	if (m_countArray) delete[] m_countArray;
+      //	if (m_sortedArrayHWPC) delete[] m_sortedArrayHWPC;
     }
     
     /// 測定モードを返す
@@ -315,14 +319,19 @@ namespace pm_lib {
     ///
     void printGroupHWPCsums(FILE* fp, std::string s_label, MPI_Group p_group, int* pp_ranks);
     
-    /// 時刻を取得.
-    ///
-    ///   Unix/Linux: gettimeofdayシステムコールを使用.
-    ///   Windows: GetSystemTimeAsFileTime API(sph_win32_util.h)を使用.
+    /// 時刻を取得
     ///
     ///   @return 時刻値(秒)
     ///
-    static double getTime();
+    ///   @note 京コンピュータ、FX100、Intel Xeonでは専用の高精度タイマー
+    ///         を呼び出す。
+    ///         一般のUnix/Linuxではgettimeofdayシステムコールを呼び出す。
+    ///
+    double getTime();
+    
+    ///   CPU動作周波数を読み出して内部保存する。
+    ///
+    void read_cpu_clock_freq();
     
   private:
     /// エラーメッセージ出力.

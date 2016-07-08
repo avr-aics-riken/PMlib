@@ -54,7 +54,6 @@ namespace pm_lib {
     int my_rank;               ///< 自ランク番号
     std::string parallel_mode; ///< 並列動作モード（"Serial", "OpenMP", "FlatMPI", "Hybrid"）
     PerfWatch* m_watchArray;   ///< 測定区間の配列
-    PerfWatch  m_total;        ///< Root区間の別称。v5.0以降では使用しない
       // PerfWatchのインスタンスは全部で m_nWatch 生成され、その番号対応は以下
       // m_watchArray[0]  :PMlibが定義するRoot区間 
       // m_watchArray[1 .. m_nWatch] :ユーザーが定義する各区間
@@ -66,6 +65,9 @@ namespace pm_lib {
     bool is_PAPI_enabled;	     ///< PMlibの対応動作可能フラグ:PAPI
     bool is_OTF_enabled;	   ///< 対応動作可能フラグ:OTF tracing 出力
     bool m_gathered;           ///< 測定結果集計済みフラグ
+      // std::string last_started_label;	///< 最後に start された測定区間
+      // 排他的区間がオーバーラップする間違った使い方をチェックするために使う
+      // エラー処理用のデータ ->  処理が遅くなる & 手間がかかるので使わない
 
   public:
     /// コンストラクタ.
@@ -425,6 +427,21 @@ namespace pm_lib {
               double sum_time_flop, double sum_time_comm, double sum_time_other,
               const std::string unit);
 
+    /// PerfMonitorクラス用エラーメッセージ出力
+    ///
+    ///   @param[in] func  関数名
+    ///   @param[in] fmt  出力フォーマット文字列
+    ///
+    void printDiag(const char* func, const char* fmt, ...)
+    {
+      if (my_rank == 0) {
+        fprintf(stderr, "*** Error. PerfMonitor::%s: ", func );
+        va_list ap;
+        va_start(ap, fmt);
+        vfprintf(stderr, fmt, ap);
+        va_end(ap);
+      }
+    }
 
   }; // end of class PerfMonitor //
 
