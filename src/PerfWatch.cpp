@@ -390,7 +390,7 @@ namespace pm_lib {
     	return;
     }
     while (fgets(buffer, 1024, fp) != NULL) {
-    	printf("%s", buffer);
+    	//	printf("%s", buffer);
     	// assumed format
     	if (!strncmp(buffer, "cpu MHz",7)) {
     		sscanf(buffer, "cpu MHz\t\t: %lf", &value);

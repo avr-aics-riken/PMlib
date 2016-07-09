@@ -16,7 +16,7 @@
 
 //! @file   PerfWatch.h
 //! @brief  PerfWatch class Header
-//! @version rev.5.0.4
+//! @version rev.5.1
 
 
 #include <cassert>

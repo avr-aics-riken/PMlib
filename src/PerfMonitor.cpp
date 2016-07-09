@@ -93,15 +93,6 @@ namespace pm_lib {
       }
     }
 
-	// 環境変数PMLIB_PRINT_VERSION が指定された場合、情報をstderrに出力する
-    c_env = std::getenv("PMLIB_PRINT_VERSION");
-    if (c_env != NULL) {
-	if(my_rank == 0) {
-		fprintf(stderr, "\tPMlib version %s is linked to the program.\n",
-			 getVersionInfo().c_str());
-	}
-    }
-
     // Start m_watchArray[0] instance
     // m_watchArray[] は PerfWatch classである(PerfMonitorではない)ことに留意
     // PerfWatchのインスタンスは全部で m_nWatch 生成される
@@ -425,9 +416,8 @@ namespace pm_lib {
   ///   @param[in] legend int型 (省略可) HWPC記号説明の表示(0:なし、1:表示する)
   ///   @param[in] seqSections (省略可)測定区間の表示順 (0:経過時間順、1:登録順で表示)
   ///
-  ///   @note 本APIよりも先にPerfWatch::gather()を呼び出しておく必要が有る
+  ///   @note 詳細レポートは排他測定区間のみを出力する 
   ///         HWPC値は各プロセス毎に子スレッドの値を合算して表示する
-  ///   @note 詳細レポートは排他測定区間のみを出力する
   ///
 
   void PerfMonitor::printDetail(FILE* fp, int legend, int seqSections)
@@ -510,7 +500,7 @@ namespace pm_lib {
   }
   
   
-  /// プロセスグループ単位でのHWPC計測結果、MPIランク別詳細レポート出力
+  /// 指定するMPIプロセスグループ毎にMPIランク詳細レポートを出力。
   ///
   ///   @param[in] fp 出力ファイルポインタ
   ///   @param[in] p_group  MPI_Group型 groupのgroup handle
@@ -525,6 +515,7 @@ namespace pm_lib {
   ///   利用者にとって識別しずらい場合がある。
   ///   別に1,2,3,..等の昇順でプロセスグループ番号 groupをつけておくと
   ///   レポートが識別しやすくなる。
+  ///   @note HWPCを測定した計集結果があればそれも出力する
   ///
   void PerfMonitor::printGroup(FILE* fp, MPI_Group p_group, MPI_Comm p_comm, int* pp_ranks, int group, int legend, int seqSections)
   {
@@ -603,8 +594,7 @@ namespace pm_lib {
   }
 
 
-  /// MPI_Comm_split分離単位でのHWPC計測結果、MPIランク別詳細レポート出力
-  /// for communicators created by MPI_Comm_split()
+  /// MPI_Comm_splitで作成するグループ毎にMPIランク詳細レポートを出力
   ///
   ///   @param[in] fp 出力ファイルポインタ
   ///   @param[in] new_comm   MPI_Comm型 対応するcommunicator
@@ -612,6 +602,8 @@ namespace pm_lib {
   ///   @param[in] key    int型 MPI_Comm_split()のkey変数
   ///   @param[in] legend int型 (省略可) HWPC記号説明の表示(0:なし、1:表示する)
   ///   @param[in] seqSections (省略可)測定区間の表示順 (0:経過時間順、1:登録順)
+  ///
+  ///   @note HWPCを測定した計集結果があればそれも出力する
   ///
   void PerfMonitor::printComm (FILE* fp, MPI_Comm new_comm, int icolor, int key, int legend, int seqSections)
   {
@@ -684,7 +676,8 @@ namespace pm_lib {
   }
 
 
-  /// 測定途中経過の状況レポートを出力。
+  /// 測定途中経過の状況レポートを出力（排他測定区間を対象とする）
+  ///
   ///   @param[in] fp       出力ファイルポインタ
   ///   @param[in] comments 任意のコメント
   ///   @param[in] seqSections 測定区間の表示順 (0:経過時間順、1:登録順)

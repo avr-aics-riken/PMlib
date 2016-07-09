@@ -16,7 +16,7 @@
 
 //! @file   PerfMonitor.h
 //! @brief  PerfMonitor class Header
-//! @version rev.5.0.4
+//! @version rev.5.1
 
 #ifdef _PM_WITHOUT_MPI_
 #include "mpi_stubs.h"
@@ -40,7 +40,6 @@ namespace pm_lib {
   class PerfMonitor {
   public:
     
-    // TODO: we should change this enum choice style.
     /// 測定計算量のタイプ
     enum Type {
       COMM,  ///< 通信（あるいはメモリ転送）
@@ -170,18 +169,6 @@ namespace pm_lib {
     ///   @endverbatim
     ///
     void stop(const std::string& label, double flopPerTask=0.0, unsigned iterationCount=1);
-    
-
-    
-    /// 全プロセスの測定結果をマスタープロセス(0)に集約.
-    ///
-    ///   @note  以下の処理を行う。
-    /// 各測定区間の全プロセスの測定結果情報をノード０に集約。
-    /// 測定結果の平均値・標準偏差などの基礎的な統計計算。
-    /// 経過時間でソートした測定区間のリストm_order[m_nWatch] を作成する。
-    /// 各測定区間のHWPCイベントの統計値を取得する。
-    ///
-    void gather(void);
 
     
     /// 測定結果の基本統計レポートを出力。
@@ -193,7 +180,12 @@ namespace pm_lib {
     ///   @param[in] seqSections (省略可)測定区間の表示順 (0:経過時間順、1:登録順で表示)
     ///
     ///   @note 基本統計レポートは排他測定区間, 非排他測定区間をともに出力する。
-    ///   MPIの場合、rank0プロセスの測定回数が１以上の区間のみを表示する。
+    ///      MPIの場合、rank0プロセスの測定回数が１以上の区間のみを表示する。
+    ///   @note  内部では以下の処理を行う。
+    ///      各測定区間の全プロセス途中経過状況を集約。 gather_and_sort();
+    ///      測定結果の平均値・標準偏差などの基礎的な統計計算。
+    ///      経過時間でソートした測定区間のリストm_order[m_nWatch] を作成する。
+    ///      各測定区間のHWPCイベントの統計値を取得する。
     ///
     void print(FILE* fp, const std::string hostname, const std::string comments, int seqSections=0);
 
@@ -242,30 +234,29 @@ namespace pm_lib {
     void printComm (FILE* fp, MPI_Comm new_comm, int icolor, int key, int legend=0, int seqSections=0);
 
     
-    /// 測定途中経過の状況レポートを出力。
+    /// 測定途中経過の状況レポートを出力（排他測定区間を対象とする）
     ///
     ///   @param[in] fp       出力ファイルポインタ
     ///   @param[in] comments 任意のコメント
     ///   @param[in] seqSections 測定区間の表示順 (0:経過時間順、1:登録順)
     ///
-    ///   @note 基本レポートと同様なフォーマットで出力する。
-    ///      MPIの場合、rank0プロセスの測定回数が１以上の区間のみを表示する。
-    ///   @note  内部では以下の処理を行う。
-    ///    各測定区間の全プロセス途中経過状況を集約。 gather_and_sort();
-    ///    測定結果の平均値・標準偏差などの基礎的な統計計算。
-    ///    経過時間でソートした測定区間のリストm_order[m_nWatch] を作成する。
-    ///    各測定区間のHWPCイベントの統計値を取得する。
+    ///   @note 基本レポートと同様なフォーマットで途中経過を出力する。
+    ///      多数回の反復計算を行う様なプログラムにおいて初期の経過状況を
+    ///      モニターする場合などに有効に用いることができる。
     ///
     void printProgress(FILE* fp, const std::string comments, int seqSections=0);
 
 
-    /**
-     * @brief PMlibバージョン番号の文字列を返す
-     */
-    std::string getVersionInfo(void);
+    /// ポスト処理用traceファイルの出力
+    ///
+    /// @note プログラム実行中一回のみポスト処理用traceファイルを出力できる
+    /// 現在サポートしているフォーマットは OTF(Open Trace Format) v1.1
+    ///
+    void postTrace(void);
 
 
-    /// 旧バージョンとの互換用プレースホルダ(並列モードを設定)
+    /// 旧バージョンとの互換維持用(並列モードを設定)。
+    /// 利用者は通常このAPIを呼び出す必要はない。
     ///
     /// @param[in] p_mode 並列モード
     /// @param[in] n_thread
@@ -275,9 +266,9 @@ namespace pm_lib {
     ///       利用者は通常このAPIを呼び出す必要はない。
     ///
     void setParallelMode(const std::string& p_mode, const int n_thread, const int n_proc);
-
     
-    /// 旧バージョンとの互換用プレースホルダ(ランク番号の通知)
+    /// 旧バージョンとの互換維持用(ランク番号の通知)
+    /// 利用者は通常このAPIを呼び出す必要はない。
     ///
     /// @param[in] MPI process ID
     ///
@@ -288,13 +279,25 @@ namespace pm_lib {
     void setRankInfo(const int my_rank_ID) {
       //	my_rank = my_rank_ID;
     }
-
     
-    /// ポスト処理用traceファイルの出力終了処理
+    /// 旧バージョンとの互換維持用(全プロセスの測定結果を集約)
+    /// 利用者は通常このAPIを呼び出す必要はない。
     ///
-    /// @note current version supports OTF(Open Trace Format) v1.1
+    /// @note  以下の処理を行う。
+    ///       各測定区間の全プロセスの測定結果情報をマスタープロセスにに集約。
+    ///       測定結果の平均値・標準偏差などの基礎的な統計計算。
+    ///       経過時間でソートした測定区間のリストm_order[m_nWatch] を作成する。
+    ///       各測定区間のHWPCイベントの統計値を取得する。
     ///
-    void postTrace(void);
+    /// @note 集約処理は必要な時にPMlib内部で自動的に実行されるため
+    ///       利用者は通常このAPIを呼び出す必要はない。
+    ///
+    void gather(void);
+    
+    /// 旧バージョンとの互換維持用(PMlibバージョン番号の文字列を返す)
+    /// 利用者は通常このAPIを呼び出す必要はない。
+    ///
+    std::string getVersionInfo(void);
 
 
   private:
@@ -348,7 +351,6 @@ namespace pm_lib {
 			p_label = it->first;
 			p_id = it->second;
 			if (p_id == ip) {
-				//	fprintf(stderr, "\t\t <%s> : %d\n", p_label.c_str(), p_id);
 				return;
 			}
 		}
