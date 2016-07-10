@@ -14,6 +14,14 @@
 REVISION HISTORY
 ================
 
+2016-07-08
+r49 package 5.1.0
+- Added a new user API printProgress() which can be called repeatedly.
+- Added high resolution timer for some platforms (Intel Xeon, K, FX100)
+- Added missing Fortran APIs. All the APIs now have C++ and Fortran version.
+- Documentation under doc/ is updated.
+
+--------------------------
 2016-06-19
 r48 package 5.0.4
 - Updated Doxygen documentations under doc/

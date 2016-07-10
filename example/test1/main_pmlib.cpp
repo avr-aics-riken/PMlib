@@ -1,14 +1,16 @@
-#include <mpi.h>
+#include <PerfMonitor.h>
+//	#include <mpi.h>
 #ifdef _OPENMP
 #include <omp.h>
 #endif
 #include <stdio.h>
 #include <math.h>
-#include <PerfMonitor.h>
 #include <string>
+#include <sstream>
 using namespace pm_lib;
 
 #define MATSIZE 1000
+//	#define MATSIZE 500
 int nsize;
 struct matrix {
 	int nsize;
@@ -29,6 +31,9 @@ int main (int argc, char *argv[])
 	double flop_count, byte_count, dsize;
 	double t1, t2;
 	int i, j, num_threads;
+
+    std::string comments;
+    std::ostringstream ouch; // old C++ notation
 
 	MPI_Init(&argc, &argv);
 	MPI_Comm_rank(MPI_COMM_WORLD, &my_id);
@@ -51,7 +56,7 @@ int main (int argc, char *argv[])
 		fprintf(stderr, "\t<main> starts. npes=%d, MATSIZE=%d max_threads=%d\n",
 			npes, MATSIZE, num_threads);
 	}
-	fprintf(stderr, "\t\tstarting process:%d\n", my_id);
+	//	fprintf(stderr, "\t\tstarting process:%d\n", my_id);
 
 	PM.initialize();
 
@@ -62,14 +67,14 @@ int main (int argc, char *argv[])
 
 	set_array();
 
+	flop_count=pow (dsize, 3.0)*4.0;
+	byte_count=pow (dsize, 3.0)*4.0*4.0;
+
 // checking exclusive section
 	PM.start("First section");
 		somekernel();
-	flop_count=pow (dsize, 3.0)*4.0;
+
 	PM.stop ("First section", flop_count, 1);
-	if(my_id == 0) {
-		fprintf(stderr, "\t<First section> flop_count=%15.0f\n", flop_count);
-	}
 	spacer();
 
 // checking non-exclusive section
@@ -79,33 +84,25 @@ int main (int argc, char *argv[])
 	for (i=0; i<3; i++){
 		PM.start("Subsection X");
 		slowkernel();
-		byte_count=pow (dsize, 3.0)*4.0*4.0;
-	
 		PM.stop ("Subsection X", byte_count, 1);
 		spacer();
-		if(my_id == 0) {
-			fprintf(stderr, "\t<Subsection X> byte_count=%15.0f\n", byte_count);
-		}
 
 		PM.start("Subsection Y");
 		somekernel();
-		flop_count=pow (dsize, 3.0)*4.0;
 		PM.stop ("Subsection Y", flop_count, 1);
 		spacer();
-		if(my_id == 0) {
-			fprintf(stderr, "\t<Subsection Y> flop_count=%15.0f\n", flop_count);
-		}
+
+		//  comments = "iteration i:" + std::to_string(i);  // C++11 notation
+		//check//	ouch.str(""); ouch << i; comments = "iteration i:" + ouch.str(); // old C++ notation
+		//check//	PM.printProgress(stdout, comments, 1);
 	}
 
+	//check//	PM.postTrace();
 
 	somekernel();
-	flop_count=pow (dsize, 3.0)*4.0 * (2*3+1) ;
-	PM.stop("Second section", flop_count, 1);
+	PM.stop("Second section", flop_count*(2*3), 1);
 	spacer();
 
-	if(my_id == 0) fprintf(stderr, "\t<main> starting PM.gather().\n");
-	PM.gather();
-	if(my_id == 0) fprintf(stderr, "\t<main> starting PM.print().\n");
 	PM.print(stdout, "", "Mrs. Kobe", 0);
 	PM.printDetail(stdout, 1);
 
@@ -158,7 +155,6 @@ float c1,c2,c3;
 nsize = matrix.nsize;
 #pragma omp parallel
 #pragma omp for
-#pragma novector
 	for (i=0; i<nsize; i++){
 #pragma novector
 	for (j=0; j<nsize; j++){

@@ -31,9 +31,6 @@
 #include <cstdlib>
 #include <cstdio>
 
-struct pmlib_papi_chooser papi;
-struct hwpc_group_chooser hwpc_group;
-
 extern void sortPapiCounterList ();
 extern void outputPapiCounterHeader (FILE*, std::string);
 extern void outputPapiCounterList (FILE*);
@@ -43,6 +40,10 @@ extern double countPapiByte (pmlib_papi_chooser );
 
 namespace pm_lib {
 
+  struct pmlib_papi_chooser papi;
+  struct hwpc_group_chooser hwpc_group;
+  double cpu_clock_freq;        /// processor clock frequency, i.e. Hz
+  double second_per_cycle;  /// real time to take each cycle
   
   bool PerfWatch::ExclusiveStarted = false;
   
@@ -141,58 +142,54 @@ namespace pm_lib {
   void PerfWatch::gatherHWPC()
   {
 #ifdef USE_PAPI
-	if ( papi.num_events == 0 ) return;
 
-	int np = num_process * my_papi.num_sorted;
+	if ( my_papi.num_events == 0) return;
 
-	// Following code block was used to zero out the inclusive section report.
-	// We no longer zero out the inclusive section.
-	//    if (!m_exclusive) {
-	//      gather_sorted  = new double[np];
-	//      if (!gather_sorted) {
-	//        printError("gatherHWPC()",  "new memory failed. %d Bytes\n", np*8);
-	//        PM_Exit(0);
-	//      }
-	//      for (int i=0; i<np ; i++) {
-	//        gather_sorted[i] = 0.0;
-	//      }
-	//      return;
-	//    }
+    int is_unit = statsSwitch();
+	if ( (is_unit == 0) || (is_unit == 1) ) {
+		printError("gatherHWPC()",  "internal error. is_unit=%d \n", is_unit);
+		PM_Exit(0);
+	}
 
 	sortPapiCounterList ();
 
-    int is_unit = statsSwitch();
+    // Curent PMlib version does not collect HWPC in the inclusive sections.
+	// See Development note in PerfWatch::stop()
+	//	if (!m_exclusive) return;
 
-	// if conditions meet, overwrite the user values with HWPC measured values
-	//	if ( (is_unit == 2) || (is_unit == 3) )
-	if ( (2 <= is_unit ) && (is_unit <= 4) )
-	{
-		m_flop = my_papi.v_sorted[my_papi.num_sorted-1] * m_time;
-	}
+	double w = my_papi.v_sorted[my_papi.num_sorted-1] ;	// rate
+	m_flop = w * m_time;	// volume
 
-	int iret;
-	if ( num_process > 1 ) {
-		iret = MPI_Barrier(MPI_COMM_WORLD);
-		if (!(gather_sorted  = new double[num_process * my_papi.num_sorted])) {
-			printError("gatherHWPC()",  "new memory failed. %d x %d x 8 \n",
-				num_process, my_papi.num_sorted);
+	// The space is reserved only once as a fixed size array
+	if ( m_sortedArrayHWPC == NULL) {
+		m_sortedArrayHWPC = new double[num_process*my_papi.num_sorted];
+		if (!(m_sortedArrayHWPC)) {
+			printError("gatherHWPC()", "new memory failed. %d x %d x 8 \n",
+			num_process, my_papi.num_sorted);
 			PM_Exit(0);
 		}
-		iret =
+	}
+
+	if ( num_process > 1 ) {
+		int iret =
 		MPI_Gather (my_papi.v_sorted, my_papi.num_sorted, MPI_DOUBLE,
-					gather_sorted, my_papi.num_sorted, MPI_DOUBLE,
+					m_sortedArrayHWPC, my_papi.num_sorted, MPI_DOUBLE,
 					0, MPI_COMM_WORLD);
 		if ( iret != 0 ) {
 			printError("gatherHWPC()", " MPI_Gather failed.\n");
 			PM_Exit(0);
 		}
 	} else {
-		gather_sorted = my_papi.v_sorted;
+		//	m_sortedArrayHWPC = my_papi.v_sorted;
+
+        for (int i = 0; i < my_papi.num_sorted; i++) {
+			m_sortedArrayHWPC[i] = my_papi.v_sorted[i];
+		}
 	}
 	#ifdef DEBUG_PRINT_WATCH
     if (my_rank == 0) {
-		fprintf(stderr, "\t<gatherHWPC> num_sorted=%d, m_time=%e\n",
-			my_papi.num_sorted, m_time );
+        fprintf(stderr, "\t<gatherHWPC> [%15s], w(rate)=%e, m_time=%e\n",
+			m_label.c_str(), w, m_time );
     }
 	#endif
 #endif
@@ -203,24 +200,25 @@ namespace pm_lib {
   ///
   void PerfWatch::gather()
   {
-	//	if (!m_exclusive) return;
-    if (m_gathered) {
-      printError("PerfWatch::gather()",  "already gathered\n");
-      PM_Exit(0);
-    }
 	#ifdef DEBUG_PRINT_WATCH
     if (my_rank == 0) {
-		fprintf(stderr, "\t<gather> my_rank=%d, num_process=%d, m_time=%e, m_flop=%e, m_count=%lu\n",
-			my_rank, num_process, m_time, m_flop, m_count );
+        fprintf(stderr, "\t<gather> [%15s], m_time=%e, m_flop=%e, m_count=%lu\n",
+			m_label.c_str(), m_time, m_flop, m_count );
     }
 	#endif
     
     int m_np;
     m_np = num_process;
     
-    if (!(m_timeArray  = new double[m_np]))        PM_Exit(0);
-    if (!(m_flopArray  = new double[m_np]))        PM_Exit(0);
-    if (!(m_countArray = new unsigned long[m_np])) PM_Exit(0);
+	// The space is reserved only once as a fixed size array
+	if ( m_timeArray == NULL) m_timeArray  = new double[m_np];
+	if ( m_flopArray == NULL) m_flopArray  = new double[m_np];
+	if ( m_countArray == NULL) m_countArray  = new unsigned long[m_np];
+	if (!(m_timeArray) || !(m_timeArray) || !(m_timeArray)) {
+		printError("gatherHWPC()", "new memory failed. %d(process) x 3 x 8 \n",
+		num_process);
+		PM_Exit(0);
+	}
     
     if ( m_np == 1 ) {
       m_timeArray[0] = m_time;
@@ -233,13 +231,13 @@ namespace pm_lib {
       if ( MPI_Gather(&m_count, 1, MPI_UNSIGNED_LONG, m_countArray, 1, MPI_UNSIGNED_LONG, 0, MPI_COMM_WORLD) != MPI_SUCCESS ) PM_Exit(0);
       if ( MPI_Allreduce(&m_count, &m_count_sum, 1, MPI_UNSIGNED_LONG, MPI_SUM, MPI_COMM_WORLD) != MPI_SUCCESS ) PM_Exit(0);
     }
-    m_gathered = true;
   }
 
   
   /// Statistics among processes
   /// Translate in Japanese later on...
   /// 測定結果の平均値・標準偏差などの基礎的な統計計算
+  /// 測定区間の呼び出し回数はプロセス毎に異なる場合がありえる
   ///
   void PerfWatch::statsAverage()
   {
@@ -247,18 +245,6 @@ namespace pm_lib {
     if (my_rank == 0) {
       //	if (m_exclusive) {
         
-        // version 4 以降
-        // 計算が複雑になり負荷のアンバランスが生じると、
-        // 排他測定(m_exclusive==true)でも
-        // 区間の呼び出し回数はプロセス毎に異なる場合がありえるため
-        // 測定回数が全ノードで等しいことの checkはnasi
-        // int n = m_countArray[0];
-        // for (int i = 1; i < num_process; i++) {
-        //   if (m_countArray[i] != n) m_valid = false;
-        // }
-        // if (!m_valid) return;
-        //
-
         
         // 平均値
         m_time_av = 0.0;
@@ -346,18 +332,82 @@ namespace pm_lib {
   }
 
   
-  /// 時刻を取得.
+  /// 時刻を取得
   ///
-  ///   Unix/Linux: gettimeofdayシステムコールを使用.
-  ///   Windows: GetSystemTimeAsFileTime API(sph_win32_util.h)を使用.
+  /// If available, call precise timer function
+  /// Otherwise, gettimeofdayシステムコールを使用.
   ///
   ///   @return 時刻値(秒)
   ///
+  //   		Windows: GetSystemTimeAsFileTime API(sph_win32_util.h)を使用???
+  ///
   double PerfWatch::getTime()
   {
+
+#if defined (__sparcv9)						// K computer and FX100
+	#include <fjcex.h>
+	register double tval;
+	tval = __gettod()*1.0e-6;
+	return (tval);
+
+#elif defined(__x86_64__)					// Intel Xeon
+
+    #if defined (__INTEL_COMPILER) || defined(__gnu_linux__)
+    // Replace the following code segment using inline assembler
+	unsigned long long tsc;
+	unsigned int lo, hi;
+	__asm __volatile__ ( "rdtsc" : "=a"(lo), "=d"(hi) );
+	tsc = ( (unsigned long long)lo)|( ((unsigned long long)hi)<<32 );
+	return ((double)tsc * second_per_cycle);
+
+    #else			// MacOSX ("__APPLE__") and other linux/unix
     struct timeval tv;
     gettimeofday(&tv, 0);
     return (double)tv.tv_sec + (double)tv.tv_usec * 1.0e-6;
+    #endif
+
+#else			// Other platforms. Not tested. Let's assume gettimeofday().
+    struct timeval tv;
+    gettimeofday(&tv, 0);
+    return (double)tv.tv_sec + (double)tv.tv_usec * 1.0e-6;
+#endif
+  }
+
+  void PerfWatch::read_cpu_clock_freq()
+  // read_cpu_clock_freq() reads the cpu freqency from  /proc/cpuinfo, etc..
+  {
+#if defined(__x86_64__)					// Intel Xeon
+    #if defined (__INTEL_COMPILER) || defined(__gnu_linux__)
+    cpu_clock_freq=0.0;
+    second_per_cycle=0.0;
+  
+    FILE *fp;
+    double value;
+    char buffer[1024];
+    fp = fopen("/proc/cpuinfo","r");
+    if (fp == NULL) {
+    	printError("read_cpu_clock_freq()",  "Can not open /proc/cpuinfo \n");
+    	return;
+    }
+    while (fgets(buffer, 1024, fp) != NULL) {
+    	//	printf("%s", buffer);
+    	// assumed format
+    	if (!strncmp(buffer, "cpu MHz",7)) {
+    		sscanf(buffer, "cpu MHz\t\t: %lf", &value);
+    		// sscanf handles regexp such as: sscanf (buffer, "%[^\t:]", value);
+    		cpu_clock_freq = (value * 1.0e6);
+    		break;
+    	}
+    }
+    fclose(fp);
+    if (cpu_clock_freq == 0.0) {
+    	printError("read_cpu_clock_freq()",  "Failed parsing /proc/cpuinfo \n");
+    	return;
+    }
+    second_per_cycle = 1.0/(double)cpu_clock_freq;
+    #endif
+#endif
+    return;
   }
  
   
@@ -530,7 +580,7 @@ namespace pm_lib {
 #ifdef USE_PAPI
     char* c_env = std::getenv("HWPC_CHOOSER");
     if (c_env == NULL) return;
-    if (papi.num_events == 0) return;
+    if (my_papi.num_events == 0) return;
     if (!m_exclusive) return;
     if ( m_count_sum == 0 ) return;
     if (my_rank == 0) outputPapiCounterHeader (fp, s_label);
@@ -554,7 +604,7 @@ namespace pm_lib {
 #ifdef USE_PAPI
     char* c_env = std::getenv("HWPC_CHOOSER");
     if (c_env == NULL) return;
-    if (papi.num_events == 0) return;
+    if (my_papi.num_events == 0) return;
     if (!m_exclusive) return;
     if ( m_count_sum == 0 ) return;
     if (my_rank == 0) outputPapiCounterHeader (fp, s_label);
@@ -610,12 +660,14 @@ namespace pm_lib {
   void PerfWatch::printError(const char* func, const char* fmt, ...)
   {
     if (my_rank == 0) {
-      fprintf(stderr, "%s error: \"%s\" ", func, m_label.c_str());
+      fprintf(stderr, "*** Error. PerfWatch::%s [%s] ",
+                      func, m_label.c_str());
       va_list ap;
       va_start(ap, fmt);
       vfprintf(stderr, fmt, ap);
       va_end(ap);
     }
+    (void) MPI_Barrier(MPI_COMM_WORLD);
   }
   
   
@@ -669,7 +721,7 @@ namespace pm_lib {
 
 
 
-  /// OTF tracing 出力用の初期化
+  /// ポスト処理用traceファイル出力用の初期化
   ///
   void PerfWatch::initializeOTF(void)
   {
@@ -703,6 +755,10 @@ namespace pm_lib {
 
 	int i_switch = statsSwitch();
     my_otf_event_label(num_process, my_rank, id+1, label.c_str(), m_exclusive, i_switch);
+
+    if (id != 0) {
+      m_is_OTF = 0;
+    }
 #ifdef DEBUG_PRINT_OTF
     if (my_rank == 0) {
 		fprintf(stderr, "\t<labelOTF> label=%s, m_exclusive=%d, i_switch=%d\n",
@@ -725,6 +781,12 @@ namespace pm_lib {
 	s_group = "PMlib-OTF counter group" ;
 
     int is_unit = statsSwitch();
+	#ifdef DEBUG_PRINT_OTF
+    if (my_rank == 0) {
+	fprintf(stderr, "\t<finalizeOTF> is_unit=%d \n", is_unit);
+	fprintf(stderr, "\tmy_papi.num_sorted-1=%d \n", my_papi.num_sorted-1);
+    }
+	#endif
 	if ( (is_unit == 0) || (is_unit == 1) ) {
 		s_counter =  "User Defined COMM/CALC values" ;
 		s_unit =  "unit: B/sec or Flops";
@@ -737,6 +799,15 @@ namespace pm_lib {
 	my_otf_finalize (num_process, my_rank, is_unit,
 		otf_filename.c_str(), s_group.c_str(),
 		s_counter.c_str(), s_unit.c_str());
+
+    m_is_OTF = 0;
+
+	#ifdef DEBUG_PRINT_OTF
+    if (my_rank == 0) {
+	fprintf(stderr, "\t<finalizeOTF> otf_filename=%s, is_unit=%d, s_unit=%s \n",
+		otf_filename.c_str(), is_unit, s_unit.c_str());
+    }
+	#endif
 #endif
   }
 
@@ -746,22 +817,24 @@ namespace pm_lib {
   ///
   void PerfWatch::start()
   {
-	//	fprintf (stderr, "\t<PerfWatch::start> %s\n", m_label.c_str());
-    if (m_label.empty()) {
-      printError("PerfWatch::start()",  "properties not set\n");
-      PM_Exit(0);
-    }
     if (m_started) {
-      printError("PerfWatch::start()",  "already started\n");
-      PM_Exit(0);
+      printError("start()",  "was already started. Ignored the call.\n");
+      return;
     }
     if (m_exclusive && ExclusiveStarted) {
-      printError("PerfWatch::start()",  "exclusive sections overlapped\n");
-      PM_Exit(0);
+      printError("start()",  "Overlapped the previous exclusive section.\n");
+      printError("start()",  "PMlib ignores this section.\n");
+      m_is_healthy=false;
+      return;
     }
     m_started = true;
     if (m_exclusive) ExclusiveStarted = true;
     m_startTime = getTime();
+
+#ifdef DEBUG_PRINT_WATCH
+    if (my_rank == 0)
+		fprintf (stderr, "<PerfWatch::start> [%s] \n", m_label.c_str());
+#endif
 
 #ifdef USE_PAPI
 
@@ -769,25 +842,48 @@ namespace pm_lib {
 		my_papi = papi;
 		m_is_first = false;
 	}
-	for (int i=0; i<papi.num_events; i++){
+	for (int i=0; i<my_papi.num_events; i++){
 		my_papi.values[i] = 0;
 	}
 
 	#pragma omp parallel
 	{
 		struct pmlib_papi_chooser th_papi = my_papi;
+		int i_ret;
 
-		int i_ret = my_papi_bind_start (th_papi.events, th_papi.values, th_papi.num_events);
+		i_ret = my_papi_bind_start (th_papi.values, th_papi.num_events);
+		//
+		//	Development note:
+		//	If we should support HWPC measurement for inclusive sections,
+		//	a start()/stop() pair may not be used, because it clears out
+		//	the event counters.
+		//	To produce the HWPC data for inclusive sections, we should use 
+		//	my_papi_bind_read() instead of my_papi_bind_start/stop() as below.
+		//	In such a case, we will have to modify the my_papi.values[*]
+		//	and my_papi.accumu[*] usage.
+		//
+		//	i_ret = my_papi_bind_read (th_papi.values, th_papi.num_events);
+
 		if ( i_ret != PAPI_OK ) {
 			int i_thread = omp_get_thread_num();
 			fprintf(stderr, "*** error. <my_papi_bind_start> code: %d, thread:%d\n", i_ret, i_thread);
 			PM_Exit(0);
 		}
+
+		#ifdef DEBUG_PRINT_PAPI_THREADS
+		#pragma omp critical
+		{
+    		if (my_rank == 0) {
+			int i_thread = omp_get_thread_num();
+				fprintf (stderr, "\tthread:%d, th_papi.values[*]: ", i_thread);
+				for (int i=0; i<my_papi.num_events; i++) {
+				fprintf (stderr, "%llu, ", th_papi.values[i]);
+				}
+				fprintf (stderr, "\n");
+			}
+		}
+		#endif
 	}
-    #ifdef DEBUG_PRINT_PAPI
-    if (my_rank == 0)
-		fprintf (stderr, "\t<PerfWatch::start> <%s> \n", m_label.c_str());
-    #endif
 
 #endif // USE_PAPI
 
@@ -860,9 +956,15 @@ namespace pm_lib {
      */
   void PerfWatch::stop(double flopPerTask, unsigned iterationCount)
   {
+    if (!(m_is_healthy)) {
+      printError("stop()",  "PMlib ignores this section.\n");
+      m_is_healthy=false;
+      return;
+    }
     if (!m_started) {
       printError("PerfWatch::stop()",  "not started\n");
-      PM_Exit(0);
+      m_is_healthy=false;
+      return;
     }
 
     m_stopTime = getTime();
@@ -873,52 +975,82 @@ namespace pm_lib {
 
 
 #ifdef USE_PAPI
+	if (m_exclusive) {
 	#pragma omp parallel
 	{
+
 		struct pmlib_papi_chooser th_papi = my_papi;
-		int i_ret = my_papi_bind_stop (th_papi.events, th_papi.values, th_papi.num_events);
+		int i_ret;
+
+		//	i_ret = my_papi_bind_stop (th_papi.values, th_papi.num_events);
+
+		i_ret = my_papi_bind_stop (th_papi.values, th_papi.num_events);
+
 		if ( i_ret != PAPI_OK ) {
 			int i_thread = omp_get_thread_num();
-			fprintf(stderr, "*** error. <PerfWatch::stop> <my_papi_bind_stop> code: %d, thread:%d\n", i_ret, i_thread);
-			PM_Exit(0);
+			printError("stop()",  "my_papi_bind_stop code: %d, i_thread:%d\n",
+								i_ret, i_thread);
 		}
+
+		// 2016/6/27 Development note:
+		// PAPIでは start()/stop() ペアによりカウンター情報がリセットされる
+		// このため非排他区間のHWPC情報を保存するためには my_papi データを
+		// 保持する仕組みに修正が必要となる
+		//	If we should support HWPC measurement for inclusive sections,
+		//	a start()/stop() pair may not be used, because it clears out
+		//	the event counters.
+		//	We will need to use my_papi_bind_read() instead, as below.
+		//	In such a case, we will have to modify the my_papi.values[*]
+		//	and my_papi.accumu[*] usage.
+		//
+		//	i_ret = my_papi_bind_read (th_papi.values, th_papi.num_events);
+
+
 		#pragma omp critical
 		{
-		for (int i=0; i<papi.num_events; i++) {
+			for (int i=0; i<my_papi.num_events; i++) {
 			my_papi.values[i] += th_papi.values[i];
 			}
 		}
+
+		#ifdef DEBUG_PRINT_PAPI_THREADS
+		#pragma omp critical
+		{
+    		if (my_rank == 0) {
+			int i_thread = omp_get_thread_num();
+				fprintf (stderr, "\tthread:%d, th_papi.values[*]: ", i_thread);
+				for (int i=0; i<my_papi.num_events; i++) {
+				fprintf (stderr, "%llu, ", th_papi.values[i]);
+				}
+				fprintf (stderr, "\n");
+			}
+		}
+		#endif
 	}
 
-	for (int i=0; i<papi.num_events; i++) {
+	} else { //	!(m_exclusive)
+		//	If inclusive, do not collect HWPC data
+	}
+
+
+	for (int i=0; i<my_papi.num_events; i++) {
 		my_papi.accumu[i] += my_papi.values[i];
 	}
 
 	#ifdef DEBUG_PRINT_PAPI
     if (my_rank == 0) {
 		int n_thread = omp_get_max_threads();
-		fprintf (stderr, "   my_papi : num_events=%d, sum of %d threads \n",
+		fprintf (stderr, "  my_papi : num_events=%d, sum of %d threads \n",
 				my_papi.num_events, n_thread);
 		for (int i=0; i<my_papi.num_events; i++) {
 			fprintf (stderr, "  event i=%d, value=%llu, accumu=%llu\n",
 				i, my_papi.values[i], my_papi.accumu[i]);
 		}
-		#ifdef DEBUG_PRINT_PAPI_THREADS
-		#pragma omp parallel
-		{
-			struct pmlib_papi_chooser th_papi = my_papi;
-			#pragma omp critical
-			{
-			int i_thread = omp_get_thread_num();
-			fprintf (stderr, "   values of thread: %d\n", i_thread);
-			for (int i=0; i<papi.num_events; i++) {
-				fprintf (stderr, "\t i:%d, th.value=%llu\n", i,th_papi.values[i]);}
-			}
-		}
-		#endif
 	}
 	#endif
+
 #endif
+
 
     int is_unit = statsSwitch();
 	if ( (is_unit == 0) || (is_unit == 1) ) {
@@ -926,9 +1058,18 @@ namespace pm_lib {
 		m_flop += flopPerTask * (double)iterationCount;
 	}
 
+#ifdef DEBUG_PRINT_WATCH
+    if (my_rank == 0) {
+		fprintf (stderr, "<PerfWatch::stop> [%s] fPT=%e, itC=%u, m_time=%f, m_flop=%e\n"
+			, m_label.c_str(), flopPerTask, iterationCount, m_time, m_flop);
+    }
+#endif
+
+
+
 #ifdef USE_OTF
+	double w=0.0;
     int i_shift = 0;
-	double w;
 
 	if (m_is_OTF == 0) {
 		// OTFファイル出力なし
@@ -951,14 +1092,15 @@ namespace pm_lib {
 		}
 		my_otf_event_stop(my_rank, m_stopTime, m_id, i_shift, w);
 	}
-#endif
 
 #ifdef DEBUG_PRINT_WATCH
     if (my_rank == 0) {
-		fprintf (stderr, "\t<PerfWatch::stop> <%s> fPT(arg1)=%f, itC(arg2)=%u, w=%e, m_time=%f, m_flop=%e, m_count=%lu\n"
-			, m_label.c_str(), flopPerTask, iterationCount, w, m_time, m_flop, m_count);
+		fprintf (stderr, "\t[%s] w=%e, m_time=%f, m_flop=%e \n"
+				, m_label.c_str(), w, m_time, m_flop );
     }
 #endif
+#endif
+
   }
 
 } /* namespace pm_lib */

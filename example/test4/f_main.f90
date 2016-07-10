@@ -1,103 +1,76 @@
-#ifdef _PM_WITHOUT_MPI_
 program test4_main
-	parameter(msize=1000)
-	real(kind=8), allocatable :: a(:,:),b(:,:),c(:,:)
-
-	double precision dptime_omp
-	double precision dpt1,dpt0
-	integer nWatch
-
-	write(6,'(a)') "<test4_main> starting."
-	allocate (a(msize,msize), b(msize,msize), c(msize,msize), stat=istat)
-	if (istat.ne.0) then
-		write(*,*) "*** Allocate() failed."
-		stop
-	endif
-
-	n=msize
-	nWatch=10
-	call f_pm_initialize (nWatch)
-
-	icalc=1         !cx 1:calc, 0:comm
-	iexclusive=1    !cx 1:true, 2:false
-	call f_pm_setproperties ("1st section", icalc, iexclusive)
-	call f_pm_setproperties ("2nd section", icalc, iexclusive)
-
-	call f_pm_start ("1st section")
-	call subinit (msize,n,a,b,c)
-	call f_pm_stop ("1st section", 0.0, 0)
-
-	dpt0=dptime_omp()
-	loops=3
-	do i=1,loops
-	call f_pm_start ("2nd section")
-	call submtxm (msize,n,dflop,a,b,c)
-	call f_pm_stop ("2nd section", dflop, 0)
-	end do
-	write(6,'(a)') "<test4_main> finished computing submxm."
-
-	call f_pm_gather ()
-	call f_pm_print ("", 0)
-	call f_pm_printdetail ("", 0, 0)
-	stop
-end
-
+#if defined(_PM_WITHOUT_MPI_)
 #else
-program test4_main
 	include 'mpif.h'
+#endif
 	parameter(msize=1000)
 	real(kind=8), allocatable :: a(:,:),b(:,:),c(:,:)
-
-	double precision dptime_omp
-	double precision dpt1,dpt0
+	real(kind=8) :: dflop
 	integer nWatch
-
 	allocate (a(msize,msize), b(msize,msize), c(msize,msize), stat=istat)
 	if (istat.ne.0) then
 		write(*,*) "*** Allocate() failed."
 		stop
 	endif
-
-	call mpi_init(ierr )
-	call mpi_comm_rank( MPI_COMM_WORLD, myid, ierr )
-	call mpi_comm_size( MPI_COMM_WORLD, ncpus, ierr )
+	myid=0
+#if defined(_PM_WITHOUT_MPI_)
+#else
+	call MPI_Init(ierr )
+	call MPI_Comm_rank( MPI_COMM_WORLD, myid, ierr )
+	call MPI_Comm_size( MPI_COMM_WORLD, ncpus, ierr )
+#endif
 	write(6,'(a,i3,a)') "fortran <test4_main> started process:", myid
-
 	n=msize
-	nWatch=10
+	nWatch=4
 	call f_pm_initialize (nWatch)
-
-	icalc=0         !cx 0:calc, 1:comm
-	iexclusive=1    !cx 1:true, 2:false
-	call f_pm_setproperties ("1-subinit", icalc, iexclusive)
-	call f_pm_setproperties ("2-submtxm", icalc, iexclusive)
-
-	call f_pm_start ("1-subinit")
+	
+	icalc=1
+	icomm=0
+	iexclusive=1
+	iinclusive=0    !cx i.e. not exclusive
+	call f_pm_setproperties ("First section", icalc, iexclusive)
+	call f_pm_setproperties ("Second section", icalc, iinclusive)
+	call f_pm_setproperties ("Subsection P", icomm, iexclusive)
+	call f_pm_setproperties ("Subsection Q", icalc, iexclusive)
+	
+	dinit=(n**2)*4.0
+	dflop=(n**3)*4.0
+	dbyte=(n**3)*4.0*3.0
+	
+	call f_pm_start ("First section")
 	call subinit (msize,n,a,b,c)
-	call f_pm_stop ("1-subinit", 0.0, 0)
+	call f_pm_stop ("First section", dinit, 1)
+	call spacer (msize,n,a,b,c)
+	
+	call f_pm_start ("Second section")
 
-	dpt0=dptime_omp()
-	loops=3
-	do i=1,loops
-	call f_pm_start ("2-submtxm")
+	do i=1,3
+	call f_pm_start ("Subsection P")
+	call slowmtxm (msize,n,dflop,a,b,c)
+	call f_pm_stop ("Subsection P", dflop*4.0, 1)
+	call spacer (msize,n,a,b,c)
+	
+	call f_pm_start ("Subsection Q")
 	call submtxm (msize,n,dflop,a,b,c)
-	call f_pm_stop ("2-submtxm", dflop, 0)
+	call f_pm_stop ("Subsection Q", dflop, 1)
+	call spacer (msize,n,a,b,c)
+	
+!cx call f_pm_printprogress ("", "check point:", 0)
 	end do
+	
+	call f_pm_stop ("Second section", dflop*6.0, 1)
 
-	dpt1=dptime_omp()
-	s=dpt1-dpt0
-	flops=real(loops)*dflop/s*1.e-9
-	write(6,'(f10.5,a, f10.5,a)') s, " seconds", flops, " Gflops"
-	!cx	write(6,*)  'dummy for enforcing', c(1,11), c(msize,msize)
-	write(6,'(a,i3,a)') "fortran <test4_main> finished process:", myid
+!cx call f_pm_posttrace ()
 
-	call f_pm_gather ()
 	call f_pm_print ("", 0)
 	call f_pm_printdetail ("", 0, 0)
+#if defined(_PM_WITHOUT_MPI_)
+#else
 	call MPI_Finalize( ierr )
+#endif
+	write(6,'(a,i3,a)') "fortran <test4_main> finished process:", myid
 	stop
 end
-#endif
 
 subroutine subinit (msize,n,a,b,c)
 	real(kind=8) :: a(msize,msize), b(msize,msize), c(msize,msize)
@@ -116,6 +89,7 @@ end
 	
 subroutine submtxm (msize,n,dflop,a,b,c)
 	real(kind=8) :: a(msize,msize), b(msize,msize), c(msize,msize)
+	real(kind=8) :: dflop
 	real(kind=8) :: x
 	dflop=2.0*dble(n)**3
 	!$omp parallel
@@ -133,7 +107,38 @@ subroutine submtxm (msize,n,dflop,a,b,c)
 	!$omp end parallel
 	return
 end
+
+subroutine slowmtxm (msize,n,dflop,a,b,c)
+	real(kind=8) :: a(msize,msize), b(msize,msize), c(msize,msize)
+	real(kind=8) :: dflop
+	real(kind=8) :: x
+	dflop=2.0*dble(n)**3
+	!$omp parallel
+	!$omp do private(x)
+	do j=1, n
+	do i=1, n
+	x=0
+!OCL NOSIMD
+!OCL NOUNROLL
+!DIR$ NOVECTOR
+!DIR$ NOUNROLL
+	do k=1, n
+	x=x+a(i,k)*b(k,j)
+	end do
+	c(i,j) = x
+	end do
+	end do
+	!$omp end do
+	!$omp end parallel
+	return
+end
 	
+subroutine spacer (msize,n,a,b,c)
+	real(kind=8) :: a(msize,msize), b(msize,msize), c(msize,msize)
+	real(kind=8) :: dflop
+	call slowmtxm (msize,n/2,dflop,a,b,c)
+	return
+end
 	
 #ifdef _PM_WITHOUT_MPI_
 #ifdef _OPENMP

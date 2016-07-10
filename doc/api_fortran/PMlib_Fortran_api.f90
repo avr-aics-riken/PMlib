@@ -105,11 +105,6 @@ subroutine f_pm_stop (fc, fpt, tic)
 end subroutine
 
 
-!> PMlib Fortran !! 全プロセスの全測定結果情報をマスタープロセス(0)に集約
-!!
-subroutine f_pm_gather ()
-end subroutine
-
 
 !> PMlib Fortran 測定結果の基本レポートを出力
 !!
@@ -126,7 +121,7 @@ end subroutine
 !> PMlib Fortran MPIランク別詳細レポートを出力
 !!
 !!   @param[in] character*(*) fc	出力ファイル名(character文字列)
-!!   @param[in] integer		legend  HWPC 記号説明の表示(0:表示する、1:しない)
+!!   @param[in] integer		legend  HWPC 記号説明の表示 (0:なし、1:表示する)
 !!   @param[in] integer		psort	測定区間の表示順 (0/1)
 !!                       (0:経過時間順にソート後表示、1:登録順で表示)
 !!
@@ -144,20 +139,60 @@ end subroutine
 !!   @param[in] integer		p_comm   MPI_Comm型groupに対応するcommunicator
 !!   @param[in] integer配列	pp_ranks(*)	 groupを構成するrank番号配列
 !!   @param[in] integer		group    プロセスグループ番号
-!!   @param[in] integer		legend   HWPC 記号説明の表示 (0:表示する、1:しない)
+!!   @param[in] integer		legend   HWPC 記号説明の表示 (0:なし、1:表示する)
 !!   @param[in] integer		psort	測定区間の表示順 (0/1)
 !!							(0:経過時間順にソート後表示、1:登録順で表示)
 !!
+!!   @note  HWPCを測定した計集結果があればそれも出力する
 !!   @note  MPI_Group, MPI_Comm型は呼び出すFortranでは integer 型である
 !!
 subroutine f_pm_printgroup (fc, p_group, p_comm, pp_ranks, group, legend, psort)
 end subroutine
 
 
-!! PMlib Fortran インタフェイス TODO
-!! 今後開発が必要なfortran API ルーチン
-!! MPI_Comm_splitで分離されたMPIランクグループ毎に詳細レポート出力を行う。
-!!	void f_pm_printcomm ( ... )
-!! (C++バージョンのAPIは開発済み)
+!> PMlib Fortran MPI_Comm_splitで作成するグループ毎にMPIランク詳細レポートを出力
+!!
+!!   @param[in] character*(*)	fc	出力ファイル名(character文字列)
+!!   @param[in] integer		new_comm   MPI communicator
+!!   @param[in] integer		icolor    MPI_Comm_split()のカラー変数
+!!   @param[in] integer		key    MPI_Comm_split()のkey変数
+!!   @param[in] integer		legend   HWPC 記号説明の表示 (0:なし、1:表示する)
+!!   @param[in] integer		psort	測定区間の表示順 (0/1)
+!!							(0:経過時間順にソート後表示、1:登録順で表示)
+!!
+!!   @note  HWPCを測定した計集結果があればそれも出力する
+!!   @note  MPI_Group, MPI_Comm型は呼び出すFortranでは integer 型である
+!!
+subroutine f_pm_printcomm (fc, new_comm, icolor, key, legend, psort)
+end subroutine
 
+
+!> PMlib Fortran 測定途中経過レポートを出力（排他測定区間を対象とする）
+!!
+!!   @param[in] character*(*) fc	出力ファイル名(character文字列)
+!!   @param[in] character*(*) comments	任意のコメント(character文字列)
+!!   @param[in] integer		psort	測定区間の表示順 (0/1)
+!!							(0:経過時間順にソート後表示、1:登録順で表示)
+!!
+subroutine f_pm_printprogress (fc, comments, psort)
+end subroutine
+
+
+!> PMlib Fortran ポスト処理用traceファイルの出力
+!!
+!!   @note  プログラム実行中一回のみポスト処理用traceファイルを出力できる
+!!      現在サポートしているフォーマットは OTF(Open Trace Format) v1.1
+!!
+subroutine f_pm_posttrace ()
+end subroutine
+
+
+!> PMlib Fortran
+!! 全プロセスの全測定結果情報をマスタープロセスに集約
+!!
+!!   @note  旧バージョンとの互換維持用。
+!!			利用者は通常このAPIを呼び出す必要はない。
+!!
+subroutine f_pm_gather ()
+end subroutine
 
