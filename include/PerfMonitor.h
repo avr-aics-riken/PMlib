@@ -16,7 +16,7 @@
 
 //! @file   PerfMonitor.h
 //! @brief  PerfMonitor class Header
-//! @version rev.5.0.4
+//! @version rev.5.1
 
 #ifdef _PM_WITHOUT_MPI_
 #include "mpi_stubs.h"
@@ -34,14 +34,6 @@
 
 namespace pm_lib {
   
-  /// 排他測定用マクロ
-#define PM_TIMING__         if (PerfMonitor::TimingLevel > 0)
-  
-  
-  /// 排他測定＋非排他測定用マクロ
-#define PM_TIMING_DETAIL__  if (PerfMonitor::TimingLevel > 1)
-
-  
   /**
    * 計算性能測定管理クラス.
    */
@@ -54,19 +46,13 @@ namespace pm_lib {
       CALC,  ///< 演算
     };
     
-    /// 測定レベル制御変数.
-    /// =0:測定なし/=1:排他測定のみ/=2:非排他測定も(ディフォルト)
-    static unsigned TimingLevel;
-    
   private:
     unsigned m_nWatch;         ///< 測定区間数
-    bool m_gathered;           ///< 想定結果集計済みフラグ
     int num_threads;           ///< 並列スレッド数
     int num_process;           ///< 並列プロセス数
     int my_rank;               ///< 自ランク番号
     std::string parallel_mode; ///< 並列動作モード（"Serial", "OpenMP", "FlatMPI", "Hybrid"）
     PerfWatch* m_watchArray;   ///< 測定区間の配列
-    PerfWatch  m_total;        ///< Root区間の別称。v5.0以降では使用しない
       // PerfWatchのインスタンスは全部で m_nWatch 生成され、その番号対応は以下
       // m_watchArray[0]  :PMlibが定義するRoot区間 
       // m_watchArray[1 .. m_nWatch] :ユーザーが定義する各区間
@@ -77,6 +63,10 @@ namespace pm_lib {
     bool is_OpenMP_enabled;	   ///< PMlibの対応動作可能フラグ:OpenMP
     bool is_PAPI_enabled;	     ///< PMlibの対応動作可能フラグ:PAPI
     bool is_OTF_enabled;	   ///< 対応動作可能フラグ:OTF tracing 出力
+    bool m_gathered;           ///< 測定結果集計済みフラグ
+      // std::string last_started_label;	///< 最後に start された測定区間
+      // 排他的区間がオーバーラップする間違った使い方をチェックするために使う
+      // エラー処理用のデータ ->  処理が遅くなる & 手間がかかるので使わない
 
   public:
     /// コンストラクタ.
@@ -179,19 +169,6 @@ namespace pm_lib {
     ///   @endverbatim
     ///
     void stop(const std::string& label, double flopPerTask=0.0, unsigned iterationCount=1);
-    
-
-    
-    /// 全プロセスの測定結果をマスタープロセス(0)に集約.
-    ///
-    ///   @note  以下の処理を行う。
-    /// 各測定区間の全プロセスの測定結果情報をノード０に集約。
-    /// 測定結果の平均値・標準偏差などの基礎的な統計計算。
-    /// 経過時間でソートした測定区間のリストm_order[m_nWatch] を作成する。
-    /// 各測定区間のHWPCイベントの統計値を取得する。
-    /// OTFポスト処理ファイルの終了処理。
-    ///
-    void gather(void);
 
     
     /// 測定結果の基本統計レポートを出力。
@@ -203,7 +180,12 @@ namespace pm_lib {
     ///   @param[in] seqSections (省略可)測定区間の表示順 (0:経過時間順、1:登録順で表示)
     ///
     ///   @note 基本統計レポートは排他測定区間, 非排他測定区間をともに出力する。
-    ///   MPIの場合、rank0プロセスの測定回数が１以上の区間のみを表示する。
+    ///      MPIの場合、rank0プロセスの測定回数が１以上の区間のみを表示する。
+    ///   @note  内部では以下の処理を行う。
+    ///      各測定区間の全プロセス途中経過状況を集約。 gather_and_sort();
+    ///      測定結果の平均値・標準偏差などの基礎的な統計計算。
+    ///      経過時間でソートした測定区間のリストm_order[m_nWatch] を作成する。
+    ///      各測定区間のHWPCイベントの統計値を取得する。
     ///
     void print(FILE* fp, const std::string hostname, const std::string comments, int seqSections=0);
 
@@ -251,14 +233,30 @@ namespace pm_lib {
     ///
     void printComm (FILE* fp, MPI_Comm new_comm, int icolor, int key, int legend=0, int seqSections=0);
 
+    
+    /// 測定途中経過の状況レポートを出力（排他測定区間を対象とする）
+    ///
+    ///   @param[in] fp       出力ファイルポインタ
+    ///   @param[in] comments 任意のコメント
+    ///   @param[in] seqSections 測定区間の表示順 (0:経過時間順、1:登録順)
+    ///
+    ///   @note 基本レポートと同様なフォーマットで途中経過を出力する。
+    ///      多数回の反復計算を行う様なプログラムにおいて初期の経過状況を
+    ///      モニターする場合などに有効に用いることができる。
+    ///
+    void printProgress(FILE* fp, const std::string comments, int seqSections=0);
 
-    /**
-     * @brief PMlibバージョン番号の文字列を返す
-     */
-    std::string getVersionInfo(void);
+
+    /// ポスト処理用traceファイルの出力
+    ///
+    /// @note プログラム実行中一回のみポスト処理用traceファイルを出力できる
+    /// 現在サポートしているフォーマットは OTF(Open Trace Format) v1.1
+    ///
+    void postTrace(void);
 
 
-    /// 旧バージョンとの互換用プレースホルダ(並列モードを設定)
+    /// 旧バージョンとの互換維持用(並列モードを設定)。
+    /// 利用者は通常このAPIを呼び出す必要はない。
     ///
     /// @param[in] p_mode 並列モード
     /// @param[in] n_thread
@@ -268,9 +266,9 @@ namespace pm_lib {
     ///       利用者は通常このAPIを呼び出す必要はない。
     ///
     void setParallelMode(const std::string& p_mode, const int n_thread, const int n_proc);
-
     
-    /// 旧バージョンとの互換用プレースホルダ(ランク番号の通知)
+    /// 旧バージョンとの互換維持用(ランク番号の通知)
+    /// 利用者は通常このAPIを呼び出す必要はない。
     ///
     /// @param[in] MPI process ID
     ///
@@ -281,6 +279,25 @@ namespace pm_lib {
     void setRankInfo(const int my_rank_ID) {
       //	my_rank = my_rank_ID;
     }
+    
+    /// 旧バージョンとの互換維持用(全プロセスの測定結果を集約)
+    /// 利用者は通常このAPIを呼び出す必要はない。
+    ///
+    /// @note  以下の処理を行う。
+    ///       各測定区間の全プロセスの測定結果情報をマスタープロセスにに集約。
+    ///       測定結果の平均値・標準偏差などの基礎的な統計計算。
+    ///       経過時間でソートした測定区間のリストm_order[m_nWatch] を作成する。
+    ///       各測定区間のHWPCイベントの統計値を取得する。
+    ///
+    /// @note 集約処理は必要な時にPMlib内部で自動的に実行されるため
+    ///       利用者は通常このAPIを呼び出す必要はない。
+    ///
+    void gather(void);
+    
+    /// 旧バージョンとの互換維持用(PMlibバージョン番号の文字列を返す)
+    /// 利用者は通常このAPIを呼び出す必要はない。
+    ///
+    std::string getVersionInfo(void);
 
 
   private:
@@ -334,7 +351,6 @@ namespace pm_lib {
 			p_label = it->first;
 			p_id = it->second;
 			if (p_id == ip) {
-				//	fprintf(stderr, "\t\t <%s> : %d\n", p_label.c_str(), p_id);
 				return;
 			}
 		}
@@ -354,6 +370,79 @@ namespace pm_lib {
 			p_id = it->second;
 			fprintf(stderr, "\t\t <%s> : %d\n", p_label.c_str(), p_id);
 		}
+    }
+    
+    /// 全プロセスの測定中経過情報を集約
+    ///
+    ///   @note  以下の処理を行う。
+    ///    各測定区間の全プロセス途中経過状況を集約。
+    ///    測定結果の平均値・標準偏差などの基礎的な統計計算。
+    ///    経過時間でソートした測定区間のリストm_order[m_nWatch] を作成する。
+    ///    各測定区間のHWPCイベントの統計値を取得する。
+    void gather_and_sort(void);
+
+    /// 基本統計レポートのヘッダ部分を出力。
+    ///
+    ///   @param[in] fp       出力ファイルポインタ
+    ///   @param[in] hostname ホスト名(省略時はrank 0 実行ホスト名)
+    ///   @param[in] comments 任意のコメント
+    ///   @param[in] tot      測定経過時間
+    ///
+    void printBasicHeader(FILE* fp, const std::string hostname, const std::string comments, double tot=0.0);
+
+    /// 基本統計レポートの各測定区間を出力
+    ///
+    ///   @param[in] fp        出力ファイルポインタ
+    ///   @param[in] maxLabelLen    ラベル文字長
+    ///   @param[in] tot       全経過時間
+    ///   @param[in] sum_time_flop  演算経過時間
+    ///   @param[in] sum_time_comm  通信経過時間
+    ///   @param[in] sum_time_other  その他経過時間
+    ///   @param[in] sum_flop  演算量
+    ///   @param[in] sum_comm  通信量
+    ///   @param[in] sum_other その他
+    ///   @param[in] unit      計算量の単位
+    ///   @param[in] seqSections (省略可)測定区間の表示順 (0:経過時間順、1:登録順)
+    ///
+    ///   @note   計算量（演算数やデータ移動量）選択方法は PerfWatch::stop() の
+    ///           コメントに詳しく説明されている。
+    ///
+    void printBasicSections(FILE* fp, int maxLabelLen, double& tot,
+              double& sum_flop, double& sum_comm, double& sum_other,
+              double& sum_time_flop, double& sum_time_comm, double& sum_time_other,
+              std::string unit, int seqSections=0);
+
+    /// 基本統計レポートのテイラー部分を出力。
+    ///
+    ///   @param[in] fp       出力ファイルポインタ
+    ///   @param[in] maxLabelLen    ラベル文字長
+    ///   @param[in] sum_time_flop  演算経過時間
+    ///   @param[in] sum_time_comm  通信経過時間
+    ///   @param[in] sum_time_other  その他経過時間
+    ///   @param[in] sum_flop  演算量
+    ///   @param[in] sum_comm  通信量
+    ///   @param[in] sum_other  その他
+    ///   @param[in] unit 計算量の単位
+    ///
+    void printBasicTailer(FILE* fp, int maxLabelLen,
+              double sum_flop, double sum_comm, double sum_other,
+              double sum_time_flop, double sum_time_comm, double sum_time_other,
+              const std::string unit);
+
+    /// PerfMonitorクラス用エラーメッセージ出力
+    ///
+    ///   @param[in] func  関数名
+    ///   @param[in] fmt  出力フォーマット文字列
+    ///
+    void printDiag(const char* func, const char* fmt, ...)
+    {
+      if (my_rank == 0) {
+        fprintf(stderr, "*** Error. PerfMonitor::%s: ", func );
+        va_list ap;
+        va_start(ap, fmt);
+        vfprintf(stderr, fmt, ap);
+        va_end(ap);
+      }
     }
 
   }; // end of class PerfMonitor //

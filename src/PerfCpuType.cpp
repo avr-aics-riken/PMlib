@@ -29,10 +29,10 @@
 #include <cstdlib>
 #include <cstdio>
 
-extern struct pmlib_papi_chooser papi;
-extern struct hwpc_group_chooser hwpc_group;
-
 namespace pm_lib {
+
+  extern struct pmlib_papi_chooser papi;
+  extern struct hwpc_group_chooser hwpc_group;
 
 
   /// HWPC interface initialization
@@ -56,6 +56,8 @@ void PerfWatch::initializeHWPC ()
 		papi.values[i] = 0;
 		papi.accumu[i] = 0;
 		}
+
+	read_cpu_clock_freq(); /// API for reading processor clock frequency.
 
 #ifdef USE_PAPI
 	unsigned long l_papi;
@@ -476,14 +478,12 @@ void PerfWatch::outputPapiCounterList (FILE* fp)
 {
 #ifdef USE_PAPI
 	int iret;
-	// HWPC data collection using MPI_Gather() has been moved to gatherHWPC()
-
 	if (my_rank == 0) {
 	// print the HWPC event values and their derived values
 	for (int i=0; i<num_process; i++) {
 		fprintf(fp, "Rank %5d :", i);
 		for(int n=0; n<my_papi.num_sorted; n++) {
-			fprintf (fp, "  %9.3e", fabs(gather_sorted[i*my_papi.num_sorted + n]));
+			fprintf (fp, "  %9.3e", fabs(m_sortedArrayHWPC[i*my_papi.num_sorted + n]));
 		}
 		fprintf (fp, "\n");
 	}
@@ -515,7 +515,7 @@ void PerfWatch::outputPapiCounterGroup (FILE* fp, MPI_Group p_group, int* pp_ran
 		ip = pp_ranks[i];
 		fprintf(fp, "Rank %5d :", ip);
 		for(int n=0; n<my_papi.num_sorted; n++) {
-			fprintf (fp, "  %9.3e", fabs(gather_sorted[ip*my_papi.num_sorted + n]));
+			fprintf (fp, "  %9.3e", fabs(m_sortedArrayHWPC[ip*my_papi.num_sorted + n]));
 		}
 		fprintf (fp, "\n");
 	}

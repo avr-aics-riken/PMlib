@@ -19,7 +19,7 @@
 using namespace pm_lib;
 PerfMonitor PM;
 
-// only to prevent C++ name mangling
+// Fortran interface should avoid C++ name space mangling, thus this extern.
 extern "C" {
 
 /// PMlib Fortran インタフェイス
@@ -262,7 +262,7 @@ void f_pm_print_ (char* fc, int &psort, int fc_size)
 /// MPIランク別詳細レポート、HWPC詳細レポートを出力。 非排他測定区間も出力
 ///
 ///   @param[in] char* fc 出力ファイル名(character文字列)
-///   @param[in] legend  HWPC 記号説明の表示(0:表示する、1:表示しない)
+///   @param[in] int legend  HWPC 記号説明の表示(0:なし、1:表示する)
 ///   @param[in] int psort 測定区間の表示順
 ///                       (0:経過時間順にソート後表示、1:登録順で表示)
 ///   @param[in] int fc_size  出力ファイル名の文字数
@@ -304,24 +304,23 @@ void f_pm_printdetail_ (char* fc, int& legend, int &psort, int fc_size)
 
 
 /// PMlib Fortran インタフェイス
-/// プロセスグループ単位でのMPIランク別詳細レポート、HWPC詳細レポート出力
+/// 指定するMPIプロセスグループ毎にMPIランク詳細レポートを出力
 ///
-///   @param[in] char* fc ラベルとなる character文字列
-///   @param[in] p_group  MPI_Group型 groupのgroup handle
-///   @param[in] p_comm   MPI_Comm型 groupに対応するcommunicator
-///   @param[in] pp_ranks int**型 groupを構成するrank番号配列へのポインタ
-///   @param[in] group    int型 プロセスグループ番号
-///   @param[in] legend   int型 HWPC 記号説明の表示 (0:表示する、1:表示しない)
-///   @param[in] int psort 測定区間の表示順
+///   @param[in] char* fc 出力ファイル名(character文字列)
+///   @param[in] MPI_Group型 p_group  MPIのgroup handle
+///   @param[in] MPI_Comm型 p_comm   groupに対応するcommunicator
+///   @param[in] int**型	pp_ranks groupを構成するrank番号配列へのポインタ
+///   @param[in] int	group    プロセスグループ番号
+///   @param[in] int	legend  HWPC 記号説明の表示(0:なし、1:表示する)
+///   @param[in] int	psort 測定区間の表示順
 ///                       (0:経過時間順にソート後表示、1:登録順で表示)
-///   @param[in] int fc_size  character文字列ラベルの長さ（文字数）
+///   @param[in] int	fc_size  character文字列ラベルの長さ（文字数）
 ///
 ///   @note  MPI_Group, MPI_Comm型は呼び出すFortran側では integer 型である
 ///   @note  Fortranコンパイラはfc_size引数を自動的に追加してしまう
+///   @note  HWPCを測定した計集結果があればそれも出力する
 ///
 void f_pm_printgroup_ (char* fc, MPI_Group p_group, MPI_Comm p_comm, int* pp_ranks, int& group, int& legend, int &psort, int fc_size)
-
-
 {
 	FILE *fp;
 	std::string s=std::string(fc,fc_size);
@@ -347,9 +346,100 @@ void f_pm_printgroup_ (char* fc, MPI_Group p_group, MPI_Comm p_comm, int* pp_ran
 }
 
 
+/// PMlib Fortran インタフェイス
+/// MPI_Comm_splitで作成するグループ毎にMPIランク詳細レポートを出力
+///
+///   @param[in] char*	fc	出力ファイル名(character文字列)
+///   @param[in] MPI_Comm型 new_comm   groupに対応するcommunicator
+///   @param[in] int	icolor   MPI_Comm_split()のカラー変数
+///   @param[in] int	key      MPI_Comm_split()のkey変数
+///   @param[in] int	legend  HWPC 記号説明の表示(0:なし、1:表示する)
+///   @param[in] int	psort 測定区間の表示順
+///                       (0:経過時間順にソート後表示、1:登録順で表示)
+///   @param[in] int	fc_size  character文字列ラベルの長さ（文字数）
+///
+///   @note  MPI_Group, MPI_Comm型は呼び出すFortran側では integer 型である
+///   @note  Fortranコンパイラはfc_size引数を自動的に追加してしまう
+///
+void f_pm_printcomm_ (char* fc, MPI_Comm new_comm, int& icolor, int& key, int& legend, int& psort, int fc_size)
+{
+	FILE *fp;
+	std::string s=std::string(fc,fc_size);
+#ifdef DEBUG_PRINT_MONITOR
+	fprintf(stderr, "<f_pm_printcomm_> fc=%s, new_comm=%d, icolor=%d, key=%d, legend=%d, psort=%d, fc_size=%d \n",
+		fc, new_comm, icolor, key, legend, psort, fc_size);
+#endif
+
+	if (s == "" || fc_size == 0) {
+		fp=stdout;
+	} else {
+		fp=fopen(fc,"w+");
+		if (fp == NULL) {
+			fprintf(stderr, "*** warning <f_pm_printcomm_> can not open: %s\n", fc);
+			fp=stdout;
+		}
+	}
+	if (psort != 0 && psort != 1) psort = 0;
+
+	PM.printComm (fp, new_comm, icolor, key, legend, psort);
+
+	return;
 }
 
+
 /// PMlib Fortran インタフェイス
-/// 今後開発が必要なfortran API ルーチン (C++バージョンのAPIは開発済み)
-/// MPI_Comm_splitで分離されたMPIランクグループ毎に詳細レポート出力を行う。
-///	void f_pm_printcomm_ ( ... )
+/// 測定途中経過の状況レポートを出力（排他測定区間を対象とする）
+///
+///   @param[in] fc	出力ファイル名(character文字列)
+///   @param[in] comments	任意のコメント(character文字列)
+///   @param[in] psort 測定区間の表示順 (0:経過時間順に表示、1:登録順で表示)
+///   @param[in] fc_size  fc文字列の長さ（文字数）
+///   @param[in] comments_size  comments文字列の長さ（文字数）
+///
+///   @note  Fortranコンパイラはfc_size引数を自動的に追加してしまう
+///
+void f_pm_printprogress_ (char* fc, char* comments, int& psort, int fc_size, int comments_size)
+{
+	FILE *fp;
+	std::string s=std::string(fc,fc_size);
+#ifdef DEBUG_PRINT_MONITOR
+	fprintf(stderr, "<f_pm_printprogress_> fc=%s, comments=%s, psort=%d, fc_size=%d, comments_size=%d \n",
+		fc, comments, psort, fc_size, comments_size);
+#endif
+
+	if (s == "" || fc_size == 0) {
+		fp=stdout;
+	} else {
+		fp=fopen(fc,"w+");
+		if (fp == NULL) {
+			fprintf(stderr, "*** warning <f_pm_printcomm_> can not open: %s\n", fc);
+			fp=stdout;
+		}
+	}
+	if (psort != 0 && psort != 1) psort = 0;
+
+	std::string s2=std::string(comments,comments_size);
+	PM.printProgress (fp, s2, psort);
+
+	return;
+}
+
+
+/// PMlib Fortran インタフェイス
+/// ポスト処理用traceファイルの出力
+///
+void f_pm_posttrace_ (void)
+{
+#ifdef DEBUG_PRINT_MONITOR
+	fprintf(stderr, "<f_pm_posttrace_> \n");
+#endif
+
+	PM.postTrace ();
+
+	return;
+}
+
+
+// PMlib Fortran インタフェイス終了
+} // closing extern "C"
+

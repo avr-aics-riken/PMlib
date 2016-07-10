@@ -1,80 +1,27 @@
-#ifdef _PM_WITHOUT_MPI_
 program test4_main
-	parameter(msize=1000)
-	real(kind=8), allocatable :: a(:,:),b(:,:),c(:,:)
-	real(kind=8) :: dflop
-
-	write(6,'(a)') "<test4_main> starting."
-	allocate (a(msize,msize), b(msize,msize), c(msize,msize), stat=istat)
-	if (istat.ne.0) then
-		write(*,*) "*** Allocate() failed."
-		stop
-	endif
-
-	n=msize
-	nWatch=10
-	call f_pm_initialize (nWatch)
-	
-	icalc=1
-	icomm=0
-	iexclusive=1
-	iinclusive=0    !cx i.e. not exclusive
-	call f_pm_setproperties ("First section", icalc, iexclusive)
-	call f_pm_setproperties ("Second section", icalc, iinclusive)
-	call f_pm_setproperties ("Subsection X", icomm, iexclusive)
-	call f_pm_setproperties ("Subsection Y", icalc, iexclusive)
-	
-	call f_pm_start ("First section")
-	call subinit (msize,n,a,b,c)
-	dflop=(n**2)*4.0
-	call f_pm_stop ("First section", dflop, 1)
-	
-	call spacer (msize,n,a,b,c)
-	
-	call f_pm_start ("Second section")
-	do i=1,3
-	call f_pm_start ("Subsection X")
-	call slowmtxm (msize,n,dflop,a,b,c)
-	call f_pm_stop ("Subsection X", dflop*4.0, 1)
-	call spacer (msize,n,a,b,c)
-	
-	call f_pm_start ("Subsection Y")
-	call submtxm (msize,n,dflop,a,b,c)
-	call f_pm_stop ("Subsection Y", dflop, 1)
-	call spacer (msize,n,a,b,c)
-	end do
-	call f_pm_stop ("Second section", dflop, 1)
-	
-	write(6,'(a)') "<test4_main> finished computing submxm."
-	
-	call f_pm_gather ()
-	call f_pm_print ("", 0)
-	call f_pm_printdetail ("", 0, 0)
-	stop
-end
-
+#if defined(_PM_WITHOUT_MPI_)
 #else
-program test4_main
 	include 'mpif.h'
+#endif
 	parameter(msize=1000)
 	real(kind=8), allocatable :: a(:,:),b(:,:),c(:,:)
 	real(kind=8) :: dflop
-
 	integer nWatch
-
 	allocate (a(msize,msize), b(msize,msize), c(msize,msize), stat=istat)
 	if (istat.ne.0) then
 		write(*,*) "*** Allocate() failed."
 		stop
 	endif
-
-	call mpi_init(ierr )
-	call mpi_comm_rank( MPI_COMM_WORLD, myid, ierr )
-	call mpi_comm_size( MPI_COMM_WORLD, ncpus, ierr )
+	myid=0
+#if defined(_PM_WITHOUT_MPI_)
+#else
+	call MPI_Init(ierr )
+	call MPI_Comm_rank( MPI_COMM_WORLD, myid, ierr )
+	call MPI_Comm_size( MPI_COMM_WORLD, ncpus, ierr )
+#endif
 	write(6,'(a,i3,a)') "fortran <test4_main> started process:", myid
-
 	n=msize
-	nWatch=10
+	nWatch=4
 	call f_pm_initialize (nWatch)
 	
 	icalc=1
@@ -83,40 +30,47 @@ program test4_main
 	iinclusive=0    !cx i.e. not exclusive
 	call f_pm_setproperties ("First section", icalc, iexclusive)
 	call f_pm_setproperties ("Second section", icalc, iinclusive)
-	call f_pm_setproperties ("Subsection X", icomm, iexclusive)
-	call f_pm_setproperties ("Subsection Y", icalc, iexclusive)
+	call f_pm_setproperties ("Subsection P", icomm, iexclusive)
+	call f_pm_setproperties ("Subsection Q", icalc, iexclusive)
+	
+	dinit=(n**2)*4.0
+	dflop=(n**3)*4.0
+	dbyte=(n**3)*4.0*3.0
 	
 	call f_pm_start ("First section")
 	call subinit (msize,n,a,b,c)
-	dflop=(n**2)*4.0
-	call f_pm_stop ("First section", dflop, 1)
-	write(6,'(a,i3,a)') "<test4_main> finished process:", myid
-	
+	call f_pm_stop ("First section", dinit, 1)
 	call spacer (msize,n,a,b,c)
 	
 	call f_pm_start ("Second section")
+
 	do i=1,3
-	call f_pm_start ("Subsection X")
+	call f_pm_start ("Subsection P")
 	call slowmtxm (msize,n,dflop,a,b,c)
-	call f_pm_stop ("Subsection X", dflop*4.0, 1)
+	call f_pm_stop ("Subsection P", dflop*4.0, 1)
 	call spacer (msize,n,a,b,c)
 	
-	call f_pm_start ("Subsection Y")
+	call f_pm_start ("Subsection Q")
 	call submtxm (msize,n,dflop,a,b,c)
-	call f_pm_stop ("Subsection Y", dflop, 1)
+	call f_pm_stop ("Subsection Q", dflop, 1)
 	call spacer (msize,n,a,b,c)
+	
+!cx call f_pm_printprogress ("", "check point:", 0)
 	end do
+	
 	call f_pm_stop ("Second section", dflop*6.0, 1)
-	
-	write(6,'(a,i3,a)') "fortran <test4_main> finished process:", myid
-	
-	call f_pm_gather ()
+
+!cx call f_pm_posttrace ()
+
 	call f_pm_print ("", 0)
 	call f_pm_printdetail ("", 0, 0)
+#if defined(_PM_WITHOUT_MPI_)
+#else
 	call MPI_Finalize( ierr )
+#endif
+	write(6,'(a,i3,a)') "fortran <test4_main> finished process:", myid
 	stop
 end
-#endif
 
 subroutine subinit (msize,n,a,b,c)
 	real(kind=8) :: a(msize,msize), b(msize,msize), c(msize,msize)

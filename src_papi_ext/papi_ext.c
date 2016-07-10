@@ -83,13 +83,13 @@ int my_papi_add_events ( int *events, int num_events)
 		PAPI_cleanup_eventset( state->EventSet );
 		return retval;
 	}
-	print_state_HighLevelInfo(state);
+	//	print_state_HighLevelInfo(state);
 
 	return PAPI_OK;
 }
 
 
-int my_papi_bind_start ( int *events, long long *values, int num_events)
+int my_papi_bind_start ( long long *values, int num_events)
 {
 	HighLevelInfo *state = NULL;
 	int retval;
@@ -122,7 +122,7 @@ int my_papi_bind_start ( int *events, long long *values, int num_events)
 }
 
 
-int my_papi_bind_stop ( int *events, long long *values, int num_events)
+int my_papi_bind_stop ( long long *values, int num_events)
 {
 	HighLevelInfo *state = NULL;
 	int retval;
@@ -152,7 +152,7 @@ int my_papi_bind_stop ( int *events, long long *values, int num_events)
 }
 
 
-int my_papi_bind_read ( int *events, long long *values, int num_events)
+int my_papi_bind_read ( long long *values, int num_events)
 {
 	HighLevelInfo *state = NULL;
 	int retval;
