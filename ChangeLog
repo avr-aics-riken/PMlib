@@ -14,6 +14,12 @@
 REVISION HISTORY
 ================
 
+2016-07-27
+r50 package 5.1.1
+- Modified the label string of the unit for bandwidth to [Bytes/s].
+- Modified the OTF counterid for TRAiL.
+
+--------------------------
 2016-07-08
 r49 package 5.1.0
 - Added a new user API printProgress() which can be called repeatedly.

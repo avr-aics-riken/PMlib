@@ -734,10 +734,10 @@ namespace pm_lib {
     return;
   }
 
-  /// ポスト処理用traceファイルの出力終了処理
+  /// ポスト処理用traceファイルの出力と終了処理
   ///
   /// @note current version supports OTF(Open Trace Format) v1.5
-  /// @note This API terminates producing post trace immediately, and will
+  /// @note This API terminates producing post trace immediately, and may
   ///       produce non-pairwise start()/stop() records.
   ///
   void PerfMonitor::postTrace(void)
@@ -753,8 +753,8 @@ namespace pm_lib {
 
     gather_and_sort();
 
-    // OTFポスト処理ファイルの終了処理
 #ifdef USE_OTF
+    // OTFファイルの出力と終了処理
     if (is_OTF_enabled) {
       std::string label;
       for (int i=0; i<m_nWatch; i++) {
