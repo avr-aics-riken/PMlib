@@ -74,9 +74,8 @@ void my_otf_initialize(int num_process, int my_rank, char* otf_filename, double 
 // my_rank	自ランク番号
 // time		the event start time
 // m_id		the number mapped to the section label (1,2,..,m_nWatch)
-// m_shift	optional shift value for the counter id
-//			= 1: 計算量をユーザがPMlib引数で指定し、そのタイプがCALCの場合
-//			= 0: それ以外の場合
+// m_shift	optional shift value for the counter id (0,1,2,3,4,5)
+//			see statsSwitch() document for the meaning of each value 
 void my_otf_event_start(int my_rank, double time, int m_id, int m_shift)
 {
 	// Write the counter zero value and leave with starting time stamp
@@ -202,19 +201,19 @@ void my_otf_finalize(int num_process, int my_rank, int is_unit,
 	if (my_rank == 0) {
 		if (is_unit >= 2) {
 			OTF_Writer_writeDefCounterGroup( writer, OTF_STREAM_0,
-				otf_counterGroup, c_group );
+				otf_counterGroup+is_unit, c_group );
 
 			OTF_Writer_writeDefCounter( writer, OTF_STREAM_0,
-				otf_counterid, c_counter,
+				otf_counterid+is_unit, c_counter,
 				OTF_COUNTER_TYPE_ABS | OTF_COUNTER_SCOPE_LAST,
-				otf_counterGroup, c_unit);
+				otf_counterGroup+is_unit, c_unit);
 
 		} else {
 
 			OTF_Writer_writeDefCounterGroup( writer, OTF_STREAM_0,
 				otf_counterGroup+0, c_group );
 			c_counter = "User Defined COMM sections";
-			c_unit = "Bytes/sec";
+			c_unit = "[Bytes/s]";
 			OTF_Writer_writeDefCounter( writer, OTF_STREAM_0,
 				otf_counterid+0 /* COMM section */, c_counter,
 				OTF_COUNTER_TYPE_ABS | OTF_COUNTER_SCOPE_LAST,
@@ -223,7 +222,7 @@ void my_otf_finalize(int num_process, int my_rank, int is_unit,
 			OTF_Writer_writeDefCounterGroup( writer, OTF_STREAM_0,
 				otf_counterGroup+1, c_group );
 			c_counter = "User Defined CALC sections";
-			c_unit = "Flops";
+			c_unit = "[Flops]";
 			OTF_Writer_writeDefCounter( writer, OTF_STREAM_0,
 				otf_counterid+1 /* CALC section */, c_counter,
 				OTF_COUNTER_TYPE_ABS | OTF_COUNTER_SCOPE_LAST,

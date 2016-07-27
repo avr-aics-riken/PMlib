@@ -404,7 +404,7 @@ void PerfWatch::sortPapiCounterList (void)
 			bandwidth = counts * 128 / m_time; // Sparc64 has 128 Byte $ line
 		}
 
-		my_papi.s_sorted[jp] = "[HW B/s]" ;
+		my_papi.s_sorted[jp] = "[Bytes/s]" ;
 		my_papi.v_sorted[jp] = bandwidth ; //* 1.0e-9;
 		jp++;
 	}

@@ -889,14 +889,9 @@ namespace pm_lib {
 
 #ifdef USE_OTF
     if (m_is_OTF != 0) {
-    int is_unit = statsSwitch();
-    int i_shift;
-	if (is_unit == 1) {
-    	i_shift = 1;
-	} else {
-    	i_shift = 0;
-	}
-      my_otf_event_start(my_rank, m_startTime, m_id, i_shift);
+      int is_unit = statsSwitch();
+      //	if (is_unit != 1) is_unit = 0;
+      my_otf_event_start(my_rank, m_startTime, m_id, is_unit);
 	}
 #endif
 
@@ -1069,7 +1064,6 @@ namespace pm_lib {
 
 #ifdef USE_OTF
 	double w=0.0;
-    int i_shift = 0;
 
 	if (m_is_OTF == 0) {
 		// OTFファイル出力なし
@@ -1077,20 +1071,19 @@ namespace pm_lib {
 	} else if (m_is_OTF == 1) {
 		// OTFファイルには時間情報だけを出力し、カウンター値は0.0とする
 		w = 0.0;
-		my_otf_event_stop(my_rank, m_stopTime, m_id, i_shift, w);
+		my_otf_event_stop(my_rank, m_stopTime, m_id, is_unit, w);
 
 	} else if (m_is_OTF == 2) {
 		if ( (is_unit == 0) || (is_unit == 1) ) {
 			// ユーザが引数で指定した計算量/time(計算speed)
     		//	w = (flopPerTask * (double)iterationCount) / m_time;
     		w = (flopPerTask * (double)iterationCount) / (m_stopTime-m_startTime);
-			if (is_unit == 1) i_shift = 1;
 		} else if ( (2 <= is_unit) && (is_unit <= 4) ) {
 			// 自動計測されたHWPCイベントを分析した計算speed
 			sortPapiCounterList ();
 			w = my_papi.v_sorted[my_papi.num_sorted-1] ;
 		}
-		my_otf_event_stop(my_rank, m_stopTime, m_id, i_shift, w);
+		my_otf_event_stop(my_rank, m_stopTime, m_id, is_unit, w);
 	}
 
 #ifdef DEBUG_PRINT_WATCH
