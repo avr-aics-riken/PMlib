@@ -19,8 +19,9 @@ ChangeLog              History of modification
 COPYING                Copyright
 doc/                   Document
   Doxyfile             Configuration file to generate a doxygen file
-  PMlib_User_Guide.pdf User's manual (in Japanese)
-  Training_Slides.pdf  Explanation Slides for in depth training (in Japanese)
+  PMlib.pdf            User's manual (in Japanese)
+  scripts/             shell script collections for installation/execution
+  tutorial/            tutorial documents
 example/               example source codes
 include/               Header files
 INSTALL                Description of how to install
@@ -28,7 +29,7 @@ LICENSE                License to apply
 NEWS                   Release note
 Makefile_hand          Building PMlib by hand compile
 README                 This document
-src/                   Source codes
+src/                   PMlib Source codes
 src_papi_ext/          Extension of Papi interface 
 src_otf_ext/           Extension of Open Tracer Format interface 
 

@@ -125,26 +125,33 @@ void PerfWatch::createPapiCounterList ()
 		s_model_string.find( "Xeon" ) != string::npos )
 	{
 		hwpc_group.platform = "Xeon" ;
-		hwpc_group.i_platform = 1;
+		hwpc_group.i_platform = 5;
 	}
 
 	// Intel Core i CPU. So far supporting i7 and i5
     if (s_model_string.find( "Intel" ) != string::npos &&
 		s_model_string.find( "Core" ) != string::npos )
 	{
-		hwpc_group.platform = "Core" ;
-		hwpc_group.i_platform = 1;
+		hwpc_group.platform = "Xeon" ;
+		hwpc_group.i_platform = 3;
 	}
 
 
 	// Kei and Fujitsu FX10
-    if (s_model_string.find( "Fujitsu" ) != string::npos &&
-		s_model_string.find( "SPARC64" ) != string::npos )
+    if (s_model_string.find( "SPARC64" ) != string::npos &&
+		s_model_string.find( "VIIIfx" ) != string::npos )
 	{
 		hwpc_group.platform = "SPARC64" ;
-		hwpc_group.i_platform = 2;
+		hwpc_group.i_platform = 8;
 	}
-	// Add more CPU architecture selection. Later. Sometime...
+
+	// FX100
+    if (s_model_string.find( "SPARC64" ) != string::npos &&
+		s_model_string.find( "XIfx" ) != string::npos )
+	{
+		hwpc_group.platform = "SPARC64" ;
+		hwpc_group.i_platform = 11;
+	}
 
 
 // 2. Parse the Environment Variable HWPC_CHOOSER
@@ -179,22 +186,51 @@ void PerfWatch::createPapiCounterList ()
 			 Native Code[2]: 0x4000001f |SIMD_FP_256:PACKED_SINGLE| 256-bit packed
 			PAPI_FP_OPS == un-packed operations only. useless. (PAPI_FP_OPS == PAPI_FP_INS)
 		*/
-		if (hwpc_group.platform == "Xeon" ) { // Intel Xeon E5 specific 
+		if (hwpc_group.platform == "Xeon" ) { // Intel Xeon E5, Core i7 and i5
 			hwpc_group.number[I_flops] += 2;
 			papi.s_name[ip] = "SP_OPS"; papi.events[ip] = PAPI_SP_OPS; ip++;
 			papi.s_name[ip] = "DP_OPS"; papi.events[ip] = PAPI_DP_OPS; ip++;
 		}
 		/* [K and FX10]
-			PAPI_FP_OPS contains 4 native events. equivalent of (PAPI_FP_INS + PAPI_FMA_INS):
+			PAPI_FP_OPS is supported, and contains 4 native events.
 			 Native Code[0]: 0x40000010  |FLOATING_INSTRUCTIONS|
 			 Native Code[2]: 0x40000008  |SIMD_FLOATING_INSTRUCTIONS|
 			 Native Code[1]: 0x40000011  |FMA_INSTRUCTIONS|
 			 Native Code[3]: 0x40000009  |SIMD_FMA_INSTRUCTIONS|
 		*/
-		if (hwpc_group.platform == "SPARC64" ) {
+		if (hwpc_group.platform == "SPARC64" && hwpc_group.i_platform == 8 ) {
 			hwpc_group.number[I_flops] += 1;
 			papi.s_name[ip] = "FP_OPS"; papi.events[ip] = PAPI_FP_OPS; ip++;
 		}
+		/* [FX100]
+			On FX100, PAPI_FP_OPS is not supported. Fujitsu says f.p. ops can be
+			calculated as the sum of 6 instruction values as below.
+			PAPI_FP_OPS = N0 + 2*N1 + 2*N2 + 4*N3 + 4*N4 + 8*N5
+				N0: 0x40000010   FLOATING_INSTRUCTIONS  
+				N1: 0x40000011   FMA_INSTRUCTIONS  
+				N2: 0x40000008   SIMD_FLOATING_INSTRUCTIONS  
+				N3: 0x40000009   SIMD_FMA_INSTRUCTIONS  
+				N4: 0x4000007d   4SIMD_FLOATING_INSTRUCTIONS  
+				N5: 0x4000007e   4SIMD_FMA_INSTRUCTIONS  
+			However, counting SIMD and 4SIMD in one run causes an error.
+			So, a very rough approximation is done baed on XSIMD event count...
+		*/
+		if (hwpc_group.platform == "SPARC64" && hwpc_group.i_platform == 11 ) {
+			hwpc_group.number[I_flops] += 4;
+			papi.s_name[ip] = "FLOATING_INSTRUCTIONS";
+				my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]);
+				papi.s_name[ip] = "FP_INS"; ip++;
+			papi.s_name[ip] = "FMA_INSTRUCTIONS";
+				my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]);
+				papi.s_name[ip] = "FMA_INS"; ip++;
+			papi.s_name[ip] = "XSIMD_FLOATING_INSTRUCTIONS";
+				my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]);
+				papi.s_name[ip] = "XSIMD_FP"; ip++;
+			papi.s_name[ip] = "XSIMD_FMA_INSTRUCTIONS";
+				my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]);
+				papi.s_name[ip] = "XSIMD_FMA"; ip++;
+		}
+
 	}
 // if (VECTOR)
 	if ( s_chooser.find( "VECTOR" ) != string::npos ) {
@@ -351,11 +387,23 @@ void PerfWatch::sortPapiCounterList (void)
 	if ( hwpc_group.number[I_flops] > 0 ) {
 		flops=0.0;
 		ip = hwpc_group.index[I_flops];
+
 		for(int i=0; i<hwpc_group.number[I_flops]; i++)
 		{
 			my_papi.s_sorted[jp] = my_papi.s_name[ip] ;
 			flops += my_papi.v_sorted[jp] = my_papi.accumu[ip] ;
 			ip++;jp++;
+		}
+		// [FX100]
+		//	Rough approximation is done baed on XSIMD event count.
+		//	See comments in the API createPapiCounterList above.
+		if (hwpc_group.platform == "SPARC64" && hwpc_group.i_platform == 11 ) {
+			flops=0.0;
+			jp=0;
+			flops += my_papi.v_sorted[jp] ; jp++;	// FLOATING_INSTRUCTIONS
+			flops += my_papi.v_sorted[jp]*2 ; jp++;	// FMA_INSTRUCTIONS
+			flops += my_papi.v_sorted[jp]*4 ; jp++;	// XSIMD_FLOATING_INSTRUCTIONS
+			flops += my_papi.v_sorted[jp]*8 ; jp++;	// XSIMD_FMA_INSTRUCTIONS
 		}
 		my_papi.s_sorted[jp] = "[Flops]" ;
 		my_papi.v_sorted[jp] = flops / m_time ; // * 1.0e-9;

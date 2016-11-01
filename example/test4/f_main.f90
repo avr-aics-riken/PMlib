@@ -5,7 +5,7 @@ program test4_main
 #endif
 	parameter(msize=1000)
 	real(kind=8), allocatable :: a(:,:),b(:,:),c(:,:)
-	real(kind=8) :: dflop
+	real(kind=8) :: dinit, dflop, dbyte
 	integer nWatch
 	allocate (a(msize,msize), b(msize,msize), c(msize,msize), stat=istat)
 	if (istat.ne.0) then
