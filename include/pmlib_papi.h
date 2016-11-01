@@ -68,7 +68,7 @@ struct pmlib_papi_chooser {
 };
 
 // Macro patches for K computer which has fairly old PAPI 3.6
-#if defined(__FUJITSU) || defined(__HPC_ACE__)
+#if defined(K_COMPUTER)
 #define PAPI_SP_OPS 0	// Needed for compatibility
 #define PAPI_DP_OPS 0	// Needed for compatibility
 #define PAPI_VEC_SP 0	// Needed for compatibility

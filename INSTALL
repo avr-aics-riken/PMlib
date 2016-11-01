@@ -11,23 +11,49 @@
 */
 
 
-SOFTWARE REQUIREMENT
-====================
-- MPI library
+This INSTALL file contains the summary information regarding the installation
+options and runtime variables, as well as the installation examples on
+Intel Xeon server, K computer/FX100 system, Apple Mac PCs.
+
+Typical installation will be composed of three steps.
+
+1. Confirm that the software requirement is met.
+2. Obtain the the package tar ball and unpack it under the temporary directory.
+3. Configure and Make the related files.
+
+
+1. SOFTWARE REQUIREMENT
+=======================
+Before starting the installation, make sure that the following software
+has been made ready on the platform.
+- C++/C/Fortran compiler.
+- MPI library (option)
 - PAPI library (option)
 - OTF library (option)
+Although MPI and PAPI libraries are optional, they are frequently used
+in the application, and are recommended to be included.
 
 
-HOW TO COMPILE
-==============
+2. PACKAGE PLACEMENT
+====================
+Download the PMlib package tar.gz file from the distribution repository.
+	http://avr-aics-riken.github.io/PMlib/
+Unpack the downloaded file under the temporary directory.
+$ tar -zxf avr-aics-riken-PMlib-*.tar.gz
 
-1) with configure
 
-$ export FFV_HOME=hogehoge
-$ cd BUILD_DIR
+3. CONFIGURE and MAKE
+=====================
+After unpacking the PMlib package tar.gz, follow the configure and make steps
+as below.
+
+$ cd ./BUILD_DIR
 $ ../configure [options]
 $ make
 $ sudo make install
+
+The configure command requires a small number of options.
+The typically specified configure options are explained below.
 
 
 Configure options:
@@ -100,10 +126,13 @@ F90FLAGS=FORTRAN90_OPTIONS
    Specify compiler options.
 
 
+4.  INSTALLATION EXAMPLES
+=========================
+Some installation examples on Intel Xeon server, K computer/FX100 system,
+Apple Mac PCs are shown below.
 
-2) Configure Examples
-
-# INTEL compiler
+4.1 Intel Xeon server - INTEL compiler
+======================================
 
 ## Serial version
 
@@ -115,9 +144,10 @@ $ ../configure --with-comp=INTEL \
                F90FLAGS="-fpp"
 
 ### useful basic options with example, openmp, installation directory
+INSTALL_DIR=/usr/local/PMlib
 $ ../configure --with-comp=INTEL \
                --with-example=yes \
-               --prefix=${FFV_HOME}/PMlib \
+               --prefix=${INSTALL_DIR} \
                CXX=icpc \
                CXXFLAGS="-O3 -openmp" \
                CC=icc \
@@ -128,9 +158,10 @@ $ ../configure --with-comp=INTEL \
 ## MPI version using wrapper commands (mpicxx, mpicc, mpif90)
 
 ### useful basic options with example, Intel MPI, openmp, installation directory
+INSTALL_DIR=/usr/local/PMlib
 $ ../configure --with-comp=INTEL \
                --with-example=yes \
-               --prefix=${FFV_HOME}/PMlib \
+               --prefix=${INSTALL_DIR} \
                --with-impi \
                CXX=mpicxx \
                CXXFLAGS="-O3 -openmp" \
@@ -165,8 +196,8 @@ $ ../configure --with-comp=INTEL \
                F90FLAGS="-fpp -O3 -openmp"
 
 
-
-# GNU compiler
+4.2 Intel Xeon server - GNU compiler
+====================================
 
 ## Serial version
 
@@ -193,13 +224,14 @@ $ ../configure --with-comp=GNU \
                F90FLAGS="-cpp -O3 -fopenmp --free-line-length-none"
 
 
-
-# FUJITSU compiler / FX, K computer
+4.3 FUJITSU compiler / FX, K computer
+=====================================
 
 ## Serial version
 
 ### Compilation on login nodes
-$ ../configure --prefix=${FFV_HOME}/PMlib \
+INSTALL_DIR=${HOME}/local/PMlib
+$ ../configure --prefix=${INSTALL_DIR} \
                --host=sparc64-unknown-linux-gnu \
                --with-papi=/opt/FJSVXosDevkit/sparc64fx/V01L02E07 \
                --with-example=yes \
@@ -213,7 +245,8 @@ $ ../configure --prefix=${FFV_HOME}/PMlib \
 ## MPI version
 
 ### Compilation on compute nodes
-$ ../configure --prefix=${FFV_HOME}/PMlib \
+INSTALL_DIR=${HOME}/local/PMlib
+$ ../configure --prefix=${INSTALL_DIR} \
                --with-papi=yes \
                --with-example=yes \
                CC=mpifcc \
@@ -222,7 +255,8 @@ $ ../configure --prefix=${FFV_HOME}/PMlib \
                CXXFLAGS="-Kfast,parallel,openmp -Nrt_notune"
 
 ### Compilation on login nodes
-$ ../configure --prefix=${FFV_HOME}/PMlib \
+INSTALL_DIR=${HOME}/local/PMlib
+$ ../configure --prefix=${INSTALL_DIR} \
                --host=sparc64-unknown-linux-gnu \
                --with-papi=/opt/FJSVXosDevkit/sparc64fx/V01L02E07 \
                --with-example=yes \
@@ -232,14 +266,16 @@ $ ../configure --prefix=${FFV_HOME}/PMlib \
                CXXFLAGS="-Kfast,parallel,openmp -Nrt_notune"
 
 
+4.4 Apple Mac OSX LLVM/clang compiler
+=====================================
 
-# Apple Mac OSX LLVM/clang compiler
-				note :PAPI/HWPC is not supported on Apple Mac OSX.
-
+note :PAPI/HWPC is not supported on Apple Mac OSX.
 ## Serial version
 
 ###  minimum options. note: c++ points to clang++, cc points to clang
-$ ../configure --with-papi=none \
+INSTALL_DIR=${HOME}/local/PMlib
+$ ../configure --prefix=${INSTALL_DIR} \
+               --with-papi=none \
                --with-example=yes \
                CXX=c++ \
                CXXFLAGS="" \
@@ -250,7 +286,10 @@ $ ../configure --with-papi=none \
 
 
 ## MPI version (OpenMPI wrapper)
-$ ../configure --with-example=yes \
+INSTALL_DIR=${HOME}/local/PMlib
+$ ../configure --prefix=${INSTALL_DIR} \
+               --with-papi=none \
+               --with-example=yes \
                --with-ompi=/opt/openmpi \
                CXX=mpicxx \
                CXXFLAGS="" \
@@ -259,19 +298,32 @@ $ ../configure --with-example=yes \
                FC=mpifort \
                FCFLAGS="-cpp"
 
-
 If you try to install process again, execute 'make distclean' then configure.
 
 
+4.5 Other platforms
+===================
 
-3) Hand compile
+Refer to Makefile_hand hand for manually prepare the Makefiles for
+a system not covered in the previous sections.
+Edit environmental variables in a Makefile_hand file for a target machine.
 
-Edit environmental variables in a Makefile_hand file for a target machine. Then, 'make'.
-A compiled module libPM.a will be placed in $(PM_DIR)/lib/ directory.
+
+5. RUNNING THE APPLICATION WITH PMLIB
+=====================================
+
+There are several documents explaining how to run the application with PMlib,
+and how to understand the output information.
+Currently, they are all written in Japanese.
+
+doc/PMlib.pdf  : detail user guide
+doc/thtorial/PMlib-Getting-Started.pdf 			: Quick start guide
+doc/thtorial/Tutorial-slide1-overview.pdf		: PMlib overview
+doc/thtorial/Tutorial-slide2-installation.pdf	: PMlib installation
 
 
-RUN TIME ENVIRONMENT VARIABLES
-==============================
+6. RUN TIME ENVIRONMENT VARIABLES
+=================================
 When running applications linked with PMlib, the following
 environment variables can be set to the shell.
 
@@ -300,4 +352,3 @@ OTF_FILENAME="some file name"
   value of previous ${OTF_TRACING} has been set to "on" or "full".
   If this environment variable is not set, the default value of
   "pmlib_optional_otf_files" is used to prefix the OTF file names.
-
