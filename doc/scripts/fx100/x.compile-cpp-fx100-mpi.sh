@@ -14,8 +14,10 @@ mkdir -p $WK_DIR
 cd $WK_DIR; if [ $? != 0 ] ; then echo '@@@ Directory error @@@'; exit; fi
 rm $WK_DIR/*
 
-MY_SRC=${HOME}/pmlib/scripts/src_tests
-cp $MY_SRC/mxm.cpp main.cpp
+#	MY_SRC=${HOME}/pmlib/scripts/src_tests
+#	cp $MY_SRC/mxm.cpp main.cpp
+MY_SRC=${HOME}/pmlib/PMlib/doc/src_tutorial/
+cp $MY_SRC/mpi_pmlib.cpp main.cpp
 
 CXXFLAGS="-Kopenmp,fast -Ntl_notrt  -w -Nfjcex "
 CFLAGS="-std=c99 -Kopenmp,fast -Ntl_notrt -w"

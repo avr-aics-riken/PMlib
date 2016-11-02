@@ -1,32 +1,29 @@
 #! /bin/bash
-
+#PJM -N TEST-PAPI-MPI
+#PJM -L "elapse=1:00:00"
+#PJM -L "node=1"
+#PJM --mpi "proc=4"
+#PJM -j
+#PJM -S
 set -x
 xospastop
 
-# Start batch session
-#	~/x.interactive.sh
-
-TEST_DIR=${HOME}/work/check_pmlib
 #	TEST_DIR=${HOME}/pmlib/PMlib/BUILD_DIR/example
-#	TEST_DIR=${HOME}/pmlib/PMlib-eagles/BUILD_DIR/example
+TEST_DIR=${HOME}/work/check_pmlib
 cd $TEST_DIR; if [ $? != 0 ] ; then echo '@@@ Directory error @@@'; exit; fi
 
 #  export HWPC_CHOOSER=FLOPS
 #  export HWPC_CHOOSER=BANDWIDTH
 #  export HWPC_CHOOSER=VECTOR
-#  export HWPC_CHOOSER=FLOPS,VECTOR,INSTRUCTION # OK
-#  export HWPC_CHOOSER=CYCLE,INSTRUCTION
-#  export HWPC_CHOOSER=VECTOR # OK
 #  export HWPC_CHOOSER=CYCLE
 #  export HWPC_CHOOSER=CACHE
 #  export HWPC_CHOOSER=INSTRUCTION  # this is not available on K
-#  export HWPC_CHOOSER=FLOPS,VECTOR # this causes nan
 
-export OMP_NUM_THREADS=16
+NPROCS=4
+export OMP_NUM_THREADS=8
 export HWPC_CHOOSER=FLOPS
+export PAPI_PERFMON_EVENT_FILE=/usr/share/papi/papi_events.csv
 
-./a.out
+mpiexec -n ${NPROCS} ./a.out
 exit
-#	NPROCS=2
-#	mpiexec -n ${NPROCS} test1/test1
 

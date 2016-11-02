@@ -11,9 +11,14 @@ BUILD_DIR=${SRC_DIR}/BUILD_DIR
 cd $BUILD_DIR; if [ $? != 0 ] ; then echo '@@@ Directory error @@@'; exit; fi
 make distclean 2>&1 >/dev/null
 
-CXXFLAGS="-Kopenmp,fast -Ntl_notrt -Nfjcex -w -DK_COMPUTER"
-CFLAGS="-std=c99 -Kopenmp,fast -Ntl_notrt -w"
-FCFLAGS="-Cpp -Kopenmp,fast -Ntl_notrt -w -Knooptmsg"
+CXXFLAGS="-Kopenmp,fast -Ntl_notrt -Nfjcex -DK_COMPUTER -w"
+CFLAGS="-Kopenmp,fast -Ntl_notrt -DK_COMPUTER -w"
+#	CFLAGS="-Xg -std=c99 -Kopenmp,fast -Ntl_notrt -DK_COMPUTER -w"
+FCFLAGS="-Cpp -Kopenmp,fast -Ntl_notrt -DK_COMPUTER -Knooptmsg"
+
+#	PAPI library for K computer is under /opt/FJSVXosDevkit/sparc64fx/V01L02E07
+#	which is automatically identified thru --with-papi=yes option.
+
 
 if [[ $HOSTNAME =~ fe01p ]]
 then

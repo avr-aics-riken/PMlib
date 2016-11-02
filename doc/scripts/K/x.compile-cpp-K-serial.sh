@@ -17,11 +17,10 @@ WRK_DIR=${HOME}/pmlib/tmp
 mkdir -p $WRK_DIR
 cd $WRK_DIR; if [ $? != 0 ] ; then echo '@@@ Directory error @@@'; exit; fi
 
-MY_SRC=${HOME}/pmlib/scripts/src_test
-cp $MY_SRC/pmlib_test.cpp main.cpp
+MY_SRC=${HOME}/pmlib/PMlib/doc/src_tutorial
+cp $MY_SRC/mxm.cpp  main.cpp
 
-CXXFLAGS="-Kopenmp,fast -Ntl_notrt -DUSE_PAPI -D_PM_WITHOUT_MPI_"
-FCFLAGS="-Cpp -Kopenmp,fast -Ntl_notrt -w "
+CXXFLAGS="-Kopenmp,fast -Ntl_notrt -DUSE_PAPI -DK_COMPUTER -D_PM_WITHOUT_MPI_"
 
 mpiFCCpx ${CXXFLAGS} ${INCLUDES} -o a.out main.cpp ${LDFLAGS}
 
