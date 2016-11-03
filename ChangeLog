@@ -14,6 +14,20 @@
 REVISION HISTORY
 ================
 
+2016-11-03
+r52 package 5.2.1
+- Updated INSTALL documents
+- Updated doc/scripts/*/*.sh examples
+
+--------------------------
+2016-10-31
+r51 package 5.2.0
+- Added tutorial documents for beginners
+- Added high resolution timers for K, FX100, Intel.
+- Added example scripts for linking user programs with PMlib
+
+--------------------------
+
 2016-07-27
 r50 package 5.1.1
 - Modified the label string of the unit for bandwidth to [Bytes/s].
