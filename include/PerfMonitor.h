@@ -1,17 +1,21 @@
 #ifndef _PM_PERFMONITOR_H_
 #define _PM_PERFMONITOR_H_
 
-/* ############################################################################
- *
- * PMlib - Performance Monitor library
- *
- * Copyright (c) 2010-2011 VCAD System Research Program, RIKEN.
- * All rights reserved.
- *
- * Copyright (c) 2012-2015 Advanced Institute for Computational Science, RIKEN.
- * All rights reserved.
- *
- * ############################################################################
+/*
+###################################################################################
+#
+# PMlib - Performance Monitor Library
+#
+# Copyright (c) 2010-2011 VCAD System Research Program, RIKEN.
+# All rights reserved.
+#
+# Copyright (c) 2012-2017 Advanced Institute for Computational Science(AICS), RIKEN.
+# All rights reserved.
+#
+# Copyright (c) 2016-2017 Research Institute for Information Technology(RIIT), Kyushu University.
+# All rights reserved.
+#
+###################################################################################
  */
 
 //! @file   PerfMonitor.h
@@ -33,19 +37,19 @@
 
 
 namespace pm_lib {
-  
+
   /**
    * 計算性能測定管理クラス.
    */
   class PerfMonitor {
   public:
-    
+
     /// 測定計算量のタイプ
     enum Type {
       COMM,  ///< 通信（あるいはメモリ転送）
       CALC,  ///< 演算
     };
-    
+
   private:
     unsigned m_nWatch;         ///< 測定区間数
     int num_threads;           ///< 並列スレッド数
@@ -54,7 +58,7 @@ namespace pm_lib {
     std::string parallel_mode; ///< 並列動作モード（"Serial", "OpenMP", "FlatMPI", "Hybrid"）
     PerfWatch* m_watchArray;   ///< 測定区間の配列
       // PerfWatchのインスタンスは全部で m_nWatch 生成され、その番号対応は以下
-      // m_watchArray[0]  :PMlibが定義するRoot区間 
+      // m_watchArray[0]  :PMlibが定義するRoot区間
       // m_watchArray[1 .. m_nWatch] :ユーザーが定義する各区間
 
     unsigned *m_order;         ///< 経過時間でソートした測定区間のリストm_order[m_nWatch]
@@ -71,25 +75,25 @@ namespace pm_lib {
   public:
     /// コンストラクタ.
     PerfMonitor() : m_watchArray(0) {}
-    
+
     /// デストラクタ.
     ~PerfMonitor() { if (m_watchArray) delete[] m_watchArray; }
-    
+
 
     /// PMlibの内部初期化
-    /// 
+    ///
     /// 測定区間数分の内部領域を確保しする。並列動作モード、サポートオプション
     /// の認識を行い、実行時のオプションによりHWPC、OTF出力用の初期化も行う。
-    /// 
-    /// @param[in] init_nWatch 最初に確保する測定区間数（C++では省略可能） 
     ///
-    /// @note 
+    /// @param[in] init_nWatch 最初に確保する測定区間数（C++では省略可能）
+    ///
+    /// @note
     /// 測定区間数分の内部領域を最初にinit_nWatch区間分を確保する。
     /// 測定区間数が不足したらその都度動的にinit_nWatch追加する。
     ///
     void initialize (int init_nWatch=100);
 
-    
+
     /// 測定区間にプロパティを設定.
     ///
     ///   @param[in] label ラベルとなる文字列
@@ -105,7 +109,7 @@ namespace pm_lib {
     ///
     void setProperties(const std::string& label, Type type, bool exclusive=true);
 
-    
+
     /// 測定区間スタート
     ///
     ///   @param[in] label ラベル文字列。測定区間を識別するために用いる。
@@ -113,7 +117,7 @@ namespace pm_lib {
     ///
     void start (const std::string& label);
 
-    
+
     /// 測定区間ストップ
     ///
     ///   @param[in] label ラベル文字列。測定区間を識別するために用いる。
@@ -170,7 +174,7 @@ namespace pm_lib {
     ///
     void stop(const std::string& label, double flopPerTask=0.0, unsigned iterationCount=1);
 
-    
+
     /// 測定結果の基本統計レポートを出力。
     ///   排他測定区間毎に出力。プロセスの平均値、ジョブ全体の統計値も出力。
     ///
@@ -189,7 +193,7 @@ namespace pm_lib {
     ///
     void print(FILE* fp, const std::string hostname, const std::string comments, int seqSections=0);
 
-    
+
     /// MPIランク別詳細レポート、HWPC詳細レポートを出力。
     ///
     ///   @param[in] fp 出力ファイルポインタ
@@ -202,7 +206,7 @@ namespace pm_lib {
     ///
     void printDetail(FILE* fp, int legend=0, int seqSections=0);
 
-    
+
     /// プロセスグループ単位でのMPIランク別詳細レポート、HWPC詳細レポート出力
     ///
     ///   @param[in] fp 出力ファイルポインタ
@@ -233,7 +237,7 @@ namespace pm_lib {
     ///
     void printComm (FILE* fp, MPI_Comm new_comm, int icolor, int key, int legend=0, int seqSections=0);
 
-    
+
     /// 測定途中経過の状況レポートを出力（排他測定区間を対象とする）
     ///
     ///   @param[in] fp       出力ファイルポインタ
@@ -266,7 +270,7 @@ namespace pm_lib {
     ///       利用者は通常このAPIを呼び出す必要はない。
     ///
     void setParallelMode(const std::string& p_mode, const int n_thread, const int n_proc);
-    
+
     /// 旧バージョンとの互換維持用(ランク番号の通知)
     /// 利用者は通常このAPIを呼び出す必要はない。
     ///
@@ -279,7 +283,7 @@ namespace pm_lib {
     void setRankInfo(const int my_rank_ID) {
       //	my_rank = my_rank_ID;
     }
-    
+
     /// 旧バージョンとの互換維持用(全プロセスの測定結果を集約)
     /// 利用者は通常このAPIを呼び出す必要はない。
     ///
@@ -293,7 +297,7 @@ namespace pm_lib {
     ///       利用者は通常このAPIを呼び出す必要はない。
     ///
     void gather(void);
-    
+
     /// 旧バージョンとの互換維持用(PMlibバージョン番号の文字列を返す)
     /// 利用者は通常このAPIを呼び出す必要はない。
     ///
@@ -371,7 +375,7 @@ namespace pm_lib {
 			fprintf(stderr, "\t\t <%s> : %d\n", p_label.c_str(), p_id);
 		}
     }
-    
+
     /// 全プロセスの測定中経過情報を集約
     ///
     ///   @note  以下の処理を行う。
@@ -450,4 +454,3 @@ namespace pm_lib {
 } /* namespace pm_lib */
 
 #endif // _PM_PERFMONITOR_H_
-

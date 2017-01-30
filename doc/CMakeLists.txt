@@ -1,7 +1,3 @@
-#ifndef _PMLIB_VERSION_H_
-#define _PMLIB_VERSION_H_
-
-/*
 ###################################################################################
 #
 # PMlib - Performance Monitor Library
@@ -16,14 +12,13 @@
 # All rights reserved.
 #
 ###################################################################################
- */
 
-/**
- * @file   pmVersion.h
- * @brief  PMlib version header
- */
+# Install files
 
-#define PM_VERSION_NO  "@PACKAGE_VERSION@"
-#define PM_REVISION    "@PM_REVISION@"
+install(FILES  PMlib-user-manual.pdf
+               ./tutorial/PMlib-Getting-Started.pdf
+               ./tutorial/Tutorial-slide1-overview.pdf
+               ./tutorial/Tutorial-slide2-installation.pdf
+        DESTINATION doc)
 
-#endif /* _PMLIB_VERSION_H_ */
+###

@@ -1,7 +1,3 @@
-#ifndef _PMLIB_VERSION_H_
-#define _PMLIB_VERSION_H_
-
-/*
 ###################################################################################
 #
 # PMlib - Performance Monitor Library
@@ -16,14 +12,18 @@
 # All rights reserved.
 #
 ###################################################################################
- */
 
-/**
- * @file   pmVersion.h
- * @brief  PMlib version header
- */
+include_directories(${PAPI_DIR}/include)
+link_directories(${PAPI_DIR}/lib64)
 
-#define PM_VERSION_NO  "@PACKAGE_VERSION@"
-#define PM_REVISION    "@PM_REVISION@"
+C99()
 
-#endif /* _PMLIB_VERSION_H_ */
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DSTATIC_PAPI_EVENTS_TABLE -D_REENTRANT -D_GNU_SOURCE")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DUSE_COMPILER_TLS  -DPAPI_NO_MEMORY_MANAGEMENT -DUSE_PAPI")
+
+add_library(papi_ext STATIC papi_ext.c)
+
+set_target_properties(papi_ext PROPERTIES LINKER_LANGUAGE CXX)
+target_link_libraries(papi_ext ${CMAKE_CXX_IMPLICIT_LINK_LIBRARIES})
+
+install(TARGETS papi_ext DESTINATION lib)

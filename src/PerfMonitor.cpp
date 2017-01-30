@@ -1,14 +1,18 @@
-/* ############################################################################
- *
- * PMlib - Performance Monitor library
- *
- * Copyright (c) 2010-2011 VCAD System Research Program, RIKEN.
- * All rights reserved.
- *
- * Copyright (c) 2012-2015 Advanced Institute for Computational Science, RIKEN.
- * All rights reserved.
- *
- * ############################################################################
+/*
+###################################################################################
+#
+# PMlib - Performance Monitor Library
+#
+# Copyright (c) 2010-2011 VCAD System Research Program, RIKEN.
+# All rights reserved.
+#
+# Copyright (c) 2012-2017 Advanced Institute for Computational Science(AICS), RIKEN.
+# All rights reserved.
+#
+# Copyright (c) 2016-2017 Research Institute for Information Technology(RIIT), Kyushu University.
+# All rights reserved.
+#
+###################################################################################
  */
 
 ///@file   PerfMonitor.cpp
@@ -25,7 +29,7 @@
 #include <unistd.h> // for gethostname() of FX10/K
 
 namespace pm_lib {
-  
+
 
   /// 初期化.
   /// 測定区間数分の測定時計を準備.
@@ -157,7 +161,7 @@ namespace pm_lib {
     m_watchArray[id].setProperties(label, id, type, num_process, my_rank, exclusive);
   }
 
-    
+
 
   /// 並列モードを設定
   ///
@@ -208,7 +212,7 @@ namespace pm_lib {
     }
     #endif
   }
-    
+
 
   /// 測定区間ストップ
   ///
@@ -307,12 +311,12 @@ namespace pm_lib {
     for (int i=0; i<m_nWatch; i++) {
       m_order[i] = i;
     }
-    
+
     double *m_tcost = NULL;
     if ( !(m_tcost = new double[m_nWatch]) ) PM_Exit(0);
     for (int i = 0; i < m_nWatch; i++) {
       PerfWatch& w = m_watchArray[i];
-      //	if (!w.m_exclusive) continue;   // 
+      //	if (!w.m_exclusive) continue;   //
       if ( w.m_count > 0 ) {
         m_tcost[i] = w.m_time_av;
       }
@@ -322,11 +326,11 @@ namespace pm_lib {
     unsigned tmp_u;
     for (int i=0; i<m_nWatch-1; i++) {
       PerfWatch& w = m_watchArray[i];
-      //	if (!w.m_exclusive) continue;   // 
+      //	if (!w.m_exclusive) continue;   //
       if (w.m_label.empty()) continue;  //
       for (int j=i+1; j<m_nWatch; j++) {
         PerfWatch& q = m_watchArray[j];
-        //	if (!q.m_exclusive) continue;   // 
+        //	if (!q.m_exclusive) continue;   //
         if (q.m_label.empty()) continue;  //
         if ( m_tcost[i] < m_tcost[j] ) {
           tmp_d=m_tcost[i]; m_tcost[i]=m_tcost[j]; m_tcost[j]=tmp_d;
@@ -387,7 +391,7 @@ namespace pm_lib {
 
     /// ヘッダ部分を出力。
     PerfMonitor::printBasicHeader(fp, hostname, comments, tot);
-    
+
     double sum_time_comm = 0.0;
     double sum_time_flop = 0.0;
     double sum_time_other = 0.0;
@@ -408,15 +412,15 @@ namespace pm_lib {
                                   sum_time_flop, sum_time_comm, sum_time_other, unit);
 
   }
-  
-  
-  /// MPIランク別詳細レポート、HWPC詳細レポートを出力。 
+
+
+  /// MPIランク別詳細レポート、HWPC詳細レポートを出力。
   ///
   ///   @param[in] fp 出力ファイルポインタ
   ///   @param[in] legend int型 (省略可) HWPC記号説明の表示(0:なし、1:表示する)
   ///   @param[in] seqSections (省略可)測定区間の表示順 (0:経過時間順、1:登録順で表示)
   ///
-  ///   @note 詳細レポートは排他測定区間のみを出力する 
+  ///   @note 詳細レポートは排他測定区間のみを出力する
   ///         HWPC値は各プロセス毎に子スレッドの値を合算して表示する
   ///
 
@@ -443,7 +447,7 @@ namespace pm_lib {
       } else {
         fprintf(fp, "\n# PMlib Process Report ------------------------------------------------\n\n");
       }
-    
+
       // 測定時間の分母
       // initialize()からgather()までの区間（==Root区間）の測定時間を分母とする
       double tot = 0.0;
@@ -498,8 +502,8 @@ namespace pm_lib {
 #endif
     int iret = MPI_Barrier(MPI_COMM_WORLD);
   }
-  
-  
+
+
   /// 指定するMPIプロセスグループ毎にMPIランク詳細レポートを出力。
   ///
   ///   @param[in] fp 出力ファイルポインタ
@@ -540,7 +544,7 @@ namespace pm_lib {
     // 	I. MPIランク別詳細レポート: MPIランク別測定結果を出力
     if (my_rank == 0) {
       fprintf(fp, "\n# PMlib Process Group [%5d] Elapsed time for individual MPI ranks --------\n\n", group);
-    
+
       // 測定時間の分母
       // initialize()からgather()までの区間（==Root区間）の測定時間を分母とする
       double tot = 0.0;
@@ -788,10 +792,10 @@ namespace pm_lib {
     time_t now;
     int year, month, day;
     int hour, minute, second;
-    
+
     time(&now);
     date = localtime(&now);
-    
+
     year   = date->tm_year + 1900;
     month  = date->tm_mon + 1;
     day    = date->tm_mday;
@@ -868,7 +872,7 @@ namespace pm_lib {
     fprintf(fp, "\n");
 
   }
-  
+
 
   /// 基本統計レポートの各測定区間を出力
   ///
@@ -906,7 +910,7 @@ namespace pm_lib {
     fprintf(fp, "|      avr       sdv   speed\n");
 	fputc('\t', fp); for (int i = 0; i < maxLabelLen; i++) fputc('-', fp);
 	fprintf(fp,       "+----------+----------------------------------------+----------------------------\n");
-    
+
     sum_time_comm = 0.0;
     sum_time_flop = 0.0;
     sum_time_other = 0.0;
@@ -960,7 +964,7 @@ namespace pm_lib {
 
       fprintf(fp, "\t%-*s: %8ld   %9.3e %6.2f  %8.2e  %9.3e",
               maxLabelLen,
-              p_label.c_str(), 
+              p_label.c_str(),
               w.m_count,            // 測定区間のコール回数
               w.m_time_av,          // 測定区間の時間(全プロセスの平均値)
               100*w.m_time_av/tot,  // 測定区間の時間/全区間（=Root区間）の時間
@@ -985,7 +989,7 @@ namespace pm_lib {
       }
     }	// for
   }
-    
+
   /// 基本統計レポートのテイラー部分を出力。
   ///
   ///   @param[in] fp       出力ファイルポインタ
@@ -1023,7 +1027,7 @@ namespace pm_lib {
       double other_serial = PerfWatch::unitFlop(sum_other/sum_time_other, unit, 4, 4);
       fprintf(fp, "%30s  %8.3e          %7.2f %s\n", "-Exclusive sections only-", sum_other, other_serial, unit.c_str());
     }
-    
+
     fputc('\t', fp); for (int i = 0; i < maxLabelLen; i++) fputc('-', fp);
 	fprintf(fp,       "+----------+----------------------------------------+----------------------------\n");
 
@@ -1047,7 +1051,6 @@ namespace pm_lib {
       fprintf(fp, "%30s  %8.3e          %7.2f %s\n", "-Exclusive sections only-", sum_other_job, other_job, unit.c_str());
     }
   }
-     
- 
-} /* namespace pm_lib */
 
+
+} /* namespace pm_lib */

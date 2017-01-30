@@ -1,17 +1,21 @@
 #ifndef _PM_PERFWATCH_H_
 #define _PM_PERFWATCH_H_
 
-/* ############################################################################
- *
- * PMlib - Performance Monitor library
- *
- * Copyright (c) 2010-2011 VCAD System Research Program, RIKEN.
- * All rights reserved.
- *
- * Copyright (c) 2012-2015 Advanced Institute for Computational Science, RIKEN.
- * All rights reserved.
- *
- * ############################################################################
+/*
+###################################################################################
+#
+# PMlib - Performance Monitor Library
+#
+# Copyright (c) 2010-2011 VCAD System Research Program, RIKEN.
+# All rights reserved.
+#
+# Copyright (c) 2012-2017 Advanced Institute for Computational Science(AICS), RIKEN.
+# All rights reserved.
+#
+# Copyright (c) 2016-2017 Research Institute for Information Technology(RIIT), Kyushu University.
+# All rights reserved.
+#
+###################################################################################
  */
 
 //! @file   PerfWatch.h
@@ -52,40 +56,40 @@ namespace pm_lib {
   /// デバッグ用マクロ
 #define PM_Exit(x) \
 ((void)printf("exit at %s:%u\n", __FILE__, __LINE__), exit((x)))
-  
-  
+
+
   /**
    * 計算性能「測定時計」クラス.
    */
   class PerfWatch {
   public:
-    
+
     // プロパティ
     std::string m_label;   ///< 測定区間のラベル
     int m_id;             ///< 測定区間のラベルに対応する番号
     int m_typeCalc;        ///< 測定対象タイプ (0:通信, 1:計算)
     bool m_exclusive;      ///< 排他測定フラグ (false, true)
-    
+
     // 測定値の積算量
     double m_time;         ///< 時間(秒)
     double m_flop;         ///< 浮動小数点演算量or通信量(バイト)
     unsigned long m_count; ///< 測定回数
                            // 区間の呼び出し回数はプロセス毎に異なる場合がある
-    
+
     // 統計量
     double m_time_av;    ///< 時間の平均値(ランク0のみ)
     double m_time_sd;    ///< 時間の標準偏差(ランク0のみ)
     double m_flop_av;    ///< 浮動小数点演算量or通信量の平均値(ランク0のみ)
     double m_flop_sd;    ///< 浮動小数点演算量or通信量の標準偏差(ランク0のみ)
     double m_time_comm;  ///< 通信部分の最大値（ランク0のみ）
-    
+
     int m_is_OTF;	     ///< OTF tracing 出力のフラグ 0(no), 1(yes), 2(full)
     std::string otf_filename;    ///< OTF filename headings
                         //	master 		: otf_filename + .otf
                         //	definition	: otf_filename + .mdID + .def
                         //	event		: otf_filename + .mdID + .events
                         //	marker		: otf_filename + .mdID + .marker
-    
+
 	struct pmlib_papi_chooser my_papi;
 
   private:
@@ -93,31 +97,31 @@ namespace pm_lib {
     double m_startTime;  ///< 測定区間の測定開始時刻
     double m_stopTime;   ///< 測定区間の測定終了時刻
     bool m_started;      ///< 測定区間の測定中フラグ
-    
+
     // 測定値集計時の補助変数
     double* m_timeArray;         ///< 「時間」集計用配列
     double* m_flopArray;         ///< 「浮動小数点演算量or通信量」集計用配列
     unsigned long* m_countArray; ///< 「測定回数」集計用配列
     unsigned long  m_count_sum;  ///< 「測定回数」summed over all MPI ranks
     double* m_sortedArrayHWPC;   ///< 集計後ソートされたHWPC配列のポインタ
-    
+
     /// 排他測定実行中フラグ. 非排他測定では未使用
     static bool ExclusiveStarted;
-    
+
     /// MPI並列時の並列プロセス数と自ランク番号
     int num_process;
     int my_rank;
-    
+
     /// bool値：  true/false
     bool m_is_first;      /// 測定区間が初めてstartされる場合かどうかのフラグ
     bool m_is_healthy;    /// 測定区間に排他性・非排他性の矛盾がないかのフラグ
 
   public:
     /// コンストラクタ.
-    PerfWatch() : m_time(0.0), m_flop(0.0), m_count(0), m_started(false), 
+    PerfWatch() : m_time(0.0), m_flop(0.0), m_count(0), m_started(false),
       my_rank(0), m_timeArray(0), m_flopArray(0), m_countArray(0),
       m_sortedArrayHWPC(0), m_is_first(true), m_is_healthy(true) {}
-    
+
     /// デストラクタ.
     ~PerfWatch() {
       //	if (m_timeArray)  delete[] m_timeArray;
@@ -125,10 +129,10 @@ namespace pm_lib {
       //	if (m_countArray) delete[] m_countArray;
       //	if (m_sortedArrayHWPC) delete[] m_sortedArrayHWPC;
     }
-    
+
     /// 測定モードを返す
     int get_typeCalc(void) { return m_typeCalc; }
-    
+
     /// 測定区間にプロパティを設定.
     ///
     ///   @param[in] label     ラベル
@@ -140,11 +144,11 @@ namespace pm_lib {
     ///
     void setProperties(const std::string& label, int id, int typeCalc, int nPEs, int my_rank, bool exclusive);
 
-    
+
     /// HWPCイベントを初期化する
     ///
     void initializeHWPC(void);
-    
+
     /// OTF 用の初期化
     ///
     void initializeOTF(void);
@@ -152,7 +156,7 @@ namespace pm_lib {
     /// 測定スタート.
     ///
     void start();
-    
+
   /// 測定区間ストップ.
   ///
   ///   @param[in] flopPerTask     測定区間の計算量(演算量Flopまたは通信量Byte)
@@ -207,7 +211,7 @@ namespace pm_lib {
   ///   @endverbatim
   ///
     void stop(double flopPerTask, unsigned iterationCount);
-    
+
     /// 測定結果情報をランク０プロセスに集約.
     ///
     void gather(void);
@@ -252,13 +256,13 @@ namespace pm_lib {
     ///   @note is_unitは通常PerfWatch::statsSwitch()で事前に決定されている
     ///
     static double unitFlop(double fops, std::string &unit, int typeCalc, int is_unit);
-    
+
     /// 測定区間のラベル情報をOTF に出力
     ///   @param[in] label     ラベル
     ///   @param[in] id       ラベルに対応する番号
     ///
     void labelOTF(const std::string& label, int id);
-    
+
     /// OTF 出力処理を終了する
     ///
     void finalizeOTF(void);
@@ -282,7 +286,7 @@ namespace pm_lib {
     ///   @note ランク0プロセスからのみ呼び出し可能
     ///
     void printGroupRanks(FILE* fp, double totalTime, MPI_Group p_group, int* pp_ranks);
-    
+
     /// HWPCヘッダーを出力.
     ///
     ///   @param[in] fp 出力ファイルポインタ
@@ -290,7 +294,7 @@ namespace pm_lib {
     ///   @note ランク0プロセスからのみ呼び出し可能
     ///
     void printHWPCHeader(FILE* fp);
-    
+
     /// HWPCレジェンドを出力.
     ///
     ///   @param[in] fp 出力ファイルポインタ
@@ -298,7 +302,7 @@ namespace pm_lib {
     ///   @note ランク0プロセスからのみ呼び出し可能
     ///
     void printHWPCLegend(FILE* fp);
-    
+
     /// HWPCイベントの測定結果と統計値を出力.
     ///
     ///   @param[in] fp 出力ファイルポインタ
@@ -307,7 +311,7 @@ namespace pm_lib {
     ///   @note ランク0プロセスからのみ呼び出し可能
     ///
     void printDetailHWPCsums(FILE* fp, std::string s_label);
- 
+
     ///   Groupに含まれるMPIプロセスのHWPC測定結果を区間毎に出力
     ///
     ///   @param[in] fp 出力ファイルポインタ
@@ -318,7 +322,7 @@ namespace pm_lib {
     ///   @note ランク0プロセスからのみ呼び出し可能
     ///
     void printGroupHWPCsums(FILE* fp, std::string s_label, MPI_Group p_group, int* pp_ranks);
-    
+
     /// 時刻を取得
     ///
     ///   @return 時刻値(秒)
@@ -328,11 +332,11 @@ namespace pm_lib {
     ///         一般のUnix/Linuxではgettimeofdayシステムコールを呼び出す。
     ///
     double getTime();
-    
+
     ///   CPU動作周波数を読み出して内部保存する。
     ///
     void read_cpu_clock_freq();
-    
+
   private:
     /// エラーメッセージ出力.
     ///
@@ -352,8 +356,7 @@ namespace pm_lib {
 	void outputPapiCounterGroup (FILE* fp, MPI_Group p_group, int* pp_ranks);
 
   };
-  
+
 } /* namespace pm_lib */
 
 #endif // _PM_PERFWATCH_H_
-
