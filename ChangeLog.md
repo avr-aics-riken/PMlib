@@ -3,6 +3,10 @@
 ## REVISION HISTORY
 
 ---
+- 2017-1-31 Version 5.3.1
+  - modify FindPM.cmake
+  
+---
 - 2017-1-30 Version 5.3.0
   - cmake branch in github
   - Tested

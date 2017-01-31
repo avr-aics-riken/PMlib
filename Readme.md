@@ -10,10 +10,10 @@ This library records the statistics information of run-time performance and the 
 
 ## SOFTWARE REQUIREMENT
 - Cmake
-- TextParser
 - MPI library  (option)
 - PAPI library (option)
 - OTF library (option)
+- TextParser
 
 Although MPI and PAPI libraries are optional, they are frequently used in the application, and are recommended to be included.
 
@@ -61,7 +61,7 @@ $ sudo make install
 
 `-D INSTALL_DIR=install_directory`
 
->  Specify the directory that this library will be installed. Built library is installed at `install_directory/lib` and the header files are placed at `install_directory/include`.　The default install directory is `/usr/local/PMlib`.
+>  Specify the directory that this library will be installed. Built library is installed at `install_directory/lib` and the header files are placed at `install_directory/include`. The default install directory is `/usr/local/PMlib`.
 
 `-D with_example=(no|yes)`
 

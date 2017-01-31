@@ -18,21 +18,21 @@
 
 # Following parameters must be given at cmake command line
 
-# Build options, see Readme.md for details.
+# Build options, see Readme.md for the details.
 #
 # -D INSTALL_DIR=install_directory
 #
 # -D with_example=(no|yes)
 #
-# -D enable_Fortran=(yes|no)
+# -D enable_Fortran=(no|yes)
 #
 # -D with_MPI=(no|yes)
 #
 # -D enable_OPENMP=(no|yes)
 #
-# -D with_PAPI=installed_directory or -D with_PAPI="(no|yes)"
+# -D with_PAPI=(no|yes|installed_directory)
 #
-# -D with_OTF=installed_directory
+# -D with_OTF=(no|installed_directory)
 #
 
 cmake_minimum_required(VERSION 2.8)
@@ -43,7 +43,7 @@ cmake_minimum_required(VERSION 2.8)
 #######
 
 option (with_example "Compiling examples" "OFF")
-option (enable_Fortran "Using Fortran" "ON")
+option (enable_Fortran "Using Fortran" "OFF")
 option (with_MPI "Enable MPI" "OFF")
 option (enable_OPENMP "Enable OpenMP" "OFF")
 option (with_PAPI "Enable PAPI" "OFF")
@@ -73,8 +73,8 @@ set(CMAKE_BUILD_TYPE Release)
 
 
 #######
-set(PROJECT_VERSION "5.3.0")
-set(LIB_REVISION "20170130_1200")
+set(PROJECT_VERSION "5.3.1")
+set(LIB_REVISION "20170131_1200")
 #######
 
 
