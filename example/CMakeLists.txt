@@ -15,13 +15,15 @@
 
 message(" ")
 message("Examples : ")
+message(STATUS "PAPI_DIR            = " ${PAPI_DIR})
+message(STATUS "OTF_DIR             = " ${OTF_DIR})
+message(STATUS "with_MPI            = " ${with_MPI})
+
 #message(STATUS "PROJECT_BINARY_DIR = " ${PROJECT_BINARY_DIR})
 #message(STATUS "PROJECT_SOURCE_DIR = " ${PROJECT_SOURCE_DIR})
-message(STATUS "PAPI_DIR           = " ${PAPI_DIR})
-message(STATUS "OTF_DIR            = " ${OTF_DIR})
-message(STATUS "with_MPI           = " ${with_MPI})
-message(STATUS "IMPLICIT_LINK_LIBS = " ${CMAKE_CXX_IMPLICIT_LINK_LIBRARIES})
-
+#message(STATUS "IMPLICIT_LINK_LIBS = " ${CMAKE_CXX_IMPLICIT_LINK_LIBRARIES})
+#message(STATUS "CFLAGS              = " ${CMAKE_C_FLAGS})
+#message(STATUS "CXXFLAGS            = " ${CMAKE_CXX_FLAGS})
 
 include_directories(${PROJECT_BINARY_DIR}/include ${PROJECT_SOURCE_DIR}/include)
 
@@ -58,7 +60,13 @@ if(with_OTF)
   target_link_libraries(example1 -lotf_ext -lopen-trace-format)
 endif()
 
-add_test(TEST_1 example1)
+if(with_MPI)
+  set (test_parameters -np 2 "example1")
+  add_test(NAME TEST_1 COMMAND "mpirun" ${test_parameters})
+else()
+  add_test(TEST_1 example1)
+endif()
+
 
 
 ### Test2 : C++ and C
@@ -86,7 +94,13 @@ endif()
 
 set_target_properties(example2 PROPERTIES LINKER_LANGUAGE CXX)
 target_link_libraries(example2 ${CMAKE_CXX_IMPLICIT_LINK_LIBRARIES})
-add_test(TEST_2 example2)
+
+if(with_MPI)
+  set (test_parameters -np 2 "example2")
+  add_test(NAME TEST_2 COMMAND "mpirun" ${test_parameters})
+else()
+  add_test(TEST_2 example2)
+endif()
 
 
 ### Test 3 : Process group
@@ -111,7 +125,9 @@ if(with_MPI)
 
   set_target_properties(example3 PROPERTIES LINKER_LANGUAGE CXX)
   target_link_libraries(example3 ${CMAKE_CXX_IMPLICIT_LINK_LIBRARIES})
-  add_test(TEST_3 example3)
+
+  set (test_parameters -np 2 "example3")
+  add_test(NAME TEST_3 COMMAND "mpirun" ${test_parameters})
 endif()
 
 
@@ -145,7 +161,12 @@ if(enable_Fortran)
     target_link_libraries(example4 ${CMAKE_CXX_IMPLICIT_LINK_LIBRARIES})
   endif()
 
-  add_test(TEST_4 example4)
+  if(with_MPI)
+    set (test_parameters -np 2 "example4")
+    add_test(NAME TEST_4 COMMAND "mpirun" ${test_parameters})
+  else()
+    add_test(TEST_4 example4)
+  endif()
 
 endif()
 
@@ -172,5 +193,7 @@ if(with_MPI)
 
   set_target_properties(example5 PROPERTIES LINKER_LANGUAGE CXX)
   target_link_libraries(example5 ${CMAKE_CXX_IMPLICIT_LINK_LIBRARIES})
-  add_test(TEST_5 example5)
+
+  set (test_parameters -np 2 "example5")
+  add_test(NAME TEST_5 COMMAND "mpirun" ${test_parameters})
 endif()

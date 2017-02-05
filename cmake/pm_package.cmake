@@ -38,7 +38,7 @@ set (CPACK_SOURCE_GENERATOR "TGZ")
 # config for source installer
 set (CPACK_SOURCE_OUTPUT_CONFIG_FILE "${PROJECT_BINARY_DIR}/CPackSourceConfig.cmake")
 
-set (CPACK_SOURCE_IGNORE_FILES "/BUILD/;/build/;/.git/;.#;/#;/.DS_Store" CACHE STRING "CPACK will ignore this files" )
+set (CPACK_SOURCE_IGNORE_FILES "/BUILD/;/build/;/.git/;.#;/#;.DS_Store" CACHE STRING "CPACK will ignore this files" )
 
 # config for binary installer
 #set (CPACK_OUTPUT_CONFIG_FILE "${PROJECT_BINARY_DIR}/CPackConfig.cmake")

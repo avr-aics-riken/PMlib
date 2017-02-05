@@ -68,13 +68,13 @@ endif()
 # project()でCMAKE_INSTALL_PREFIX=/usr/localとなるので、再定義
 set (CMAKE_INSTALL_PREFIX "${INSTALL_DIR}")
 
-set(CMAKE_BUILD_TYPE Release)
+#set(CMAKE_BUILD_TYPE Release)
 
 
 
 #######
-set(PROJECT_VERSION "5.3.1")
-set(LIB_REVISION "20170131_1200")
+set(PROJECT_VERSION "5.3.2")
+set(LIB_REVISION "20170205_2300")
 #######
 
 
@@ -149,6 +149,11 @@ endif()
 
 message("${PROJECT_NAME} Version : ${PROJECT_VERSION}")
 
+if(NOT with_MPI)
+  add_definitions(-D_PM_WITHOUT_MPI_)
+endif()
+
+
 
 #######
 # include PATH for libs
@@ -173,15 +178,6 @@ endif()
 
 
 add_definitions(-DHAVE_CONFIG_H)
-
-
-#######
-# Library name
-#######
-
-if(NOT with_MPI)
-  add_definitions(-D_PM_WITHOUT_MPI_)
-endif()
 
 
 #######
