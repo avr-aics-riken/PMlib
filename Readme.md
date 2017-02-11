@@ -13,7 +13,6 @@ This library records the statistics information of run-time performance and the 
 - MPI library  (option)
 - PAPI library (option)
 - OTF library (option)
-- TextParser
 
 Although MPI and PAPI libraries are optional, they are frequently used in the application, and are recommended to be included.
 
@@ -63,29 +62,29 @@ $ sudo make install
 
 >  Specify the directory that this library will be installed. Built library is installed at `install_directory/lib` and the header files are placed at `install_directory/include`. The default install directory is `/usr/local/PMlib`.
 
-`-D with_example=(no|yes)`
+`-D with_example=` {no | yes}
 
 >  This option turns on compiling sample codes. Default is no.
 
-`-D enable_Fortran=(no|yes)`
+`-D enable_Fortran=` {no | yes}
 
 > This option tells a compiler to use a Fortran.
 
-`-D with_MPI=(no|yes)`
+`-D with_MPI=` {no | yes}
 
->  If you use an MPI library, specify `with_MPI=yes`, otherwise no or you can omit.
+>  If you use an MPI library, specify `with_MPI=yes`.
 
-`-D enable_OPENMP=(no|yes)`
+`-D enable_OPENMP=` {no | yes}
 
 > Enable OpenMP directives.
 
-`-D with_PAPI=(no|yes|installed_directory)`
+`-D with_PAPI=` {no | yes | installed_directory}
 
->  If you use PAPI library, specify this option with PAPI_DIR value pointing to the PAPI library installed directory. In cross-compile installation, there can be multiple PAPI libraries on the system, one for the current platform and another for the target platform. See examples in 4. INSTALLATION EXAMPLES section. In many cases, `-Dwith-papi="yes"` can detect the correct path.
+>  If you use PAPI library, specify this option with PAPI_DIR value pointing to the PAPI library installed directory. In cross-compile installation, there can be multiple PAPI libraries on the system, one for the current platform and another for the target platform. See examples in 4. INSTALLATION EXAMPLES section. In many cases, `-Dwith_PAPI="yes"` can detect the correct path.
 
-`-D with_OTF=(no|installed_directory)`
+`-D with_OTF=` {no | installed_directory}
 
->  If you use OTF library, specify this option with OTF_DIR value pointing to the OTF library installed directory.
+>  If you use OTF library, specify this option `with_OTF` value pointing to the OTF library installed directory.
 
 The default compiler options are described in `cmake/CompilerOptionSelector.cmake` file. See BUILD OPTION section in CMakeLists.txt in detail.
 
@@ -94,27 +93,22 @@ The default compiler options are described in `cmake/CompilerOptionSelector.cmak
 
 ### INTEL/GNU compiler
 
-	~~~
-	$ cmake -DINSTALL_DIR=${PM_HOME}/PMlib -Denable_OPENMP=yes -Dwith_MPI=no -Denable_Fortran=yes -Dwith_example=no -Dwith_PAPI=no -Dwith_OTF=no  ..
-	~~~
+~~~
+$ cmake -DINSTALL_DIR=${PM_HOME}/PMlib -Denable_OPENMP=yes -Dwith_MPI=no -Denable_Fortran=yes -Dwith_example=no -Dwith_PAPI=no -Dwith_OTF=no  ..
+~~~
 
 
 ### FUJITSU compiler / FX10 on login nodes (Cross compilation)
-
-* Specify PAPI
-
   ~~~
-  $ cmake -DINSTALL_DIR=${PM_HOME}/PMlib -DCMAKE_TOOLCHAIN_FILE=../cmake/Toolchain_fx10.cmake -Denable_OPENMP=yes -Dwith_MPI=no -Denable_Fortran=yes -Dwith_example=no -Dwith_PAPI=yes -Dwith_OTF=no ..
-  ~~~
+$ cmake -DINSTALL_DIR=${PM_HOME}/PMlib -DCMAKE_TOOLCHAIN_FILE=../cmake/Toolchain_fx10.cmake -Denable_OPENMP=yes -Dwith_MPI=no -Denable_Fortran=yes -Dwith_example=no -Dwith_PAPI=yes -Dwith_OTF=no ..
+~~~
 
 
 ### FUJITSU compiler / K computer on login nodes (Cross compilation)
 
-* Specify PAPI
-
-  ~~~
-  $ cmake -DINSTALL_DIR=${PM_HOME}/PMlib -DCMAKE_TOOLCHAIN_FILE=../cmake/Toolchain_K.cmake -Denable_OPENMP=yes -Dwith_MPI=no -Denable_Fortran=yes -Dwith_example=no -Dwith_PAPI=yes -Dwith_OTF=no ..
-  ~~~
+~~~
+$ cmake -DINSTALL_DIR=${PM_HOME}/PMlib -DCMAKE_TOOLCHAIN_FILE=../cmake/Toolchain_K.cmake -Denable_OPENMP=yes -Dwith_MPI=no -Denable_Fortran=yes -Dwith_example=no -Dwith_PAPI=yes -Dwith_OTF=no ..
+~~~
 
 
 ##### Note
@@ -133,10 +127,10 @@ Edit environmental variables in a `Makefile_hand` file for a target machine.
 There are several documents explaining how to run the application with PMlib, and how to understand the output information.
 Currently, they are all written in Japanese.
 
-doc/PMlib.pdf  : detail user guide
-doc/thtorial/PMlib-Getting-Started.pdf 			: Quick start guide
-doc/thtorial/Tutorial-slide1-overview.pdf		: PMlib overview
-doc/thtorial/Tutorial-slide2-installation.pdf	: PMlib installation
+doc/PMlib.pdf                                 : detail user guide
+doc/tutorial/PMlib-Getting-Started.pdf 			  : Quick start guide
+doc/tutorial/Tutorial-slide1-overview.pdf		  : PMlib overview
+doc/tutorial/Tutorial-slide2-installation.pdf	: PMlib installation
 
 
 ## RUN TIME ENVIRONMENT VARIABLES
@@ -180,7 +174,7 @@ Meanwhile, the summary is displayed for stdout.
 
 ## CONTRIBUTORS
 
-* Kenji     Ono      keno@{cc.kyushu-u.ac, riken}.jp
+* Kenji     Ono      *keno@{cc.kyushu-u.ac, riken}.jp*
 * Kazunori  Mikami   kazunori.mikami@riken.jp
 * Soichiro  Suzuki
 * Syoyo     Fujita

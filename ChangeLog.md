@@ -3,6 +3,10 @@
 ## REVISION HISTORY
 
 ---
+- 2017-2-11 Version 5.3.3
+  - modify the description of PAPI, OTF branches in CMakeLists.txt
+
+---
 - 2017-2-5 Version 5.3.2
   - modify CMakeLists.txt for example
 

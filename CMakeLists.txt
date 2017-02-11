@@ -22,17 +22,17 @@
 #
 # -D INSTALL_DIR=install_directory
 #
-# -D with_example=(no|yes)
+# -D with_example={no|yes}
 #
-# -D enable_Fortran=(no|yes)
+# -D enable_Fortran={no|yes}
 #
-# -D with_MPI=(no|yes)
+# -D with_MPI={no|yes}
 #
-# -D enable_OPENMP=(no|yes)
+# -D enable_OPENMP={no|yes}
 #
-# -D with_PAPI=(no|yes|installed_directory)
+# -D with_PAPI={no|yes|installed_directory}
 #
-# -D with_OTF=(no|installed_directory)
+# -D with_OTF={no|installed_directory}
 #
 
 cmake_minimum_required(VERSION 2.8)
@@ -73,8 +73,8 @@ set (CMAKE_INSTALL_PREFIX "${INSTALL_DIR}")
 
 
 #######
-set(PROJECT_VERSION "5.3.2")
-set(LIB_REVISION "20170205_2300")
+set(PROJECT_VERSION "5.3.3")
+set(LIB_REVISION "2017021_1400")
 #######
 
 
@@ -133,7 +133,7 @@ message( STATUS "Example: "                        ${with_example})
 message(" ")
 
 if(CMAKE_CXX_COMPILER MATCHES ".*FCCpx$")
-elseif()
+else()
   if(with_MPI)
     include(FindMPI)
 
@@ -187,8 +187,10 @@ add_definitions(-DHAVE_CONFIG_H)
 if(with_PAPI STREQUAL "no")
 elseif(with_PAPI STREQUAL "yes")
   add_definitions(-DUSE_PAPI)
+  set(OPT_PAPI "ON")
 else()
   add_definitions(-DUSE_PAPI)
+  set(OPT_PAPI "ON")
   set(PAPI_DIR "${with_PAPI}")
 endif()
 
@@ -200,6 +202,7 @@ endif()
 if(with_OTF STREQUAL "no")
 else()
   add_definitions(-DUSE_OTF)
+  set(OPT_OTF "ON")
 endif()
 
 
@@ -227,13 +230,11 @@ CHECK_INCLUDE_FILES(unistd.h HAVE_UNISTD_H)
 add_subdirectory(src)
 add_subdirectory(doc)
 
-if(with_PAPI STREQUAL "no")
-else()
+if(OPT_PAPI)
   add_subdirectory(src_papi_ext)
 endif()
 
-if(with_OTF STREQUAL "no")
-else()
+if(OPT_OTF)
   add_subdirectory(src_otf_ext)
 endif()
 
