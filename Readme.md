@@ -99,15 +99,29 @@ $ cmake -DINSTALL_DIR=${PM_HOME}/PMlib -Denable_OPENMP=yes -Dwith_MPI=no -Denabl
 
 
 ### FUJITSU compiler / FX10 on login nodes (Cross compilation)
-  ~~~
-$ cmake -DINSTALL_DIR=${PM_HOME}/PMlib -DCMAKE_TOOLCHAIN_FILE=../cmake/Toolchain_fx10.cmake -Denable_OPENMP=yes -Dwith_MPI=no -Denable_Fortran=yes -Dwith_example=no -Dwith_PAPI=yes -Dwith_OTF=no ..
+~~~
+$ cmake -DINSTALL_DIR=${INST_DIR}/PMlib \
+            -DCMAKE_TOOLCHAIN_FILE=../cmake/Toolchain_fx10.cmake \
+            -Denable_OPENMP=yes \
+            -Dwith_MPI=yes \
+            -Denable_Fortran=no \
+            -Dwith_example=no \
+            -Dwith_PAPI=no \
+            -Dwith_OTF=no ..
 ~~~
 
 
 ### FUJITSU compiler / K computer on login nodes (Cross compilation)
 
 ~~~
-$ cmake -DINSTALL_DIR=${PM_HOME}/PMlib -DCMAKE_TOOLCHAIN_FILE=../cmake/Toolchain_K.cmake -Denable_OPENMP=yes -Dwith_MPI=no -Denable_Fortran=yes -Dwith_example=no -Dwith_PAPI=yes -Dwith_OTF=no ..
+$ cmake -DINSTALL_DIR=${INST_DIR}/PMlib \
+            -DCMAKE_TOOLCHAIN_FILE=../cmake/Toolchain_K.cmake \
+            -Denable_OPENMP=yes \
+            -Dwith_MPI=yes \
+            -Denable_Fortran=no \
+            -Dwith_example=no \
+            -Dwith_PAPI=no \
+            -Dwith_OTF=no ..
 ~~~
 
 
