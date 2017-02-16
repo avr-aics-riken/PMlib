@@ -353,6 +353,11 @@ namespace pm_lib {
 	tval = __gettod()*1.0e-6;
 	return (tval);
 
+#elif defined (__APPLE__)
+  struct timeval tv;
+  gettimeofday(&tv, 0);
+  return (double)tv.tv_sec + (double)tv.tv_usec * 1.0e-6;
+
 #elif defined(__x86_64__)					// Intel Xeon
 
     #if defined (__INTEL_COMPILER) || defined(__gnu_linux__)
@@ -363,7 +368,7 @@ namespace pm_lib {
 	tsc = ( (unsigned long long)lo)|( ((unsigned long long)hi)<<32 );
 	return ((double)tsc * second_per_cycle);
 
-    #else			// MacOSX ("__APPLE__") and other linux/unix
+    #else			// other linux/unix
     struct timeval tv;
     gettimeofday(&tv, 0);
     return (double)tv.tv_sec + (double)tv.tv_usec * 1.0e-6;
@@ -379,7 +384,29 @@ namespace pm_lib {
   void PerfWatch::read_cpu_clock_freq()
   // read_cpu_clock_freq() reads the cpu freqency from  /proc/cpuinfo, etc..
   {
-#if defined(__x86_64__)					// Intel Xeon
+#if defined (__APPLE__)
+/*
+  cpu_clock_freq=0.0;
+  second_per_cycle=0.0;
+
+  FILE *fp;
+  char buf[256];
+
+  if ((fp = popen("sysctl -n machdep.cpu.brand_string", "r")) == NULL) {
+    fprintf(stderr, "Failure popen\n");
+    exit(-1);
+  }
+
+  // 実行結果を受けとる
+  while (fgets(buf, sizeof(buf), fp) != NULL) {
+    printf("%s", buf);
+  }
+  pclose(fp);
+
+  // buf >> "Intel(R) Core(TM) i7-6567U CPU @ 3.30GHz"
+  */
+
+#elif defined(__x86_64__)					// Intel Xeon
     #if defined (__INTEL_COMPILER) || defined(__gnu_linux__)
     cpu_clock_freq=0.0;
     second_per_cycle=0.0;

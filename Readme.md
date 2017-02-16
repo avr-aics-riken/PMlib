@@ -94,7 +94,7 @@ The default compiler options are described in `cmake/CompilerOptionSelector.cmak
 ### INTEL/GNU compiler
 
 ~~~
-$ cmake -DINSTALL_DIR=${PM_HOME}/PMlib -Denable_OPENMP=yes -Dwith_MPI=no -Denable_Fortran=yes -Dwith_example=no -Dwith_PAPI=no -Dwith_OTF=no  ..
+$ cmake -DINSTALL_DIR=${PM_HOME}/PMlib -Denable_OPENMP=yes -Dwith_MPI=no -Denable_Fortran=yes -Dwith_example=no -Dwith_PAPI=no -Dwith_OTF=no ..
 ~~~
 
 

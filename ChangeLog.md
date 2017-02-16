@@ -3,6 +3,10 @@
 ## REVISION HISTORY
 
 ---
+- 2017-2-17 Version 5.4.0
+  - modify how to determine an architecture in PerfWatch.cpp, see __APPLE__
+
+---
 - 2017-2-16 Version 5.3.5
   - enable PM_VERSION
 
