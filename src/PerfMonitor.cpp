@@ -250,7 +250,7 @@ namespace pm_lib {
    */
   std::string PerfMonitor::getVersionInfo(void)
   {
-      std::string str(PM_VERSION_NO);
+      std::string str(PM_VERSION);
       return str;
   }
 
@@ -806,7 +806,7 @@ namespace pm_lib {
 	// PMlibインストール時のサポートプログラムモデルについての情報を出力する
     fprintf(fp, "\n# PMlib Basic Report -------------------------------------------------------\n");
     fprintf(fp, "\n");
-    fprintf(fp, "\tTiming Statistics Report from PMlib version %s\n", PM_VERSION_NO);
+    fprintf(fp, "\tTiming Statistics Report from PMlib version %s\n", PM_VERSION);
     fprintf(fp, "\tLinked PMlib supports: ");
 #ifdef _PM_WITHOUT_MPI_
     fprintf(fp, "no-MPI");

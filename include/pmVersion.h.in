@@ -23,7 +23,6 @@
  * @brief  PMlib version header
  */
 
-#define PM_VERSION_NO  "@PACKAGE_VERSION@"
-#define PM_REVISION    "@PM_REVISION@"
+#define PM_VERSION  "@PROJECT_VERSION@"
 
 #endif /* _PMLIB_VERSION_H_ */

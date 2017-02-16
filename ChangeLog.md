@@ -3,6 +3,10 @@
 ## REVISION HISTORY
 
 ---
+- 2017-2-16 Version 5.3.5
+  - enable PM_VERSION
+
+---
 - 2017-2-12 Version 5.3.4
   - modify Readme.md
 

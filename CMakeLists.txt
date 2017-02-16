@@ -73,8 +73,8 @@ set (CMAKE_INSTALL_PREFIX "${INSTALL_DIR}")
 
 
 #######
-set(PROJECT_VERSION "5.3.4")
-set(LIB_REVISION "20170212_2200")
+set(PROJECT_VERSION "5.3.5")
+set(LIB_REVISION "20170216_2200")
 #######
 
 
@@ -248,7 +248,7 @@ endif()
 #######
 
 configure_file( config.h.in.cmake config.h )
-configure_file( include/pmVersion.h.in ${PROJECT_BINARY_DIR}/include/pmVersion.h)
+configure_file( include/pmVersion.h.in ${PROJECT_BINARY_DIR}/include/pmVersion.h @ONLY)
 
 
 #######
