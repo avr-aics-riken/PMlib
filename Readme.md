@@ -114,7 +114,7 @@ $ cmake -DINSTALL_DIR=${PM_HOME}/PMlib \
 ### FUJITSU compiler / K computer on login nodes (Cross compilation)
 
 ~~~
-$ cmake -DINSTALL_DIR=${PMT_HOME}/PMlib \
+$ cmake -DINSTALL_DIR=${PM_HOME}/PMlib \
             -DCMAKE_TOOLCHAIN_FILE=../cmake/Toolchain_K.cmake \
             -Denable_OPENMP=no \
             -Dwith_MPI=yes \
