@@ -24,6 +24,7 @@ message(STATUS "with_MPI            = " ${with_MPI})
 #message(STATUS "IMPLICIT_LINK_LIBS = " ${CMAKE_CXX_IMPLICIT_LINK_LIBRARIES})
 #message(STATUS "CFLAGS              = " ${CMAKE_C_FLAGS})
 #message(STATUS "CXXFLAGS            = " ${CMAKE_CXX_FLAGS})
+message(STATUS "FortranFLAGS         = " ${CMAKE_Fortran_FLAGS})
 
 include_directories(${PROJECT_BINARY_DIR}/include ${PROJECT_SOURCE_DIR}/include)
 

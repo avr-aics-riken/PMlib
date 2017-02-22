@@ -76,7 +76,7 @@ $ sudo make install
 
 `-D enable_OPENMP=` {no | yes}
 
-> Enable OpenMP directives.
+> Enable OpenMP directives. This option is valid if only PAPI interface is enabled.
 
 `-D with_PAPI=` {no | yes | installed_directory}
 
@@ -94,15 +94,15 @@ The default compiler options are described in `cmake/CompilerOptionSelector.cmak
 ### INTEL/GNU compiler
 
 ~~~
-$ cmake -DINSTALL_DIR=${PM_HOME}/PMlib -Denable_OPENMP=yes -Dwith_MPI=no -Denable_Fortran=yes -Dwith_example=no -Dwith_PAPI=no -Dwith_OTF=no ..
+$ cmake -DINSTALL_DIR=${PM_HOME}/PMlib -Denable_OPENMP=no -Dwith_MPI=no -Denable_Fortran=yes -Dwith_example=no -Dwith_PAPI=no -Dwith_OTF=no ..
 ~~~
 
 
 ### FUJITSU compiler / FX10 on login nodes (Cross compilation)
 ~~~
-$ cmake -DINSTALL_DIR=${INST_DIR}/PMlib \
+$ cmake -DINSTALL_DIR=${PM_HOME}/PMlib \
             -DCMAKE_TOOLCHAIN_FILE=../cmake/Toolchain_fx10.cmake \
-            -Denable_OPENMP=yes \
+            -Denable_OPENMP=no \
             -Dwith_MPI=yes \
             -Denable_Fortran=no \
             -Dwith_example=no \
@@ -114,9 +114,9 @@ $ cmake -DINSTALL_DIR=${INST_DIR}/PMlib \
 ### FUJITSU compiler / K computer on login nodes (Cross compilation)
 
 ~~~
-$ cmake -DINSTALL_DIR=${INST_DIR}/PMlib \
+$ cmake -DINSTALL_DIR=${PMT_HOME}/PMlib \
             -DCMAKE_TOOLCHAIN_FILE=../cmake/Toolchain_K.cmake \
-            -Denable_OPENMP=yes \
+            -Denable_OPENMP=no \
             -Dwith_MPI=yes \
             -Denable_Fortran=no \
             -Dwith_example=no \

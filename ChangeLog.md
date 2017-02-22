@@ -3,8 +3,22 @@
 ## REVISION HISTORY
 
 ---
+- 2017-02-22 Version 5.5.0
+  - modify Toolchain_K.cmake so that user can build with cmake version 2.6 on K
+  - Tested
+
+  |Compiler|OMP|Serial|PAPI|OTF|Ex.|MPI |PAPI|OTF|Ex.|
+  |:--|:--:|:--:|:--:|:--:|:--:|:--:|:--:|:--:|:--:|
+  |Intel 17.0.1 |ok|ok|||100%|ok|||100%|
+  |Intel+impi   ||||||||||
+  |GNU 6.2.0    |ok|ok|||100%|ok|||100%|
+  |K            ||ok||||ok||||
+  |fx10         |ok|ok||||ok||||
+  |fx100        ||||||||||
+
+---
 - 2017-2-17 Version 5.4.0
-  - modify how to determine an architecture in PerfWatch.cpp, see __APPLE__
+  - modify how to determine an architecture in PerfWatch.cpp, see `__APPLE__`
 
 ---
 - 2017-2-16 Version 5.3.5
@@ -29,17 +43,6 @@
 ---
 - 2017-1-30 Version 5.3.0
   - cmake branch in github
-  - Tested
-
-  |Compiler|OMP|Serial|PAPI|OTF|Ex.|MPI |PAPI|OTF|Ex.|
-  |:--|:--:|:--:|:--:|:--:|:--:|:--:|:--:|:--:|:--:|
-  |Intel 17.0.1 |ok|ok|||100%|ok|||100%|
-  |Intel+impi   ||||||||||
-  |GNU 6.2.0    |ok|ok|||100%|ok|||100%|
-  |K           ||||||||||
-  |fx10         |ok|ok||||ok||||
-  |fx100        ||||||||||
-
 
 ---
 - 2016-11-03 Version 5.2.1

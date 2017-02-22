@@ -35,7 +35,7 @@
 # -D with_OTF={no|installed_directory}
 #
 
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 2.6)
 
 
 #######
@@ -73,8 +73,8 @@ set (CMAKE_INSTALL_PREFIX "${INSTALL_DIR}")
 
 
 #######
-set(PROJECT_VERSION "5.4.0")
-set(LIB_REVISION "20170217_0200")
+set(PROJECT_VERSION "5.5.0")
+set(LIB_REVISION "20170222_1700")
 #######
 
 
@@ -184,7 +184,7 @@ add_definitions(-DHAVE_CONFIG_H)
 # PAPI
 #######
 
-if(with_PAPI STREQUAL "no")
+if(NOT with_PAPI)
 elseif(with_PAPI STREQUAL "yes")
   add_definitions(-DUSE_PAPI)
   set(OPT_PAPI "ON")
@@ -199,7 +199,7 @@ endif()
 # OTF
 #######
 
-if(with_OTF STREQUAL "no")
+if(NOT with_OTF)
 else()
   add_definitions(-DUSE_OTF)
   set(OPT_OTF "ON")
