@@ -3,12 +3,8 @@
 ## REVISION HISTORY
 
 ---
-- 2017-02-23 Version 5.5.2
-  - clean compiler option for Fujitsu compiler
-
----
-- 2017-02-23 Version 5.5.1
-  - fix mpifrtpx in Toolchain_K.cmake
+- 2017-02-23 Version 5.5.3
+  - bug fix: example/CMakeLists.txt to correct PAPI directory.
   - Tested
 
   |Compiler|OMP|Serial|PAPI|OTF|Ex.|MPI |PAPI|OTF|Ex.|
@@ -16,9 +12,17 @@
   |Intel 17.0.1 |ok|ok|||100%|ok|||100%|
   |Intel+impi   ||||||||||
   |GNU 6.2.0    |ok|ok|||100%|ok|||100%|
-  |K            ||ok||||ok||||
+  |K            ||ok||||ok|ok|||
   |fx10         |ok|ok||||ok||||
   |fx100        ||||||||||
+
+---
+- 2017-02-23 Version 5.5.2
+  - cleanup compiler option for Fujitsu compiler
+
+---
+- 2017-02-23 Version 5.5.1
+  - fix mpifrtpx in Toolchain_K.cmake
 
 ---
 - 2017-02-22 Version 5.5.0

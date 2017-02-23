@@ -31,11 +31,11 @@ include_directories(${PROJECT_BINARY_DIR}/include ${PROJECT_SOURCE_DIR}/include)
 link_directories(${PROJECT_BINARY_DIR}/src)
 
 if(OPT_PAPI)
-  link_directories(${PROJECT_BINARY_DIR}/src_otf_ext)
+  link_directories(${PROJECT_BINARY_DIR}/src_papi_ext)
 endif()
 
 if(OPT_OTF)
-  link_directories(${PROJECT_BINARY_DIR}/src_papi_ext)
+  link_directories(${PROJECT_BINARY_DIR}/src_otf_ext)
 endif()
 
 
