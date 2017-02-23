@@ -36,7 +36,7 @@ if(with_MPI)
   CMAKE_FORCE_C_COMPILER(mpifccpx GNU)
   CMAKE_FORCE_CXX_COMPILER(mpiFCCpx GNU)
   if (build_rule STREQUAL "A")
-    CMAKE_FORCE_Fortran_COMPILER(frtpx GNU)
+    CMAKE_FORCE_Fortran_COMPILER(mpifrtpx GNU)
   else()
     set(CMAKE_Fortran_COMPILER mpifrtpx)
     set(CMAKE_Fortran_COMPILER_WORKS true)
@@ -60,4 +60,3 @@ set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
 set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
 
 set(TARGET_ARCH "K")
-

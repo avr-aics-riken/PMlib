@@ -18,7 +18,6 @@
 ##
 
 macro (AddOptimizeOption)
-#  if(CMAKE_CXX_COMPILER MATCHES ".*FCCpx$")
 if (TARGET_ARCH STREQUAL "FX10")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Kfast, -Nrt_notune -Nfjcex -w -Xg")
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Kfast, -Nrt_notune -w -Xg")

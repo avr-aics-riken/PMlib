@@ -3,8 +3,8 @@
 ## REVISION HISTORY
 
 ---
-- 2017-02-22 Version 5.5.0
-  - modify Toolchain_K.cmake so that user can build with cmake version 2.6 on K
+- 2017-02-23 Version 5.5.1
+  - fix mpifrtpx in Toolchain_K.cmake
   - Tested
 
   |Compiler|OMP|Serial|PAPI|OTF|Ex.|MPI |PAPI|OTF|Ex.|
@@ -15,6 +15,10 @@
   |K            ||ok||||ok||||
   |fx10         |ok|ok||||ok||||
   |fx100        ||||||||||
+
+---
+- 2017-02-22 Version 5.5.0
+  - modify Toolchain_K.cmake so that user can build with cmake version 2.6 on K
 
 ---
 - 2017-2-17 Version 5.4.0
