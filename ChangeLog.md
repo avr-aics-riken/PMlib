@@ -3,18 +3,23 @@
 ## REVISION HISTORY
 
 ---
-- 2017-02-23 Version 5.5.3
-  - bug fix: example/CMakeLists.txt to correct PAPI directory.
-  - Tested
+- 2017-03-04 Version 5.5.4
+  - In case of Intel compiler, change linker from CXX to Fortran for example4
+  - Tested.
 
   |Compiler|OMP|Serial|PAPI|OTF|Ex.|MPI |PAPI|OTF|Ex.|
   |:--|:--:|:--:|:--:|:--:|:--:|:--:|:--:|:--:|:--:|
   |Intel 17.0.1 |ok|ok|||100%|ok|||100%|
-  |Intel+impi   ||||||||||
+  |Intel+impi   ||ok|||100%|ok|||0%|
   |GNU 6.2.0    |ok|ok|||100%|ok|||100%|
   |K            ||ok||||ok|ok|||
   |fx10         |ok|ok||||ok||||
   |fx100        ||||||||||
+  
+---
+- 2017-02-23 Version 5.5.3
+  - bug fix: example/CMakeLists.txt to correct PAPI directory.
+
 
 ---
 - 2017-02-23 Version 5.5.2

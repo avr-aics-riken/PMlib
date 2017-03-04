@@ -136,8 +136,11 @@ endif()
 
 if(enable_Fortran)
   add_executable(example4 ./test4/f_main.f90)
-  # CXXでリンク
+
+  if(CMAKE_CXX_COMPILER_ID STREQUAL "Intel")
+    else()
   set_target_properties(example4 PROPERTIES LINKER_LANGUAGE CXX)
+  endif()
 
   if(with_MPI)
     target_link_libraries(example4 -lPMmpi)

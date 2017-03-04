@@ -97,6 +97,11 @@ The default compiler options are described in `cmake/CompilerOptionSelector.cmak
 $ cmake -DINSTALL_DIR=${PM_HOME}/PMlib -Denable_OPENMP=no -Dwith_MPI=no -Denable_Fortran=yes -Dwith_example=no -Dwith_PAPI=no -Dwith_OTF=no ..
 ~~~
 
+#### NOTE
+In case of some Intel compiler environment, please specify environemnt variables
+`export CC=icc CXX=icpc F90=ifort FC=ifort`
+before compiling.
+
 
 ### FUJITSU compiler / FX10 on login nodes (Cross compilation)
 ~~~
