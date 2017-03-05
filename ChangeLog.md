@@ -3,6 +3,11 @@
 ## REVISION HISTORY
 
 ---
+- 2017-03-05 Version 5.5.5
+  - add Toolchain_fx100.cmake
+
+
+---
 - 2017-03-04 Version 5.5.4
   - In case of Intel compiler, change linker from CXX to Fortran for example4
   - Tested.
@@ -15,7 +20,7 @@
   |K            ||ok||||ok|ok|||
   |fx10         |ok|ok||||ok||||
   |fx100        ||||||||||
-  
+
 ---
 - 2017-02-23 Version 5.5.3
   - bug fix: example/CMakeLists.txt to correct PAPI directory.

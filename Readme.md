@@ -129,6 +129,18 @@ $ cmake -DINSTALL_DIR=${PM_HOME}/PMlib \
             -Dwith_OTF=no ..
 ~~~
 
+### FUJITSU compiler / FX100 on login nodes (Cross compilation)
+
+~~~
+$ cmake -DINSTALL_DIR=${PM_HOME}/PMlib \
+            -DCMAKE_TOOLCHAIN_FILE=../cmake/Toolchain_fx100.cmake \
+            -Denable_OPENMP=no \
+            -Dwith_MPI=yes \
+            -Denable_Fortran=no \
+            -Dwith_example=no \
+            -Dwith_PAPI=no \
+            -Dwith_OTF=no ..
+~~~
 
 ##### Note
 - Before building, execute following command for clean. `$ make distclean`
