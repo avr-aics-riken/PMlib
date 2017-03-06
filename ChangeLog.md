@@ -3,13 +3,8 @@
 ## REVISION HISTORY
 
 ---
-- 2017-03-05 Version 5.5.5
-  - add Toolchain_fx100.cmake
-
-
----
-- 2017-03-04 Version 5.5.4
-  - In case of Intel compiler, change linker from CXX to Fortran for example4
+- 2017-03-06 Version 5.5.6
+  - move `#if defined (__sparcv9)` in PerfWatch.cpp from L.351 to L.37 (for fx100)
   - Tested.
 
   |Compiler|OMP|Serial|PAPI|OTF|Ex.|MPI |PAPI|OTF|Ex.|
@@ -19,7 +14,18 @@
   |GNU 6.2.0    |ok|ok|||100%|ok|||100%|
   |K            ||ok||||ok|ok|||
   |fx10         |ok|ok||||ok||||
-  |fx100        ||||||||||
+  |fx100        |ok|ok||||ok||||
+
+
+---
+- 2017-03-05 Version 5.5.5
+  - add Toolchain_fx100.cmake
+
+
+---
+- 2017-03-04 Version 5.5.4
+  - In case of Intel compiler, change linker from CXX to Fortran for example4
+
 
 ---
 - 2017-02-23 Version 5.5.3

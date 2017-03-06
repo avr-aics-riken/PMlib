@@ -34,6 +34,10 @@
 #include <cstdlib>
 #include <cstdio>
 
+#if defined (__sparcv9)						// K computer and FX100
+	#include <fjcex.h>
+#endif
+
 extern void sortPapiCounterList ();
 extern void outputPapiCounterHeader (FILE*, std::string);
 extern void outputPapiCounterList (FILE*);
@@ -348,7 +352,6 @@ namespace pm_lib {
   {
 
 #if defined (__sparcv9)						// K computer and FX100
-	#include <fjcex.h>
 	register double tval;
 	tval = __gettod()*1.0e-6;
 	return (tval);
