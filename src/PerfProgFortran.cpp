@@ -1,3 +1,20 @@
+/*
+###################################################################################
+#
+# PMlib - Performance Monitor Library
+#
+# Copyright (c) 2010-2011 VCAD System Research Program, RIKEN.
+# All rights reserved.
+#
+# Copyright (c) 2012-2017 Advanced Institute for Computational Science(AICS), RIKEN.
+# All rights reserved.
+#
+# Copyright (c) 2016-2017 Research Institute for Information Technology(RIIT), Kyushu University.
+# All rights reserved.
+#
+###################################################################################
+ */
+
 #ifdef _PM_WITHOUT_MPI_
 #include "mpi_stubs.h"
 #else
@@ -442,4 +459,3 @@ void f_pm_posttrace_ (void)
 
 // PMlib Fortran インタフェイス終了
 } // closing extern "C"
-

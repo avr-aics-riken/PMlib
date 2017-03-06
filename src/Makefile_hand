@@ -1,14 +1,17 @@
-##############################################################################
+###################################################################################
 #
-# PMlib - Performance Monitor library
+# PMlib - Performance Monitor Library
 #
 # Copyright (c) 2010-2011 VCAD System Research Program, RIKEN.
 # All rights reserved.
 #
-# Copyright (c) 2012-2015 Advanced Institute for Computational Science, RIKEN.
+# Copyright (c) 2012-2017 Advanced Institute for Computational Science(AICS), RIKEN.
 # All rights reserved.
-# 
-##############################################################################
+#
+# Copyright (c) 2016-2017 Research Institute for Information Technology(RIIT), Kyushu University.
+# All rights reserved.
+#
+###################################################################################
 
 
 PMLIB  = libPM.a
@@ -21,7 +24,7 @@ OBJS = $(SRCS:.cpp=.o)
 
 
 $(PMLIB): $(OBJS)
-	$(AR) $(PMLIB) $(OBJS) 
+	$(AR) $(PMLIB) $(OBJS)
 	$(RANLIB) $(PMLIB)
 	-mkdir -p $(PM_DIR)/lib
 	mv $(PMLIB) $(PM_DIR)/lib

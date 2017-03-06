@@ -1,20 +1,24 @@
-/* ##################################################################
- *
- * PMlib - Performance Monitor library
- *
- * Copyright (c) 2010-2011 VCAD System Research Program, RIKEN.
- * All rights reserved.
- *
- * Copyright (c) 2012-2015 Advanced Institute for Computational Science, RIKEN.
- * All rights reserved.
- *
- * ###################################################################
+/*
+###################################################################################
+#
+# PMlib - Performance Monitor Library
+#
+# Copyright (c) 2010-2011 VCAD System Research Program, RIKEN.
+# All rights reserved.
+#
+# Copyright (c) 2012-2017 Advanced Institute for Computational Science(AICS), RIKEN.
+# All rights reserved.
+#
+# Copyright (c) 2016-2017 Research Institute for Information Technology(RIIT), Kyushu University.
+# All rights reserved.
+#
+###################################################################################
  */
 
 //@file   PerfCpuType.cpp
 //@brief  PMlib - PAPI interface class
 
-// if USE_PAPI is defined, compile this file with openmp option 
+// if USE_PAPI is defined, compile this file with openmp option
 
 #ifdef _PM_WITHOUT_MPI_
 #include "mpi_stubs.h"
@@ -206,12 +210,12 @@ void PerfWatch::createPapiCounterList ()
 			On FX100, PAPI_FP_OPS is not supported. Fujitsu says f.p. ops can be
 			calculated as the sum of 6 instruction values as below.
 			PAPI_FP_OPS = N0 + 2*N1 + 2*N2 + 4*N3 + 4*N4 + 8*N5
-				N0: 0x40000010   FLOATING_INSTRUCTIONS  
-				N1: 0x40000011   FMA_INSTRUCTIONS  
-				N2: 0x40000008   SIMD_FLOATING_INSTRUCTIONS  
-				N3: 0x40000009   SIMD_FMA_INSTRUCTIONS  
-				N4: 0x4000007d   4SIMD_FLOATING_INSTRUCTIONS  
-				N5: 0x4000007e   4SIMD_FMA_INSTRUCTIONS  
+				N0: 0x40000010   FLOATING_INSTRUCTIONS
+				N1: 0x40000011   FMA_INSTRUCTIONS
+				N2: 0x40000008   SIMD_FLOATING_INSTRUCTIONS
+				N3: 0x40000009   SIMD_FMA_INSTRUCTIONS
+				N4: 0x4000007d   4SIMD_FLOATING_INSTRUCTIONS
+				N5: 0x4000007e   4SIMD_FMA_INSTRUCTIONS
 			However, counting SIMD and 4SIMD in one run causes an error.
 			So, a very rough approximation is done baed on XSIMD event count...
 		*/
@@ -302,7 +306,7 @@ void PerfWatch::createPapiCounterList ()
 
 	}
 
-// if (CACHE) 
+// if (CACHE)
 	if ( s_chooser.find( "CACHE" ) != string::npos ) {
 		hwpc_group.index[I_cache] = ip;
 		hwpc_group.number[I_cache] = 0;
@@ -311,7 +315,7 @@ void PerfWatch::createPapiCounterList ()
 		papi.s_name[ip] = "L1_TCM"; papi.events[ip] = PAPI_L1_TCM; ip++;
 		papi.s_name[ip] = "L2_TCM"; papi.events[ip] = PAPI_L2_TCM; ip++;
 
-		if (hwpc_group.platform == "Xeon" ) { // Intel Xeon E5 specific 
+		if (hwpc_group.platform == "Xeon" ) { // Intel Xeon E5 specific
 			hwpc_group.number[I_cache] += 2;
 			papi.s_name[ip] = "L3_TCM"; papi.events[ip] = PAPI_L3_TCM; ip++;
 			//	following events are native events
@@ -329,7 +333,7 @@ void PerfWatch::createPapiCounterList ()
 		papi.s_name[ip] = "TOT_CYC"; papi.events[ip] = PAPI_TOT_CYC; ip++;
 		papi.s_name[ip] = "TOT_INS"; papi.events[ip] = PAPI_TOT_INS; ip++;
 
-		if (hwpc_group.platform == "SPARC64" ) { // Kei/FX10 Sparc64 specific 
+		if (hwpc_group.platform == "SPARC64" ) { // Kei/FX10 Sparc64 specific
 			hwpc_group.number[I_cycle] += 2;
 			papi.s_name[ip] = "LD_INS"; papi.events[ip] = PAPI_LD_INS; ip++;
 			papi.s_name[ip] = "SR_INS"; papi.events[ip] = PAPI_SR_INS; ip++;
@@ -357,7 +361,7 @@ void PerfWatch::createPapiCounterList ()
 		}
 		fprintf(stderr, " papi.num_events=%d, &papi=%lu \n", papi.num_events, &papi.num_events);
 		for (int i=0; i<papi.num_events; i++) {
-		fprintf(stderr, " i=%d : %s : events[i]=%u \n", 
+		fprintf(stderr, " i=%d : %s : events[i]=%u \n",
 					i, papi.s_name[i].c_str(), papi.events[i]);
 		}
 		fprintf (stderr, " <createPapiCounterList> ends\n" );
@@ -595,19 +599,19 @@ void PerfWatch::outputPapiCounterLegend (FILE* fp)
 
 	fprintf(fp, "\tHWPC events legend: \n");
 	fprintf(fp, "\t\tFP_OPS: floating point operations\n");
-	if (hwpc_group.platform == "Xeon" ) { // Intel Xeon E5 specific 
+	if (hwpc_group.platform == "Xeon" ) { // Intel Xeon E5 specific
 	fprintf(fp, "\t\tSP_OPS: single precision floating point operations\n");
 	fprintf(fp, "\t\tDP_OPS: double precision floating point operations\n");
 	fprintf(fp, "\t\tVEC_SP: single precision vector floating point operations\n");
 	fprintf(fp, "\t\tVEC_DP: double precision vector floating point operations\n");
 	}
-	if (hwpc_group.platform == "SPARC64" ) { // Kei/FX10 Sparc64 specific 
+	if (hwpc_group.platform == "SPARC64" ) { // Kei/FX10 Sparc64 specific
 	fprintf(fp, "\t\tVEC_INS: vector instructions\n");
 	fprintf(fp, "\t\tFMA_INS: Fused Multiply-and-Add instructions\n");
 	}
 	fprintf(fp, "\t\tLD_INS: memory load instructions\n");
 	fprintf(fp, "\t\tSR_INS: memory store instructions\n");
-	if (hwpc_group.platform == "Xeon" ) { // Intel Xeon E5 specific 
+	if (hwpc_group.platform == "Xeon" ) { // Intel Xeon E5 specific
 	fprintf(fp, "\t\tL1_HIT: level 1 cache hit\n");
 	fprintf(fp, "\t\tL2_HIT: level 2 cache hit\n");
 	fprintf(fp, "\t\tL3_HIT: level 3 cache hit\n");
@@ -615,18 +619,18 @@ void PerfWatch::outputPapiCounterLegend (FILE* fp)
 	}
 
 	fprintf(fp, "\t\tL1_TCM: level 1 cache miss\n");
-	if (hwpc_group.platform == "Xeon" ) { // Intel Xeon E5 specific 
+	if (hwpc_group.platform == "Xeon" ) { // Intel Xeon E5 specific
 	fprintf(fp, "\t\tL2_TCM: level 2 cache miss\n");
 	fprintf(fp, "\t\tL3_TCM: level 3 cache miss by demand\n");
 	fprintf(fp, "\t\tOFFCORE: demand and prefetch request cache miss \n");
 	}
-	if (hwpc_group.platform == "SPARC64" ) { // Kei/FX10 Sparc64 specific 
+	if (hwpc_group.platform == "SPARC64" ) { // Kei/FX10 Sparc64 specific
 	fprintf(fp, "\t\tL2_TCM: level 2 cache miss (by demand and by prefetch)\n");
 	fprintf(fp, "\t\tL2_WB_DM: level 2 cache miss by demand with writeback request\n");
 	fprintf(fp, "\t\tL2_WB_PF: level 2 cache miss by prefetch with writeback request\n");
 	}
 	fprintf(fp, "\t\tTOT_CYC: total cycles\n");
-	if (hwpc_group.platform == "SPARC64" ) { // Kei/FX10 Sparc64 specific 
+	if (hwpc_group.platform == "SPARC64" ) { // Kei/FX10 Sparc64 specific
 	fprintf(fp, "\t\tMEM_SCY: Cycles Stalled Waiting for memory accesses\n");
 	fprintf(fp, "\t\tSTL_ICY: Cycles with no instruction issue\n");
 	}
@@ -646,4 +650,3 @@ void PerfWatch::outputPapiCounterLegend (FILE* fp)
 
 
 } /* namespace pm_lib */
-

@@ -1,15 +1,18 @@
-
-/* ##################################################################
- *
- * PMlib - Performance Monitor library
- *
- * Copyright (c) 2010-2011 VCAD System Research Program, RIKEN.
- * All rights reserved.
- *
- * Copyright (c) 2012-2015 Advanced Institute for Computational Science, RIKEN.
- * All rights reserved.
- *
- * ###################################################################
+/*
+###################################################################################
+#
+# PMlib - Performance Monitor Library
+#
+# Copyright (c) 2010-2011 VCAD System Research Program, RIKEN.
+# All rights reserved.
+#
+# Copyright (c) 2012-2017 Advanced Institute for Computational Science(AICS), RIKEN.
+# All rights reserved.
+#
+# Copyright (c) 2016-2017 Research Institute for Information Technology(RIIT), Kyushu University.
+# All rights reserved.
+#
+###################################################################################
  */
 
 //! @file   PerfWatch.cpp
@@ -31,6 +34,10 @@
 #include <cstdlib>
 #include <cstdio>
 
+#if defined (__sparcv9)						// K computer and FX100
+	#include <fjcex.h>
+#endif
+
 extern void sortPapiCounterList ();
 extern void outputPapiCounterHeader (FILE*, std::string);
 extern void outputPapiCounterList (FILE*);
@@ -44,9 +51,9 @@ namespace pm_lib {
   struct hwpc_group_chooser hwpc_group;
   double cpu_clock_freq;        /// processor clock frequency, i.e. Hz
   double second_per_cycle;  /// real time to take each cycle
-  
+
   bool PerfWatch::ExclusiveStarted = false;
-  
+
 
   /// 単位変換.
   ///
@@ -134,7 +141,7 @@ namespace pm_lib {
     return ret;
   }
 
-  
+
 
   /// HWPCによるイベントカウンターの測定値を PAPI APIで取得収集する
   ///
@@ -195,7 +202,7 @@ namespace pm_lib {
 #endif
   }
 
-  
+
   /// 測定結果情報をノード０に集約.
   ///
   void PerfWatch::gather()
@@ -206,10 +213,10 @@ namespace pm_lib {
 			m_label.c_str(), m_time, m_flop, m_count );
     }
 	#endif
-    
+
     int m_np;
     m_np = num_process;
-    
+
 	// The space is reserved only once as a fixed size array
 	if ( m_timeArray == NULL) m_timeArray  = new double[m_np];
 	if ( m_flopArray == NULL) m_flopArray  = new double[m_np];
@@ -219,7 +226,7 @@ namespace pm_lib {
 		num_process);
 		PM_Exit(0);
 	}
-    
+
     if ( m_np == 1 ) {
       m_timeArray[0] = m_time;
       m_flopArray[0] = m_flop;
@@ -233,7 +240,7 @@ namespace pm_lib {
     }
   }
 
-  
+
   /// Statistics among processes
   /// Translate in Japanese later on...
   /// 測定結果の平均値・標準偏差などの基礎的な統計計算
@@ -244,8 +251,8 @@ namespace pm_lib {
 
     if (my_rank == 0) {
       //	if (m_exclusive) {
-        
-        
+
+
         // 平均値
         m_time_av = 0.0;
         m_flop_av = 0.0;
@@ -255,7 +262,7 @@ namespace pm_lib {
         }
         m_time_av /= num_process;
         m_flop_av /= num_process;
-        
+
         // 標準偏差
         m_time_sd = 0.0;
         m_flop_sd = 0.0;
@@ -269,7 +276,7 @@ namespace pm_lib {
           m_time_sd = sqrt(m_time_sd / (num_process-1));
           m_flop_sd = sqrt(m_flop_sd / (num_process-1));
         }
-        
+
         // 通信の場合，各ノードの通信時間の最大値
         m_time_comm = 0.0;
         if (m_typeCalc == 0) {
@@ -277,16 +284,16 @@ namespace pm_lib {
           for (int i = 0; i < num_process; i++) {
             if (m_timeArray[i] > comm_max) comm_max = m_timeArray[i];
           }
-          m_time_comm = comm_max; 
+          m_time_comm = comm_max;
         }
       //	} // m_exclusive
     } // my_rank == 0
   }
-  
-  
+
+
   /// 計算量の選択を行う
   ///
-  /// @return  
+  /// @return
   ///   0: ユーザが引数で指定した通信量を採用する "Bytes/sec"
   ///   1: ユーザが引数で指定した計算量を採用する "Flops"
   ///   2: HWPC が自動的に測定する通信量を採用する	"Bytes/sec (HWPC)"
@@ -331,7 +338,7 @@ namespace pm_lib {
     return is_unit;
   }
 
-  
+
   /// 時刻を取得
   ///
   /// If available, call precise timer function
@@ -345,10 +352,14 @@ namespace pm_lib {
   {
 
 #if defined (__sparcv9)						// K computer and FX100
-	#include <fjcex.h>
 	register double tval;
 	tval = __gettod()*1.0e-6;
 	return (tval);
+
+#elif defined (__APPLE__)
+  struct timeval tv;
+  gettimeofday(&tv, 0);
+  return (double)tv.tv_sec + (double)tv.tv_usec * 1.0e-6;
 
 #elif defined(__x86_64__)					// Intel Xeon
 
@@ -360,7 +371,7 @@ namespace pm_lib {
 	tsc = ( (unsigned long long)lo)|( ((unsigned long long)hi)<<32 );
 	return ((double)tsc * second_per_cycle);
 
-    #else			// MacOSX ("__APPLE__") and other linux/unix
+    #else			// other linux/unix
     struct timeval tv;
     gettimeofday(&tv, 0);
     return (double)tv.tv_sec + (double)tv.tv_usec * 1.0e-6;
@@ -376,11 +387,33 @@ namespace pm_lib {
   void PerfWatch::read_cpu_clock_freq()
   // read_cpu_clock_freq() reads the cpu freqency from  /proc/cpuinfo, etc..
   {
-#if defined(__x86_64__)					// Intel Xeon
+#if defined (__APPLE__)
+/*
+  cpu_clock_freq=0.0;
+  second_per_cycle=0.0;
+
+  FILE *fp;
+  char buf[256];
+
+  if ((fp = popen("sysctl -n machdep.cpu.brand_string", "r")) == NULL) {
+    fprintf(stderr, "Failure popen\n");
+    exit(-1);
+  }
+
+  // 実行結果を受けとる
+  while (fgets(buf, sizeof(buf), fp) != NULL) {
+    printf("%s", buf);
+  }
+  pclose(fp);
+
+  // buf >> "Intel(R) Core(TM) i7-6567U CPU @ 3.30GHz"
+  */
+
+#elif defined(__x86_64__)					// Intel Xeon
     #if defined (__INTEL_COMPILER) || defined(__gnu_linux__)
     cpu_clock_freq=0.0;
     second_per_cycle=0.0;
-  
+
     FILE *fp;
     double value;
     char buffer[1024];
@@ -409,8 +442,8 @@ namespace pm_lib {
 #endif
     return;
   }
- 
-  
+
+
   /// MPIランク別測定結果を出力.
   ///
   ///   @param[in] fp 出力ファイルポインタ
@@ -420,16 +453,16 @@ namespace pm_lib {
 
   void PerfWatch::printDetailRanks(FILE* fp, double totalTime)
   {
-    
+
     int m_np;
     m_np = num_process;
-    
+
     double t_per_call, perf_rate;
     double tMax = 0.0;
     for (int i = 0; i < m_np; i++) {
       tMax = (m_timeArray[i] > tMax) ? m_timeArray[i] : tMax;
     }
-    
+
     std::string unit;
     int is_unit = statsSwitch();
     if (is_unit == 0) unit = "B/sec";	// 0: user set bandwidth
@@ -441,7 +474,7 @@ namespace pm_lib {
 
     unsigned long total_count = 0;
     for (int i = 0; i < m_np; i++) total_count += m_countArray[i];
-    
+
     if ( total_count > 0 && is_unit <= 4) {
       fprintf(fp, "Label  %s%s\n", m_exclusive ? "" : "*", m_label.c_str());
       // fprintf(fp, "Header ID  :     call   time[s] time[%%]  t_wait[s]  t[s]/call   flop|msg    speed              \n");
@@ -450,7 +483,7 @@ namespace pm_lib {
 		t_per_call = (m_countArray[i]==0) ? 0.0: m_timeArray[i]/m_countArray[i];
 		perf_rate = (m_countArray[i]==0) ? 0.0 : m_flopArray[i]/m_timeArray[i];
 		fprintf(fp, "Rank %5d : %8ld  %9.3e  %5.1f  %9.3e  %9.3e  %9.3e  %9.3e %s\n",
-			i, 
+			i,
 			m_countArray[i], // コール回数
 			m_timeArray[i],  // ノードあたりの時間
 			100*m_timeArray[i]/totalTime, // 非排他測定区間に対する割合
@@ -467,7 +500,7 @@ namespace pm_lib {
       for (int i = 0; i < m_np; i++) {
 		t_per_call = (m_countArray[i]==0) ? 0.0: m_timeArray[i]/m_countArray[i];
 		fprintf(fp, "Rank %5d : %8ld  %9.3e  %5.1f  %9.3e  %9.3e  \n",
-			i, 
+			i,
 			m_countArray[i], // コール回数
 			m_timeArray[i],  // ノードあたりの時間
 			100*m_timeArray[i]/totalTime, // 非排他測定区間に対する割合
@@ -509,13 +542,13 @@ namespace pm_lib {
     }
 #endif
 
-    
+
     double t_per_call, perf_rate;
     double tMax = 0.0;
     for (int i = 0; i < m_np; i++) {
       tMax = (m_timeArray[pp_ranks[i]] > tMax) ? m_timeArray[pp_ranks[i]] : tMax;
     }
-    
+
     std::string unit;
     int is_unit = statsSwitch();
     if (is_unit == 0) unit = "B/sec";	// 0: user set bandwidth
@@ -527,7 +560,7 @@ namespace pm_lib {
 
     unsigned long total_count = 0;
     for (int i = 0; i < m_np; i++) total_count += m_countArray[pp_ranks[i]];
-    
+
     if ( total_count > 0 && is_unit <= 4) {
       fprintf(fp, "Label  %s%s\n", m_exclusive ? "" : "*", m_label.c_str());
       // fprintf(fp, "Header ID  :     call   time[s] time[%%]  t_wait[s]  t[s]/call   flop|msg    speed              \n");
@@ -537,7 +570,7 @@ namespace pm_lib {
 	t_per_call = (m_countArray[ip]==0) ? 0.0: m_timeArray[ip]/m_countArray[ip];
 	perf_rate = (m_countArray[ip]==0) ? 0.0 : m_flopArray[ip]/m_timeArray[ip];
 	fprintf(fp, "Rank %5d : %8ld  %9.3e  %5.1f  %9.3e  %9.3e  %9.3e  %9.3e %s\n",
-			ip, 
+			ip,
 			m_countArray[ip], // コール回数
 			m_timeArray[ip],  // ノードあたりの時間
 			100*m_timeArray[ip]/totalTime, // 非排他測定区間に対する割合
@@ -555,7 +588,7 @@ namespace pm_lib {
 	ip = pp_ranks[i];
 	t_per_call = (m_countArray[ip]==0) ? 0.0: m_timeArray[ip]/m_countArray[ip];
 	fprintf(fp, "Rank %5d : %8ld  %9.3e  %5.1f  %9.3e  %9.3e  \n",
-			ip, 
+			ip,
 			m_countArray[ip], // コール回数
 			m_timeArray[ip],  // ノードあたりの時間
 			100*m_timeArray[ip]/totalTime, // 非排他測定区間に対する割合
@@ -589,7 +622,7 @@ namespace pm_lib {
   }
 
 
- 
+
   ///   Groupに含まれるMPIプロセスのHWPC測定結果を区間毎に出力
   ///
   ///   @param[in] fp 出力ファイルポインタ
@@ -649,7 +682,7 @@ namespace pm_lib {
 	outputPapiCounterLegend (fp);
 #endif
   }
-  
+
 
 
   /// エラーメッセージ出力.
@@ -669,8 +702,8 @@ namespace pm_lib {
     }
     (void) MPI_Barrier(MPI_COMM_WORLD);
   }
-  
-  
+
+
   /// 測定区間にプロパティを設定.
   ///
   ///   @param[in] label     ラベル
@@ -768,7 +801,7 @@ namespace pm_lib {
 #endif
   }
 
-  
+
   /// OTF 出力処理を終了する
   ///
   void PerfWatch::finalizeOTF(void)
@@ -857,7 +890,7 @@ namespace pm_lib {
 		//	If we should support HWPC measurement for inclusive sections,
 		//	a start()/stop() pair may not be used, because it clears out
 		//	the event counters.
-		//	To produce the HWPC data for inclusive sections, we should use 
+		//	To produce the HWPC data for inclusive sections, we should use
 		//	my_papi_bind_read() instead of my_papi_bind_start/stop() as below.
 		//	In such a case, we will have to modify the my_papi.values[*]
 		//	and my_papi.accumu[*] usage.
@@ -896,7 +929,7 @@ namespace pm_lib {
 #endif
 
   }
-  
+
 
   /// 測定区間ストップ.
   ///
@@ -1097,4 +1130,3 @@ namespace pm_lib {
   }
 
 } /* namespace pm_lib */
-

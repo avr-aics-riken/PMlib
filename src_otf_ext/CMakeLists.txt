@@ -1,7 +1,3 @@
-#ifndef _PMLIB_VERSION_H_
-#define _PMLIB_VERSION_H_
-
-/*
 ###################################################################################
 #
 # PMlib - Performance Monitor Library
@@ -16,13 +12,16 @@
 # All rights reserved.
 #
 ###################################################################################
- */
 
-/**
- * @file   pmVersion.h
- * @brief  PMlib version header
- */
+include_directories(${OTF_DIR}/include/open-trace-format)
+link_directories(${OTF_DIR}/lib)
 
-#define PM_VERSION  "@PROJECT_VERSION@"
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DSTATIC_PAPI_EVENTS_TABLE -D_REENTRANT -D_GNU_SOURCE")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DUSE_COMPILER_TLS  -DPAPI_NO_MEMORY_MANAGEMENT -DUSE_PAPI")
 
-#endif /* _PMLIB_VERSION_H_ */
+add_library(otf_ext STATIC otf_ext.c)
+
+set_target_properties(otf_ext PROPERTIES LINKER_LANGUAGE CXX)
+target_link_libraries(otf_ext ${CMAKE_CXX_IMPLICIT_LINK_LIBRARIES})
+
+install(TARGETS otf_ext DESTINATION lib)
