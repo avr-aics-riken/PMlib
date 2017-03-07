@@ -3,6 +3,11 @@
 ## REVISION HISTORY
 
 ---
+- 2017-03-07 Version 5.5.7
+  - update Readme.md
+
+
+---
 - 2017-03-06 Version 5.5.6
   - move `#if defined (__sparcv9)` in PerfWatch.cpp from L.351 to L.37 (for fx100)
   - Tested.

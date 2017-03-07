@@ -103,7 +103,7 @@ In case of some Intel compiler environment, please specify environemnt variables
 before compiling.
 
 
-### FUJITSU compiler / FX10 on login nodes (Cross compilation)
+### FUJITSU compiler / FX10 ,FX100, K on login nodes (Cross compilation)
 ~~~
 $ cmake -DINSTALL_DIR=${PM_HOME}/PMlib \
             -DCMAKE_TOOLCHAIN_FILE=../cmake/Toolchain_fx10.cmake \
@@ -113,12 +113,16 @@ $ cmake -DINSTALL_DIR=${PM_HOME}/PMlib \
             -Dwith_example=no \
             -Dwith_PAPI=no \
             -Dwith_OTF=no ..
-~~~
 
+$ cmake -DINSTALL_DIR=${PM_HOME}/PMlib \
+            -DCMAKE_TOOLCHAIN_FILE=../cmake/Toolchain_fx100.cmake \
+            -Denable_OPENMP=no \
+            -Dwith_MPI=yes \
+            -Denable_Fortran=no \
+            -Dwith_example=no \
+            -Dwith_PAPI=no \
+            -Dwith_OTF=no ..
 
-### FUJITSU compiler / K computer on login nodes (Cross compilation)
-
-~~~
 $ cmake -DINSTALL_DIR=${PM_HOME}/PMlib \
             -DCMAKE_TOOLCHAIN_FILE=../cmake/Toolchain_K.cmake \
             -Denable_OPENMP=no \
@@ -129,20 +133,9 @@ $ cmake -DINSTALL_DIR=${PM_HOME}/PMlib \
             -Dwith_OTF=no ..
 ~~~
 
-### FUJITSU compiler / FX100 on login nodes (Cross compilation)
-
-~~~
-$ cmake -DINSTALL_DIR=${PM_HOME}/PMlib \
-            -DCMAKE_TOOLCHAIN_FILE=../cmake/Toolchain_fx100.cmake \
-            -Denable_OPENMP=no \
-            -Dwith_MPI=yes \
-            -Denable_Fortran=no \
-            -Dwith_example=no \
-            -Dwith_PAPI=no \
-            -Dwith_OTF=no ..
-~~~
 
 ##### Note
+- On Fujitsu machines(fx10, K, fx100), confirm appropriate directrory path for compiler environment.
 - Before building, execute following command for clean. `$ make distclean`
 
 

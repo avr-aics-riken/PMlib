@@ -30,9 +30,9 @@ if (TARGET_ARCH STREQUAL "FX10")
     set(CMAKE_Fortran_FLAGS "-Cpp -DK_COMPUTER -Kfast -Nrt_notune -Knooptmsg")
 
   elseif (TARGET_ARCH STREQUAL "FX100")
-      set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Kfast -Nrt_notune -Nfjcex -w -Xg")
-      set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Kfast -Nrt_notune -w -Xg")
-      set(CMAKE_Fortran_FLAGS "-Cpp -Kfast -Nrt_notune -Knooptmsg")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Kfast -Nrt_notune -Nfjcex -w -Xg")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Kfast -Nrt_notune -w -Xg")
+    set(CMAKE_Fortran_FLAGS "-Cpp -Kfast -Nrt_notune -Knooptmsg")
 
   elseif(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -Wall")
