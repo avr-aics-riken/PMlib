@@ -3,6 +3,16 @@
 ## REVISION HISTORY
 
 ---
+- 2017-03-20 Version 5.5.8
+  - fix OTF option handling in CMakeLists.txt, src_otf_ext/CMakeLists.txt
+  - added PAPI and OTF headers in example/CMakeLists.txt : see include_directories() and link_directories() lines
+  - added PAPI header in src/CMakeLists.txt see include_directories()
+  - bug fix to support old PAPI on FX10: src/PerfCpuType.cpp, include/pmlib_papi.h, cmake/CompileOption\*.cmake
+  - minor fix to reformat DEBUG_PRINT output : PerfProgFortran.cpp
+  - minor fix to add OTF information in basic report : PerfWatch.cpp
+
+
+---
 - 2017-03-07 Version 5.5.7
   - update Readme.md
 

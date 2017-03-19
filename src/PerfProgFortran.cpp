@@ -117,7 +117,7 @@ void f_pm_setproperties_ (char* fc, int& f_type, int& f_exclusive, int fc_size)
     PerfMonitor::Type arg_type; /// 測定対象タイプ from PerfMonitor.h
 
 #ifdef DEBUG_PRINT_MONITOR
-	fprintf(stderr, "<f_pm_setproperties_> fc=%s, f_type=%d, f_exclusive=%d, fc_size=%d\n", fc, f_type, f_exclusive, fc_size);
+	fprintf(stderr, "<f_pm_setproperties_> fc=%s, f_type=%d, f_exclusive=%d, fc_size=%d\n", s.c_str(), f_type, f_exclusive, fc_size);
 #endif
 	if (s == "" || fc_size == 0) {
 		fprintf(stderr, "<f_pm_setproperties> argument fc is empty(null)\n");
@@ -160,7 +160,7 @@ void f_pm_start_ (char* fc, int fc_size)
 	std::string s=std::string(fc,fc_size);
 
 #ifdef DEBUG_PRINT_MONITOR
-	fprintf(stderr, "<f_pm_start_> fc=%s, fc_size=%d\n", fc, fc_size);
+	fprintf(stderr, "<f_pm_start_> fc=%s, fc_size=%d\n", s.c_str(), fc_size);
 #endif
 	if (s == "") {
 		fprintf(stderr, "<f_pm_start_> ");
@@ -195,7 +195,7 @@ void f_pm_stop_ (char* fc, double& fpt, unsigned& tic, int fc_size)
 	std::string s=std::string(fc,fc_size);
 
 #ifdef DEBUG_PRINT_MONITOR
-	fprintf(stderr, "<f_pm_stop_> fc=%s, fpt=%8.0lf, tic=%d, fc_size=%d\n", fc, fpt, tic, fc_size);
+	fprintf(stderr, "<f_pm_stop_> fc=%s, fpt=%8.0lf, tic=%d, fc_size=%d\n", s.c_str(), fpt, tic, fc_size);
 #endif
 	if (s == "") {
 		fprintf(stderr, "<f_pm_stop_> ");
@@ -237,7 +237,7 @@ void f_pm_print_ (char* fc, int &psort, int fc_size)
 	FILE *fp;
 	std::string s=std::string(fc,fc_size);
 #ifdef DEBUG_PRINT_MONITOR
-	fprintf(stderr, "<f_pm_print_> fc=%s, psort=%d, fc_size=%d\n", fc, psort, fc_size);
+	fprintf(stderr, "<f_pm_print_> fc=%s, psort=%d, fc_size=%d\n", s.c_str(), psort, fc_size);
 #endif
 	std::string h;
 	std::string u="Fortran API";
@@ -291,7 +291,7 @@ void f_pm_printdetail_ (char* fc, int& legend, int &psort, int fc_size)
 	FILE *fp;
 	std::string s=std::string(fc,fc_size);
 #ifdef DEBUG_PRINT_MONITOR
-	fprintf(stderr, "<f_pm_printdetail_> fc=%s, legend=%d, psort=%d, fc_size=%d \n", fc, legend, psort, fc_size);
+	fprintf(stderr, "<f_pm_printdetail_> fc=%s, legend=%d, psort=%d, fc_size=%d \n", s.c_str(), legend, psort, fc_size);
 #endif
 
 	int user_file;
@@ -342,7 +342,7 @@ void f_pm_printgroup_ (char* fc, MPI_Group p_group, MPI_Comm p_comm, int* pp_ran
 	FILE *fp;
 	std::string s=std::string(fc,fc_size);
 #ifdef DEBUG_PRINT_MONITOR
-	fprintf(stderr, "<f_pm_printgroup_> fc=%s, group=%d, legend=%d, psort=%d, fc_size=%d \n", fc, group, legend, psort, fc_size);
+	fprintf(stderr, "<f_pm_printgroup_> fc=%s, group=%d, legend=%d, psort=%d, fc_size=%d \n", s.c_str(), group, legend, psort, fc_size);
 #endif
 
 	if (s == "" || fc_size == 0) {
@@ -384,7 +384,7 @@ void f_pm_printcomm_ (char* fc, MPI_Comm new_comm, int& icolor, int& key, int& l
 	std::string s=std::string(fc,fc_size);
 #ifdef DEBUG_PRINT_MONITOR
 	fprintf(stderr, "<f_pm_printcomm_> fc=%s, new_comm=%d, icolor=%d, key=%d, legend=%d, psort=%d, fc_size=%d \n",
-		fc, new_comm, icolor, key, legend, psort, fc_size);
+		s.c_str(), new_comm, icolor, key, legend, psort, fc_size);
 #endif
 
 	if (s == "" || fc_size == 0) {
@@ -421,7 +421,7 @@ void f_pm_printprogress_ (char* fc, char* comments, int& psort, int fc_size, int
 	std::string s=std::string(fc,fc_size);
 #ifdef DEBUG_PRINT_MONITOR
 	fprintf(stderr, "<f_pm_printprogress_> fc=%s, comments=%s, psort=%d, fc_size=%d, comments_size=%d \n",
-		fc, comments, psort, fc_size, comments_size);
+		s.c_str(), comments, psort, fc_size, comments_size);
 #endif
 
 	if (s == "" || fc_size == 0) {

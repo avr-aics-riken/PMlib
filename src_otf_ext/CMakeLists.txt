@@ -16,6 +16,8 @@
 include_directories(${OTF_DIR}/include/open-trace-format)
 link_directories(${OTF_DIR}/lib)
 
+C99()
+
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DSTATIC_PAPI_EVENTS_TABLE -D_REENTRANT -D_GNU_SOURCE")
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DUSE_COMPILER_TLS  -DPAPI_NO_MEMORY_MANAGEMENT -DUSE_PAPI")
 
