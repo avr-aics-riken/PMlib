@@ -71,8 +71,8 @@ struct pmlib_papi_chooser {
 	std::string s_sorted[Max_chooser_events];	// sorted event symbols
 };
 
-// Macro patches for K computer which has fairly old PAPI 3.6
-#if defined(K_COMPUTER)
+// Macro patches for K computer and FX10 which has fairly old PAPI 3.6
+#if defined(K_COMPUTER) || defined(FX10)
 #define PAPI_SP_OPS 0	// Needed for compatibility
 #define PAPI_DP_OPS 0	// Needed for compatibility
 #define PAPI_VEC_SP 0	// Needed for compatibility

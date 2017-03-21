@@ -37,6 +37,11 @@ else()
 
 endif()
 
+if(with_PAPI)
+  # PAPI header はPerfWatchクラスなどをコンパイルする場合にも参照される
+  include_directories(${PAPI_DIR}/include)
+endif()
+
 install(FILES ${PROJECT_SOURCE_DIR}/include/mpi_stubs.h
               ${PROJECT_SOURCE_DIR}/include/PerfMonitor.h
               ${PROJECT_SOURCE_DIR}/include/PerfWatch.h

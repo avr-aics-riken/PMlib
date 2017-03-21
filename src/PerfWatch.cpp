@@ -656,17 +656,24 @@ namespace pm_lib {
 #ifdef USE_PAPI
 	const PAPI_hw_info_t *hwinfo = NULL;
 	using namespace std;
-	char* c_env = std::getenv("HWPC_CHOOSER");
+   char* c_env;
 
+	c_env = std::getenv("HWPC_CHOOSER");
 	if (c_env == NULL) {
 	  fprintf(fp, "\tThe environment variable HWPC_CHOOSER is not provided. No HWPC report.\n");
-      return;
-    } else {
+   } else {
 	  fprintf(fp, "\tThe environment variable HWPC_CHOOSER=%s is provided.\n", c_env);
-    }
+   }
+#endif
 
+#ifdef USE_OTF
+    c_env = std::getenv("OTF_TRACING");
+    if (c_env != NULL) {
+	  fprintf(fp, "\tThe environment variable OTF_TRACING=%s is provided.\n", c_env);
+    }
 #endif
   }
+
 
 
   /// PAPI HWPC Legendの表示
@@ -1003,14 +1010,21 @@ namespace pm_lib {
 
 
 #ifdef USE_PAPI
+	if (my_papi.num_events > 0) {
+	#ifdef DEBUG_PRINT_PAPI
+		if (my_rank == 0) {
+		fprintf (stderr, "<PerfWatch::stop> sum up HWPC event values.\n");
+		}
+	#endif
+
+	// HWPC event values are collected only inside of exclusive sections.
+	// This policy may change in the future releases.
+
 	if (m_exclusive) {
 	#pragma omp parallel
 	{
-
 		struct pmlib_papi_chooser th_papi = my_papi;
 		int i_ret;
-
-		//	i_ret = my_papi_bind_stop (th_papi.values, th_papi.num_events);
 
 		i_ret = my_papi_bind_stop (th_papi.values, th_papi.num_events);
 
@@ -1042,9 +1056,9 @@ namespace pm_lib {
 		}
 
 		#ifdef DEBUG_PRINT_PAPI_THREADS
-		#pragma omp critical
-		{
-    		if (my_rank == 0) {
+    	if (my_rank == 0) {
+			#pragma omp critical
+			{
 			int i_thread = omp_get_thread_num();
 				fprintf (stderr, "\tthread:%d, th_papi.values[*]: ", i_thread);
 				for (int i=0; i<my_papi.num_events; i++) {
@@ -1054,10 +1068,7 @@ namespace pm_lib {
 			}
 		}
 		#endif
-	}
-
-	} else { //	!(m_exclusive)
-		//	If inclusive, do not collect HWPC data
+	} // end of #pragma omp parallel region
 	}
 
 
@@ -1077,6 +1088,7 @@ namespace pm_lib {
 	}
 	#endif
 
+	}
 #endif
 
 
@@ -1084,6 +1096,11 @@ namespace pm_lib {
 	if ( (is_unit == 0) || (is_unit == 1) ) {
 		// ユーザが引数で指定した計算量
 		m_flop += flopPerTask * (double)iterationCount;
+	#ifdef DEBUG_PRINT_PAPI
+    if (my_rank == 0) {
+		fprintf (stderr, "\t Explicit mode: stop() uses fPT=%e\n", flopPerTask);
+    }
+	#endif
 	}
 
 #ifdef DEBUG_PRINT_WATCH

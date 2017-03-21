@@ -31,11 +31,16 @@ include_directories(${PROJECT_BINARY_DIR}/include ${PROJECT_SOURCE_DIR}/include)
 link_directories(${PROJECT_BINARY_DIR}/src)
 
 if(OPT_PAPI)
+  include_directories(${PAPI_DIR}/include)
   link_directories(${PROJECT_BINARY_DIR}/src_papi_ext)
+  link_directories(${PAPI_DIR}/lib)
+  #	link_directories(${PAPI_DIR}/lib64)
 endif()
 
 if(OPT_OTF)
+  include_directories(${OTF_DIR}/include/open-trace-format)
   link_directories(${PROJECT_BINARY_DIR}/src_otf_ext)
+  link_directories(${OTF_DIR}/lib)
 endif()
 
 
@@ -52,12 +57,10 @@ else()
 endif()
 
 if(OPT_PAPI)
-  link_directories(${PAPI_DIR}/lib64)
   target_link_libraries(example1 -lpapi_ext -lpapi -lpfm)
 endif()
 
 if(OPT_OTF)
-  link_directories(${OTF_DIR}/lib)
   target_link_libraries(example1 -lotf_ext -lopen-trace-format)
 endif()
 
@@ -84,17 +87,18 @@ else()
 endif()
 
 if(OPT_PAPI)
-  link_directories(${PAPI_DIR}/lib64)
   target_link_libraries(example2 -lpapi_ext -lpapi -lpfm)
 endif()
 
 if(OPT_OTF)
-  link_directories(${OTF_DIR}/lib)
   target_link_libraries(example2 -lotf_ext -lopen-trace-format)
 endif()
 
 set_target_properties(example2 PROPERTIES LINKER_LANGUAGE CXX)
-target_link_libraries(example2 ${CMAKE_CXX_IMPLICIT_LINK_LIBRARIES})
+#	On vsh, CMAKE_CXX_IMPLICIT_LINK_LIBRARIES contains -lmpi -lmpigf -lmpigi, etc
+#	They are not threaded and result in link errors on vsh if OpenMP is enabled.
+#	Temporary sotution is to exclude them.
+# target_link_libraries(example2 ${CMAKE_CXX_IMPLICIT_LINK_LIBRARIES})
 
 if(with_MPI)
   set (test_parameters -np 2 "example2")
@@ -115,17 +119,15 @@ if(with_MPI)
   target_link_libraries(example3 -lPMmpi)
 
   if(OPT_PAPI)
-    link_directories(${PAPI_DIR}/lib64)
     target_link_libraries(example3 -lpapi_ext -lpapi -lpfm)
   endif()
 
   if(OPT_OTF)
-    link_directories(${OTF_DIR}/lib)
     target_link_libraries(example3 -lotf_ext -lopen-trace-format)
   endif()
 
-  set_target_properties(example3 PROPERTIES LINKER_LANGUAGE CXX)
-  target_link_libraries(example3 ${CMAKE_CXX_IMPLICIT_LINK_LIBRARIES})
+set_target_properties(example3 PROPERTIES LINKER_LANGUAGE CXX)
+# target_link_libraries(example3 ${CMAKE_CXX_IMPLICIT_LINK_LIBRARIES})
 
   set (test_parameters -np 2 "example3")
   add_test(NAME TEST_3 COMMAND "mpirun" ${test_parameters})
@@ -149,12 +151,10 @@ if(enable_Fortran)
   endif()
 
   if(OPT_PAPI)
-    link_directories(${PAPI_DIR}/lib64)
     target_link_libraries(example4 -lpapi_ext -lpapi -lpfm)
   endif()
 
   if(OPT_OTF)
-    link_directories(${OTF_DIR}/lib)
     target_link_libraries(example4 -lotf_ext -lopen-trace-format)
   endif()
 
@@ -162,7 +162,8 @@ if(enable_Fortran)
   if(CMAKE_CXX_COMPILER MATCHES ".*FCCpx$")
     target_link_libraries(example4 ${CMAKE_CXX_IMPLICIT_LINK_LIBRARIES} "--linkfortran")
   else()
-    target_link_libraries(example4 ${CMAKE_CXX_IMPLICIT_LINK_LIBRARIES})
+#   target_link_libraries(example4 ${CMAKE_CXX_IMPLICIT_LINK_LIBRARIES})
+    target_link_libraries(example4 -lstdc++ )
   endif()
 
   if(with_MPI)
@@ -186,17 +187,15 @@ if(with_MPI)
   target_link_libraries(example5 -lPMmpi)
 
   if(OPT_PAPI)
-    link_directories(${PAPI_DIR}/lib64)
     target_link_libraries(example5 -lpapi_ext -lpapi -lpfm)
   endif()
 
   if(OPT_OTF)
-    link_directories(${OTF_DIR}/lib)
     target_link_libraries(example5 -lotf_ext -lopen-trace-format)
   endif()
 
   set_target_properties(example5 PROPERTIES LINKER_LANGUAGE CXX)
-  target_link_libraries(example5 ${CMAKE_CXX_IMPLICIT_LINK_LIBRARIES})
+# target_link_libraries(example5 ${CMAKE_CXX_IMPLICIT_LINK_LIBRARIES})
 
   set (test_parameters -np 2 "example5")
   add_test(NAME TEST_5 COMMAND "mpirun" ${test_parameters})

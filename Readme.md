@@ -76,7 +76,7 @@ $ sudo make install
 
 `-D enable_OPENMP=` {no | yes}
 
-> Enable OpenMP directives. This option is valid if only PAPI interface is enabled.
+> Enable OpenMP directives.  <!-- This option is valid if only PAPI interface is enabled. ??? -->
 
 `-D with_PAPI=` {no | yes | installed_directory}
 
@@ -93,14 +93,36 @@ The default compiler options are described in `cmake/CompilerOptionSelector.cmak
 
 ### INTEL/GNU compiler
 
+####
+##### serial version
+In some Intel compiler environment, CC/CXX/F90/FC environemnt variables
+must be set for compiling.
 ~~~
-$ cmake -DINSTALL_DIR=${PM_HOME}/PMlib -Denable_OPENMP=no -Dwith_MPI=no -Denable_Fortran=yes -Dwith_example=no -Dwith_PAPI=no -Dwith_OTF=no ..
+$ export CC=icc CXX=icpc F90=ifort FC=ifort	# needed for Intel compiler
+$ cmake -DINSTALL_DIR=${PM_HOME}/PMlib \
+	-Denable_OPENMP=no \
+	-Dwith_MPI=no \
+	-Denable_Fortran=yes \
+	-Dwith_example=no \
+	-Dwith_PAPI=no \
+	-Dwith_OTF=no ..
 ~~~
 
-#### NOTE
-In case of some Intel compiler environment, please specify environemnt variables
-`export CC=icc CXX=icpc F90=ifort FC=ifort`
-before compiling.
+##### MPI version
+If PAPI and/or OTF library is available on the system, set their path
+as the example below to activate the functionality within PMlib.
+~~~
+$ export CC=mpiicc CXX=mpiicpc F90=mpiifort FC=mpiifort	# for Intel compiler
+$ PAPI_DIR="#set PAPI library path such as /usr/local/papi-5.5"
+$ OTF_DIR="#set OTF library path such as /usr/local/otf-1.12"
+$ cmake -DINSTALL_DIR=${PM_HOME}/PMlib \
+	-Denable_OPENMP=yes \
+	-Dwith_MPI=yes \
+	-Denable_Fortran=yes \
+	-Dwith_example=yes \
+	-Dwith_PAPI="${PAPI_DIR}" \
+	-Dwith_OTF="${OTF_DIR}" ..
+~~~
 
 
 ### FUJITSU compiler / FX10 ,FX100, K on login nodes (Cross compilation)

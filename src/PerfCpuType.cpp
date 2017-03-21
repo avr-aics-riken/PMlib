@@ -140,13 +140,20 @@ void PerfWatch::createPapiCounterList ()
 		hwpc_group.i_platform = 3;
 	}
 
-
-	// Kei and Fujitsu FX10
+	// K computer
     if (s_model_string.find( "SPARC64" ) != string::npos &&
 		s_model_string.find( "VIIIfx" ) != string::npos )
 	{
 		hwpc_group.platform = "SPARC64" ;
 		hwpc_group.i_platform = 8;
+	}
+
+	// Fujitsu FX10
+    if (s_model_string.find( "SPARC64" ) != string::npos &&
+		s_model_string.find( "IXfx" ) != string::npos )
+	{
+		hwpc_group.platform = "SPARC64" ;
+		hwpc_group.i_platform = 9;
 	}
 
 	// FX100
@@ -203,6 +210,10 @@ void PerfWatch::createPapiCounterList ()
 			 Native Code[3]: 0x40000009  |SIMD_FMA_INSTRUCTIONS|
 		*/
 		if (hwpc_group.platform == "SPARC64" && hwpc_group.i_platform == 8 ) {
+			hwpc_group.number[I_flops] += 1;
+			papi.s_name[ip] = "FP_OPS"; papi.events[ip] = PAPI_FP_OPS; ip++;
+		}
+		if (hwpc_group.platform == "SPARC64" && hwpc_group.i_platform == 9 ) {
 			hwpc_group.number[I_flops] += 1;
 			papi.s_name[ip] = "FP_OPS"; papi.events[ip] = PAPI_FP_OPS; ip++;
 		}

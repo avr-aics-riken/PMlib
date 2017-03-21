@@ -73,8 +73,8 @@ set (CMAKE_INSTALL_PREFIX "${INSTALL_DIR}")
 
 
 #######
-set(PROJECT_VERSION "5.5.7")
-set(LIB_REVISION "20170307_0930")
+set(PROJECT_VERSION "5.5.8")
+set(LIB_REVISION "20170320_0000")
 #######
 
 
@@ -200,9 +200,13 @@ endif()
 #######
 
 if(NOT with_OTF)
+elseif(with_OTF STREQUAL "yes")
+  add_definitions(-DUSE_OTF)
+  set(OPT_OTF "ON")
 else()
   add_definitions(-DUSE_OTF)
   set(OPT_OTF "ON")
+  set(OTF_DIR "${with_OTF}")
 endif()
 
 
