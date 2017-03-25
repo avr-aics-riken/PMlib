@@ -3,6 +3,11 @@
 ## REVISION HISTORY
 
 ---
+- 2017-03-25 Version 5.5.9
+  - add CMakeCache.txt to ${INSTALL_DIR}/share
+
+
+---
 - 2017-03-20 Version 5.5.8
   - fix OTF option handling in CMakeLists.txt, src_otf_ext/CMakeLists.txt
   - added PAPI and OTF headers in example/CMakeLists.txt : see include_directories() and link_directories() lines

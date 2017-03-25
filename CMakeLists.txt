@@ -73,8 +73,8 @@ set (CMAKE_INSTALL_PREFIX "${INSTALL_DIR}")
 
 
 #######
-set(PROJECT_VERSION "5.5.8")
-set(LIB_REVISION "20170320_0000")
+set(PROJECT_VERSION "5.5.9")
+set(LIB_REVISION "20170325_1100")
 #######
 
 
@@ -262,6 +262,7 @@ configure_file( include/pmVersion.h.in ${PROJECT_BINARY_DIR}/include/pmVersion.h
 install(FILES  ChangeLog.md
                Readme.md
                License.txt
+               ${PROJECT_BINARY_DIR}/CMakeCache.txt
         DESTINATION share)
 
 
