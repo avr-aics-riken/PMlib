@@ -653,10 +653,10 @@ namespace pm_lib {
   ///
   void PerfWatch::printHWPCHeader(FILE* fp)
   {
+   char* c_env;
 #ifdef USE_PAPI
 	const PAPI_hw_info_t *hwinfo = NULL;
 	using namespace std;
-   char* c_env;
 
 	c_env = std::getenv("HWPC_CHOOSER");
 	if (c_env == NULL) {
