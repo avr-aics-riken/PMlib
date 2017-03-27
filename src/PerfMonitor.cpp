@@ -355,14 +355,16 @@ namespace pm_lib {
 
   void PerfMonitor::print(FILE* fp, std::string hostname, const std::string comments, int seqSections)
   {
-    if (my_rank != 0) return;
     if (m_nWatch == 0) {
-      fprintf(fp, "\n# PMlib print():: No section has been defined via setProperties().\n");
+      if (my_rank == 0) {
+        fprintf(fp, "\n\t#<PerfMonitor::print> No section has been defined.\n");
+      }
       return;
     }
     if (!m_gathered) {
       gather();
     }
+    if (my_rank != 0) return;
 
     // 測定時間の分母
     // initialize()からgather()までの区間（==Root区間）の測定時間を分母とする
@@ -923,7 +925,7 @@ namespace pm_lib {
 
     // 測定区間の時間と計算量を表示。表示順は引数 seqSections で指定されている。
     for (int j = 0; j < m_nWatch; j++) {
-      if (j == 0) continue;
+      //	if (j == 0) continue;
       int i;
       if (seqSections == 0) {
         i = m_order[j]; //	0:経過時間順
