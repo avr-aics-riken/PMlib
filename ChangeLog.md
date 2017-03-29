@@ -3,6 +3,11 @@
 ## REVISION HISTORY
 
 ---
+- 2017-03-29 Version 5.6.0
+  - merge request #27
+
+
+---
 - 2017-03-25 Version 5.5.9
   - add CMakeCache.txt to ${INSTALL_DIR}/share
 
