@@ -55,7 +55,7 @@ rm $WKDIR/*
 
 SRC_DIR=${HOME}/pmlib/scripts/src_tests
 cp $SRC_DIR/mxm.cpp main.cpp
-CXXFLAGS="-fopenmp ${REPORTS} -D_PM_WITHOUT_MPI_"
+CXXFLAGS="-fopenmp ${REPORTS} -DDISABLE_MPI"
 c++    ${CXXFLAGS} ${INCLUDES} main.cpp ${LDFLAGS}
 
 #	export HWPC_CHOOSER=USER
@@ -72,4 +72,3 @@ sleep 2
 ./a.out
 pwd
 ls -go
-

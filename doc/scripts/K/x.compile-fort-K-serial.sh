@@ -23,7 +23,7 @@ cd $WRK_DIR; if [ $? != 0 ] ; then echo '@@@ Directory error @@@'; exit; fi
 MY_SRC=${HOME}/pmlib/PMlib/doc/src_tutorial
 cp $MY_SRC/mxm.f90  main.f90
 
-CXXFLAGS="-Kopenmp,fast -Ntl_notrt -w -DUSE_PAPI -D_PM_WITHOUT_MPI_ "
+CXXFLAGS="-Kopenmp,fast -Ntl_notrt -w -DUSE_PAPI -DDISABLE_MPI "
 FCFLAGS="-Cpp -Kopenmp,fast -Ntl_notrt -Knooptmsg"
 LDFLAGS="${LDFLAGS}  --linkfortran"
 

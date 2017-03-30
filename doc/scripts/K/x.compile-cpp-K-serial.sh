@@ -20,7 +20,7 @@ cd $WRK_DIR; if [ $? != 0 ] ; then echo '@@@ Directory error @@@'; exit; fi
 MY_SRC=${HOME}/pmlib/PMlib/doc/src_tutorial
 cp $MY_SRC/mxm.cpp  main.cpp
 
-CXXFLAGS="-Kopenmp,fast -Ntl_notrt -DUSE_PAPI -DK_COMPUTER -D_PM_WITHOUT_MPI_"
+CXXFLAGS="-Kopenmp,fast -Ntl_notrt -DUSE_PAPI -DK_COMPUTER -DDISABLE_MPI"
 
 mpiFCCpx ${CXXFLAGS} ${INCLUDES} -o a.out main.cpp ${LDFLAGS}
 

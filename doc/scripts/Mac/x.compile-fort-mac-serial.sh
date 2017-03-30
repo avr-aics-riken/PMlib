@@ -18,9 +18,8 @@ rm a.out main.ex
 MY_SRC=${HOME}/Desktop/Git_Repos/pmlib/mikami3heart/PMlib/doc/src_tutorial
 cp ${MY_SRC}/mxm.f90 main.f90
 
-FCFLAGS="-cpp -fopenmp -D_PM_WITHOUT_MPI_"
+FCFLAGS="-cpp -fopenmp -DDISABLE_MPI"
 gfortran ${FCFLAGS} ${INCLUDES} -o main.ex main.f90 ${LDFLAGS}
 
 export OMP_NUM_THREADS=2
 ./main.ex
-

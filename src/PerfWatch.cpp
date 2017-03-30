@@ -20,7 +20,7 @@
 
 // When compiling with USE_PAPI macro, openmp option should be enabled.
 
-#ifdef _PM_WITHOUT_MPI_
+#ifdef DISABLE_MPI
 #include "mpi_stubs.h"
 #else
 #include <mpi.h>

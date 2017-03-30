@@ -1,4 +1,4 @@
-#ifdef _PM_WITHOUT_MPI_
+#ifdef DISABLE_MPI
 #include <iostream>
 int main (int argc, char *argv[])
 {
@@ -112,4 +112,3 @@ int main (int argc, char *argv[])
 	return 0;
 }
 #endif
-

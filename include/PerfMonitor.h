@@ -22,7 +22,7 @@
 //! @brief  PerfMonitor class Header
 //! @version rev.5.1
 
-#ifdef _PM_WITHOUT_MPI_
+#ifdef DISABLE_MPI
 #include "mpi_stubs.h"
 #else
 #include <mpi.h>

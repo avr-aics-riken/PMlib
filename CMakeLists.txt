@@ -73,8 +73,8 @@ set (CMAKE_INSTALL_PREFIX "${INSTALL_DIR}")
 
 
 #######
-set(PROJECT_VERSION "5.6.0")
-set(LIB_REVISION "20170329_2300")
+set(PROJECT_VERSION "5.6.1")
+set(LIB_REVISION "20170330_0900")
 #######
 
 
@@ -101,6 +101,11 @@ endif()
 AddOptimizeOption()
 
 checkOpenMP()
+
+if(NOT with_MPI)
+  SET(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} -DDISABLE_MPI")
+  SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DDISABLE_MPI")
+endif()
 
 
 #######
@@ -148,10 +153,6 @@ else()
 endif()
 
 message("${PROJECT_NAME} Version : ${PROJECT_VERSION}")
-
-if(NOT with_MPI)
-  add_definitions(-D_PM_WITHOUT_MPI_)
-endif()
 
 
 

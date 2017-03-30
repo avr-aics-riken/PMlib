@@ -1,4 +1,4 @@
-#ifdef _PM_WITHOUT_MPI_
+#ifdef DISABLE_MPI
 program check
 	parameter(msize=1000)
 	real(kind=8), allocatable :: a(:,:),b(:,:),c(:,:)
@@ -103,7 +103,7 @@ end
 subroutine subinit (msize,n,a,b,c)
 	real(kind=8) :: a(msize,msize), b(msize,msize), c(msize,msize)
 	!$omp parallel
-	!$omp do 
+	!$omp do
 	do j=1, n
 	do i=1, n
 	a(i,j)=sin(real(i)/real(n))
@@ -114,7 +114,7 @@ subroutine subinit (msize,n,a,b,c)
 	!$omp end parallel
 	return
 end
-	
+
 subroutine submtxm (msize,n,dflop,a,b,c)
 	real(kind=8) :: a(msize,msize), b(msize,msize), c(msize,msize)
 	real(kind=8) :: x
@@ -134,9 +134,9 @@ subroutine submtxm (msize,n,dflop,a,b,c)
 	!$omp end parallel
 	return
 end
-	
-	
-#ifdef _PM_WITHOUT_MPI_
+
+
+#ifdef DISABLE_MPI
 #ifdef _OPENMP
 double precision function dptime_omp()
 	use omp_lib

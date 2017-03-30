@@ -15,7 +15,6 @@ MY_SRC=${HOME}/Desktop/Git_Repos/pmlib/mikami3heart/PMlib/doc/src_tutorial
 cp ${MY_SRC}/mxm.cpp main.cpp
 
 
-CFLAGS="-D_PM_WITHOUT_MPI_"
+CFLAGS="-DDISABLE_MPI"
 c++    ${CFLAGS} ${INCLUDES} main.cpp ${LDFLAGS}
 ./a.out
-

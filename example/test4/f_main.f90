@@ -1,5 +1,5 @@
 program test4_main
-#if defined(_PM_WITHOUT_MPI_)
+#if defined(DISABLE_MPI)
 #else
 	include 'mpif.h'
 #endif
@@ -13,7 +13,7 @@ program test4_main
 		stop
 	endif
 	myid=0
-#if defined(_PM_WITHOUT_MPI_)
+#if defined(DISABLE_MPI)
 #else
 	call MPI_Init(ierr )
 	call MPI_Comm_rank( MPI_COMM_WORLD, myid, ierr )
@@ -23,7 +23,7 @@ program test4_main
 	n=msize
 	nWatch=4
 	call f_pm_initialize (nWatch)
-	
+
 	icalc=1
 	icomm=0
 	iexclusive=1
@@ -32,16 +32,16 @@ program test4_main
 	call f_pm_setproperties ("Second section", icalc, iinclusive)
 	call f_pm_setproperties ("Subsection P", icomm, iexclusive)
 	call f_pm_setproperties ("Subsection Q", icalc, iexclusive)
-	
+
 	dinit=(n**2)*4.0
 	dflop=(n**3)*4.0
 	dbyte=(n**3)*4.0*3.0
-	
+
 	call f_pm_start ("First section")
 	call subinit (msize,n,a,b,c)
 	call f_pm_stop ("First section", dinit, 1)
 	call spacer (msize,n,a,b,c)
-	
+
 	call f_pm_start ("Second section")
 
 	do i=1,3
@@ -49,22 +49,22 @@ program test4_main
 	call slowmtxm (msize,n,dflop,a,b,c)
 	call f_pm_stop ("Subsection P", dflop*4.0, 1)
 	call spacer (msize,n,a,b,c)
-	
+
 	call f_pm_start ("Subsection Q")
 	call submtxm (msize,n,dflop,a,b,c)
 	call f_pm_stop ("Subsection Q", dflop, 1)
 	call spacer (msize,n,a,b,c)
-	
+
 !cx call f_pm_printprogress ("", "check point:", 0)
 	end do
-	
+
 	call f_pm_stop ("Second section", dflop*6.0, 1)
 
 !cx call f_pm_posttrace ()
 
 	call f_pm_print ("", 0)
 	call f_pm_printdetail ("", 0, 0)
-#if defined(_PM_WITHOUT_MPI_)
+#if defined(DISABLE_MPI)
 #else
 	call MPI_Finalize( ierr )
 #endif
@@ -75,7 +75,7 @@ end
 subroutine subinit (msize,n,a,b,c)
 	real(kind=8) :: a(msize,msize), b(msize,msize), c(msize,msize)
 	!$omp parallel
-	!$omp do 
+	!$omp do
 	do j=1, n
 	do i=1, n
 	a(i,j)=sin(real(i)/real(n))
@@ -86,7 +86,7 @@ subroutine subinit (msize,n,a,b,c)
 	!$omp end parallel
 	return
 end
-	
+
 subroutine submtxm (msize,n,dflop,a,b,c)
 	real(kind=8) :: a(msize,msize), b(msize,msize), c(msize,msize)
 	real(kind=8) :: dflop
@@ -132,15 +132,15 @@ subroutine slowmtxm (msize,n,dflop,a,b,c)
 	!$omp end parallel
 	return
 end
-	
+
 subroutine spacer (msize,n,a,b,c)
 	real(kind=8) :: a(msize,msize), b(msize,msize), c(msize,msize)
 	real(kind=8) :: dflop
 	call slowmtxm (msize,n/2,dflop,a,b,c)
 	return
 end
-	
-#ifdef _PM_WITHOUT_MPI_
+
+#ifdef DISABLE_MPI
 #ifdef _OPENMP
 double precision function dptime_omp()
 	use omp_lib

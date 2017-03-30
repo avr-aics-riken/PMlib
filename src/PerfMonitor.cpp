@@ -18,7 +18,7 @@
 ///@file   PerfMonitor.cpp
 ///@brief  PerfMonitor class
 
-//	#ifdef _PM_WITHOUT_MPI_
+//	#ifdef DISABLE_MPI
 //	#include "mpi_stubs.h"
 //	#else
 //	#include <mpi.h>
@@ -64,7 +64,7 @@ namespace pm_lib {
 	#endif
 
 	// Preserve the parallel mode information while PMlib is being made.
-	#ifdef _PM_WITHOUT_MPI_
+	#ifdef DISABLE_MPI
 	is_MPI_enabled = false;
 	#else
 	is_MPI_enabled = true;
@@ -810,7 +810,7 @@ namespace pm_lib {
     fprintf(fp, "\n");
     fprintf(fp, "\tTiming Statistics Report from PMlib version %s\n", PM_VERSION);
     fprintf(fp, "\tLinked PMlib supports: ");
-#ifdef _PM_WITHOUT_MPI_
+#ifdef DISABLE_MPI
     fprintf(fp, "no-MPI");
 #else
     fprintf(fp, "MPI");

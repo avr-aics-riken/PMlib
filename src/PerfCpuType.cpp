@@ -20,7 +20,7 @@
 
 // if USE_PAPI is defined, compile this file with openmp option
 
-#ifdef _PM_WITHOUT_MPI_
+#ifdef DISABLE_MPI
 #include "mpi_stubs.h"
 #else
 #include <mpi.h>

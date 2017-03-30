@@ -3,6 +3,11 @@
 ## REVISION HISTORY
 
 ---
+- 2017-03-30 Version 5.6.1
+  - change _PM_WITHOUT_MPI_ to DISABLE_MPI due to maintain the consistency with other libraries
+
+
+---
 - 2017-03-29 Version 5.6.0
   - merge request #27
 

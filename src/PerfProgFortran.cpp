@@ -15,7 +15,7 @@
 ###################################################################################
  */
 
-#ifdef _PM_WITHOUT_MPI_
+#ifdef DISABLE_MPI
 #include "mpi_stubs.h"
 #else
 #include <mpi.h>
@@ -60,7 +60,7 @@ void f_pm_initialize_ (int& init_nWatch)
 
 	PM.initialize(init_nWatch);
 
-#ifdef _PM_WITHOUT_MPI_
+#ifdef DISABLE_MPI
 	#ifdef _OPENMP
    	char parallel_mode[] = "OpenMP";
 	#else

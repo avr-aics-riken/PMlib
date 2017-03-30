@@ -19,7 +19,7 @@ MY_SRC=${HOME}/pmlib/PMlib/doc/src_tutorial/
 cp $MY_SRC/mxm.cpp main.cpp
 
 
-CXXFLAGS="-Kopenmp,fast -Ntl_notrt  -w -Nfjcex -D_PM_WITHOUT_MPI_"
+CXXFLAGS="-Kopenmp,fast -Ntl_notrt  -w -Nfjcex -DDISABLE_MPI"
 CFLAGS="-std=c99 -Kopenmp,fast -Ntl_notrt -w"
 FCFLAGS="-Cpp -Kopenmp,fast -Ntl_notrt -w"
 
@@ -27,6 +27,3 @@ FCCpx    ${CXXFLAGS} ${INCLUDES} main.cpp ${LDFLAGS}
 
 ls -go
 file a.out
-
-
-
