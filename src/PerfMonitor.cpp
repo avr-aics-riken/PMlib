@@ -18,11 +18,20 @@
 ///@file   PerfMonitor.cpp
 ///@brief  PerfMonitor class
 
-//	#ifdef DISABLE_MPI
-//	#include "mpi_stubs.h"
-//	#else
-//	#include <mpi.h>
-//	#endif
+//	macro used in serial version of "mpi_stubs.h" that is included in "PerfMonitor.h"
+#ifdef DISABLE_MPI
+	#define MPI_COMM_WORLD 0
+	#define MPI_INT  1
+	#define MPI_CHAR 2
+	#define MPI_DOUBLE 3
+	#define MPI_UNSIGNED_LONG 4
+	typedef int MPI_Comm;
+	typedef int MPI_Datatype;
+	typedef int MPI_Op;
+	typedef int MPI_Group;
+	#define MPI_SUCCESS true
+	#define MPI_SUM (MPI_Op)(0x58000003)
+#endif
 
 #include "PerfMonitor.h"
 #include <time.h>
@@ -925,13 +934,13 @@ namespace pm_lib {
 
     // 測定区間の時間と計算量を表示。表示順は引数 seqSections で指定されている。
     for (int j = 0; j < m_nWatch; j++) {
-      //	if (j == 0) continue;
       int i;
       if (seqSections == 0) {
         i = m_order[j]; //	0:経過時間順
       } else {
         i = j; //	1:登録順で表示
       }
+      if (i == 0) continue;
 
       PerfWatch& w = m_watchArray[i];
       if ( !(w.m_count > 0) ) continue;
@@ -1054,5 +1063,14 @@ namespace pm_lib {
     }
   }
 
-
 } /* namespace pm_lib */
+
+#ifdef DISABLE_MPI
+	#undef MPI_COMM_WORLD
+	#undef MPI_INT
+	#undef MPI_CHAR
+	#undef MPI_DOUBLE
+	#undef MPI_UNSIGNED_LONG
+	#undef MPI_SUCCESS
+	#undef MPI_SUM
+#endif

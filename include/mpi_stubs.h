@@ -26,20 +26,18 @@
 
 namespace pm_lib {
 
-#define MPI_COMM_WORLD 0
-#define MPI_INT  1
-#define MPI_CHAR 2
-#define MPI_DOUBLE 3
-#define MPI_UNSIGNED_LONG 4
-
-  typedef int MPI_Comm;
-  typedef int MPI_Datatype;
-  typedef int MPI_Op;
-  typedef int MPI_Group;
-
-#define MPI_SUCCESS true
-#define MPI_SUM (MPI_Op)(0x58000003)
-
+// The following macros are moved out from this file
+//	#define MPI_COMM_WORLD 0
+//	#define MPI_INT  1
+//	#define MPI_CHAR 2
+//	#define MPI_DOUBLE 3
+//	#define MPI_UNSIGNED_LONG 4
+//	typedef int MPI_Comm;
+//	typedef int MPI_Datatype;
+//	typedef int MPI_Op;
+//	typedef int MPI_Group;
+//	#define MPI_SUCCESS true
+//	#define MPI_SUM (MPI_Op)(0x58000003)
 
   inline bool MPI_Init(int* argc, char*** argv) { return true; }
 

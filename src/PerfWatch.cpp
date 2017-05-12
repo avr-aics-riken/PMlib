@@ -20,10 +20,22 @@
 
 // When compiling with USE_PAPI macro, openmp option should be enabled.
 
+
 #ifdef DISABLE_MPI
-#include "mpi_stubs.h"
+	#define MPI_COMM_WORLD 0
+	#define MPI_INT  1
+	#define MPI_CHAR 2
+	#define MPI_DOUBLE 3
+	#define MPI_UNSIGNED_LONG 4
+	typedef int MPI_Comm;
+	typedef int MPI_Datatype;
+	typedef int MPI_Op;
+	typedef int MPI_Group;
+	#define MPI_SUCCESS true
+	#define MPI_SUM (MPI_Op)(0x58000003)
+	#include "mpi_stubs.h"
 #else
-#include <mpi.h>
+	#include <mpi.h>
 #endif
 
 #include "PerfWatch.h"
@@ -1147,3 +1159,14 @@ namespace pm_lib {
   }
 
 } /* namespace pm_lib */
+
+#ifdef DISABLE_MPI
+	#undef MPI_COMM_WORLD
+	#undef MPI_INT
+	#undef MPI_CHAR
+	#undef MPI_DOUBLE
+	#undef MPI_UNSIGNED_LONG
+	#undef MPI_SUCCESS
+	#undef MPI_SUM
+#endif
+
