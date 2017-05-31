@@ -73,8 +73,8 @@ set (CMAKE_INSTALL_PREFIX "${INSTALL_DIR}")
 
 
 #######
-set(PROJECT_VERSION "5.6.1")
-set(LIB_REVISION "20170330_0900")
+set(PROJECT_VERSION "5.6.2")
+set(LIB_REVISION "20170601_0730")
 #######
 
 
@@ -105,7 +105,6 @@ checkOpenMP()
 if(NOT with_MPI)
   SET(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} -DDISABLE_MPI")
   SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DDISABLE_MPI")
-  SET(CMAKE_Fortran_FLAGS  "${CMAKE_Fortran_FLAGS} -DDISABLE_MPI")
 endif()
 
 
@@ -138,7 +137,7 @@ message( STATUS "OTF: "                            ${with_OTF})
 message( STATUS "Example: "                        ${with_example})
 message(" ")
 
-if(CMAKE_CXX_COMPILER MATCHES ".*FCCpx$")
+if(USE_F_TCS STREQUAL "YES")
 else()
   if(with_MPI)
     include(FindMPI)

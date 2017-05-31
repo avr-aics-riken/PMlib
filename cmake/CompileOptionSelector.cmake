@@ -34,6 +34,11 @@ if (TARGET_ARCH STREQUAL "FX10")
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Kfast -Nrt_notune -w -Xg")
     set(CMAKE_Fortran_FLAGS "-Cpp -Kfast -Nrt_notune -Knooptmsg")
 
+  elseif (TARGET_ARCH STREQUAL "INTEL_F_TCS")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Kfast -Nrt_notune -Nfjcex -w -Xg")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Kfast -Nrt_notune -w -Xg")
+    set(CMAKE_Fortran_FLAGS "-Cpp -Kfast -Nrt_notune -Knooptmsg")
+
   elseif(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -Wall")
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O3 -Wall")
@@ -71,12 +76,18 @@ endmacro()
 macro (FreeForm)
   if(CMAKE_Fortran_COMPILER MATCHES ".*frtpx$")
     #set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS}")
+
   elseif(CMAKE_Fortran_COMPILER_ID STREQUAL "GNU")
     set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -ffree-form  --free-line-length-none")
+
   elseif(CMAKE_Fortran_COMPILER_ID STREQUAL "Intel")
     set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -free")
+
   elseif(CMAKE_Fortran_COMPILER_ID STREQUAL "PGI")
     set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -Mfree")
+
+  elseif(TARGET_ARCH STREQUAL "INTEL_F_TCS")
+    set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -Free")
   endif()
 endmacro()
 
@@ -100,7 +111,7 @@ endmacro()
 
 macro(checkOpenMP)
   if(enable_OPENMP)
-    if(CMAKE_CXX_COMPILER MATCHES ".*FCCpx$")
+    if(USE_F_TCS STREQUAL "YES")
       set(OpenMP_C_FLAGS "-Kopenmp")
       set(OpenMP_CXX_FLAGS "-Kopenmp")
       set(OpenMP_Fortran_FLAGS "-Kopenmp")

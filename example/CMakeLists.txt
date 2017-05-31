@@ -159,7 +159,7 @@ if(enable_Fortran)
   endif()
 
   # Fujitsuの場合　--linkfortranは必須
-  if(CMAKE_CXX_COMPILER MATCHES ".*FCCpx$")
+  if(USE_F_TCS STREQUAL "YES")
     target_link_libraries(example4 ${CMAKE_CXX_IMPLICIT_LINK_LIBRARIES} "--linkfortran")
   else()
 #   target_link_libraries(example4 ${CMAKE_CXX_IMPLICIT_LINK_LIBRARIES})

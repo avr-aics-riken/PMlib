@@ -125,7 +125,7 @@ $ cmake -DINSTALL_DIR=${PM_HOME}/PMlib \
 ~~~
 
 
-### FUJITSU compiler / FX10 ,FX100, K on login nodes (Cross compilation)
+### FUJITSU compiler / FX10 ,FX100, K on login nodes (Cross compilation) and Fujitsu TCS environment for intel PC
 ~~~
 $ cmake -DINSTALL_DIR=${PM_HOME}/PMlib \
             -DCMAKE_TOOLCHAIN_FILE=../cmake/Toolchain_fx10.cmake \
@@ -147,6 +147,15 @@ $ cmake -DINSTALL_DIR=${PM_HOME}/PMlib \
 
 $ cmake -DINSTALL_DIR=${PM_HOME}/PMlib \
             -DCMAKE_TOOLCHAIN_FILE=../cmake/Toolchain_K.cmake \
+            -Denable_OPENMP=no \
+            -Dwith_MPI=yes \
+            -Denable_Fortran=no \
+            -Dwith_example=no \
+            -Dwith_PAPI=no \
+            -Dwith_OTF=no ..
+
+$ cmake -DINSTALL_DIR=${PM_HOME}/PMlib \
+            -DCMAKE_TOOLCHAIN_FILE=../cmake/Toolchain_intel_F_TCS.cmake \
             -Denable_OPENMP=no \
             -Dwith_MPI=yes \
             -Denable_Fortran=no \
