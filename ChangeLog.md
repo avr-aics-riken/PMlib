@@ -3,6 +3,11 @@
 ## REVISION HISTORY
 
 ---
+- 2017-06-02 Version 5.6.3
+  - change order .*frtpx$ > INTEL_F_TCS > GNU > Intel > PGI in FreeForm MACRO
+
+  
+---
 - 2017-06-01 Version 5.6.2
   - Add INTEL_F_TCS environment to cmake
 

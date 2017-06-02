@@ -77,6 +77,9 @@ macro (FreeForm)
   if(CMAKE_Fortran_COMPILER MATCHES ".*frtpx$")
     #set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS}")
 
+  elseif(TARGET_ARCH STREQUAL "INTEL_F_TCS")
+    set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -Free")
+
   elseif(CMAKE_Fortran_COMPILER_ID STREQUAL "GNU")
     set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -ffree-form  --free-line-length-none")
 
@@ -86,8 +89,6 @@ macro (FreeForm)
   elseif(CMAKE_Fortran_COMPILER_ID STREQUAL "PGI")
     set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -Mfree")
 
-  elseif(TARGET_ARCH STREQUAL "INTEL_F_TCS")
-    set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -Free")
   endif()
 endmacro()
 
