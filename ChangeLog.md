@@ -3,6 +3,10 @@
 ## REVISION HISTORY
 
 ---
+- 2017-06-12 Version 5.6.3
+  -  fix to link PAPI 5.5+ with Intel compiler
+
+---
 - 2017-05-12 Version 5.6.2
   -  fix to suppress printing Root Section(*)
   -  move macros such as MPI_SUM from include/mpi_stubs.h to *.cpp source files
