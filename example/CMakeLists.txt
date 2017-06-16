@@ -59,7 +59,8 @@ endif()
 if(OPT_PAPI)
   # papi related objects need static linking.
   # -B options are valid for GNU ld, and they affect the arguments after.
-  target_link_libraries(example1 -Bstatic -lpapi_ext -lpapi -lpfm -Bdynamic)
+  #	target_link_libraries(example1 -Bstatic -lpapi_ext -lpapi -lpfm -Bdynamic)
+  target_link_libraries(example1 -lpapi_ext -Wl,'-Bstatic,-lpapi,-lpfm,-Bdynamic')
 endif()
 
 if(OPT_OTF)
@@ -89,7 +90,8 @@ else()
 endif()
 
 if(OPT_PAPI)
-  target_link_libraries(example2 -Bstatic -lpapi_ext -lpapi -lpfm -Bdynamic)
+  # target_link_libraries(example2 -Bstatic -lpapi_ext -lpapi -lpfm -Bdynamic)
+  target_link_libraries(example2 -lpapi_ext -Wl,'-Bstatic,-lpapi,-lpfm,-Bdynamic')
 endif()
 
 if(OPT_OTF)
@@ -121,7 +123,8 @@ if(with_MPI)
   target_link_libraries(example3 -lPMmpi)
 
   if(OPT_PAPI)
-    target_link_libraries(example3 -Bstatic -lpapi_ext -lpapi -lpfm -Bdynamic)
+    # target_link_libraries(example3 -Bstatic -lpapi_ext -lpapi -lpfm -Bdynamic)
+    target_link_libraries(example3 -lpapi_ext -Wl,'-Bstatic,-lpapi,-lpfm,-Bdynamic')
   endif()
 
   if(OPT_OTF)
@@ -153,7 +156,8 @@ if(enable_Fortran)
   endif()
 
   if(OPT_PAPI)
-    target_link_libraries(example4 -Bstatic -lpapi_ext -lpapi -lpfm -Bdynamic)
+    # target_link_libraries(example4 -Bstatic -lpapi_ext -lpapi -lpfm -Bdynamic)
+    target_link_libraries(example4 -lpapi_ext -Wl,'-Bstatic,-lpapi,-lpfm,-Bdynamic')
   endif()
 
   if(OPT_OTF)
@@ -189,7 +193,8 @@ if(with_MPI)
   target_link_libraries(example5 -lPMmpi)
 
   if(OPT_PAPI)
-    target_link_libraries(example5 -Bstatic -lpapi_ext -lpapi -lpfm -Bdynamic)
+    # target_link_libraries(example5 -Bstatic -lpapi_ext -lpapi -lpfm -Bdynamic)
+    target_link_libraries(example5 -lpapi_ext -Wl,'-Bstatic,-lpapi,-lpfm,-Bdynamic')
   endif()
 
   if(OPT_OTF)
