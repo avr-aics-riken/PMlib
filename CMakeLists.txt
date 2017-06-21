@@ -73,8 +73,8 @@ set (CMAKE_INSTALL_PREFIX "${INSTALL_DIR}")
 
 
 #######
-set(PROJECT_VERSION "5.6.3")
-set(LIB_REVISION "20170602_1200")
+set(PROJECT_VERSION "5.6.4")
+set(LIB_REVISION "20170621_1000")
 #######
 
 
@@ -137,7 +137,7 @@ message( STATUS "OTF: "                            ${with_OTF})
 message( STATUS "Example: "                        ${with_example})
 message(" ")
 
-if(USE_F_TCS STREQUAL "YES")
+if((USE_F_TCS STREQUAL "YES") OR (CMAKE_CXX_COMPILER MATCHES ".*FCCpx$"))
 else()
   if(with_MPI)
     include(FindMPI)

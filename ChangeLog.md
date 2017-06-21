@@ -3,6 +3,11 @@
 ## REVISION HISTORY
 
 ---
+- 2017-06-21 Version 5.6.4
+  -  fix to link static library for PAPI 5.5.1+ with Intel and GNU compiler
+
+
+---
 - 2017-06-02 Version 5.6.3
   - change order .*frtpx$ > INTEL_F_TCS > GNU > Intel > PGI in FreeForm MACRO
 
@@ -11,7 +16,7 @@
 - 2017-06-01 Version 5.6.2
   - Add INTEL_F_TCS environment to cmake
 
-
+ 
 ---
 - 2017-03-30 Version 5.6.1
   - change _PM_WITHOUT_MPI_ to DISABLE_MPI due to maintain the consistency with other libraries

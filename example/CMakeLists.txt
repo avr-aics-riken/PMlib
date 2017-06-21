@@ -24,7 +24,7 @@ message(STATUS "with_MPI            = " ${with_MPI})
 #message(STATUS "IMPLICIT_LINK_LIBS = " ${CMAKE_CXX_IMPLICIT_LINK_LIBRARIES})
 #message(STATUS "CFLAGS              = " ${CMAKE_C_FLAGS})
 #message(STATUS "CXXFLAGS            = " ${CMAKE_CXX_FLAGS})
-message(STATUS "FortranFLAGS        = " ${CMAKE_Fortran_FLAGS})
+#message(STATUS "FortranFLAGS        = " ${CMAKE_Fortran_FLAGS})
 
 include_directories(${PROJECT_BINARY_DIR}/include ${PROJECT_SOURCE_DIR}/include)
 
@@ -57,7 +57,10 @@ else()
 endif()
 
 if(OPT_PAPI)
-  target_link_libraries(example1 -lpapi_ext -lpapi -lpfm)
+  # papi related objects need static linking.
+  # -B options are valid for GNU ld, and they affect the arguments after.
+  #	target_link_libraries(example1 -Bstatic -lpapi_ext -lpapi -lpfm -Bdynamic)
+  target_link_libraries(example1 -lpapi_ext -Wl,'-Bstatic,-lpapi,-lpfm,-Bdynamic')
 endif()
 
 if(OPT_OTF)
@@ -87,7 +90,7 @@ else()
 endif()
 
 if(OPT_PAPI)
-  target_link_libraries(example2 -lpapi_ext -lpapi -lpfm)
+  target_link_libraries(example2 -lpapi_ext -Wl,'-Bstatic,-lpapi,-lpfm,-Bdynamic')
 endif()
 
 if(OPT_OTF)
@@ -119,7 +122,7 @@ if(with_MPI)
   target_link_libraries(example3 -lPMmpi)
 
   if(OPT_PAPI)
-    target_link_libraries(example3 -lpapi_ext -lpapi -lpfm)
+    target_link_libraries(example3 -lpapi_ext -Wl,'-Bstatic,-lpapi,-lpfm,-Bdynamic')
   endif()
 
   if(OPT_OTF)
@@ -151,7 +154,7 @@ if(enable_Fortran)
   endif()
 
   if(OPT_PAPI)
-    target_link_libraries(example4 -lpapi_ext -lpapi -lpfm)
+    target_link_libraries(example4 -lpapi_ext -Wl,'-Bstatic,-lpapi,-lpfm,-Bdynamic')
   endif()
 
   if(OPT_OTF)
@@ -187,7 +190,7 @@ if(with_MPI)
   target_link_libraries(example5 -lPMmpi)
 
   if(OPT_PAPI)
-    target_link_libraries(example5 -lpapi_ext -lpapi -lpfm)
+    target_link_libraries(example5 -lpapi_ext -Wl,'-Bstatic,-lpapi,-lpfm,-Bdynamic')
   endif()
 
   if(OPT_OTF)
