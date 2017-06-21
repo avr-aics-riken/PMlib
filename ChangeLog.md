@@ -3,8 +3,17 @@
 ## REVISION HISTORY
 
 ---
-- 2017-06-12 Version 5.6.3
-  -  fix to link PAPI 5.5+ with Intel compiler
+- 2017-06-20 Version 5.6.4
+  -  fix to link option for newer PAPI (5.5.1+) with Intel and GNU compiler
+  -  add include/SingleMonitor.h for non-MPI C++ application
+  -  update example programs and scripts under doc/
+
+---
+- 2017-06-02 Version 5.6.3
+  -  pull in the upstream repository
+  - change order .*frtpx$ > INTEL_F_TCS > GNU > Intel > PGI in FreeForm MACRO
+  - Add INTEL_F_TCS environment to cmake
+  - commit 98dfb5e5 appears to have backdated include/ and src/ ?
 
 ---
 - 2017-05-12 Version 5.6.2
