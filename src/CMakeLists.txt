@@ -47,6 +47,5 @@ install(FILES ${PROJECT_SOURCE_DIR}/include/mpi_stubs.h
               ${PROJECT_SOURCE_DIR}/include/PerfWatch.h
               ${PROJECT_SOURCE_DIR}/include/pmlib_otf.h
               ${PROJECT_SOURCE_DIR}/include/pmlib_papi.h
-              ${PROJECT_SOURCE_DIR}/include/SingleMonitor.h
               ${PROJECT_BINARY_DIR}/include/pmVersion.h
         DESTINATION include )
