@@ -54,10 +54,8 @@ option (with_OTF "Enable tracing" "OFF")
 #######
 
 if(enable_Fortran)
-  message("PROJECT: PMlib for C, C++, and Fortran")
   project(PMlib C CXX Fortran)
 else()
-  message("PROJECT: PMlib for C and C++")
   project(PMlib C CXX)
 endif()
 
@@ -73,8 +71,12 @@ set (CMAKE_INSTALL_PREFIX "${INSTALL_DIR}")
 
 
 #######
-set(PROJECT_VERSION "5.6.4")
-set(LIB_REVISION "20170612_1100")
+set(PROJECT_VERSION "5.6.5")
+set(LIB_REVISION "20170622_1500")
+
+message(" ")
+message("${PROJECT_NAME} Version : ${PROJECT_VERSION}")
+message(" ")
 #######
 
 
@@ -118,23 +120,23 @@ endif()
 #######
 
 message(" ")
-message( STATUS "Destination PATH: "               ${CMAKE_INSTALL_PREFIX})
-message( STATUS "CMAKE_C_COMPILER: "               ${CMAKE_C_COMPILER})
-message( STATUS "CMAKE_C_FLAGS: "                  ${CMAKE_C_FLAGS})
-message( STATUS "CMAKE_CXX_COMPILER: "             ${CMAKE_CXX_COMPILER})
-message( STATUS "CMAKE_CXX_FLAGS: "                ${CMAKE_CXX_FLAGS})
+message( STATUS "Destination PATH  : "    ${CMAKE_INSTALL_PREFIX})
+message( STATUS "CMAKE_C_COMPILER  : "    ${CMAKE_C_COMPILER})
+message( STATUS "CMAKE_C_FLAGS     : "    ${CMAKE_C_FLAGS})
+message( STATUS "CMAKE_CXX_COMPILER: "    ${CMAKE_CXX_COMPILER})
+message( STATUS "CMAKE_CXX_FLAGS   : "    ${CMAKE_CXX_FLAGS})
 
 if(enable_Fortran)
-  message( STATUS "CMAKE_Fortran_COMPILER: "         ${CMAKE_Fortran_COMPILER})
-  message( STATUS "CMAKE_Fortran_FLAGS: "            ${CMAKE_Fortran_FLAGS})
+  message( STATUS "CMAKE_Fortran_COMPILER : "  ${CMAKE_Fortran_COMPILER})
+  message( STATUS "CMAKE_Fortran_FLAGS    : "  ${CMAKE_Fortran_FLAGS})
 endif()
 
 message(" ")
-message( STATUS "OpenMP: "                         ${enable_OPENMP})
-message( STATUS "MPI: "                            ${with_MPI})
-message( STATUS "PAPI: "                           ${with_PAPI})
-message( STATUS "OTF: "                            ${with_OTF})
-message( STATUS "Example: "                        ${with_example})
+message( STATUS "OpenMP            : "    ${enable_OPENMP})
+message( STATUS "MPI               : "    ${with_MPI})
+message( STATUS "PAPI              : "    ${with_PAPI})
+message( STATUS "OTF               : "    ${with_OTF})
+message( STATUS "Example           : "    ${with_example})
 message(" ")
 
 if(USE_F_TCS STREQUAL "YES")
@@ -143,17 +145,16 @@ else()
     include(FindMPI)
 
     if(MPI_CXX_FOUND)
+      message(" ")
       message("MPI-CXX-CMP  : ${MPI_CXX_COMPILER}")
       message("MPI-CXX-FLAGS: ${MPI_CXX_COMPILE_FLAGS}")
       message("MPI-CXX-INC  : ${MPI_CXX_INCLUDE_PATH}")
       message("MPI-LNK-FLAGS: ${MPI_CXX_LINK_FLAGS}")
       message("MPI-LIBS     : ${MPI_CXX_LIBRARIES}")
+      message(" ")
     endif(MPI_CXX_FOUND)
   endif()
 endif()
-
-message("${PROJECT_NAME} Version : ${PROJECT_VERSION}")
-
 
 
 #######
