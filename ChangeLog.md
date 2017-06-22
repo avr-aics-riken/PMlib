@@ -3,6 +3,10 @@
 ## REVISION HISTORY
 
 ---
+- 2017-06-12 Version 5.6.4
+  - add PGI compiler environment on reedbush.cc.u-tokyo.ac.jp
+
+---
 - 2017-06-02 Version 5.6.3
   - change order .*frtpx$ > INTEL_F_TCS > GNU > Intel > PGI in FreeForm MACRO
 
