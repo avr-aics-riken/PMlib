@@ -3,15 +3,25 @@
 ## REVISION HISTORY
 
 ---
-- 2017-06-21 Version 5.6.4
-  -  fix to link static library for PAPI 5.5.1+ with Intel and GNU compiler
+- 2017-07-03 Version 5.6.6
+  - update CMAKE_Fortran_FLAGS handling : CMakeLists.txt and CompileOptionSelector.cmake
+  - fix to link PAPI 5.5.1+ static library with Intel and GNU compiler : example/CMakeLists.txt
 
+---
+- 2017-06-22 Version 5.6.5
+  - modify PGI compiler option -O3
+  - PerfMonitor.cpp >> L.935, add if (i == 0) continue;
+
+
+---
+- 2017-06-12 Version 5.6.4
+  - add PGI compiler environment on reedbush.cc.u-tokyo.ac.jp
 
 ---
 - 2017-06-02 Version 5.6.3
   - change order .*frtpx$ > INTEL_F_TCS > GNU > Intel > PGI in FreeForm MACRO
 
-  
+
 ---
 - 2017-06-01 Version 5.6.2
   - Add INTEL_F_TCS environment to cmake

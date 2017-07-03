@@ -50,10 +50,9 @@ if (TARGET_ARCH STREQUAL "FX10")
     set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -fpp -O3")
 
   elseif(CMAKE_CXX_COMPILER_ID STREQUAL "PGI")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fastsse")
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fastsse")
-    set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -O3")
-
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -Minfo=all -Mipa=inline")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O3 -Minfo=all")
+    set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -O3 -Minfo=all")
   else()
     message("using default option")
   endif()

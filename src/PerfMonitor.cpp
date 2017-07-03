@@ -933,6 +933,8 @@ namespace pm_lib {
         i = j; //	1:登録順で表示
       }
 
+      if (i == 0) continue;
+
       PerfWatch& w = m_watchArray[i];
       if ( !(w.m_count > 0) ) continue;
       //	if ( !w.m_exclusive || w.m_label.empty()) continue;
