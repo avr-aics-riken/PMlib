@@ -3,6 +3,11 @@
 ## REVISION HISTORY
 
 ---
+- 2017-07-05 Version 5.6.6
+  - set(CMAKE_FIND_ROOT_PATH   /opt/FJSVtclang/1.2.0) in Toolchaon_K.cmake
+
+
+---
 - 2017-06-22 Version 5.6.5
   - modify PGI compiler option -O3
   - PerfMonitor.cpp >> L.935, add if (i == 0) continue;
