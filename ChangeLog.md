@@ -3,9 +3,9 @@
 ## REVISION HISTORY
 
 ---
-- 2017-07-03 Version 5.6.6
-  - update CMAKE_Fortran_FLAGS handling : CMakeLists.txt and CompileOptionSelector.cmake
-  - fix to link PAPI 5.5.1+ static library with Intel and GNU compiler : example/CMakeLists.txt
+- 2017-07-05 Version 5.6.6
+  - set(CMAKE_FIND_ROOT_PATH   /opt/FJSVtclang/1.2.0) in Toolchaon_K.cmake
+
 
 ---
 - 2017-06-22 Version 5.6.5

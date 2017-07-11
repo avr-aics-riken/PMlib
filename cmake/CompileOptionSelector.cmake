@@ -111,7 +111,7 @@ endmacro()
 
 macro(checkOpenMP)
   if(enable_OPENMP)
-    if((USE_F_TCS STREQUAL "YES") OR (CMAKE_CXX_COMPILER MATCHES ".*FCCpx$"))
+    if(USE_F_TCS STREQUAL "YES")
       set(OpenMP_C_FLAGS "-Kopenmp")
       set(OpenMP_CXX_FLAGS "-Kopenmp")
       set(OpenMP_Fortran_FLAGS "-Kopenmp")
