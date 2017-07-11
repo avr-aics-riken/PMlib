@@ -57,8 +57,7 @@ else()
 endif()
 
 if(OPT_PAPI)
-  # options for GNU linker ld is better passed using -Wl, rather than using
-  # compiler enabled option -B
+  # GNU linker ld options are better passed using -Wl, rather than -B compiler phase option
   target_link_libraries(example1 -lpapi_ext -Wl,'-Bstatic,-lpapi,-lpfm,-Bdynamic')
 endif()
 
