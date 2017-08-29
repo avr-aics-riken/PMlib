@@ -42,7 +42,7 @@ extern void sortPapiCounterList ();
 extern void outputPapiCounterHeader (FILE*, std::string);
 extern void outputPapiCounterList (FILE*);
 extern void outputPapiCounterLegend (FILE*);
-extern double countPapiByte (pmlib_papi_chooser );
+//	extern double countPapiByte (pmlib_papi_chooser );
 
 
 namespace pm_lib {
@@ -150,11 +150,23 @@ namespace pm_lib {
   {
 #ifdef USE_PAPI
 
+	#ifdef DEBUG_PRINT_PAPI
+    int *ip_debug;
+	ip_debug=&my_papi.num_events;
+    if (my_rank == 0) {
+		fprintf(stderr, "gatherHWPC() my_rank=%d, my_papi.num_events=%d, ip_debug=%p\n",
+			my_rank, my_papi.num_events, ip_debug );
+    }
+	#endif
 	if ( my_papi.num_events == 0) return;
 
     int is_unit = statsSwitch();
 	if ( (is_unit == 0) || (is_unit == 1) ) {
-		printError("gatherHWPC()",  "internal error. is_unit=%d \n", is_unit);
+		printError("gatherHWPC()",
+			"my_rank=%d, my_papi.num_events=%d, exclusive=%s, is_unit=%d \n",
+			my_rank, my_papi.num_events, m_exclusive?"true":"false", is_unit);
+
+		printError("gatherHWPC() internal", "PMlib should not reach here.\n");
 		PM_Exit(0);
 	}
 
@@ -222,7 +234,7 @@ namespace pm_lib {
 	if ( m_flopArray == NULL) m_flopArray  = new double[m_np];
 	if ( m_countArray == NULL) m_countArray  = new unsigned long[m_np];
 	if (!(m_timeArray) || !(m_timeArray) || !(m_timeArray)) {
-		printError("gatherHWPC()", "new memory failed. %d(process) x 3 x 8 \n",
+		printError("gather()", "new memory failed. %d(process) x 3 x 8 \n",
 		num_process);
 		PM_Exit(0);
 	}
@@ -700,14 +712,14 @@ namespace pm_lib {
   void PerfWatch::printError(const char* func, const char* fmt, ...)
   {
     if (my_rank == 0) {
-      fprintf(stderr, "*** Error. PerfWatch::%s [%s] ",
+      fprintf(stderr, "*** Error. PerfWatch::%s section [%s] ",
                       func, m_label.c_str());
       va_list ap;
       va_start(ap, fmt);
       vfprintf(stderr, fmt, ap);
       va_end(ap);
     }
-    (void) MPI_Barrier(MPI_COMM_WORLD);
+    //	(void) MPI_Barrier(MPI_COMM_WORLD);
   }
 
 
@@ -731,6 +743,13 @@ namespace pm_lib {
     if (my_rank == 0) {
     fprintf(stderr, "<PerfWatch::setProperties> %s : id=%d, typeCalc=%d, nPEs=%d, my_rank_ID=%d, exclusive=%s\n", label.c_str(), id, typeCalc, nPEs, my_rank_ID, exclusive?"true":"false");
     }
+#endif
+
+#ifdef USE_PAPI
+	if (m_is_first) {
+		my_papi = papi;
+		m_is_first = false;
+	}
 #endif
 
     m_is_OTF = 0;
@@ -885,6 +904,10 @@ namespace pm_lib {
 	for (int i=0; i<my_papi.num_events; i++){
 		my_papi.values[i] = 0;
 	}
+#ifdef DEBUG_PRINT_PAPI
+    if (my_rank == 0)
+		fprintf (stderr, "<PerfWatch::start> [%s] my_papi address=%p\n", m_label.c_str(), &my_papi);
+#endif
 
 	#pragma omp parallel
 	{

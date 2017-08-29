@@ -206,7 +206,7 @@ namespace pm_lib {
 
     //	last_started_label = label;
     #ifdef DEBUG_PRINT_MONITOR
-    int iret = MPI_Barrier(MPI_COMM_WORLD);
+    //	int iret = MPI_Barrier(MPI_COMM_WORLD);
     if (my_rank == 0) {
       fprintf(stderr, "<start> [%s] id=%d\n", label.c_str(), id);
     }
@@ -237,7 +237,7 @@ namespace pm_lib {
     m_watchArray[id].stop(flopPerTask, iterationCount);
 
     #ifdef DEBUG_PRINT_MONITOR
-    int iret = MPI_Barrier(MPI_COMM_WORLD);
+    //	int iret = MPI_Barrier(MPI_COMM_WORLD);
     if (my_rank == 0) {
       fprintf(stderr, "<stop> [%s] id=%d\n", label.c_str(), id);
     }
@@ -478,8 +478,12 @@ namespace pm_lib {
 
 #ifdef USE_PAPI
     //	II. HWPC/PAPIレポート：HWPC計測結果を出力
+	char* c_env;
     if (my_rank == 0) {
+		c_env = std::getenv("HWPC_CHOOSER");
+		if (c_env != NULL) {
         fprintf(fp, "\n# PMlib hardware performance counter (HWPC) Report -------------------------\n");
+		}
     }
 
     for (int j = 0; j < m_nWatch; j++) {
@@ -502,7 +506,7 @@ namespace pm_lib {
       }
     }
 #endif
-    int iret = MPI_Barrier(MPI_COMM_WORLD);
+    //	int iret = MPI_Barrier(MPI_COMM_WORLD);
   }
 
 
@@ -770,7 +774,7 @@ namespace pm_lib {
       m_watchArray[0].finalizeOTF();
     }
 #endif
-    int iret = MPI_Barrier(MPI_COMM_WORLD);
+    //	int iret = MPI_Barrier(MPI_COMM_WORLD);
 #ifdef DEBUG_PRINT_MONITOR
     if (my_rank == 0) {
 	  fprintf(stderr, "\t<postTrace> ends\n");

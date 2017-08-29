@@ -55,7 +55,9 @@ namespace pm_lib {
 
   /// デバッグ用マクロ
 #define PM_Exit(x) \
-((void)printf("exit at %s:%u\n", __FILE__, __LINE__), exit((x)))
+((void)fprintf(stderr, "*** continue from <%s> line:%u\n", __FILE__, __LINE__))
+//	((void)printf("exit at %s:%u\n", __FILE__, __LINE__), exit((x)))
+
 
 
   /**
@@ -351,8 +353,8 @@ namespace pm_lib {
 	void outputPapiCounterHeader (FILE* fp, std::string s_label);
 	void outputPapiCounterList (FILE* fp);
 	void outputPapiCounterLegend (FILE* fp);
-	double countPapiFlop (pmlib_papi_chooser my_papi);
-	double countPapiByte (pmlib_papi_chooser my_papi);
+	//	double countPapiFlop (pmlib_papi_chooser my_papi);
+	//	double countPapiByte (pmlib_papi_chooser my_papi);
 	void outputPapiCounterGroup (FILE* fp, MPI_Group p_group, int* pp_ranks);
 
   };

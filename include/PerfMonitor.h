@@ -107,7 +107,7 @@ namespace pm_lib {
     ///   第１引数は必須。第２引数は明示的な自己申告モードの場合に必須。
     ///   第３引数は省略可
     ///
-    void setProperties(const std::string& label, Type type, bool exclusive=true);
+    void setProperties(const std::string& label, Type type=CALC, bool exclusive=true);
 
 
     /// 測定区間スタート

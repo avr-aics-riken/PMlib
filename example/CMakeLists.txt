@@ -1,4 +1,4 @@
-###################################################################################
+##################################################################################
 #
 # PMlib - Performance Monitor Library
 #
@@ -57,8 +57,11 @@ else()
 endif()
 
 if(OPT_PAPI)
-  # GNU linker ld options are better passed using -Wl, rather than -B compiler phase option
-  target_link_libraries(example1 -lpapi_ext -Wl,'-Bstatic,-lpapi,-lpfm,-Bdynamic')
+  ## GNU linker ld options are better passed using -Wl, rather than -B compiler phase option
+  ## Static PAPI library on FX100 has been built errorneously by Fujitsu,
+  ## so the following link line can not be used, unfortunately
+  # target_link_libraries(example1 -lpapi_ext -Wl,'-Bstatic,-lpapi,-lpfm,-Bdynamic')
+  target_link_libraries(example1 -lpapi_ext -Wl,'-lpapi,-lpfm')
 endif()
 
 if(OPT_OTF)
@@ -88,7 +91,8 @@ else()
 endif()
 
 if(OPT_PAPI)
-  target_link_libraries(example2 -lpapi_ext -Wl,'-Bstatic,-lpapi,-lpfm,-Bdynamic')
+  # target_link_libraries(example2 -lpapi_ext -Wl,'-Bstatic,-lpapi,-lpfm,-Bdynamic')
+  target_link_libraries(example2 -lpapi_ext -Wl,'-lpapi,-lpfm')
 endif()
 
 if(OPT_OTF)
@@ -120,7 +124,8 @@ if(with_MPI)
   target_link_libraries(example3 -lPMmpi)
 
   if(OPT_PAPI)
-    target_link_libraries(example3 -lpapi_ext -Wl,'-Bstatic,-lpapi,-lpfm,-Bdynamic')
+    # target_link_libraries(example3 -lpapi_ext -Wl,'-Bstatic,-lpapi,-lpfm,-Bdynamic')
+    target_link_libraries(example3 -lpapi_ext -Wl,'-lpapi,-lpfm')
   endif()
 
   if(OPT_OTF)
@@ -152,7 +157,8 @@ if(enable_Fortran)
   endif()
 
   if(OPT_PAPI)
-    target_link_libraries(example4 -lpapi_ext -Wl,'-Bstatic,-lpapi,-lpfm,-Bdynamic')
+    # target_link_libraries(example4 -lpapi_ext -Wl,'-Bstatic,-lpapi,-lpfm,-Bdynamic')
+    target_link_libraries(example4 -lpapi_ext -Wl,'-lpapi,-lpfm')
   endif()
 
   if(OPT_OTF)
@@ -188,7 +194,8 @@ if(with_MPI)
   target_link_libraries(example5 -lPMmpi)
 
   if(OPT_PAPI)
-    target_link_libraries(example5 -lpapi_ext -Wl,'-Bstatic,-lpapi,-lpfm,-Bdynamic')
+    # target_link_libraries(example5 -lpapi_ext -Wl,'-Bstatic,-lpapi,-lpfm,-Bdynamic')
+    target_link_libraries(example5 -lpapi_ext -Wl,'-lpapi,-lpfm')
   endif()
 
   if(OPT_OTF)
