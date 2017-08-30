@@ -3,6 +3,16 @@
 ## REVISION HISTORY
 
 ---
+- 2017-08-30 Version 5.6.9
+  - Set the default timer to gettimeofday()
+  - Move the array initialization from start() to setProperties(), which maybe redundant but safer.
+  - Changed output info from DEBUG options
+
+---
+- 2017-08-29 Version 5.6.8
+  - revert missing PMlib-user-manual.pdf
+
+---
 - 2017-07-11 Version 5.6.7
   - update example scripts under doc/scripts/ and pdf under doc/tutorials/
   - update CMAKE_Fortran_FLAGS handling : CMakeLists.txt and CompileOptionSelector.cmake
@@ -33,7 +43,7 @@
 - 2017-06-01 Version 5.6.2
   - Add INTEL_F_TCS environment to cmake
 
- 
+
 ---
 - 2017-03-30 Version 5.6.1
   - change _PM_WITHOUT_MPI_ to DISABLE_MPI due to maintain the consistency with other libraries

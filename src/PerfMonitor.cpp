@@ -338,7 +338,7 @@ namespace pm_lib {
         }
       }
     }
-    delete[] m_tcost;
+    delete[] m_tcost; m_tcost = NULL;
   }
 
 

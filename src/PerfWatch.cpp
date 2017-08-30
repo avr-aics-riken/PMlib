@@ -34,10 +34,6 @@
 #include <cstdlib>
 #include <cstdio>
 
-#if defined (__sparcv9)						// K computer and FX100
-	#include <fjcex.h>
-#endif
-
 extern void sortPapiCounterList ();
 extern void outputPapiCounterHeader (FILE*, std::string);
 extern void outputPapiCounterList (FILE*);
@@ -150,6 +146,7 @@ namespace pm_lib {
   {
 #ifdef USE_PAPI
 
+	if ( my_papi.num_events == 0) return;
 	#ifdef DEBUG_PRINT_PAPI
     int *ip_debug;
 	ip_debug=&my_papi.num_events;
@@ -158,9 +155,8 @@ namespace pm_lib {
 			my_rank, my_papi.num_events, ip_debug );
     }
 	#endif
-	if ( my_papi.num_events == 0) return;
 
-    int is_unit = statsSwitch();
+	int is_unit = statsSwitch();
 	if ( (is_unit == 0) || (is_unit == 1) ) {
 		printError("gatherHWPC()",
 			"my_rank=%d, my_papi.num_events=%d, exclusive=%s, is_unit=%d \n",
@@ -220,14 +216,18 @@ namespace pm_lib {
   void PerfWatch::gather()
   {
 	#ifdef DEBUG_PRINT_WATCH
-    if (my_rank == 0) {
-        fprintf(stderr, "\t<gather> [%15s], m_time=%e, m_flop=%e, m_count=%lu\n",
+	if (my_rank == 0) {
+		fprintf(stderr, "\t<gather> [%15s], m_time=%e, m_flop=%e, m_count=%lu\n",
 			m_label.c_str(), m_time, m_flop, m_count );
-    }
+	}
 	#endif
 
     int m_np;
     m_np = num_process;
+
+	if ((m_timeArray != NULL)||(m_flopArray != NULL)||(m_countArray != NULL)) {
+		printError("PMlib gather()", "questionable address in my_rank=%d", my_rank);
+	}
 
 	// The space is reserved only once as a fixed size array
 	if ( m_timeArray == NULL) m_timeArray  = new double[m_np];
@@ -250,6 +250,8 @@ namespace pm_lib {
       if ( MPI_Gather(&m_count, 1, MPI_UNSIGNED_LONG, m_countArray, 1, MPI_UNSIGNED_LONG, 0, MPI_COMM_WORLD) != MPI_SUCCESS ) PM_Exit(0);
       if ( MPI_Allreduce(&m_count, &m_count_sum, 1, MPI_UNSIGNED_LONG, MPI_SUM, MPI_COMM_WORLD) != MPI_SUCCESS ) PM_Exit(0);
     }
+	// Above arrays will be used by the subsequent routines, and should not be deleted here
+	// i.e. m_timeArray, m_flopArray, m_countArray
   }
 
 
@@ -353,9 +355,6 @@ namespace pm_lib {
 
   /// 時刻を取得
   ///
-  /// If available, call precise timer function
-  /// Otherwise, gettimeofdayシステムコールを使用.
-  ///
   ///   @return 時刻値(秒)
   ///
   //   		Windows: GetSystemTimeAsFileTime API(sph_win32_util.h)を使用???
@@ -363,56 +362,46 @@ namespace pm_lib {
   double PerfWatch::getTime()
   {
 
-#if defined (__sparcv9)						// K computer and FX100
+// The default defined macro on K computer and FX100 is (__sparcv9)
+#if defined (PRECISE_SPARC)
+	#include <fjcex.h>
 	register double tval;
 	tval = __gettod()*1.0e-6;
 	return (tval);
-
-#elif defined (__APPLE__)
-  struct timeval tv;
-  gettimeofday(&tv, 0);
-  return (double)tv.tv_sec + (double)tv.tv_usec * 1.0e-6;
-
-#elif defined(__x86_64__)					// Intel Xeon
-
-    #if defined (__INTEL_COMPILER) || defined(__gnu_linux__)
-    // Replace the following code segment using inline assembler
+// The default defined macro on  Intel Xeon is (__x86_64__)
+#elif defined(PRECISE_X86_64)
+	#if defined (__INTEL_COMPILER) || (__gnu_linux__)
+    // Can replace the following code segment using inline assembler
 	unsigned long long tsc;
 	unsigned int lo, hi;
 	__asm __volatile__ ( "rdtsc" : "=a"(lo), "=d"(hi) );
 	tsc = ( (unsigned long long)lo)|( ((unsigned long long)hi)<<32 );
 	return ((double)tsc * second_per_cycle);
+	#endif
 
-    #else			// other linux/unix
+// Popular Linux, Unix, Macos platforms
+// We use this in PMlib generally
+#else
     struct timeval tv;
     gettimeofday(&tv, 0);
     return (double)tv.tv_sec + (double)tv.tv_usec * 1.0e-6;
-    #endif
 
-#else			// Other platforms. Not tested. Let's assume gettimeofday().
-    struct timeval tv;
-    gettimeofday(&tv, 0);
-    return (double)tv.tv_sec + (double)tv.tv_usec * 1.0e-6;
 #endif
   }
 
+
+  // This is just an alternative routine. We don't use it.
   void PerfWatch::read_cpu_clock_freq()
-  // read_cpu_clock_freq() reads the cpu freqency from  /proc/cpuinfo, etc..
   {
 #if defined (__APPLE__)
 /*
-  cpu_clock_freq=0.0;
-  second_per_cycle=0.0;
-
+    // read the cpu freqency thru sysctl
   FILE *fp;
   char buf[256];
-
   if ((fp = popen("sysctl -n machdep.cpu.brand_string", "r")) == NULL) {
     fprintf(stderr, "Failure popen\n");
     exit(-1);
   }
-
-  // 実行結果を受けとる
   while (fgets(buf, sizeof(buf), fp) != NULL) {
     printf("%s", buf);
   }
@@ -423,6 +412,8 @@ namespace pm_lib {
 
 #elif defined(__x86_64__)					// Intel Xeon
     #if defined (__INTEL_COMPILER) || defined(__gnu_linux__)
+/*
+    // read the cpu freqency from /proc/cpuinfo
     cpu_clock_freq=0.0;
     second_per_cycle=0.0;
 
@@ -436,7 +427,6 @@ namespace pm_lib {
     }
     while (fgets(buffer, 1024, fp) != NULL) {
     	//	printf("%s", buffer);
-    	// assumed format
     	if (!strncmp(buffer, "cpu MHz",7)) {
     		sscanf(buffer, "cpu MHz\t\t: %lf", &value);
     		// sscanf handles regexp such as: sscanf (buffer, "%[^\t:]", value);
@@ -450,6 +440,7 @@ namespace pm_lib {
     	return;
     }
     second_per_cycle = 1.0/(double)cpu_clock_freq;
+*/
     #endif
 #endif
     return;
@@ -489,7 +480,6 @@ namespace pm_lib {
 
     if ( total_count > 0 && is_unit <= 4) {
       fprintf(fp, "Label  %s%s\n", m_exclusive ? "" : "*", m_label.c_str());
-      // fprintf(fp, "Header ID  :     call   time[s] time[%%]  t_wait[s]  t[s]/call   flop|msg    speed              \n");
       fprintf(fp, "Header ID  :     call   time[s] time[%%]  t_wait[s]  t[s]/call   counter     speed              \n");
       for (int i = 0; i < m_np; i++) {
 		t_per_call = (m_countArray[i]==0) ? 0.0: m_timeArray[i]/m_countArray[i];
