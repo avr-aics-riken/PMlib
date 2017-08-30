@@ -206,7 +206,6 @@ namespace pm_lib {
 
     //	last_started_label = label;
     #ifdef DEBUG_PRINT_MONITOR
-    //	int iret = MPI_Barrier(MPI_COMM_WORLD);
     if (my_rank == 0) {
       fprintf(stderr, "<start> [%s] id=%d\n", label.c_str(), id);
     }
@@ -237,7 +236,6 @@ namespace pm_lib {
     m_watchArray[id].stop(flopPerTask, iterationCount);
 
     #ifdef DEBUG_PRINT_MONITOR
-    //	int iret = MPI_Barrier(MPI_COMM_WORLD);
     if (my_rank == 0) {
       fprintf(stderr, "<stop> [%s] id=%d\n", label.c_str(), id);
     }
@@ -338,7 +336,7 @@ namespace pm_lib {
         }
       }
     }
-    delete[] m_tcost;
+    delete[] m_tcost; m_tcost = NULL;
   }
 
 
@@ -506,7 +504,6 @@ namespace pm_lib {
       }
     }
 #endif
-    //	int iret = MPI_Barrier(MPI_COMM_WORLD);
   }
 
 
