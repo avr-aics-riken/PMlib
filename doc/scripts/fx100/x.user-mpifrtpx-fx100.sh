@@ -12,7 +12,7 @@ PAPI_LDFLAGS=" -lpapi_ext -lpapi -lpfm "
 OTF_DIR=${HOME}/otf/local
 OTF_LDFLAGS=" -lotf_ext -L${OTF_DIR}/lib -lopen-trace-format -lotfaux "
 
-#	FX100LDFLAGS="-Ntl_notrt -Nfjcex"
+#	FX100LDFLAGS="-Ntl_notrt"
 FX100LDFLAGS="-Ntl_notrt --linkfortran "
 LDFLAGS+=" ${PMLIB_LDFLAGS} ${PAPI_LDFLAGS} ${OTF_LDFLAGS} ${FX100LDFLAGS} "
 
@@ -32,15 +32,14 @@ rm $WK_DIR/*
 MY_SRC=${HOME}/pmlib/PMlib-5.6.3/example/test4
 cp $MY_SRC/f_main.f90 main.f90
 
-CXXFLAGS="-Kopenmp,fast -Ntl_notrt -w -Nfjcex "
-CFLAGS="-std=c99 -Kopenmp,fast -Ntl_notrt -w -Nfjcex "
+CXXFLAGS="-Kopenmp,fast -Ntl_notrt -w "
+CFLAGS="-std=c99 -Kopenmp,fast -Ntl_notrt -w "
 FCFLAGS="-Cpp -Kopenmp,fast -Ntl_notrt "
 
 #NG	mpifrtpx    ${FCFLAGS} ${INCLUDES} main.f90 ${LDFLAGS}
 
-mpifrtpx    ${FCFLAGS} ${INCLUDES} -c main.f90 
+mpifrtpx    ${FCFLAGS} ${INCLUDES} -c main.f90
 mpiFCCpx    ${CXXFLAGS} ${INCLUDES} main.o ${LDFLAGS}
 
 ls -go
 file a.out
-

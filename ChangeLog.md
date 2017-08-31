@@ -3,14 +3,21 @@
 ## REVISION HISTORY
 
 ---
+- 2017-08-31 Version 5.7.0
+  - rmove -Nfjcex from entire source
+
+
+---
 - 2017-08-30 Version 5.6.9
   - Set the default timer to gettimeofday()
   - Move the array initialization from start() to setProperties(), which maybe redundant but safer.
   - Changed output info from DEBUG options
 
+
 ---
 - 2017-08-29 Version 5.6.8
   - revert missing PMlib-user-manual.pdf
+
 
 ---
 - 2017-07-11 Version 5.6.7

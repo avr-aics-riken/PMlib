@@ -21,7 +21,7 @@ PMLIB_LDFLAGS="-L${PMLIB_DIR}/lib -lPM "
 PAPI_DIR="yes"
 PAPI_LDFLAGS="-lpapi_ext -Wl,-Bstatic,-lpapi,-lpfm,-Bdynamic "
 
-LDFLAGS+=" ${PMLIB_LDFLAGS} ${PAPI_LDFLAGS} -w -Nfjcex"
+LDFLAGS+=" ${PMLIB_LDFLAGS} ${PAPI_LDFLAGS} -w "
 
 PMLIB_INCLUDES="-I${PMLIB_DIR}/include "
 INCLUDES="${PMLIB_INCLUDES} ${PAPI_INCLUDES} "
@@ -34,5 +34,3 @@ FCCpx ${CXXFLAGS} ${INCLUDES} mxm.cpp ${LDFLAGS}
 
 ls -l
 file a.out
-
-

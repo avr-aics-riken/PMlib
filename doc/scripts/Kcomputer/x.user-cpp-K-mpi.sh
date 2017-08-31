@@ -18,7 +18,7 @@ PAPI_LDFLAGS="-lpapi_ext -Wl,-Bstatic,-lpapi,-lpfm,-Bdynamic "
 OTF_DIR=${HOME}/otf/usr_local_otf/opt-1.12.5
 OTF_LDFLAGS="-lotf_ext -L${OTF_DIR}/lib -lopen-trace-format -lotfaux "
 
-LDFLAGS+=" ${PMLIB_LDFLAGS} ${PAPI_LDFLAGS} ${OTF_LDFLAGS} -w -Nfjcex"
+LDFLAGS+=" ${PMLIB_LDFLAGS} ${PAPI_LDFLAGS} ${OTF_LDFLAGS} -w "
 
 PMLIB_INCLUDES="-I${PMLIB_DIR}/include "
 OTF_INCLUDES="-I${OTF_DIR}/include/open-trace-format "
@@ -38,4 +38,3 @@ mpiFCCpx ${CXXFLAGS} ${INCLUDES} -o a.out.mpi  main.cpp ${LDFLAGS}
 
 ls -l
 file a.out.mpi
-

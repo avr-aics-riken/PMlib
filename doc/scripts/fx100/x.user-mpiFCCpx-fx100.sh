@@ -12,7 +12,7 @@ PAPI_LDFLAGS=" -lpapi_ext -lpapi -lpfm "
 OTF_DIR=${HOME}/otf/usr_local_otf/fx100
 OTF_LDFLAGS=" -lotf_ext -L${OTF_DIR}/lib -lopen-trace-format -lotfaux "
 
-FX100LDFLAGS="-Ntl_notrt -Nfjcex"
+FX100LDFLAGS="-Ntl_notrt"
 LDFLAGS+=" ${PMLIB_LDFLAGS} ${PAPI_LDFLAGS} ${OTF_LDFLAGS} ${FX100LDFLAGS} "
 
 
@@ -31,7 +31,7 @@ rm $WK_DIR/*
 PACKAGE_DIR=${HOME}/pmlib/package
 cp ${PACKAGE_DIR}/doc/src_tutorial/main_mpi.cpp  main.cpp
 
-#	CXXFLAGS="-Kopenmp,fast -Ntl_notrt  -w -Nfjcex "
+#	CXXFLAGS="-Kopenmp,fast -Ntl_notrt  -w"
 #	CFLAGS="-std=c99 -Kopenmp,fast -Ntl_notrt -w"
 #	FCFLAGS="-Cpp -Kopenmp,fast -Ntl_notrt -w"
 
@@ -43,5 +43,3 @@ mpiFCCpx    ${CXXFLAGS} ${INCLUDES} main.cpp ${LDFLAGS}
 
 ls -go
 file a.out
-
-

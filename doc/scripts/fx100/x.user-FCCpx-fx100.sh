@@ -12,7 +12,7 @@ PAPI_LDFLAGS="-lpapi -lpfm "
 OTF_DIR=${HOME}/otf/local
 OTF_LDFLAGS=" -lotf_ext -L${OTF_DIR}/lib -lopen-trace-format -lotfaux "
 
-FX100LDFLAGS="-Ntl_notrt -Nfjcex"
+FX100LDFLAGS="-Ntl_notrt"
 LDFLAGS+=" ${PMLIB_LDFLAGS} ${PAPI_LDFLAGS} ${OTF_LDFLAGS} ${FX100LDFLAGS} "
 
 
@@ -33,7 +33,7 @@ PACKAGE_DIR=${HOME}/pmlib/package
 cp ${PACKAGE_DIR}/doc/src_tutorial/main_serial.cpp  main.cpp
 
 
-CXXFLAGS="-Kopenmp,fast -Ntl_notrt  -w -Nfjcex -DDISABLE_MPI"
+CXXFLAGS="-Kopenmp,fast -Ntl_notrt  -w -DDISABLE_MPI"
 CFLAGS="-std=c99 -Kopenmp,fast -Ntl_notrt -w -DDISABLE_MPI"
 FCFLAGS="-Cpp -Kopenmp,fast -Ntl_notrt -DDISABLE_MPI"
 
@@ -41,4 +41,3 @@ FCCpx    ${CXXFLAGS} ${INCLUDES} main.cpp ${LDFLAGS}
 
 ls -go
 file a.out
-
