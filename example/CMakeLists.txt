@@ -1,4 +1,4 @@
-###################################################################################
+##################################################################################
 #
 # PMlib - Performance Monitor Library
 #
@@ -57,8 +57,11 @@ else()
 endif()
 
 if(OPT_PAPI)
-  # GNU linker ld options are better passed using -Wl, rather than -B compiler phase option
+  ## GNU linker ld options are better passed using -Wl, rather than -B compiler phase option
   target_link_libraries(example1 -lpapi_ext -Wl,'-Bstatic,-lpapi,-lpfm,-Bdynamic')
+  # Static PAPI library on FX100 has been built errorneously by Fujitsu,
+  # so the following link line must be used, unfortunately
+  # target_link_libraries(example1 -lpapi_ext -Wl,'-lpapi,-lpfm')
 endif()
 
 if(OPT_OTF)
@@ -89,6 +92,7 @@ endif()
 
 if(OPT_PAPI)
   target_link_libraries(example2 -lpapi_ext -Wl,'-Bstatic,-lpapi,-lpfm,-Bdynamic')
+  # target_link_libraries(example2 -lpapi_ext -Wl,'-lpapi,-lpfm')
 endif()
 
 if(OPT_OTF)
@@ -121,6 +125,7 @@ if(with_MPI)
 
   if(OPT_PAPI)
     target_link_libraries(example3 -lpapi_ext -Wl,'-Bstatic,-lpapi,-lpfm,-Bdynamic')
+    # target_link_libraries(example3 -lpapi_ext -Wl,'-lpapi,-lpfm')
   endif()
 
   if(OPT_OTF)
@@ -153,6 +158,7 @@ if(enable_Fortran)
 
   if(OPT_PAPI)
     target_link_libraries(example4 -lpapi_ext -Wl,'-Bstatic,-lpapi,-lpfm,-Bdynamic')
+    # target_link_libraries(example4 -lpapi_ext -Wl,'-lpapi,-lpfm')
   endif()
 
   if(OPT_OTF)
@@ -189,6 +195,7 @@ if(with_MPI)
 
   if(OPT_PAPI)
     target_link_libraries(example5 -lpapi_ext -Wl,'-Bstatic,-lpapi,-lpfm,-Bdynamic')
+    # target_link_libraries(example5 -lpapi_ext -Wl,'-lpapi,-lpfm')
   endif()
 
   if(OPT_OTF)

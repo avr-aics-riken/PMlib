@@ -27,9 +27,9 @@ else()
   CMAKE_FORCE_Fortran_COMPILER(frtpx GNU)
 endif()
 
-set(CMAKE_FIND_ROOT_PATH /opt/FJSVfxlang/1.2.1)
-set(CMAKE_INCLUDE_PATH /opt/FJSVfxlang/1.2.1/include)
-set(CMAKE_LIBRARY_PATH /opt/FJSVfxlang/1.2.1/lib64)
+set(CMAKE_FIND_ROOT_PATH /opt/FJSVmxlang/GM-2.0.0-05)
+set(CMAKE_INCLUDE_PATH /opt/FJSVmxlang/GM-2.0.0-05/include)
+set(CMAKE_LIBRARY_PATH /opt/FJSVmxlang/GM-2.0.0-05/lib64)
 
 set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)
 set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)

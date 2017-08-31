@@ -64,17 +64,27 @@ void PerfWatch::initializeHWPC ()
 	read_cpu_clock_freq(); /// API for reading processor clock frequency.
 
 #ifdef USE_PAPI
-	unsigned long l_papi;
-	l_papi = PAPI_library_init( PAPI_VER_CURRENT );
-	if (l_papi != PAPI_VER_CURRENT ) {
-		fprintf (stderr, "*** error. <PAPI_library_init> return code: %lu\n", l_papi);
+	int i_papi;
+	i_papi = PAPI_library_init( PAPI_VER_CURRENT );
+	if (i_papi != PAPI_VER_CURRENT ) {
+		fprintf (stderr, "*** error. <PAPI_library_init> return code: %d\n", i_papi);
 		fprintf (stderr, "\t It should match %lu\n", (unsigned long)PAPI_VER_CURRENT);
 		PM_Exit(0);
 		}
 
 	createPapiCounterList ();
 
-	int i_papi;
+	#ifdef DEBUG_PRINT_PAPI
+	int my_id;
+	MPI_Comm_rank(MPI_COMM_WORLD, &my_id);
+	int *ip_debug;
+	ip_debug=&papi.num_events;
+	if (my_id == 0) {
+		fprintf(stderr, "initializeHWPC() papi.num_events=%d, ip_debug=%p\n",
+			papi.num_events, ip_debug );
+	}
+	#endif
+
 	i_papi = PAPI_thread_init( (unsigned long (*)(void)) (omp_get_thread_num) );
 	if (i_papi != PAPI_OK ) {
 		fprintf (stderr, "*** error. <PAPI_thread_init> failed. %d\n", i_papi);
@@ -82,10 +92,11 @@ void PerfWatch::initializeHWPC ()
 		}
 	#pragma omp parallel
 	{
-	i_papi = my_papi_add_events (papi.events, papi.num_events);
-	if ( i_papi != PAPI_OK ) {
-		int i_thread = omp_get_thread_num();
-		fprintf(stderr, "*** error. <my_papi_add_events> code:%d thread:%d\n", i_papi, i_thread);
+	int t_papi;
+	t_papi = my_papi_add_events (papi.events, papi.num_events);
+	if ( t_papi != PAPI_OK ) {
+		int t_thread = omp_get_thread_num();
+		fprintf(stderr, "*** error. <my_papi_add_events> code:%d thread:%d\n", t_papi, t_thread);
 		fprintf(stderr, "\t most likely un-supported PAPI combination. HWPC is terminated.\n");
 		PM_Exit(0);
 		}
