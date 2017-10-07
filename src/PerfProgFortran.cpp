@@ -120,17 +120,16 @@ void f_pm_setproperties_ (char* fc, int& f_type, int& f_exclusive, int fc_size)
 	fprintf(stderr, "<f_pm_setproperties_> fc=%s, f_type=%d, f_exclusive=%d, fc_size=%d\n", s.c_str(), f_type, f_exclusive, fc_size);
 #endif
 	if (s == "" || fc_size == 0) {
-		fprintf(stderr, "<f_pm_setproperties> argument fc is empty(null)\n");
-		PM_Exit(0);
+		fprintf(stderr, "<f_pm_setproperties> argument fc is (null). The call is ignored.\n");
+		return;
 	}
 	if (f_exclusive == 1) {
 		exclusive=true;
 	} else if ((f_exclusive == 0)||(f_exclusive == 2)) {
 		exclusive=false;
 	} else {
-		fprintf(stderr, "<f_pm_setproperties> ");
-		fprintf(stderr, "argument f_exclusive is invalid: %u\n", f_exclusive);
-		PM_Exit(0);
+		fprintf(stderr, "<f_pm_setproperties> argument f_exclusive is invalid: %u . The call is ignored.\n", f_exclusive);
+		return;
 	}
 	//	PM.setProperties(s, f_type, exclusive);
 	if (f_type == 0) {
@@ -138,9 +137,8 @@ void f_pm_setproperties_ (char* fc, int& f_type, int& f_exclusive, int fc_size)
 	} else if (f_type == 1) {
 		arg_type = PM.CALC;
 	} else {
-		fprintf(stderr, "<f_pm_setproperties> ");
-		fprintf(stderr, "argument f_type is invalid: %u\n", f_type);
-		PM_Exit(0);
+		fprintf(stderr, "<f_pm_setproperties> argument f_type is invalid: %u . The call is ignored. \n", f_type);
+		return;
 	}
 	PM.setProperties(s, arg_type, exclusive);
 	return;
@@ -163,12 +161,12 @@ void f_pm_start_ (char* fc, int fc_size)
 	fprintf(stderr, "<f_pm_start_> fc=%s, fc_size=%d\n", s.c_str(), fc_size);
 #endif
 	if (s == "") {
-		fprintf(stderr, "<f_pm_start_> ");
-		fprintf(stderr, "argument fc is empty(null)\n");
+		fprintf(stderr, "<f_pm_start_> argument fc is empty(null)\n");
+		return;
 	}
 	if (fc_size == 0) {
-		fprintf(stderr, "<f_pm_start_> ");
-		fprintf(stderr, "argument fc_size is 0\n");
+		fprintf(stderr, "<f_pm_start_> argument fc_size is 0\n");
+		return;
 	}
 	PM.start(s);
 	return;
@@ -208,6 +206,50 @@ void f_pm_stop_ (char* fc, double& fpt, unsigned& tic, int fc_size)
 	PM.stop(s, fpt, tic);
 	return;
 }
+
+
+/// PMlib Fortran インタフェイス
+/// 測定区間リセット
+///
+///   @param[in] label ラベル文字列。測定区間を識別するために用いる。
+///   @param[in] int fc_size  character文字列ラベルの長さ（文字数）
+///
+///   @note  Fortranコンパイラはfc_size引数を自動的に追加してしまう
+///
+void f_pm_reset_ (char* fc, int fc_size)
+{
+	std::string s=std::string(fc,fc_size);
+
+#ifdef DEBUG_PRINT_MONITOR
+	fprintf(stderr, "<f_pm_reset_> fc=%s, fc_size=%d\n", s.c_str(), fc_size);
+#endif
+	if (s == "") {
+		fprintf(stderr, "<f_pm_reset_> argument fc is empty(null)\n");
+		return;
+	}
+	if (fc_size == 0) {
+		fprintf(stderr, "<f_pm_reset_> argument fc_size is 0\n");
+		return;
+	}
+	PM.reset(s);
+	return;
+}
+
+
+/// PMlib Fortran インタフェイス
+/// 全測定区間リセット
+///
+///
+void f_pm_resetall_ (void)
+{
+#ifdef DEBUG_PRINT_MONITOR
+	fprintf(stderr, "<f_pm_resetall_> \n");
+#endif
+	PM.resetAll();
+	return;
+}
+
+
 
 /// PMlib Fortran インタフェイス
 /// 全プロセスの全測定結果情報をマスタープロセス(0)に集約

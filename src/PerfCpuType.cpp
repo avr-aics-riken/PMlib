@@ -132,52 +132,77 @@ void PerfWatch::createPapiCounterList ()
 		fprintf (stderr, "*** error. <PAPI_get_hardware_info> failed.\n" );
 	}
 
+// ToDo: Create more robust API than PAPI_get_hardware_info(), and replace it.
+
+//	star:	: Intel(R) Core(TM)2 Duo CPU     E7500  @ 2.93GHz, has sse4
+//	eagles:	: Intel(R) Xeon(R) CPU E5-2650 v2 @ 2.60GHz, has avx
+//	ivy:	: Intel(R) Xeon(R) CPU E5-4620 v2 @ 2.60GHz, has avx
+// haswell:	: Intel(R) Xeon(R) CPU E5-2640 v3 @ 2.60GHz, has avx
+// vsh(snb) : Intel(R) Xeon(R) CPU E5-2670 0 @ 2.60GHz, has avx
+// chicago:	: Intel(R) Xeon(R) CPU E3-1220 v5 @ 3.00GHz (94), has avx
+
+
 //	with Linux, s_model_string is taken from "model name" in /proc/cpuinfo
 	s_model_string = hwinfo->model_string;
 
-	// Intel Xeon E5
+	// Intel Xeon processors
     if (s_model_string.find( "Intel" ) != string::npos &&
-		s_model_string.find( "Xeon" ) != string::npos )
-	{
+		s_model_string.find( "Xeon" ) != string::npos ) {
+		// hwpc_group.i_platform = 0;	// un-supported platform
+		// hwpc_group.i_platform = 1;	// Minimal support for only two types
+		// hwpc_group.i_platform = 2;	// Sandybridge and alike platform
+		// hwpc_group.i_platform = 3;	// Haswell does not support FLOPS events
+		// hwpc_group.i_platform = 4;	// Broadwell. No access to Broadwell yet.
+		// hwpc_group.i_platform = 5;	// Skylake and alike platform
+
 		hwpc_group.platform = "Xeon" ;
-		hwpc_group.i_platform = 5;
+    	if (s_model_string.find( "E3" ) != string::npos ||
+			s_model_string.find( "E5" ) != string::npos ||
+			s_model_string.find( "E7" ) != string::npos ) {
+
+			hwpc_group.i_platform = 2;	// Xeon default model : Sandybridge
+
+			if (s_model_string.find( "v3" ) != string::npos ) {
+				hwpc_group.i_platform = 3;	// Haswell
+			} else if (s_model_string.find( "v4" ) != string::npos ) {
+				hwpc_group.i_platform = 4;	// Broadwell: Minimal support.
+			} else if (s_model_string.find( "v5" ) != string::npos ) {
+				hwpc_group.i_platform = 5;	// Skylake without avx-512
+			}
+		}
+    	else if (s_model_string.find( "Platinum" ) != string::npos ||
+			s_model_string.find( "Gold" ) != string::npos ||
+			s_model_string.find( "Silver" ) != string::npos ) {
+				hwpc_group.i_platform = 5;	// Skylake
+		}
+    	else {
+			hwpc_group.i_platform = 0;	// un-supported Xeon type
+		}
 	}
 
-	// Intel Core i CPU. So far supporting i7 and i5
+	// Intel Core 2 CPU.
     if (s_model_string.find( "Intel" ) != string::npos &&
-		s_model_string.find( "Core" ) != string::npos )
-	{
+		s_model_string.find( "Core(TM)2" ) != string::npos ) {
 		hwpc_group.platform = "Xeon" ;
-		hwpc_group.i_platform = 3;
+		hwpc_group.i_platform = 1;	// Minimal support. only two FLOPS types
 	}
 
-	// K computer
-    if (s_model_string.find( "SPARC64" ) != string::npos &&
-		s_model_string.find( "VIIIfx" ) != string::npos )
-	{
+	// SPARC based processors
+    if (s_model_string.find( "SPARC64" ) != string::npos ) {
 		hwpc_group.platform = "SPARC64" ;
-		hwpc_group.i_platform = 8;
-	}
-
-	// Fujitsu FX10
-    if (s_model_string.find( "SPARC64" ) != string::npos &&
-		s_model_string.find( "IXfx" ) != string::npos )
-	{
-		hwpc_group.platform = "SPARC64" ;
-		hwpc_group.i_platform = 9;
-	}
-
-	// FX100
-    if (s_model_string.find( "SPARC64" ) != string::npos &&
-		s_model_string.find( "XIfx" ) != string::npos )
-	{
-		hwpc_group.platform = "SPARC64" ;
-		hwpc_group.i_platform = 11;
+    	if ( s_model_string.find( "VIIIfx" ) != string::npos ) {
+			hwpc_group.i_platform = 8;	// K computer
+		}
+    	else if ( s_model_string.find( "IXfx" ) != string::npos ) {
+			hwpc_group.i_platform = 9;	// Fujitsu FX10
+		}
+    	else if ( s_model_string.find( "XIfx" ) != string::npos ) {
+			hwpc_group.i_platform = 11;	// Fujitsu FX100
+		}
 	}
 
 
 // 2. Parse the Environment Variable HWPC_CHOOSER
-	//	it may contain multiple options such as HWPC_CHOOSER="FLOPS,VECTOR,..."
 	string s_chooser;
 	string s_default = "NONE (default)";
 
@@ -196,83 +221,27 @@ void PerfWatch::createPapiCounterList ()
 		hwpc_group.index[I_flops] = ip;
 		hwpc_group.number[I_flops] = 0;
 
-		/* [Intel Xeon E5]
-			PAPI_SP_OPS + PAPI_DP_OPS count all the floating point operations.
-			PAPI_DP_OPS  0x80000068
-			 Native Code[0]: 0x4000001c |FP_COMP_OPS_EXE:SSE_SCALAR_DOUBLE|
-			 Native Code[1]: 0x40000020 |FP_COMP_OPS_EXE:SSE_FP_PACKED_DOUBLE|
-			 Native Code[2]: 0x40000021 |SIMD_FP_256:PACKED_DOUBLE| 256-bit packed
-			PAPI_SP_OPS  0x80000067
-			 Native Code[0]: 0x4000001d |FP_COMP_OPS_EXE:SSE_FP_SCALAR_SINGLE|
-			 Native Code[1]: 0x4000001e |FP_COMP_OPS_EXE:SSE_PACKED_SINGLE|
-			 Native Code[2]: 0x4000001f |SIMD_FP_256:PACKED_SINGLE| 256-bit packed
-			PAPI_FP_OPS == un-packed operations only. useless. (PAPI_FP_OPS == PAPI_FP_INS)
-		*/
-		if (hwpc_group.platform == "Xeon" ) { // Intel Xeon E5, Core i7 and i5
-			hwpc_group.number[I_flops] += 2;
-			papi.s_name[ip] = "SP_OPS"; papi.events[ip] = PAPI_SP_OPS; ip++;
-			papi.s_name[ip] = "DP_OPS"; papi.events[ip] = PAPI_DP_OPS; ip++;
-		}
-		/* [K and FX10]
-			PAPI_FP_OPS is supported, and contains 4 native events.
-			 Native Code[0]: 0x40000010  |FLOATING_INSTRUCTIONS|
-			 Native Code[2]: 0x40000008  |SIMD_FLOATING_INSTRUCTIONS|
-			 Native Code[1]: 0x40000011  |FMA_INSTRUCTIONS|
-			 Native Code[3]: 0x40000009  |SIMD_FMA_INSTRUCTIONS|
-		*/
-		if (hwpc_group.platform == "SPARC64" && hwpc_group.i_platform == 8 ) {
-			hwpc_group.number[I_flops] += 1;
-			papi.s_name[ip] = "FP_OPS"; papi.events[ip] = PAPI_FP_OPS; ip++;
-		}
-		if (hwpc_group.platform == "SPARC64" && hwpc_group.i_platform == 9 ) {
-			hwpc_group.number[I_flops] += 1;
-			papi.s_name[ip] = "FP_OPS"; papi.events[ip] = PAPI_FP_OPS; ip++;
-		}
-		/* [FX100]
-			On FX100, PAPI_FP_OPS is not supported. Fujitsu says f.p. ops can be
-			calculated as the sum of 6 instruction values as below.
-			PAPI_FP_OPS = N0 + 2*N1 + 2*N2 + 4*N3 + 4*N4 + 8*N5
-				N0: 0x40000010   FLOATING_INSTRUCTIONS
-				N1: 0x40000011   FMA_INSTRUCTIONS
-				N2: 0x40000008   SIMD_FLOATING_INSTRUCTIONS
-				N3: 0x40000009   SIMD_FMA_INSTRUCTIONS
-				N4: 0x4000007d   4SIMD_FLOATING_INSTRUCTIONS
-				N5: 0x4000007e   4SIMD_FMA_INSTRUCTIONS
-			However, counting SIMD and 4SIMD in one run causes an error.
-			So, a very rough approximation is done baed on XSIMD event count...
-		*/
-		if (hwpc_group.platform == "SPARC64" && hwpc_group.i_platform == 11 ) {
-			hwpc_group.number[I_flops] += 4;
-			papi.s_name[ip] = "FLOATING_INSTRUCTIONS";
-				my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]);
-				papi.s_name[ip] = "FP_INS"; ip++;
-			papi.s_name[ip] = "FMA_INSTRUCTIONS";
-				my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]);
-				papi.s_name[ip] = "FMA_INS"; ip++;
-			papi.s_name[ip] = "XSIMD_FLOATING_INSTRUCTIONS";
-				my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]);
-				papi.s_name[ip] = "XSIMD_FP"; ip++;
-			papi.s_name[ip] = "XSIMD_FMA_INSTRUCTIONS";
-				my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]);
-				papi.s_name[ip] = "XSIMD_FMA"; ip++;
+		if (hwpc_group.platform == "Xeon" ) { // Intel Xeon
+			if (hwpc_group.i_platform == 1 ||
+				hwpc_group.i_platform == 2 ||
+				hwpc_group.i_platform == 4 ||
+				hwpc_group.i_platform == 5 ) {
+				hwpc_group.number[I_flops] += 2;
+				papi.s_name[ip] = "SP_OPS"; papi.events[ip] = PAPI_SP_OPS; ip++;
+				papi.s_name[ip] = "DP_OPS"; papi.events[ip] = PAPI_DP_OPS; ip++;
+			} else {
+				;	// hwpc_group.i_platform = 3;	// Haswell does not support FLOPS events
+			}
 		}
 
-	}
-// if (VECTOR)
-	if ( s_chooser.find( "VECTOR" ) != string::npos ) {
-		hwpc_group.index[I_vector] = ip;
-		hwpc_group.number[I_vector] = 0;
-
-		if (hwpc_group.platform == "Xeon" ) {
-			hwpc_group.number[I_vector] += 2;
-			papi.s_name[ip] = "VEC_SP"; papi.events[ip] = PAPI_VEC_SP; ip++;
-			papi.s_name[ip] = "VEC_DP"; papi.events[ip] = PAPI_VEC_DP; ip++;
-			// on Intel Xeon, PAPI_VEC_INS can not be counted with PAPI_VEC_SP/PAPI_VEC_DP
-		}
 		if (hwpc_group.platform == "SPARC64" ) {
-			hwpc_group.number[I_vector] += 2;
-			papi.s_name[ip] = "VEC_INS"; papi.events[ip] = PAPI_VEC_INS; ip++;
-			papi.s_name[ip] = "FMA_INS"; papi.events[ip] = PAPI_FMA_INS; ip++;
+			if (hwpc_group.i_platform == 8 ||
+				hwpc_group.i_platform == 9 ||
+				hwpc_group.i_platform == 11 ) {
+				hwpc_group.number[I_flops] += 1;
+				papi.s_name[ip] = "FP_OPS"; papi.events[ip] = PAPI_FP_OPS; ip++;
+				//	single precision count is not supported on FX100
+			}
 		}
 	}
 
@@ -282,50 +251,165 @@ void PerfWatch::createPapiCounterList ()
 		hwpc_group.number[I_bandwidth] = 0;
 
 		if (hwpc_group.platform == "Xeon" ) {
-		// Bandwidth related event counting with PAPI on Xeon E5 is quite complex,
-		// If offcore events can be measured, the bandwidth should be calculated as
-		// sum of offcore(demand read/write, prefetch, write back) * linesize *1.0e-9 / time
-		//
-		// A simple assumption could be:
-		// Bandwidth = OFFCORE_REQUESTS:ALL_DATA_RD * 64 *1.0e-9 / time
-		// unfortunately, OFFCORE_REQUESTS events are not available on vsh
-		// Linux kernel must be 3.5+ to support offcore events "OFFCORE_REQUESTS:*"
-		// Instead, the bandwidth from/to uncore, i.e. L3 and DRAM, is calculated below
-		// The events can be of demand read, rfo, or prefetch, and they must be combined.
-		// 	for example, LLC_MISSES represents the L3 miss of demand requests only .
-		// For more info regarding the events, see check_papi_events.cpp
+			// The difference of the event categories over the Xeon generations has made it difficult to
+			// trace the data transactions from/to memory edge device.
+			// Some events must be counted exclusively each other.
+			// We decided to trace the Level2 data cache transactions and bandwidth
 
-			hwpc_group.number[I_bandwidth] += 8;
-			papi.s_name[ip] = "LD_INS"; papi.events[ip] = PAPI_LD_INS; ip++;
-			papi.s_name[ip] = "SR_INS"; papi.events[ip] = PAPI_SR_INS; ip++;
+			hwpc_group.number[I_bandwidth] += 7;
+			papi.s_name[ip] = "LOAD_INS"; papi.events[ip] = PAPI_LD_INS; ip++;
+			papi.s_name[ip] = "STORE_INS"; papi.events[ip] = PAPI_SR_INS; ip++;
 
 			papi.s_name[ip] = "MEM_LOAD_UOPS_RETIRED:L1_HIT";
-			my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); ip++;
+				my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "L1_HIT"; ip++;
 			papi.s_name[ip] = "MEM_LOAD_UOPS_RETIRED:HIT_LFB";
-			my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); ip++;
-			papi.s_name[ip] = "L2_RQSTS:ALL_DEMAND_DATA_RD";	// L2 demand read request
-			my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "L2_DRD_REQ"; ip++;
-			papi.s_name[ip] = "L2_RQSTS:ALL_DEMAND_RD_HIT";		// L2 demand read hit
-			my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "L2_DRD_HIT"; ip++;
-			papi.s_name[ip] = "L2_RQSTS:PF_MISS";
-			my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "L2_PF_MISS"; ip++;
-			papi.s_name[ip] = "L2_RQSTS:RFO_MISS";
-			my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "L2_RFO_MISS"; ip++;
+				my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "LFB_HIT"; ip++;
+			papi.s_name[ip] = "PAPI_L1_TCM";
+				my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "L1_TCM"; ip++;
+			papi.s_name[ip] = "PAPI_L2_TCM";
+				my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "L2_TCM"; ip++;
+			papi.s_name[ip] = "L2_TRANS:ALL";
+				my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "L2_TRANS"; ip++;
+
 		}
 
 		if (hwpc_group.platform == "SPARC64" ) {
-		// load and store counters can not be used together with cache counters
-		//	BandWidth = (L2_MISS_DM + L2_MISS_PF + L2_WB_DM + L2_WB_PF) x 128 *1.0e-9 / time
+			// normal load and store counters can not be used together with cache counters
+			if (hwpc_group.i_platform == 8 || hwpc_group.i_platform == 9 ) {
+				hwpc_group.number[I_bandwidth] += 2;
+				papi.s_name[ip] = "LOAD_STORE_INSTRUCTIONS";
+					my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "LD+ST"; ip++;
+				papi.s_name[ip] = "SIMD_LOAD_STORE_INSTRUCTIONS";
+					my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "SIMD_LD+ST"; ip++;
+			}
+			else if (hwpc_group.i_platform == 11 ) {
+				hwpc_group.number[I_bandwidth] += 2;
+				papi.s_name[ip] = "LOAD_STORE_INSTRUCTIONS";
+					my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "LD+ST"; ip++;
+				papi.s_name[ip] = "XSIMD_LOAD_STORE_INSTRUCTIONS";
+					my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "XSIMD_LDST"; ip++;
+			}
+			//	BandWidth = (L2_MISS_DM + L2_MISS_PF + L2_WB_DM + L2_WB_PF) x 128 *1.0e-9 / time
+			//	SPARC64 event PAPI_L2_TCM == (L2_MISS_DM + L2_MISS_PF)
 
 			hwpc_group.number[I_bandwidth] += 3;
 			papi.s_name[ip] = "L2_TCM"; papi.events[ip] = PAPI_L2_TCM; ip++;
-			//	PAPI_L2_TCM == (L2_MISS_DM + L2_MISS_PF)
+			// The following two events are not shown from papi_avail -d command.
+			// They show up from papi_event_chooser NATIVE L2_WB_DM (or L2_WB_PF) command.
 			papi.s_name[ip] = "L2_WB_DM";
-			my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); ip++;
+				my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); ip++;
 			papi.s_name[ip] = "L2_WB_PF";
-			my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); ip++;
+				my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); ip++;
 		}
 
+	}
+
+// if (VECTOR)
+	if ( s_chooser.find( "VECTOR" ) != string::npos ) {
+		hwpc_group.index[I_vector] = ip;
+		hwpc_group.number[I_vector] = 0;
+
+		if (hwpc_group.platform == "Xeon" ) {
+			if (hwpc_group.i_platform == 1 ) {
+				// hwpc_group.i_platform = 1;	// Minimal support for only two types
+				hwpc_group.number[I_vector] += 2;
+				papi.s_name[ip] = "SP_OPS"; papi.events[ip] = PAPI_SP_OPS; ip++;
+				papi.s_name[ip] = "DP_OPS"; papi.events[ip] = PAPI_DP_OPS; ip++;
+					//	PAPI_FP_OPS (=PAPI_FP_INS) is not useful. un-packed operations only.
+			} else
+			if ( hwpc_group.i_platform == 2 ) {
+				// hwpc_group.i_platform = 2;	// Sandybridge and alike platform
+				hwpc_group.number[I_vector] += 6;
+				papi.s_name[ip] = "FP_COMP_OPS_EXE:SSE_FP_SCALAR_SINGLE";		// scalar
+					my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "SP_SINGLE"; ip++;
+				papi.s_name[ip] = "FP_COMP_OPS_EXE:SSE_PACKED_SINGLE";		// 4 SIMD
+					my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "SP_SSE"; ip++;
+				papi.s_name[ip] = "SIMD_FP_256:PACKED_SINGLE";				// 8 SIMD
+					my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "SP_AVX"; ip++;
+				papi.s_name[ip] = "FP_COMP_OPS_EXE:SSE_SCALAR_DOUBLE";		// scalar
+					my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "DP_SINGLE"; ip++;
+				papi.s_name[ip] = "FP_COMP_OPS_EXE:SSE_FP_PACKED_DOUBLE";	// 2 SIMD
+					my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "DP_SSE"; ip++;
+				papi.s_name[ip] = "SIMD_FP_256:PACKED_DOUBLE";				// 4 SIMD
+					my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "DP_AVX"; ip++;
+			} else
+				// hwpc_group.i_platform = 3;	// Haswell does not support VECTOR events
+				// hwpc_group.i_platform = 4;	// Broadwell. No access to Broadwell yet.
+			if ( hwpc_group.i_platform == 5 ) {
+				// hwpc_group.i_platform = 5;	// Skylake and alike platform
+				hwpc_group.number[I_vector] += 8;
+				papi.s_name[ip] = "FP_ARITH:SCALAR_SINGLE";			//	scalar
+					my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "SP_SINGLE"; ip++;
+				papi.s_name[ip] = "FP_ARITH:128B_PACKED_SINGLE";	//	4 SIMD
+					my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "SP_SSE"; ip++;
+				papi.s_name[ip] = "FP_ARITH:256B_PACKED_SINGLE";	//	8 SIMD
+					my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "SP_AVX"; ip++;
+				papi.s_name[ip] = "FP_ARITH:512B_PACKED_SINGLE";	//	16 SIMD
+					my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "SP_AVXW"; ip++;
+				papi.s_name[ip] = "FP_ARITH:SCALAR_DOUBLE";			//	scalar
+					my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "DP_SINGLE"; ip++;
+				papi.s_name[ip] = "FP_ARITH:128B_PACKED_DOUBLE";	//	2 SIMD
+					my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "DP_SSE"; ip++;
+				papi.s_name[ip] = "FP_ARITH:256B_PACKED_DOUBLE";	//	4 SIMD
+					my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "DP_AVX"; ip++;
+				papi.s_name[ip] = "FP_ARITH:512B_PACKED_DOUBLE";	//	8 SIMD
+					my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "DP_AVXW"; ip++;
+
+			} else {
+				;	// no FLOPS support
+			}
+		}
+		if (hwpc_group.platform == "SPARC64" ) {
+
+			if (hwpc_group.i_platform == 8 || hwpc_group.i_platform == 9 ) {
+			//	[K and FX10]
+			//		PAPI_FP_OPS is supported, and contains 4 native events.
+				hwpc_group.number[I_vector] += 4;
+				papi.s_name[ip] = "FLOATING_INSTRUCTIONS";
+					my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "FP_INS"; ip++;
+				papi.s_name[ip] = "FMA_INSTRUCTIONS";
+					my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "FMA_INS"; ip++;
+				papi.s_name[ip] = "SIMD_FLOATING_INSTRUCTIONS";
+					my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "SIMD_FP"; ip++;
+				papi.s_name[ip] = "SIMD_FMA_INSTRUCTIONS";
+					my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "SIMD_FMA"; ip++;
+			}
+			else if (hwpc_group.i_platform == 11 ) {
+			//	[FX100]
+			/*
+			PAPI_FP_OPS is the combination of
+				"1FLOPS_INSTRUCTIONS",  // good
+				"2FLOPS_INSTRUCTIONS",  // good
+				"4FLOPS_INSTRUCTIONS",  // good
+				"8FLOPS_INSTRUCTIONS",  // good
+				"16FLOPS_INSTRUCTIONS", // good
+			It is quite confusing to map them into the actual f.p. instructions.
+			For double precision:
+				N0: 0x40000010   FLOATING_INSTRUCTIONS
+				N1: 0x40000011   FMA_INSTRUCTIONS
+				N2: 0x40000008   SIMD_FLOATING_INSTRUCTIONS
+				N3: 0x40000009   SIMD_FMA_INSTRUCTIONS
+				N4: 0x4000007d   4SIMD_FLOATING_INSTRUCTIONS
+				N5: 0x4000007e   4SIMD_FMA_INSTRUCTIONS
+				PAPI_FP_OPS = N0 + 2*N1 + 2*N2 + 4*N3 + 4*N4 + 8*N5
+			For single precision, groups for similar instructions should exist.
+				PAPI_FP_OPS = N0 + 2*N1 + 4*N2 + 8*N3 + 8*N4 + 16*N5
+			Counting SIMD and 4SIMD in one run causes an error.
+			Rough approximation must be done based on XSIMD event count...
+				 Native Code[1]: 0x400000d2 |XSIMD_FMA_INSTRUCTIONS|
+				 Native Code[0]: 0x400000d1 |XSIMD_FLOATING_INSTRUCTIONS|
+			*/
+				hwpc_group.number[I_flops] += 4;
+				papi.s_name[ip] = "FLOATING_INSTRUCTIONS";
+					my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "FP_INS"; ip++;
+				papi.s_name[ip] = "FMA_INSTRUCTIONS";
+					my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "FMA_INS"; ip++;
+				papi.s_name[ip] = "XSIMD_FLOATING_INSTRUCTIONS";
+					my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "XSIMD_FP"; ip++;
+				papi.s_name[ip] = "XSIMD_FMA_INSTRUCTIONS";
+					my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "XSIMD_FMA"; ip++;
+			}
+		}
 	}
 
 // if (CACHE)
@@ -333,37 +417,22 @@ void PerfWatch::createPapiCounterList ()
 		hwpc_group.index[I_cache] = ip;
 		hwpc_group.number[I_cache] = 0;
 
-		hwpc_group.number[I_cache] = +2;
+		hwpc_group.number[I_cache] += 2;
 		papi.s_name[ip] = "L1_TCM"; papi.events[ip] = PAPI_L1_TCM; ip++;
 		papi.s_name[ip] = "L2_TCM"; papi.events[ip] = PAPI_L2_TCM; ip++;
 
-		if (hwpc_group.platform == "Xeon" ) { // Intel Xeon E5 specific
-			hwpc_group.number[I_cache] += 2;
+		if (hwpc_group.platform == "Xeon" ) {
+			hwpc_group.number[I_cache] += 1;
 			papi.s_name[ip] = "L3_TCM"; papi.events[ip] = PAPI_L3_TCM; ip++;
-			//	following events are native events
-			papi.s_name[ip] = "OFFCORE_REQUESTS:ALL_DATA_RD";	// dm and prefetch missed L3
-			my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); ip++;
 		}
+		hwpc_group.number[I_cache] += 2;
+		papi.s_name[ip] = "TOT_CYC"; papi.events[ip] = PAPI_TOT_CYC; ip++;
+		papi.s_name[ip] = "TOT_INS"; papi.events[ip] = PAPI_TOT_INS; ip++;
 	}
 
 // if (CYCLE)
-	if ( s_chooser.find( "CYCLE" ) != string::npos ) {
-		hwpc_group.index[I_cycle] = ip;
-		hwpc_group.number[I_cycle] = 0;
+	// This option is obsolete
 
-		hwpc_group.number[I_cycle] = +2;
-		papi.s_name[ip] = "TOT_CYC"; papi.events[ip] = PAPI_TOT_CYC; ip++;
-		papi.s_name[ip] = "TOT_INS"; papi.events[ip] = PAPI_TOT_INS; ip++;
-
-		if (hwpc_group.platform == "SPARC64" ) { // Kei/FX10 Sparc64 specific
-			hwpc_group.number[I_cycle] += 2;
-			papi.s_name[ip] = "LD_INS"; papi.events[ip] = PAPI_LD_INS; ip++;
-			papi.s_name[ip] = "SR_INS"; papi.events[ip] = PAPI_SR_INS; ip++;
-			//	papi.s_name[ip] = "LST_INS"; papi.events[ip] = PAPI_LST_INS; ip++;
-			//	papi.s_name[ip] = "MEM_SCY"; papi.events[ip] = PAPI_MEM_SCY; ip++;
-			//	papi.s_name[ip] = "STL_ICY"; papi.events[ip] = PAPI_STL_ICY; ip++;
-		}
-	}
 
 // total number of traced events by PMlib
 	papi.num_events = ip;
@@ -405,82 +474,196 @@ void PerfWatch::sortPapiCounterList (void)
 #ifdef USE_PAPI
 
 	int ip,jp;
-	double flops, counts, bandwidth;
+	double flops, counts, bandwidth, percent;
 
 	jp=0;
 
 // if (FLOPS)
 	if ( hwpc_group.number[I_flops] > 0 ) {
-		flops=0.0;
+		counts=0.0;
 		ip = hwpc_group.index[I_flops];
-
+		jp=0;
 		for(int i=0; i<hwpc_group.number[I_flops]; i++)
-		{
-			my_papi.s_sorted[jp] = my_papi.s_name[ip] ;
-			flops += my_papi.v_sorted[jp] = my_papi.accumu[ip] ;
-			ip++;jp++;
-		}
-		// [FX100]
-		//	Rough approximation is done baed on XSIMD event count.
-		//	See comments in the API createPapiCounterList above.
-		if (hwpc_group.platform == "SPARC64" && hwpc_group.i_platform == 11 ) {
-			flops=0.0;
-			jp=0;
-			flops += my_papi.v_sorted[jp] ; jp++;	// FLOATING_INSTRUCTIONS
-			flops += my_papi.v_sorted[jp]*2 ; jp++;	// FMA_INSTRUCTIONS
-			flops += my_papi.v_sorted[jp]*4 ; jp++;	// XSIMD_FLOATING_INSTRUCTIONS
-			flops += my_papi.v_sorted[jp]*8 ; jp++;	// XSIMD_FMA_INSTRUCTIONS
-		}
-		my_papi.s_sorted[jp] = "[Flops]" ;
-		my_papi.v_sorted[jp] = flops / m_time ; // * 1.0e-9;
-		jp++;
-	}
-
-// if (VECTOR)
-	if ( hwpc_group.number[I_vector] > 0 ) {
-		ip = hwpc_group.index[I_vector];
-		for(int i=0; i<hwpc_group.number[I_vector]; i++)
 		{
 			my_papi.s_sorted[jp] = my_papi.s_name[ip] ;
 			counts += my_papi.v_sorted[jp] = my_papi.accumu[ip] ;
 			ip++;jp++;
 		}
-		my_papi.s_sorted[jp] = "[VEC+FMA]" ;
+
+		my_papi.s_sorted[jp] = "[Flops]" ;
 		my_papi.v_sorted[jp] = counts / m_time ; // * 1.0e-9;
 		jp++;
 	}
 
 // if (BANDWIDTH)
 	if ( hwpc_group.number[I_bandwidth] > 0 ) {
+			double d_load_ins, d_store_ins;
+			double d_load_store, d_simd_load_store, d_xsimd_load_store;
+			double d_hit_LFB, d_hit_L1, d_miss_L1, d_miss_L2, d_all_L2;
+			double d_L1_ratio, d_L2_ratio;
+
 		counts = 0.0;
 		ip = hwpc_group.index[I_bandwidth];
+		jp=0;
 		for(int i=0; i<hwpc_group.number[I_bandwidth]; i++)
-			{
+		{
 			my_papi.s_sorted[jp] = my_papi.s_name[ip] ;
 			counts += my_papi.v_sorted[jp] = my_papi.accumu[ip] ;
 			ip++;jp++;
-			}
+		}
+
     	if (hwpc_group.platform == "Xeon" ) {
-			// See notes in createPapiCounterList ()
-			// Xeon E5 has 64 Byte L2 $ lines
-			// BandWidth = (L2 demad read miss + L2 RFO(write) miss + L2 prefetch miss + L2 WB) x 64 *1.0e-9 / time
-			counts = \
-				(my_papi.v_sorted[jp-4]-my_papi.v_sorted[jp-3]
-				+ my_papi.v_sorted[jp-1]
-				+ my_papi.v_sorted[jp-2]
-				+ 0 // WB is not measured...
-				);
-			bandwidth = counts*64.0/m_time;
+
+			//	We saved 7 events for Xeon
+			ip = hwpc_group.index[I_bandwidth];
+
+			d_load_ins  = my_papi.accumu[ip] ;	//	PAPI_LD_INS
+			d_store_ins = my_papi.accumu[ip+1] ;	//	PAPI_SR_INS
+			d_hit_L1  = my_papi.accumu[ip+2] ;	//	MEM_LOAD_UOPS_RETIRED:L1_HIT
+			d_hit_LFB = my_papi.accumu[ip+3] ;	//	MEM_LOAD_UOPS_RETIRED:HIT_LFB
+			d_miss_L1 = my_papi.accumu[ip+4] ;	//	PAPI_L1_TCM
+			d_miss_L2 = my_papi.accumu[ip+5] ;	//	PAPI_L2_TCM
+			d_all_L2  = my_papi.accumu[ip+6] ;	//	L2_TRANS:ALL
+			d_L1_ratio = (d_hit_LFB + d_hit_L1) / (d_hit_LFB + d_hit_L1 + d_miss_L1) ;
+			d_L2_ratio = (d_hit_LFB + d_hit_L1 + d_miss_L1) / (d_hit_LFB + d_hit_L1 + d_miss_L1 + d_miss_L2) ;
+
+			my_papi.s_sorted[jp] = "L1$hit(%)";
+			my_papi.v_sorted[jp] = d_L1_ratio * 100.0;
+			jp++;
+			my_papi.s_sorted[jp] = "L2$hit(%)";
+			my_papi.v_sorted[jp] = d_L2_ratio * 100.0;
+			jp++;
+
+			// HW sustained L2_BW = 64*d_all_L2/time // Xeon E5 has 64 Byte L2 $ lines
+			bandwidth = d_all_L2*64.0/m_time;
+			my_papi.s_sorted[jp] = "L2HW [B/s]"; //	"L2$[B/sec]"
+			my_papi.v_sorted[jp] = bandwidth ;	//	* 1.0e-9;
+			jp++;
+
+			// Application level effective L2 bandwidth = 64*d_miss_L1/time // Xeon E5 has 64 Byte L2 $ lines
+			bandwidth = d_miss_L1*64.0/m_time;
+			my_papi.s_sorted[jp] = "L2App[B/s]";	//	"App[B/sec]"  "L2$App_BW";
+			my_papi.v_sorted[jp] = bandwidth ;	//	* 1.0e-9;
+			jp++;
+			ip=ip+7;
+
+		} else
+    	if (hwpc_group.platform == "SPARC64" ) {
+			ip = hwpc_group.index[I_bandwidth];
+			if (hwpc_group.i_platform == 8 || hwpc_group.i_platform == 9 ) {
+				hwpc_group.number[I_bandwidth] += 2;
+				d_load_store      = my_papi.accumu[ip] ;	//	"LOAD_STORE_INSTRUCTIONS";
+				d_simd_load_store = my_papi.accumu[ip+1] ;	//	"SIMD_LOAD_STORE_INSTRUCTIONS";
+			}
+			else if (hwpc_group.i_platform == 11 ) {
+				hwpc_group.number[I_bandwidth] += 2;
+				d_load_store      = my_papi.accumu[ip] ;	//	"LOAD_STORE_INSTRUCTIONS";
+				d_simd_load_store = my_papi.accumu[ip+1] ;	//	"XSIMD_LOAD_STORE_INSTRUCTIONS";
+			}
+			// BandWidth = (L2_MISS_DM + L2_MISS_PF + L2_WB_DM + L2_WB_PF) x 128 *1.0e-9 / time
+			counts  = my_papi.accumu[ip+2] + my_papi.accumu[ip+3] + my_papi.accumu[ip+4] ;
+			bandwidth = counts * 128 / m_time; // Sparc64 has 128 Byte $ line
+			my_papi.s_sorted[jp] = "Mem [B/s]" ;
+			my_papi.v_sorted[jp] = bandwidth ; //* 1.0e-9;
+			jp++;
+		}
+
+	}
+
+// if (VECTOR)
+	if ( hwpc_group.number[I_vector] > 0 ) {
+		percent = 0.0;
+		counts = 0.0;
+		ip = hwpc_group.index[I_vector];
+		jp=0;
+		for(int i=0; i<hwpc_group.number[I_vector]; i++)
+		{
+			my_papi.s_sorted[jp] = my_papi.s_name[ip] ;
+			counts += my_papi.v_sorted[jp] = my_papi.accumu[ip] ;
+			ip++;jp++;
+		}
+		if (hwpc_group.platform == "Xeon" ) {
+			if (hwpc_group.i_platform == 1 ) {
+				;	// counts is the sum of two counts SP_OPS and DP_OPS.
+				percent = 0.0;
+			} else
+			if (hwpc_group.i_platform == 2 ) {
+				ip = hwpc_group.index[I_vector];
+				double fp_sp1, fp_sp4, fp_sp8;
+				double fp_dp1, fp_dp2, fp_dp4;
+				fp_sp1  = my_papi.accumu[ip] ;		//	FP_COMP_OPS_EXE:SSE_FP_SCALAR_SINGLE	//	SP_SINGLE
+				fp_sp4  = my_papi.accumu[ip+1] ;	//	FP_COMP_OPS_EXE:SSE_PACKED_SINGLE	//	SP_SSE
+				fp_sp8  = my_papi.accumu[ip+2] ;	//	SIMD_FP_256:PACKED_SINGLE			//	SP_AVX
+				fp_dp1  = my_papi.accumu[ip+3] ;	//	FP_COMP_OPS_EXE:SSE_SCALAR_DOUBLE	//	DP_SINGLE
+				fp_dp2  = my_papi.accumu[ip+4] ;	//	FP_COMP_OPS_EXE:SSE_FP_PACKED_DOUBLE	//	DP_SSE
+				fp_dp4  = my_papi.accumu[ip+5] ;	//	SIMD_FP_256:PACKED_DOUBLE			//	DP_AVX
+				//	counts = fp_sp1 + 4.0*fp_sp4 + 8.0*fp_sp8 + fp_dp1 + 2.0*fp_dp2 + 4.0*fp_dp4;
+				percent = 
+						(         4.0*fp_sp4 + 8.0*fp_sp8 +          2.0*fp_dp2 + 4.0*fp_dp4)/
+						(fp_sp1 + 4.0*fp_sp4 + 8.0*fp_sp8 + fp_dp1 + 2.0*fp_dp2 + 4.0*fp_dp4);
+
+			} else
+			if (hwpc_group.i_platform == 5 ) {
+				ip = hwpc_group.index[I_vector];
+				double fp_sp1, fp_sp4, fp_sp8, fp_sp16;
+				double fp_dp1, fp_dp2, fp_dp4, fp_dp8;
+				fp_sp1  = my_papi.accumu[ip] ; 		//	 "FP_ARITH:SCALAR_SINGLE"; //	"SP_SINGLE";
+				fp_sp4  = my_papi.accumu[ip+1] ; 	//	 "FP_ARITH:128B_PACKED_SINGLE"; //	"SP_SSE";
+				fp_sp8  = my_papi.accumu[ip+2] ; 	//	 "FP_ARITH:256B_PACKED_SINGLE"; //	"SP_AVX";
+				fp_sp16 = my_papi.accumu[ip+3] ; 	//	 "FP_ARITH:512B_PACKED_SINGLE"; //	"SP_AVXW";
+				fp_dp1  = my_papi.accumu[ip+4] ; 	//	 "FP_ARITH:SCALAR_DOUBLE"; //	"DP_SINGLE";
+				fp_dp2  = my_papi.accumu[ip+5] ; 	//	 "FP_ARITH:128B_PACKED_DOUBLE"; //	"DP_SSE";
+				fp_dp4  = my_papi.accumu[ip+6] ; 	//	 "FP_ARITH:256B_PACKED_DOUBLE"; //	"DP_AVX";
+				fp_dp8  = my_papi.accumu[ip+7] ; 	//	 "FP_ARITH:512B_PACKED_DOUBLE"; //	"DP_AVXW";
+				//	counts = fp_sp1 + 4.0*fp_sp4 + 8.0*fp_sp8 + 16.0*fp_sp16 + fp_dp1 + 2.0*fp_dp2 + 4.0*fp_dp4 8.0*fp_dp8;
+				percent = 
+						(         4.0*fp_sp4 + 8.0*fp_sp8 + 16.0*fp_sp16 +          2.0*fp_dp2 + 4.0*fp_dp4 + 8.0*fp_dp8)/
+						(fp_sp1 + 4.0*fp_sp4 + 8.0*fp_sp8 + 16.0*fp_sp16 + fp_dp1 + 2.0*fp_dp2 + 4.0*fp_dp4 + 8.0*fp_dp8);
+
+				// FMA events are not counted
+
+			} else {
+				percent = 0.0;
+				;	// VECTOR is not supported for this platform
+			}
+			my_papi.s_sorted[jp] = "vector(%)" ;
+			my_papi.v_sorted[jp] = percent * 100.0;
+			jp++;
 		}
 
     	if (hwpc_group.platform == "SPARC64" ) {
-			// BandWidth = (L2_MISS_DM + L2_MISS_PF + L2_WB_DM + L2_WB_PF) x 128 *1.0e-9 / time
-			bandwidth = counts * 128 / m_time; // Sparc64 has 128 Byte $ line
+			ip = hwpc_group.index[I_vector];
+			double fp_dp1, fp_dp2, fp_dp4, fp_dp8;
+			if (hwpc_group.i_platform == 8 || hwpc_group.i_platform == 9 ) {
+			//	[K and FX10]
+				fp_dp1  = my_papi.accumu[ip] ;		//	FLOATING_INSTRUCTIONS
+				fp_dp2  = my_papi.accumu[ip+1] ;	//	FMA_INSTRUCTIONS
+				fp_dp2 += my_papi.accumu[ip+2] ;	//	SIMD_FLOATING_INSTRUCTIONS
+				fp_dp4  = my_papi.accumu[ip+3] ;	//	SIMD_FMA_INSTRUCTIONS
+				//	counts = fp_dp1 + 2.0*fp_dp2 + 4.0*fp_dp4;
+				percent = 
+						(         2.0*fp_dp2 + 4.0*fp_dp4)/
+						(fp_dp1 + 2.0*fp_dp2 + 4.0*fp_dp4);
+			} else
+			if (hwpc_group.i_platform == 11 ) {
+			//	[FX100]
+				//	Rough approximation is done baed on XSIMD event count.
+				//	See comments in the API createPapiCounterList above.
+				fp_dp1  = my_papi.accumu[ip] ;		//	FLOATING_INSTRUCTIONS
+				fp_dp2  = my_papi.accumu[ip+1] ;	//	FMA_INSTRUCTIONS
+				fp_dp4  = my_papi.accumu[ip+2] ;	//	XSIMD_FLOATING_INSTRUCTIONS
+				fp_dp8  = my_papi.accumu[ip+3] ;	//	XSIMD_FMA_INSTRUCTIONS
+				//	counts = fp_dp1 + 2.0*fp_dp2 + 4.0*fp_dp4 + 8.0*fp_dp8;
+				percent = 
+						(         2.0*fp_dp2 + 4.0*fp_dp4 + 8.0*fp_dp8)/
+						(fp_dp1 + 2.0*fp_dp2 + 4.0*fp_dp4 + 8.0*fp_dp8);
+
+			}
+			my_papi.s_sorted[jp] = "vector(%)" ;
+			my_papi.v_sorted[jp] = percent * 100.0;
+			jp++;
 		}
 
-		my_papi.s_sorted[jp] = "[Bytes/s]" ;
-		my_papi.v_sorted[jp] = bandwidth ; //* 1.0e-9;
-		jp++;
 	}
 
 // if (CACHE)
@@ -489,22 +672,14 @@ void PerfWatch::sortPapiCounterList (void)
 		for(int i=0; i<hwpc_group.number[I_cache]; i++)
 		{
 			my_papi.s_sorted[jp] = my_papi.s_name[ip] ;
-			if ( my_papi.s_sorted[jp] == "OFFCORE_REQUESTS:ALL_DATA_RD" ) my_papi.s_sorted[jp] = "OFFCORE";
 			counts += my_papi.v_sorted[jp] = my_papi.accumu[ip] ;
 			ip++;jp++;
 		}
 	}
 
 // if (CYCLE)
-	if ( hwpc_group.number[I_cycle] > 0 ) {
-		ip = hwpc_group.index[I_cycle];
-		for(int i=0; i<hwpc_group.number[I_cycle]; i++)
-		{
-			my_papi.s_sorted[jp] = my_papi.s_name[ip] ;
-			counts += my_papi.v_sorted[jp] = my_papi.accumu[ip] ;
-			ip++;jp++;
-		}
-	}
+	// This option is obsolete
+
 
 // count the number of reported events and derived matrices
 	my_papi.num_sorted = jp;

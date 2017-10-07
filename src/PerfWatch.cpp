@@ -224,10 +224,6 @@ namespace pm_lib {
     int m_np;
     m_np = num_process;
 
-	if ((m_timeArray != NULL)||(m_flopArray != NULL)||(m_countArray != NULL)) {
-		printError("PMlib gather()", "questionable address in my_rank=%d", my_rank);
-	}
-
 	// The space is reserved only once as a fixed size array
 	if ( m_timeArray == NULL) m_timeArray  = new double[m_np];
 	if ( m_flopArray == NULL) m_flopArray  = new double[m_np];
@@ -1141,6 +1137,7 @@ namespace pm_lib {
     		w = (flopPerTask * (double)iterationCount) / (m_stopTime-m_startTime);
 		} else if ( (2 <= is_unit) && (is_unit <= 4) ) {
 			// 自動計測されたHWPCイベントを分析した計算speed
+			// is_unitが2以上の時、v_sorted[]配列の最後の要素は速度の次元を持つ
 			sortPapiCounterList ();
 			w = my_papi.v_sorted[my_papi.num_sorted-1] ;
 		}
@@ -1153,6 +1150,35 @@ namespace pm_lib {
 				, m_label.c_str(), w, m_time, m_flop );
     }
 #endif
+#endif
+
+  }
+
+
+
+  /// 測定区間リセット
+  ///
+  void PerfWatch::reset()
+  {
+    //	m_started = true;
+    //	m_startTime = getTime();
+#ifdef USE_PAPI
+	//	if (m_is_first) {
+		//	my_papi = papi;
+		//	m_is_first = false;
+	//	}
+#endif // USE_PAPI
+
+    m_time = 0.0;
+    m_count = 0;
+	m_flop = 0.0;
+
+#ifdef USE_PAPI
+	if (my_papi.num_events > 0) {
+		for (int i=0; i<my_papi.num_events; i++) {
+			my_papi.accumu[i] = 0.0;
+		}
+	}
 #endif
 
   }

@@ -175,6 +175,20 @@ namespace pm_lib {
     void stop(const std::string& label, double flopPerTask=0.0, unsigned iterationCount=1);
 
 
+    /// 測定区間のリセット
+    ///
+    ///   @param[in] label ラベル文字列。測定区間を識別するために用いる。
+    ///
+    ///
+    void reset (const std::string& label);
+
+
+    /// 全測定区間のリセット
+    ///
+    ///
+    void resetAll (void);
+
+
     /// 測定結果の基本統計レポートを出力。
     ///   排他測定区間毎に出力。プロセスの平均値、ジョブ全体の統計値も出力。
     ///
@@ -358,6 +372,8 @@ namespace pm_lib {
 				return;
 			}
 		}
+		// should not reach here
+		fprintf(stderr, "<loop_perf_label> search failed. ip=%d\n", ip);
 	}
 
     /// 全測定区間のラベルと番号を登録順で表示

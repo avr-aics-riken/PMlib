@@ -215,6 +215,10 @@ namespace pm_lib {
   ///
     void stop(double flopPerTask, unsigned iterationCount);
 
+    /// 測定のリセット
+    ///
+    void reset(void);
+
     /// 測定結果情報をランク０プロセスに集約.
     ///
     void gather(void);

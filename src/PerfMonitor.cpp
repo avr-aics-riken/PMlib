@@ -197,7 +197,7 @@ namespace pm_lib {
     }
     id = find_perf_label(label);
     if (id < 0) {
-      printDiag("start()",  "label [%s] is undefined. This may lead to incorrect measurement or un-expected termination.\n",
+      printDiag("start()",  "label [%s] is undefined. This may lead to incorrect measurement.\n",
 				label.c_str());
       return;
     }
@@ -229,7 +229,7 @@ namespace pm_lib {
     }
     id = find_perf_label(label);
     if (id < 0) {
-      printDiag("stop()",  "label [%s] is undefined. This may cause an incorrect measurement.\n",
+      printDiag("stop()",  "label [%s] is undefined. This may lead to incorrect measurement.\n",
 				label.c_str());
       return;
     }
@@ -238,6 +238,52 @@ namespace pm_lib {
     #ifdef DEBUG_PRINT_MONITOR
     if (my_rank == 0) {
       fprintf(stderr, "<stop> [%s] id=%d\n", label.c_str(), id);
+    }
+    #endif
+  }
+
+
+  /// 測定区間リセット
+  ///
+  ///   @param[in] label ラベル文字列。測定区間を識別するために用いる。
+  ///
+  ///
+  void PerfMonitor::reset (const std::string& label)
+  {
+    int id;
+    if (label.empty()) {
+      printDiag("reset()",  "label is blank. Ignored the call.\n");
+      return;
+    }
+    id = find_perf_label(label);
+    if (id < 0) {
+      printDiag("reset()",  "label [%s] is undefined. This may lead to incorrect measurement.\n",
+				label.c_str());
+      return;
+    }
+    m_watchArray[id].reset();
+
+    #ifdef DEBUG_PRINT_MONITOR
+    if (my_rank == 0) {
+      fprintf(stderr, "<reset> [%s] id=%d\n", label.c_str(), id);
+    }
+    #endif
+  }
+
+
+  /// 全測定区間リセット
+  /// ただしroot区間はresetされない
+  ///
+  ///
+  void PerfMonitor::resetAll (void)
+  {
+    for (int i=0; i<m_nWatch; i++) {
+      m_watchArray[i].reset();
+    }
+
+    #ifdef DEBUG_PRINT_MONITOR
+    if (my_rank == 0) {
+      fprintf(stderr, "<resetAll> \n");
     }
     #endif
   }
