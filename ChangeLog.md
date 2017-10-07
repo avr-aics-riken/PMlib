@@ -3,6 +3,11 @@
 ## REVISION HISTORY
 
 ---
+- 2017-10-07 Version 5.8.0
+  - Added new APIs: reset() and resetall()
+  - Updated PAPI event interface for Xeon v5.
+
+---
 - 2017-08-31 Version 5.7.0
   - rmove -Nfjcex from entire source
 

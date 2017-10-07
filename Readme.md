@@ -167,7 +167,10 @@ $ cmake -DINSTALL_DIR=${PM_HOME}/PMlib \
 
 ##### Note
 - On Fujitsu machines(fx10, K, fx100), confirm appropriate directrory path for compiler environment.
-- Before building, execute following command for clean. `$ make distclean`
+- Before rebuilding, execute the following command for cleaning up.
+~~~
+$ make distclean
+~~~
 
 
 ### Other platforms
