@@ -10,7 +10,6 @@
 using namespace pm_lib;
 
 #define MATSIZE 1000
-//	#define MATSIZE 500
 int nsize;
 struct matrix {
 	int nsize;

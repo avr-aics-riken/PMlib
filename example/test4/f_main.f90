@@ -3,7 +3,7 @@ program test4_main
 #else
 	include 'mpif.h'
 #endif
-	parameter(msize=1000)
+	parameter(msize=500)
 	real(kind=8), allocatable :: a(:,:),b(:,:),c(:,:)
 	real(kind=8) :: dinit, dflop, dbyte
 	integer nWatch
@@ -55,7 +55,11 @@ program test4_main
 	call f_pm_stop ("Subsection Q", dflop, 1)
 	call spacer (msize,n,a,b,c)
 
-!cx call f_pm_printprogress ("", "check point:", 0)
+	if(i.eq.2) then
+	call f_pm_resetall ()
+	endif
+	call f_pm_printprogress ("", "check point:", 0)
+
 	end do
 
 	call f_pm_stop ("Second section", dflop*6.0, 1)
@@ -69,8 +73,7 @@ program test4_main
 	call MPI_Finalize( ierr )
 #endif
 	write(6,'(a,i3,a)') "fortran <test4_main> finished process:", myid
-	stop
-end
+end program
 
 subroutine subinit (msize,n,a,b,c)
 	real(kind=8) :: a(msize,msize), b(msize,msize), c(msize,msize)
