@@ -268,8 +268,23 @@ void PerfWatch::createPapiCounterList ()
 				my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "L1_TCM"; ip++;
 			papi.s_name[ip] = "PAPI_L2_TCM";
 				my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "L2_TCM"; ip++;
-			papi.s_name[ip] = "L2_TRANS:ALL";
+
+			if (hwpc_group.i_platform == 2 ) {
+				papi.s_name[ip] = "L2_TRANS:ALL";
 				my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "L2_TRANS"; ip++;
+			} else
+			if (hwpc_group.i_platform == 3 ) {
+				papi.s_name[ip] = "L2_TRANS:ALL_REQUESTS";
+				my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "L2_TRANS"; ip++;
+			} else
+			if (hwpc_group.i_platform == 5 ) {
+				// Skylake PAPI events should be checked when they become available
+				//	"L2_TRANS:ALL" is missing on Skylake. Compromised stats.
+				papi.s_name[ip] = "L2_RQSTS:REFERENCES";
+				my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "L2_RQSTS"; ip++;
+				//	papi.s_name[ip] = "L2_TRANS:L2_WB";
+				//	my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "(*)L2_WB"; ip++;
+			}
 
 		}
 
@@ -523,7 +538,7 @@ void PerfWatch::sortPapiCounterList (void)
 			d_hit_LFB = my_papi.accumu[ip+3] ;	//	MEM_LOAD_UOPS_RETIRED:HIT_LFB
 			d_miss_L1 = my_papi.accumu[ip+4] ;	//	PAPI_L1_TCM
 			d_miss_L2 = my_papi.accumu[ip+5] ;	//	PAPI_L2_TCM
-			d_all_L2  = my_papi.accumu[ip+6] ;	//	L2_TRANS:ALL
+			d_all_L2  = my_papi.accumu[ip+6] ;	//	L2_TRANS:ALL all transactions
 			d_L1_ratio = (d_hit_LFB + d_hit_L1) / (d_hit_LFB + d_hit_L1 + d_miss_L1) ;
 			d_L2_ratio = (d_hit_LFB + d_hit_L1 + d_miss_L1) / (d_hit_LFB + d_hit_L1 + d_miss_L1 + d_miss_L2) ;
 
