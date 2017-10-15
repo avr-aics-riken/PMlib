@@ -325,15 +325,17 @@ void PerfWatch::createPapiCounterList ()
 		hwpc_group.number[I_vector] = 0;
 
 		if (hwpc_group.platform == "Xeon" ) {
+		// Remark : VECTOR option for Xeon is available for Sandybridge-EP and newer CPUs only.
+
 			if (hwpc_group.i_platform == 1 ) {
-				// hwpc_group.i_platform = 1;	// Minimal support for only two types
+				// Basic support for two types only
 				hwpc_group.number[I_vector] += 2;
 				papi.s_name[ip] = "SP_OPS"; papi.events[ip] = PAPI_SP_OPS; ip++;
 				papi.s_name[ip] = "DP_OPS"; papi.events[ip] = PAPI_DP_OPS; ip++;
 					//	PAPI_FP_OPS (=PAPI_FP_INS) is not useful. un-packed operations only.
 			} else
 			if ( hwpc_group.i_platform == 2 ) {
-				// hwpc_group.i_platform = 2;	// Sandybridge and alike platform
+				// Sandybridge v2 and alike platform
 				hwpc_group.number[I_vector] += 6;
 				papi.s_name[ip] = "FP_COMP_OPS_EXE:SSE_FP_SCALAR_SINGLE";		// scalar
 					my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "SP_SINGLE"; ip++;
@@ -351,7 +353,7 @@ void PerfWatch::createPapiCounterList ()
 				// hwpc_group.i_platform = 3;	// Haswell does not support VECTOR events
 				// hwpc_group.i_platform = 4;	// Broadwell. No access to Broadwell yet.
 			if ( hwpc_group.i_platform == 5 ) {
-				// hwpc_group.i_platform = 5;	// Skylake and alike platform
+				// Skylake and alike platform
 				hwpc_group.number[I_vector] += 8;
 				papi.s_name[ip] = "FP_ARITH:SCALAR_SINGLE";			//	scalar
 					my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "SP_SINGLE"; ip++;
@@ -427,8 +429,10 @@ void PerfWatch::createPapiCounterList ()
 		}
 	}
 
-// if (CACHE)
-	if ( s_chooser.find( "CACHE" ) != string::npos ) {
+// if (CACHE) || if (CYCLE)
+// These options are now merged
+	if (( s_chooser.find( "CACHE" ) != string::npos ) ||
+		( s_chooser.find( "CYCLE" ) != string::npos )) {
 		hwpc_group.index[I_cache] = ip;
 		hwpc_group.number[I_cache] = 0;
 
@@ -445,8 +449,6 @@ void PerfWatch::createPapiCounterList ()
 		papi.s_name[ip] = "TOT_INS"; papi.events[ip] = PAPI_TOT_INS; ip++;
 	}
 
-// if (CYCLE)
-	// This option is obsolete
 
 
 // total number of traced events by PMlib
@@ -489,7 +491,11 @@ void PerfWatch::sortPapiCounterList (void)
 #ifdef USE_PAPI
 
 	int ip,jp;
-	double flops, counts, bandwidth, percent;
+	double counts, flops, bandwidth;
+		double fp_sp1, fp_sp4, fp_sp8, fp_sp16;
+		double fp_dp1, fp_dp2, fp_dp4, fp_dp8;
+		double fp_total, fp_vector;
+		double vector_percent;
 
 	jp=0;
 
@@ -587,7 +593,7 @@ void PerfWatch::sortPapiCounterList (void)
 
 // if (VECTOR)
 	if ( hwpc_group.number[I_vector] > 0 ) {
-		percent = 0.0;
+		vector_percent = 0.0;
 		counts = 0.0;
 		ip = hwpc_group.index[I_vector];
 		jp=0;
@@ -598,30 +604,19 @@ void PerfWatch::sortPapiCounterList (void)
 			ip++;jp++;
 		}
 		if (hwpc_group.platform == "Xeon" ) {
-			if (hwpc_group.i_platform == 1 ) {
-				;	// counts is the sum of two counts SP_OPS and DP_OPS.
-				percent = 0.0;
-			} else
 			if (hwpc_group.i_platform == 2 ) {
 				ip = hwpc_group.index[I_vector];
-				double fp_sp1, fp_sp4, fp_sp8;
-				double fp_dp1, fp_dp2, fp_dp4;
 				fp_sp1  = my_papi.accumu[ip] ;		//	FP_COMP_OPS_EXE:SSE_FP_SCALAR_SINGLE	//	SP_SINGLE
 				fp_sp4  = my_papi.accumu[ip+1] ;	//	FP_COMP_OPS_EXE:SSE_PACKED_SINGLE	//	SP_SSE
 				fp_sp8  = my_papi.accumu[ip+2] ;	//	SIMD_FP_256:PACKED_SINGLE			//	SP_AVX
 				fp_dp1  = my_papi.accumu[ip+3] ;	//	FP_COMP_OPS_EXE:SSE_SCALAR_DOUBLE	//	DP_SINGLE
 				fp_dp2  = my_papi.accumu[ip+4] ;	//	FP_COMP_OPS_EXE:SSE_FP_PACKED_DOUBLE	//	DP_SSE
 				fp_dp4  = my_papi.accumu[ip+5] ;	//	SIMD_FP_256:PACKED_DOUBLE			//	DP_AVX
-				//	counts = fp_sp1 + 4.0*fp_sp4 + 8.0*fp_sp8 + fp_dp1 + 2.0*fp_dp2 + 4.0*fp_dp4;
-				percent = 
-						(         4.0*fp_sp4 + 8.0*fp_sp8 +          2.0*fp_dp2 + 4.0*fp_dp4)/
-						(fp_sp1 + 4.0*fp_sp4 + 8.0*fp_sp8 + fp_dp1 + 2.0*fp_dp2 + 4.0*fp_dp4);
-
+				fp_vector =          4.0*fp_sp4 + 8.0*fp_sp8 +          2.0*fp_dp2 + 4.0*fp_dp4;
+				fp_total  = fp_sp1 + 4.0*fp_sp4 + 8.0*fp_sp8 + fp_dp1 + 2.0*fp_dp2 + 4.0*fp_dp4;
 			} else
 			if (hwpc_group.i_platform == 5 ) {
 				ip = hwpc_group.index[I_vector];
-				double fp_sp1, fp_sp4, fp_sp8, fp_sp16;
-				double fp_dp1, fp_dp2, fp_dp4, fp_dp8;
 				fp_sp1  = my_papi.accumu[ip] ; 		//	 "FP_ARITH:SCALAR_SINGLE"; //	"SP_SINGLE";
 				fp_sp4  = my_papi.accumu[ip+1] ; 	//	 "FP_ARITH:128B_PACKED_SINGLE"; //	"SP_SSE";
 				fp_sp8  = my_papi.accumu[ip+2] ; 	//	 "FP_ARITH:256B_PACKED_SINGLE"; //	"SP_AVX";
@@ -630,35 +625,25 @@ void PerfWatch::sortPapiCounterList (void)
 				fp_dp2  = my_papi.accumu[ip+5] ; 	//	 "FP_ARITH:128B_PACKED_DOUBLE"; //	"DP_SSE";
 				fp_dp4  = my_papi.accumu[ip+6] ; 	//	 "FP_ARITH:256B_PACKED_DOUBLE"; //	"DP_AVX";
 				fp_dp8  = my_papi.accumu[ip+7] ; 	//	 "FP_ARITH:512B_PACKED_DOUBLE"; //	"DP_AVXW";
-				//	counts = fp_sp1 + 4.0*fp_sp4 + 8.0*fp_sp8 + 16.0*fp_sp16 + fp_dp1 + 2.0*fp_dp2 + 4.0*fp_dp4 8.0*fp_dp8;
-				percent = 
-						(         4.0*fp_sp4 + 8.0*fp_sp8 + 16.0*fp_sp16 +          2.0*fp_dp2 + 4.0*fp_dp4 + 8.0*fp_dp8)/
-						(fp_sp1 + 4.0*fp_sp4 + 8.0*fp_sp8 + 16.0*fp_sp16 + fp_dp1 + 2.0*fp_dp2 + 4.0*fp_dp4 + 8.0*fp_dp8);
-
-				// FMA events are not counted
-
-			} else {
-				percent = 0.0;
-				;	// VECTOR is not supported for this platform
+				// FMA events are not counted because of the event counter limit
+				fp_vector = 4.0*fp_sp4 + 8.0*fp_sp8 + 16.0*fp_sp16 + 2.0*fp_dp2 + 4.0*fp_dp4 + 8.0*fp_dp8;
+				fp_total  = fp_sp1 + fp_dp1 + fp_vector;
 			}
-			my_papi.s_sorted[jp] = "vector(%)" ;
-			my_papi.v_sorted[jp] = percent * 100.0;
-			jp++;
+			if (m_exclusive) {
+				vector_percent = fp_vector/fp_total;
+			}
 		}
 
     	if (hwpc_group.platform == "SPARC64" ) {
 			ip = hwpc_group.index[I_vector];
-			double fp_dp1, fp_dp2, fp_dp4, fp_dp8;
 			if (hwpc_group.i_platform == 8 || hwpc_group.i_platform == 9 ) {
 			//	[K and FX10]
 				fp_dp1  = my_papi.accumu[ip] ;		//	FLOATING_INSTRUCTIONS
 				fp_dp2  = my_papi.accumu[ip+1] ;	//	FMA_INSTRUCTIONS
 				fp_dp2 += my_papi.accumu[ip+2] ;	//	SIMD_FLOATING_INSTRUCTIONS
 				fp_dp4  = my_papi.accumu[ip+3] ;	//	SIMD_FMA_INSTRUCTIONS
-				//	counts = fp_dp1 + 2.0*fp_dp2 + 4.0*fp_dp4;
-				percent = 
-						(         2.0*fp_dp2 + 4.0*fp_dp4)/
-						(fp_dp1 + 2.0*fp_dp2 + 4.0*fp_dp4);
+				fp_vector = (         2.0*fp_dp2 + 4.0*fp_dp4);
+				fp_total  = (fp_dp1 + 2.0*fp_dp2 + 4.0*fp_dp4);
 			} else
 			if (hwpc_group.i_platform == 11 ) {
 			//	[FX100]
@@ -668,20 +653,27 @@ void PerfWatch::sortPapiCounterList (void)
 				fp_dp2  = my_papi.accumu[ip+1] ;	//	FMA_INSTRUCTIONS
 				fp_dp4  = my_papi.accumu[ip+2] ;	//	XSIMD_FLOATING_INSTRUCTIONS
 				fp_dp8  = my_papi.accumu[ip+3] ;	//	XSIMD_FMA_INSTRUCTIONS
-				//	counts = fp_dp1 + 2.0*fp_dp2 + 4.0*fp_dp4 + 8.0*fp_dp8;
-				percent = 
-						(         2.0*fp_dp2 + 4.0*fp_dp4 + 8.0*fp_dp8)/
-						(fp_dp1 + 2.0*fp_dp2 + 4.0*fp_dp4 + 8.0*fp_dp8);
-
+				fp_vector = (         2.0*fp_dp2 + 4.0*fp_dp4 + 8.0*fp_dp8);
+				fp_total  = (fp_dp1 + 2.0*fp_dp2 + 4.0*fp_dp4 + 8.0*fp_dp8);
 			}
-			my_papi.s_sorted[jp] = "vector(%)" ;
-			my_papi.v_sorted[jp] = percent * 100.0;
-			jp++;
+			if (m_exclusive) {
+				vector_percent = fp_vector/fp_total;
+			}
 		}
+		my_papi.s_sorted[jp] = "Total_FPs" ;
+		my_papi.v_sorted[jp] = fp_total;
+		jp++;
+		my_papi.s_sorted[jp] = "FLOPS" ;
+		my_papi.v_sorted[jp] = fp_total / m_time;
+		jp++;
+		my_papi.s_sorted[jp] = "Vector(%)" ;
+		my_papi.v_sorted[jp] = vector_percent * 100.0;
+		jp++;
 
 	}
 
-// if (CACHE)
+// if (CACHE) || if (CYCLE)
+// These options are now merged
 	if ( hwpc_group.number[I_cache] > 0 ) {
 		ip = hwpc_group.index[I_cache];
 		for(int i=0; i<hwpc_group.number[I_cache]; i++)
@@ -690,10 +682,13 @@ void PerfWatch::sortPapiCounterList (void)
 			counts += my_papi.v_sorted[jp] = my_papi.accumu[ip] ;
 			ip++;jp++;
 		}
+		my_papi.s_sorted[jp] = "Ins/cycle" ;
+		my_papi.v_sorted[jp] = my_papi.v_sorted[jp-1] / my_papi.v_sorted[jp-2];
+		jp++;
+		my_papi.s_sorted[jp] = "Ins/sec" ;
+		my_papi.v_sorted[jp] = my_papi.v_sorted[jp-2] / m_time ; // * 1.0e-9;
+		jp++;
 	}
-
-// if (CYCLE)
-	// This option is obsolete
 
 
 // count the number of reported events and derived matrices

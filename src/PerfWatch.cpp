@@ -54,19 +54,19 @@ namespace pm_lib {
   ///
   ///   @param[in] fops 浮動小数演算数/通信量(バイト)
   ///   @param[out] unit 単位の文字列
-  ///   @param[in] typeCalc  測定対象タイプ(0:通信, 1:計算)
   ///   @param[in] is_unit ユーザー申告値かHWPC自動測定値かの指定
   ///              = 0: ユーザが引数で指定した通信量"Bytes/sec"
   ///              = 1: ユーザが引数で指定した計算量"Flops"
   ///              = 2: HWPC が自動測定する通信量"Bytes/sec (HWPC)"
   ///              = 3: HWPC が自動測定する計算量"Flops (HWPC)"
-  ///              = 4: HWPC が自動測定する他の測定量"events (HWPC)"
+  ///              = 4: HWPC が自動測定するvectorization (SSE, AVX, etc)
+  ///              = 5: HWPC が自動測定するcache miss, cycles, instructions
   ///   @return  単位変換後の数値
   ///
   ///   @note is_unitは通常PerfWatch::statsSwitch()で事前に決定されている
   ///
 
-  double PerfWatch::unitFlop(double fops, std::string &unit, const int typeCalc, int is_unit)
+  double PerfWatch::unitFlop(double fops, std::string &unit, int is_unit)
   {
 
     double P, T, G, M, K, ret=0.0;
@@ -115,21 +115,26 @@ namespace pm_lib {
     }
 
     if ((is_unit == 4))  {
+        ret = fops;
+        unit = "(%)";
+    }
+
+    if ((is_unit == 5))  {
       if      ( fops > P ) {
         ret = fops / P;
-        unit = "Peta/sec";
+        unit = "Pins/sec";
       }
       else if ( fops > T ) {
         ret = fops / T;
-        unit = "Tera/sec";
+        unit = "Tins/sec";
       }
       else if ( fops > G ) {
         ret = fops / G;
-        unit = "Giga/sec";
+        unit = "Gins/sec";
       }
       else {
         ret = fops / M;
-        unit = "Mega/sec";
+        unit = "Mins/sec";
       }
     }
 
@@ -171,7 +176,13 @@ namespace pm_lib {
 	// See Development note in PerfWatch::stop()
 	//	if (!m_exclusive) return;
 
-	double w = my_papi.v_sorted[my_papi.num_sorted-1] ;	// rate
+	double w;
+	if (is_unit == 4) {
+		// The last value has the special value : vectorization %
+		w = my_papi.v_sorted[my_papi.num_sorted-2] ;	// rate
+	} else {
+		w = my_papi.v_sorted[my_papi.num_sorted-1] ;	// rate
+	}
 	m_flop = w * m_time;	// volume
 
 	// The space is reserved only once as a fixed size array
@@ -200,6 +211,8 @@ namespace pm_lib {
 			m_sortedArrayHWPC[i] = my_papi.v_sorted[i];
 		}
 	}
+	m_sortedLast = m_sortedArrayHWPC[my_papi.num_sorted-1];
+
 	#ifdef DEBUG_PRINT_WATCH
     if (my_rank == 0) {
         fprintf(stderr, "\t<gatherHWPC> [%15s], w(rate)=%e, m_time=%e\n",
@@ -307,7 +320,8 @@ namespace pm_lib {
   ///   1: ユーザが引数で指定した計算量を採用する "Flops"
   ///   2: HWPC が自動的に測定する通信量を採用する	"Bytes/sec (HWPC)"
   ///   3: HWPC が自動的に測定する計算量を用いる	"Flops (HWPC)"
-  ///   4: HWPC が自動的に測定する他の測定量を用いる "events (HWPC)"
+  ///   4: HWPC が自動的に測定するvectorization (SSE, AVX, etc)
+  ///   5: HWPC が自動的に測定するcache hit/miss, cycles, instructions
   ///
   /// @note
   /// 計算量としてユーザー申告値を用いるかHWPC計測値を用いるかの決定を行う
@@ -319,9 +333,10 @@ namespace pm_lib {
     int is_unit;
     // 0: user set bandwidth
     // 1: user set flop counts
-    // 2: HWPC base bandwidth
-    // 3: HWPC base flop counts
-    // 4: other HWPC base events
+    // 2: HWPC measured bandwidth
+    // 3: HWPC measured flop counts
+    // 4: HWPC measured vectorization
+    // 5: HWPC measured cache hit/miss
 
     is_unit=-1;
 
@@ -335,12 +350,10 @@ namespace pm_lib {
       is_unit=2;
     } else if (hwpc_group.number[I_flops]  > 0) {
       is_unit=3;
-    } else if (( hwpc_group.number[I_vector]
-               + hwpc_group.number[I_cache]
-               + hwpc_group.number[I_cycle]) >0) {
+    } else if (hwpc_group.number[I_vector] > 0) {
       is_unit=4;
-    } else {
-      // No more switch for this version. return (-1)
+    } else if (hwpc_group.number[I_cache] > 0) {
+      is_unit=5;
     }
 #endif
 
@@ -465,15 +478,16 @@ namespace pm_lib {
     int is_unit = statsSwitch();
     if (is_unit == 0) unit = "B/sec";	// 0: user set bandwidth
     if (is_unit == 1) unit = "Flops";		// 1: user set flop counts
-    if (is_unit == 2) unit = "B/sec (HWPC)";	// 2: HWPC base bandwidth
-    if (is_unit == 3) unit = "Flops (HWPC)";	// 3: HWPC base flop counts
-    if (is_unit == 4) unit = "events (HWPC)";	// 4: other HWPC base statistics
-
+    if (is_unit == 2) unit = "B/sec (HWPC)";	// 2: HWPC measured bandwidth
+    if (is_unit == 3) unit = "Flops (HWPC)";	// 3: HWPC measured flop counts
+	//
+    if (is_unit == 4) unit = "vector%(HWPC)";	// 4: HWPC measured vector %
+    if (is_unit == 5) unit = "Ins/sec(HWPC)";	// 5: HWPC measured instructions
 
     unsigned long total_count = 0;
     for (int i = 0; i < m_np; i++) total_count += m_countArray[i];
 
-    if ( total_count > 0 && is_unit <= 4) {
+    if ( total_count > 0 && is_unit <= 3) {
       fprintf(fp, "Label  %s%s\n", m_exclusive ? "" : "*", m_label.c_str());
       fprintf(fp, "Header ID  :     call   time[s] time[%%]  t_wait[s]  t[s]/call   counter     speed              \n");
       for (int i = 0; i < m_np; i++) {
@@ -491,7 +505,7 @@ namespace pm_lib {
 			unit.c_str()     // スピードの単位
 			);
       }
-    } else if ( total_count > 0 && is_unit > 4) {
+    } else if ( total_count > 0 && is_unit > 3) {
       fprintf(fp, "Label  %s%s\n", m_exclusive ? "" : "*", m_label.c_str());
       fprintf(fp, "Header ID  :     call   time[s] time[%%]  t_wait[s]  t[s]/call   \n");
       for (int i = 0; i < m_np; i++) {
@@ -552,13 +566,15 @@ namespace pm_lib {
     if (is_unit == 1) unit = "Flops";		// 1: user set flop counts
     if (is_unit == 2) unit = "B/sec (HWPC)";	// 2: HWPC base bandwidth
     if (is_unit == 3) unit = "Flops (HWPC)";	// 3: HWPC base flop counts
-    if (is_unit == 4) unit = "events (HWPC)";	// 4: other HWPC base statistics
+	//
+    if (is_unit == 4) unit = "vector%(HWPC)";	// 4: HWPC measured vector %
+    if (is_unit == 5) unit = "Ins/sec(HWPC)";	// 5: HWPC measured instructions
 
 
     unsigned long total_count = 0;
     for (int i = 0; i < m_np; i++) total_count += m_countArray[pp_ranks[i]];
 
-    if ( total_count > 0 && is_unit <= 4) {
+    if ( total_count > 0 && is_unit <= 3) {
       fprintf(fp, "Label  %s%s\n", m_exclusive ? "" : "*", m_label.c_str());
       // fprintf(fp, "Header ID  :     call   time[s] time[%%]  t_wait[s]  t[s]/call   flop|msg    speed              \n");
       fprintf(fp, "Header ID  :     call   time[s] time[%%]  t_wait[s]  t[s]/call   counter     speed              \n");
@@ -578,7 +594,7 @@ namespace pm_lib {
 			unit.c_str()     // スピードの単位
 			);
       }
-    } else if ( total_count > 0 && is_unit > 4) {
+    } else if ( total_count > 0 && is_unit > 3) {
       fprintf(fp, "Label  %s%s\n", m_exclusive ? "" : "*", m_label.c_str());
       fprintf(fp, "Header ID  :     call   time[s] time[%%]  t_wait[s]  t[s]/call   \n");
       for (int i = 0; i < m_np; i++) {
@@ -833,7 +849,7 @@ namespace pm_lib {
 	if ( (is_unit == 0) || (is_unit == 1) ) {
 		s_counter =  "User Defined COMM/CALC values" ;
 		s_unit =  "unit: B/sec or Flops";
-	} else if ( (2 <= is_unit) && (is_unit <= 4) ) {
+	} else if ( (2 <= is_unit) && (is_unit <= 5) ) {
 		s_counter =  "HWPC measured values" ;
 		s_unit =  my_papi.s_sorted[my_papi.num_sorted-1] ;
 	}
@@ -992,9 +1008,10 @@ namespace pm_lib {
 	NONE (無指定)   CALC            指定値       時間、fP引数によるFlops	 なし
 	NONE (無指定)   COMM            指定値       時間、fP引数によるByte/s    なし
     FLOPS           無視            無視         時間、HWPC自動計測Flops     FLOPSに関連するHWPC統計情報
-    VECTOR          無視            無視         時間、HWPC自動計測SIMD率    VECTORに関連するHWPC統計情報
     BANDWIDTH       無視            無視         時間、HWPC自動計測Byte/s    BANDWIDTHに関連するHWPC統計情報
+    VECTOR          無視            無視         時間、HWPC自動計測SIMD率    VECTORに関連するHWPC統計情報
     CACHE           無視            無視         時間、HWPC自動計測L1$,L2$   CACHEに関連するHWPC統計情報
+    CYCLE           無視            無視         時間、HWPC自動計測L1$,L2$   CACHEに関連するHWPC統計情報
      */
   void PerfWatch::stop(double flopPerTask, unsigned iterationCount)
   {
@@ -1135,9 +1152,10 @@ namespace pm_lib {
 			// ユーザが引数で指定した計算量/time(計算speed)
     		//	w = (flopPerTask * (double)iterationCount) / m_time;
     		w = (flopPerTask * (double)iterationCount) / (m_stopTime-m_startTime);
-		} else if ( (2 <= is_unit) && (is_unit <= 4) ) {
+		} else if ( (2 <= is_unit) && (is_unit <= 5) ) {
 			// 自動計測されたHWPCイベントを分析した計算speed
-			// is_unitが2以上の時、v_sorted[]配列の最後の要素は速度の次元を持つ
+			// is_unitが2,3の時、v_sorted[]配列の最後の要素は速度の次元を持つ
+			// is_unitが4,5の時、v_sorted[]配列の最後の要素は...
 			sortPapiCounterList ();
 			w = my_papi.v_sorted[my_papi.num_sorted-1] ;
 		}
