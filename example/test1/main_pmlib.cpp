@@ -152,13 +152,20 @@ void slowkernel()
 int i, j, k, nsize;
 float c1,c2,c3;
 nsize = matrix.nsize;
-#pragma omp parallel
-#pragma omp for
+//	#pragma omp parallel
+//	#pragma omp for
+#pragma loop serial
 	for (i=0; i<nsize; i++){
-#pragma novector
+#pragma loop novector
+#pragma loop nosimd
+#pragma loop noswp
+#pragma loop nounroll
 	for (j=0; j<nsize; j++){
 		c1=0.0;
-#pragma novector
+#pragma loop novector
+#pragma loop nosimd
+#pragma loop noswp
+#pragma loop nounroll
 		for (k=0; k<nsize; k++){
 		c2=matrix.a2[i][k] * matrix.a2[j][k];
 		c3=matrix.b2[i][k] * matrix.b2[j][k];

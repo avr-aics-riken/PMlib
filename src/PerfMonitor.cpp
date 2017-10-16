@@ -506,6 +506,7 @@ namespace pm_lib {
         }
       }
 
+    // 測定区間の時間と計算量を表示。表示順は引数 seqSections で指定されている。
       for (int j = 0; j < m_nWatch; j++) {
         int i;
         if (seqSections == 0) {
@@ -513,11 +514,13 @@ namespace pm_lib {
         } else {
           i = j; //	1:登録順で表示
         }
+        if (i == 0) continue;
 		// report exclusive sections only
         if (!m_watchArray[i].m_exclusive) continue;
         m_watchArray[i].printDetailRanks(fp, tot);
       }
     }
+
 
 #ifdef USE_PAPI
     //	II. HWPC/PAPIレポート：HWPC計測結果を出力
@@ -549,6 +552,7 @@ namespace pm_lib {
       }
     }
 #endif
+
   }
 
 
@@ -976,23 +980,21 @@ namespace pm_lib {
     sum_flop = 0.0;
     sum_other = 0.0;
 
-    PerfWatch& w = m_watchArray[0];
     double fops;
     std::string p_label;
 
     // 測定区間の時間と計算量を表示。表示順は引数 seqSections で指定されている。
     for (int j = 0; j < m_nWatch; j++) {
-      //	if (j == 0) continue;
+
       int i;
       if (seqSections == 0) {
         i = m_order[j]; //	0:経過時間順
       } else {
         i = j; //	1:登録順で表示
       }
-
       if (i == 0) continue;
 
-      w = m_watchArray[i];
+      PerfWatch& w = m_watchArray[i];
       if ( !(w.m_count > 0) ) continue;
       //	if ( !w.m_exclusive || w.m_label.empty()) continue;
 
@@ -1020,7 +1022,7 @@ namespace pm_lib {
       if ( is_unit == 4) { uF = w.m_sortedLast; }
 
       p_label = unit;		// 計算速度の単位
-      if (!w.m_exclusive) { p_label = unit + "(*)"; }	// 非排他測定区間は単位表示が(*)
+      if (!w.m_exclusive) { p_label = unit + "(*)"; } // 非排他測定区間は(*)表示
 
       fprintf(fp, "    %8.3e  %8.2e %6.2f %s\n",
             w.m_flop_av,          // 測定区間の計算量(全プロセスの平均値)
@@ -1028,7 +1030,6 @@ namespace pm_lib {
             uF,                   // 測定区間の計算速度(全プロセスの平均値)
             p_label.c_str());		// 計算速度の単位
 
-// DEBUG from here ... 2017/10/15
       if (w.m_exclusive) {
         if ( (is_unit == 0) || (is_unit == 2) ) {
           sum_time_comm += w.m_time_av;

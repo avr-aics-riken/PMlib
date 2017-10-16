@@ -232,8 +232,8 @@ void PerfWatch::createPapiCounterList ()
 			} else {
 				;	// hwpc_group.i_platform = 3;	// Haswell does not support FLOPS events
 			}
-		}
 
+		} else
 		if (hwpc_group.platform == "SPARC64" ) {
 			if (hwpc_group.i_platform == 8 ||
 				hwpc_group.i_platform == 9 ||
@@ -282,32 +282,31 @@ void PerfWatch::createPapiCounterList ()
 				//	"L2_TRANS:ALL" is missing on Skylake. Compromised stats.
 				papi.s_name[ip] = "L2_RQSTS:REFERENCES";
 				my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "L2_RQSTS"; ip++;
-				//	papi.s_name[ip] = "L2_TRANS:L2_WB";
-				//	my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "(*)L2_WB"; ip++;
+			} else {
+				// This is not useful at all. Just putting here to avoid error termination
+				papi.s_name[ip] = "LLC_REFERENCE";
+				my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "LLC_REF"; ip++;
 			}
 
-		}
-
+		} else
 		if (hwpc_group.platform == "SPARC64" ) {
+			hwpc_group.number[I_bandwidth] += 5;
 			// normal load and store counters can not be used together with cache counters
 			if (hwpc_group.i_platform == 8 || hwpc_group.i_platform == 9 ) {
-				hwpc_group.number[I_bandwidth] += 2;
 				papi.s_name[ip] = "LOAD_STORE_INSTRUCTIONS";
 					my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "LD+ST"; ip++;
 				papi.s_name[ip] = "SIMD_LOAD_STORE_INSTRUCTIONS";
-					my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "SIMD_LD+ST"; ip++;
+					my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "SIMDLD+ST"; ip++;
 			}
 			else if (hwpc_group.i_platform == 11 ) {
-				hwpc_group.number[I_bandwidth] += 2;
 				papi.s_name[ip] = "LOAD_STORE_INSTRUCTIONS";
 					my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "LD+ST"; ip++;
 				papi.s_name[ip] = "XSIMD_LOAD_STORE_INSTRUCTIONS";
-					my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "XSIMD_LDST"; ip++;
+					my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "XSIMDLD+ST"; ip++;
 			}
 			//	BandWidth = (L2_MISS_DM + L2_MISS_PF + L2_WB_DM + L2_WB_PF) x 128 *1.0e-9 / time
 			//	SPARC64 event PAPI_L2_TCM == (L2_MISS_DM + L2_MISS_PF)
 
-			hwpc_group.number[I_bandwidth] += 3;
 			papi.s_name[ip] = "L2_TCM"; papi.events[ip] = PAPI_L2_TCM; ip++;
 			// The following two events are not shown from papi_avail -d command.
 			// They show up from papi_event_chooser NATIVE L2_WB_DM (or L2_WB_PF) command.
@@ -332,7 +331,7 @@ void PerfWatch::createPapiCounterList ()
 				hwpc_group.number[I_vector] += 2;
 				papi.s_name[ip] = "SP_OPS"; papi.events[ip] = PAPI_SP_OPS; ip++;
 				papi.s_name[ip] = "DP_OPS"; papi.events[ip] = PAPI_DP_OPS; ip++;
-					//	PAPI_FP_OPS (=PAPI_FP_INS) is not useful. un-packed operations only.
+					//	PAPI_FP_OPS (=PAPI_FP_INS) is not useful on Xeon. un-packed operations only.
 			} else
 			if ( hwpc_group.i_platform == 2 ) {
 				// Sandybridge v2 and alike platform
@@ -371,16 +370,16 @@ void PerfWatch::createPapiCounterList ()
 					my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "DP_AVX"; ip++;
 				papi.s_name[ip] = "FP_ARITH:512B_PACKED_DOUBLE";	//	8 SIMD
 					my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "DP_AVXW"; ip++;
-
 			} else {
 				;	// no FLOPS support
 			}
-		}
+
+		} else
 		if (hwpc_group.platform == "SPARC64" ) {
 
 			if (hwpc_group.i_platform == 8 || hwpc_group.i_platform == 9 ) {
 			//	[K and FX10]
-			//		PAPI_FP_OPS is supported, and contains 4 native events.
+			//		4 native events are supported for F.P.ops.
 				hwpc_group.number[I_vector] += 4;
 				papi.s_name[ip] = "FLOATING_INSTRUCTIONS";
 					my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "FP_INS"; ip++;
@@ -393,38 +392,31 @@ void PerfWatch::createPapiCounterList ()
 			}
 			else if (hwpc_group.i_platform == 11 ) {
 			//	[FX100]
+			//		The following native events are supported for F.P.ops.
+			//		It is not quite clear if they are precise for both double precision and single precision
+				hwpc_group.number[I_vector] += 5;
+				papi.s_name[ip] = "1FLOPS_INSTRUCTIONS";
+					my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "1FP_OPS"; ip++;
+				papi.s_name[ip] = "2FLOPS_INSTRUCTIONS";
+					my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "2FP_OPS"; ip++;
+				papi.s_name[ip] = "4FLOPS_INSTRUCTIONS";
+					my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "4FP_OPS"; ip++;
+				papi.s_name[ip] = "8FLOPS_INSTRUCTIONS";
+					my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "8FP_OPS"; ip++;
+				papi.s_name[ip] = "16FLOPS_INSTRUCTIONS";
+					my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "16FP_OPS"; ip++;
 			/*
-			PAPI_FP_OPS is the combination of
-				"1FLOPS_INSTRUCTIONS",  // good
-				"2FLOPS_INSTRUCTIONS",  // good
-				"4FLOPS_INSTRUCTIONS",  // good
-				"8FLOPS_INSTRUCTIONS",  // good
-				"16FLOPS_INSTRUCTIONS", // good
-			It is quite confusing to map them into the actual f.p. instructions.
-			For double precision:
-				N0: 0x40000010   FLOATING_INSTRUCTIONS
-				N1: 0x40000011   FMA_INSTRUCTIONS
-				N2: 0x40000008   SIMD_FLOATING_INSTRUCTIONS
-				N3: 0x40000009   SIMD_FMA_INSTRUCTIONS
-				N4: 0x4000007d   4SIMD_FLOATING_INSTRUCTIONS
-				N5: 0x4000007e   4SIMD_FMA_INSTRUCTIONS
-				PAPI_FP_OPS = N0 + 2*N1 + 2*N2 + 4*N3 + 4*N4 + 8*N5
-			For single precision, groups for similar instructions should exist.
-				PAPI_FP_OPS = N0 + 2*N1 + 4*N2 + 8*N3 + 8*N4 + 16*N5
-			Counting SIMD and 4SIMD in one run causes an error.
-			Rough approximation must be done based on XSIMD event count...
-				 Native Code[1]: 0x400000d2 |XSIMD_FMA_INSTRUCTIONS|
-				 Native Code[0]: 0x400000d1 |XSIMD_FLOATING_INSTRUCTIONS|
+			The other combination might be
+				FLOATING_INSTRUCTIONS
+				FMA_INSTRUCTIONS
+				SIMD_FLOATING_INSTRUCTIONS
+				SIMD_FMA_INSTRUCTIONS
+				4SIMD_FLOATING_INSTRUCTIONS
+				4SIMD_FMA_INSTRUCTIONS
+			Unfortunately, counting SIMD and 4SIMD instructions in one run causes an error.
+			Also, it is quite confusing to map them into the actual f.p. instructions.
+			So we dont use this combination.
 			*/
-				hwpc_group.number[I_flops] += 4;
-				papi.s_name[ip] = "FLOATING_INSTRUCTIONS";
-					my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "FP_INS"; ip++;
-				papi.s_name[ip] = "FMA_INSTRUCTIONS";
-					my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "FMA_INS"; ip++;
-				papi.s_name[ip] = "XSIMD_FLOATING_INSTRUCTIONS";
-					my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "XSIMD_FP"; ip++;
-				papi.s_name[ip] = "XSIMD_FMA_INSTRUCTIONS";
-					my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "XSIMD_FMA"; ip++;
 			}
 		}
 	}
@@ -492,8 +484,8 @@ void PerfWatch::sortPapiCounterList (void)
 
 	int ip,jp;
 	double counts, flops, bandwidth;
-		double fp_sp1, fp_sp4, fp_sp8, fp_sp16;
-		double fp_dp1, fp_dp2, fp_dp4, fp_dp8;
+		double fp_sp1, fp_sp2, fp_sp4, fp_sp8, fp_sp16;
+		double fp_dp1, fp_dp2, fp_dp4, fp_dp8, fp_dp16;
 		double fp_total, fp_vector;
 		double vector_percent;
 
@@ -572,12 +564,10 @@ void PerfWatch::sortPapiCounterList (void)
     	if (hwpc_group.platform == "SPARC64" ) {
 			ip = hwpc_group.index[I_bandwidth];
 			if (hwpc_group.i_platform == 8 || hwpc_group.i_platform == 9 ) {
-				hwpc_group.number[I_bandwidth] += 2;
 				d_load_store      = my_papi.accumu[ip] ;	//	"LOAD_STORE_INSTRUCTIONS";
 				d_simd_load_store = my_papi.accumu[ip+1] ;	//	"SIMD_LOAD_STORE_INSTRUCTIONS";
 			}
 			else if (hwpc_group.i_platform == 11 ) {
-				hwpc_group.number[I_bandwidth] += 2;
 				d_load_store      = my_papi.accumu[ip] ;	//	"LOAD_STORE_INSTRUCTIONS";
 				d_simd_load_store = my_papi.accumu[ip+1] ;	//	"XSIMD_LOAD_STORE_INSTRUCTIONS";
 			}
@@ -594,6 +584,8 @@ void PerfWatch::sortPapiCounterList (void)
 // if (VECTOR)
 	if ( hwpc_group.number[I_vector] > 0 ) {
 		vector_percent = 0.0;
+		fp_vector = 0.0;
+		fp_total = 1.0;
 		counts = 0.0;
 		ip = hwpc_group.index[I_vector];
 		jp=0;
@@ -604,8 +596,8 @@ void PerfWatch::sortPapiCounterList (void)
 			ip++;jp++;
 		}
 		if (hwpc_group.platform == "Xeon" ) {
+			ip = hwpc_group.index[I_vector];
 			if (hwpc_group.i_platform == 2 ) {
-				ip = hwpc_group.index[I_vector];
 				fp_sp1  = my_papi.accumu[ip] ;		//	FP_COMP_OPS_EXE:SSE_FP_SCALAR_SINGLE	//	SP_SINGLE
 				fp_sp4  = my_papi.accumu[ip+1] ;	//	FP_COMP_OPS_EXE:SSE_PACKED_SINGLE	//	SP_SSE
 				fp_sp8  = my_papi.accumu[ip+2] ;	//	SIMD_FP_256:PACKED_SINGLE			//	SP_AVX
@@ -616,7 +608,6 @@ void PerfWatch::sortPapiCounterList (void)
 				fp_total  = fp_sp1 + 4.0*fp_sp4 + 8.0*fp_sp8 + fp_dp1 + 2.0*fp_dp2 + 4.0*fp_dp4;
 			} else
 			if (hwpc_group.i_platform == 5 ) {
-				ip = hwpc_group.index[I_vector];
 				fp_sp1  = my_papi.accumu[ip] ; 		//	 "FP_ARITH:SCALAR_SINGLE"; //	"SP_SINGLE";
 				fp_sp4  = my_papi.accumu[ip+1] ; 	//	 "FP_ARITH:128B_PACKED_SINGLE"; //	"SP_SSE";
 				fp_sp8  = my_papi.accumu[ip+2] ; 	//	 "FP_ARITH:256B_PACKED_SINGLE"; //	"SP_AVX";
@@ -632,8 +623,8 @@ void PerfWatch::sortPapiCounterList (void)
 			if (m_exclusive) {
 				vector_percent = fp_vector/fp_total;
 			}
-		}
 
+		} else
     	if (hwpc_group.platform == "SPARC64" ) {
 			ip = hwpc_group.index[I_vector];
 			if (hwpc_group.i_platform == 8 || hwpc_group.i_platform == 9 ) {
@@ -649,12 +640,13 @@ void PerfWatch::sortPapiCounterList (void)
 			//	[FX100]
 				//	Rough approximation is done baed on XSIMD event count.
 				//	See comments in the API createPapiCounterList above.
-				fp_dp1  = my_papi.accumu[ip] ;		//	FLOATING_INSTRUCTIONS
-				fp_dp2  = my_papi.accumu[ip+1] ;	//	FMA_INSTRUCTIONS
-				fp_dp4  = my_papi.accumu[ip+2] ;	//	XSIMD_FLOATING_INSTRUCTIONS
-				fp_dp8  = my_papi.accumu[ip+3] ;	//	XSIMD_FMA_INSTRUCTIONS
-				fp_vector = (         2.0*fp_dp2 + 4.0*fp_dp4 + 8.0*fp_dp8);
-				fp_total  = (fp_dp1 + 2.0*fp_dp2 + 4.0*fp_dp4 + 8.0*fp_dp8);
+				fp_dp1  = my_papi.accumu[ip] ;
+				fp_dp2  = my_papi.accumu[ip+1] ;
+				fp_dp4  = my_papi.accumu[ip+2] ;
+				fp_dp8  = my_papi.accumu[ip+3] ;
+				fp_dp16  = my_papi.accumu[ip+3] ;
+				fp_vector = (                      4.0*fp_dp4 + 8.0*fp_dp8 + 16.0*fp_dp16);
+				fp_total  = (fp_dp1 + 2.0*fp_dp2 + 4.0*fp_dp4 + 8.0*fp_dp8 + 16.0*fp_dp16);
 			}
 			if (m_exclusive) {
 				vector_percent = fp_vector/fp_total;
@@ -666,7 +658,7 @@ void PerfWatch::sortPapiCounterList (void)
 		my_papi.s_sorted[jp] = "FLOPS" ;
 		my_papi.v_sorted[jp] = fp_total / m_time;
 		jp++;
-		my_papi.s_sorted[jp] = "Vector(%)" ;
+		my_papi.s_sorted[jp] = "VECTOR(%)" ;
 		my_papi.v_sorted[jp] = vector_percent * 100.0;
 		jp++;
 
