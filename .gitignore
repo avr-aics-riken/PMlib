@@ -1,4 +1,4 @@
-BUILD_DIR/
+BUILD_DIR/*
 
 # Compiled Object files
 *.slo

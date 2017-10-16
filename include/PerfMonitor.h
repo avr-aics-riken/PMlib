@@ -20,7 +20,7 @@
 
 //! @file   PerfMonitor.h
 //! @brief  PerfMonitor class Header
-//! @version rev.5.1
+//! @version rev.5.8
 
 #ifdef DISABLE_MPI
 #include "mpi_stubs.h"
