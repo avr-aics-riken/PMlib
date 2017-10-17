@@ -13,9 +13,9 @@ using namespace pm_lib;
 int nsize;
 struct matrix {
 	int nsize;
-	float a2[MATSIZE][MATSIZE];
-	float b2[MATSIZE][MATSIZE];
-	float c2[MATSIZE][MATSIZE];
+	double a2[MATSIZE][MATSIZE];
+	double b2[MATSIZE][MATSIZE];
+	double c2[MATSIZE][MATSIZE];
 } matrix;
 void set_array();
 void somekernel();
@@ -59,47 +59,48 @@ int main (int argc, char *argv[])
 
 	PM.initialize();
 
-	PM.setProperties("First section", PerfMonitor::CALC);
-	PM.setProperties("Second section", PerfMonitor::CALC, false);
-	PM.setProperties("Subsection X", PerfMonitor::COMM);
-	PM.setProperties("Subsection Y", PerfMonitor::CALC);
-
-	set_array();
-
-	flop_count=pow (dsize, 3.0)*4.0;
-	byte_count=pow (dsize, 3.0)*4.0*4.0;
+	PM.setProperties("Initial-section", PerfMonitor::CALC);
+	PM.setProperties("Loop-section", PerfMonitor::COMM, false);
+	PM.setProperties("Kernel-Slow", PerfMonitor::CALC);
+	PM.setProperties("Kernel-Fast", PerfMonitor::CALC);
 
 // checking exclusive section
-	PM.start("First section");
-		somekernel();
+	PM.start("Initial-section");
+	set_array();
+	flop_count=pow (dsize, 2.0)*2.0;
+	byte_count=pow (dsize, 2.0)*3.0*8.0;
+	PM.stop ("Initial-section", flop_count, 1);
 
-	PM.stop ("First section", flop_count, 1);
 	spacer();
 
+	somekernel();
+	flop_count=pow (dsize, 3.0)*4.0;
+	byte_count=pow (dsize, 3.0)*4.0*8.0;
+
+
 // checking non-exclusive section
-	PM.start("Second section");
+	PM.start("Loop-section");
 	spacer();
 
 	for (i=0; i<3; i++){
-		PM.start("Subsection X");
+		PM.start("Kernel-Slow");
 		slowkernel();
-		PM.stop ("Subsection X", byte_count, 1);
+		PM.stop ("Kernel-Slow", flop_count, 1);
 		spacer();
 
-		PM.start("Subsection Y");
+		PM.start("Kernel-Fast");
 		somekernel();
-		PM.stop ("Subsection Y", flop_count, 1);
+		PM.stop ("Kernel-Fast", flop_count, 1);
 		spacer();
 
-		//  comments = "iteration i:" + std::to_string(i);  // C++11 notation
-		//check//	ouch.str(""); ouch << i; comments = "iteration i:" + ouch.str(); // old C++ notation
+		//check//	comments = "iteration i:" + std::to_string(i);
 		//check//	PM.printProgress(stdout, comments, 1);
 	}
 
 	//check//	PM.postTrace();
 
 	somekernel();
-	PM.stop("Second section", flop_count*(2*3), 1);
+	PM.stop("Loop-section", byte_count*(2*3), 1);
 	spacer();
 
 	PM.print(stdout, "", "Mrs. Kobe", 0);
@@ -129,7 +130,7 @@ nsize = matrix.nsize;
 void somekernel()
 {
 int i, j, k, nsize;
-float c1,c2,c3;
+double c1,c2,c3;
 nsize = matrix.nsize;
 #pragma omp parallel
 #pragma omp for
@@ -150,18 +151,23 @@ nsize = matrix.nsize;
 void slowkernel()
 {
 int i, j, k, nsize;
-float c1,c2,c3;
+double c1,c2,c3;
 nsize = matrix.nsize;
 //	#pragma omp parallel
 //	#pragma omp for
+#pragma omp single
 #pragma loop serial
 	for (i=0; i<nsize; i++){
+#pragma novector
+#pragma nounroll
 #pragma loop novector
 #pragma loop nosimd
 #pragma loop noswp
 #pragma loop nounroll
 	for (j=0; j<nsize; j++){
 		c1=0.0;
+#pragma novector
+#pragma nounroll
 #pragma loop novector
 #pragma loop nosimd
 #pragma loop noswp
