@@ -396,15 +396,15 @@ void PerfWatch::createPapiCounterList ()
 			//		It is not quite clear if they are precise for both double precision and single precision
 				hwpc_group.number[I_vector] += 5;
 				papi.s_name[ip] = "1FLOPS_INSTRUCTIONS";
-					my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "1FP_OPS"; ip++;
+					my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "1FP_INS"; ip++;
 				papi.s_name[ip] = "2FLOPS_INSTRUCTIONS";
-					my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "2FP_OPS"; ip++;
+					my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "2FP_INS"; ip++;
 				papi.s_name[ip] = "4FLOPS_INSTRUCTIONS";
-					my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "4FP_OPS"; ip++;
+					my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "4FP_INS"; ip++;
 				papi.s_name[ip] = "8FLOPS_INSTRUCTIONS";
-					my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "8FP_OPS"; ip++;
+					my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "8FP_INS"; ip++;
 				papi.s_name[ip] = "16FLOPS_INSTRUCTIONS";
-					my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "16FP_OPS"; ip++;
+					my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "16FP_INS"; ip++;
 			/*
 			The other combination might be
 				FLOATING_INSTRUCTIONS
