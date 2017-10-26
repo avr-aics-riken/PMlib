@@ -167,7 +167,10 @@ $ cmake -DINSTALL_DIR=${PM_HOME}/PMlib \
 
 ##### Note
 - On Fujitsu machines(fx10, K, fx100), confirm appropriate directrory path for compiler environment.
-- Before building, execute following command for clean. `$ make distclean`
+- Before rebuilding, execute the following command for cleaning up.
+~~~
+$ make distclean
+~~~
 
 
 ### Other platforms
@@ -182,10 +185,10 @@ Edit environmental variables in a `Makefile_hand` file for a target machine.
 There are several documents explaining how to run the application with PMlib, and how to understand the output information.
 Currently, they are all written in Japanese.
 
-doc/PMlib.pdf                                 : detail user guide
-doc/tutorial/PMlib-Getting-Started.pdf 			  : Quick start guide
-doc/tutorial/Tutorial-slide1-overview.pdf		  : PMlib overview
-doc/tutorial/Tutorial-slide2-installation.pdf	: PMlib installation
+Readme.md      : This document
+doc/Readme.md  : How to generate the detail API specification with Doxygen
+doc/tutorial/PMlib-Getting-Started.pdf      : Quick start guide
+doc/PMlib.pdf                               : detail user guide (outdated)
 
 
 ## RUN TIME ENVIRONMENT VARIABLES

@@ -20,7 +20,7 @@
 
 //! @file   PerfWatch.h
 //! @brief  PerfWatch class Header
-//! @version rev.5.1
+//! @version rev.5.8
 
 
 #include <cassert>
@@ -94,6 +94,7 @@ namespace pm_lib {
                         //	marker		: otf_filename + .mdID + .marker
 
 	struct pmlib_papi_chooser my_papi;
+    double m_sortedLast;   ///< HWPC配列の最後の値
 
   private:
     // 測定時の補助変数
@@ -215,6 +216,10 @@ namespace pm_lib {
   ///
     void stop(double flopPerTask, unsigned iterationCount);
 
+    /// 測定のリセット
+    ///
+    void reset(void);
+
     /// 測定結果情報をランク０プロセスに集約.
     ///
     void gather(void);
@@ -247,18 +252,18 @@ namespace pm_lib {
     ///
     ///   @param[in] fops 浮動小数演算数/通信量(バイト)
     ///   @param[out] unit 単位の文字列
-    ///   @param[in] typeCalc  測定対象タイプ(0:通信, 1:計算)
     ///   @param[in] is_unit ユーザー申告値かHWPC自動測定値かの指定 \n
     ///              = 0: ユーザが引数で指定した通信量"Bytes/sec" \n
     ///              = 1: ユーザが引数で指定した計算量"Flops" \n
     ///              = 2: HWPC が自動測定する通信量"Bytes/s (HWPC)" \n
     ///              = 3: HWPC が自動測定する計算量"Flops (HWPC)" \n
-    ///              = 4: HWPC が自動測定する他の測定量"events (HWPC)" \n
+    ///              = 4: HWPC が自動測定するvectorization (SSE, AVX, etc)
+    ///              = 5: HWPC が自動測定するcache miss, cycles, instructions
     ///   @return  単位変換後の数値
     ///
     ///   @note is_unitは通常PerfWatch::statsSwitch()で事前に決定されている
     ///
-    static double unitFlop(double fops, std::string &unit, int typeCalc, int is_unit);
+    static double unitFlop(double fops, std::string &unit, int is_unit);
 
     /// 測定区間のラベル情報をOTF に出力
     ///   @param[in] label     ラベル

@@ -106,6 +106,23 @@ end subroutine
 
 
 
+!> PMlib Fortran 測定区間のリセット
+!!
+!!   @param[in] character*(*) fc	測定区間を識別するラベル文字列。
+!!
+!!   @note  fc引数について subroutine f_pm_setproperties のnoteを参照
+!!
+subroutine f_pm_reset (fc)
+end subroutine
+
+
+!> PMlib Fortran  全測定区間のリセット
+!!
+!!
+subroutine f_pm_resetall ()
+end subroutine
+
+
 !> PMlib Fortran 測定結果の基本レポートを出力
 !!
 !!   @param[in] character*(*) fc	出力ファイル名(character文字列)

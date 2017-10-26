@@ -3,7 +3,7 @@ program test4_main
 #else
 	include 'mpif.h'
 #endif
-	parameter(msize=1000)
+	parameter(msize=500)
 	real(kind=8), allocatable :: a(:,:),b(:,:),c(:,:)
 	real(kind=8) :: dinit, dflop, dbyte
 	integer nWatch
@@ -28,37 +28,46 @@ program test4_main
 	icomm=0
 	iexclusive=1
 	iinclusive=0    !cx i.e. not exclusive
-	call f_pm_setproperties ("First section", icalc, iexclusive)
-	call f_pm_setproperties ("Second section", icalc, iinclusive)
-	call f_pm_setproperties ("Subsection P", icomm, iexclusive)
-	call f_pm_setproperties ("Subsection Q", icalc, iexclusive)
+	call f_pm_setproperties ("Initial-section", icalc, iexclusive)
+	call f_pm_setproperties ("Loop-section", icalc, iinclusive)
+	call f_pm_setproperties ("Kernel-Slow", icomm, iexclusive)
+	call f_pm_setproperties ("Kernel-Fast", icalc, iexclusive)
 
 	dinit=(n**2)*4.0
 	dflop=(n**3)*4.0
 	dbyte=(n**3)*4.0*3.0
 
-	call f_pm_start ("First section")
+	call f_pm_start ("Initial-section")
 	call subinit (msize,n,a,b,c)
-	call f_pm_stop ("First section", dinit, 1)
+	call f_pm_stop ("Initial-section", dinit, 1)
 	call spacer (msize,n,a,b,c)
 
-	call f_pm_start ("Second section")
+	call f_pm_start ("Loop-section")
 
-	do i=1,3
-	call f_pm_start ("Subsection P")
+	do i=1,5
+	if(myid.eq.0) write(1,'(a,i3,a)') "loop: i=",i
+
+	call f_pm_start ("Kernel-Slow")
 	call slowmtxm (msize,n,dflop,a,b,c)
-	call f_pm_stop ("Subsection P", dflop*4.0, 1)
+	call f_pm_stop ("Kernel-Slow", dflop*4.0, 1)
 	call spacer (msize,n,a,b,c)
 
-	call f_pm_start ("Subsection Q")
+	call f_pm_start ("Kernel-Fast")
 	call submtxm (msize,n,dflop,a,b,c)
-	call f_pm_stop ("Subsection Q", dflop, 1)
+	call f_pm_stop ("Kernel-Fast", dflop, 1)
 	call spacer (msize,n,a,b,c)
 
-!cx call f_pm_printprogress ("", "check point:", 0)
+	call f_pm_printprogress ("", "for checking", 0)
+	if(i.eq.3) then
+	call f_pm_reset ("Kernel-Slow")
+	endif
+	if(i.eq.4) then
+	call f_pm_resetall ()
+	endif
+
 	end do
 
-	call f_pm_stop ("Second section", dflop*6.0, 1)
+	call f_pm_stop ("Loop-section", dflop*6.0, 1)
 
 !cx call f_pm_posttrace ()
 
@@ -69,8 +78,7 @@ program test4_main
 	call MPI_Finalize( ierr )
 #endif
 	write(6,'(a,i3,a)') "fortran <test4_main> finished process:", myid
-	stop
-end
+end program
 
 subroutine subinit (msize,n,a,b,c)
 	real(kind=8) :: a(msize,msize), b(msize,msize), c(msize,msize)

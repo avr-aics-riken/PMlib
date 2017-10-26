@@ -57,11 +57,14 @@ else()
 endif()
 
 if(OPT_PAPI)
+  if(TARGET_ARCH STREQUAL "FX100")
+  # on AICS FX100 static PAPI libs does not match the other system libs.
+  # so the following dynamic libs must be used. bonehead Fujitsu...
+    target_link_libraries(example1 -lpapi_ext -Wl,'-lpapi,-lpfm')
+  else()
   ## GNU linker ld options are better passed using -Wl, rather than -B compiler phase option
-  target_link_libraries(example1 -lpapi_ext -Wl,'-Bstatic,-lpapi,-lpfm,-Bdynamic')
-  # Static PAPI library on FX100 has been built errorneously by Fujitsu,
-  # so the following link line must be used, unfortunately
-  # target_link_libraries(example1 -lpapi_ext -Wl,'-lpapi,-lpfm')
+    target_link_libraries(example1 -lpapi_ext -Wl,'-Bstatic,-lpapi,-lpfm,-Bdynamic')
+  endif()
 endif()
 
 if(OPT_OTF)
@@ -91,8 +94,11 @@ else()
 endif()
 
 if(OPT_PAPI)
-  target_link_libraries(example2 -lpapi_ext -Wl,'-Bstatic,-lpapi,-lpfm,-Bdynamic')
-  # target_link_libraries(example2 -lpapi_ext -Wl,'-lpapi,-lpfm')
+  if(TARGET_ARCH STREQUAL "FX100")
+    target_link_libraries(example2 -lpapi_ext -Wl,'-lpapi,-lpfm')
+  else()
+    target_link_libraries(example2 -lpapi_ext -Wl,'-Bstatic,-lpapi,-lpfm,-Bdynamic')
+  endif()
 endif()
 
 if(OPT_OTF)
@@ -124,8 +130,11 @@ if(with_MPI)
   target_link_libraries(example3 -lPMmpi)
 
   if(OPT_PAPI)
-    target_link_libraries(example3 -lpapi_ext -Wl,'-Bstatic,-lpapi,-lpfm,-Bdynamic')
-    # target_link_libraries(example3 -lpapi_ext -Wl,'-lpapi,-lpfm')
+    if(TARGET_ARCH STREQUAL "FX100")
+      target_link_libraries(example3 -lpapi_ext -Wl,'-lpapi,-lpfm')
+    else()
+      target_link_libraries(example3 -lpapi_ext -Wl,'-Bstatic,-lpapi,-lpfm,-Bdynamic')
+    endif()
   endif()
 
   if(OPT_OTF)
@@ -157,8 +166,11 @@ if(enable_Fortran)
   endif()
 
   if(OPT_PAPI)
-    target_link_libraries(example4 -lpapi_ext -Wl,'-Bstatic,-lpapi,-lpfm,-Bdynamic')
-    # target_link_libraries(example4 -lpapi_ext -Wl,'-lpapi,-lpfm')
+    if(TARGET_ARCH STREQUAL "FX100")
+      target_link_libraries(example4 -lpapi_ext -Wl,'-lpapi,-lpfm')
+    else()
+      target_link_libraries(example4 -lpapi_ext -Wl,'-Bstatic,-lpapi,-lpfm,-Bdynamic')
+    endif()
   endif()
 
   if(OPT_OTF)
@@ -194,8 +206,11 @@ if(with_MPI)
   target_link_libraries(example5 -lPMmpi)
 
   if(OPT_PAPI)
-    target_link_libraries(example5 -lpapi_ext -Wl,'-Bstatic,-lpapi,-lpfm,-Bdynamic')
-    # target_link_libraries(example5 -lpapi_ext -Wl,'-lpapi,-lpfm')
+    if(TARGET_ARCH STREQUAL "FX100")
+      target_link_libraries(example5 -lpapi_ext -Wl,'-lpapi,-lpfm')
+    else()
+      target_link_libraries(example5 -lpapi_ext -Wl,'-Bstatic,-lpapi,-lpfm,-Bdynamic')
+    endif()
   endif()
 
   if(OPT_OTF)
