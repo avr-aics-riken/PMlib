@@ -58,7 +58,7 @@ struct hwpc_group_chooser {
 	std::string platform;	// "Intel", "SPARC64"
 };
 
-const int Max_chooser_events=50;
+const int Max_chooser_events=12;
 
 struct pmlib_papi_chooser {
 	int num_events;				// number of PAPI events

@@ -70,6 +70,7 @@ void PerfWatch::initializeHWPC ()
 		fprintf (stderr, "*** error. <PAPI_library_init> return code: %d\n", i_papi);
 		fprintf (stderr, "\t It should match %lu\n", (unsigned long)PAPI_VER_CURRENT);
 		PM_Exit(0);
+		return;
 		}
 
 	createPapiCounterList ();
@@ -80,7 +81,7 @@ void PerfWatch::initializeHWPC ()
 	int *ip_debug;
 	ip_debug=&papi.num_events;
 	if (my_id == 0) {
-		fprintf(stderr, "initializeHWPC() papi.num_events=%d, ip_debug=%p\n",
+		fprintf(stderr, "<initializeHWPC> papi.num_events=%d, ip_debug=%p\n",
 			papi.num_events, ip_debug );
 	}
 	#endif
@@ -89,15 +90,23 @@ void PerfWatch::initializeHWPC ()
 	if (i_papi != PAPI_OK ) {
 		fprintf (stderr, "*** error. <PAPI_thread_init> failed. %d\n", i_papi);
 		PM_Exit(0);
+		return;
 		}
 	#pragma omp parallel
 	{
 	int t_papi;
 	t_papi = my_papi_add_events (papi.events, papi.num_events);
 	if ( t_papi != PAPI_OK ) {
-		int t_thread = omp_get_thread_num();
-		fprintf(stderr, "*** error. <my_papi_add_events> code:%d thread:%d\n", t_papi, t_thread);
-		fprintf(stderr, "\t most likely un-supported PAPI combination. HWPC is terminated.\n");
+		fprintf(stderr, "*** error. <initializeHWPC> <my_papi_add_events> code: %d\n"
+			"\t most likely un-supported HWPC PAPI combination. HWPC is terminated.\n" , t_papi);
+		papi.num_events = 0;
+		PM_Exit(0);
+		}
+	// In general the arguments to <my_papi_*> should be thread private
+	// Here we use shared object, since <> does not change its content
+	t_papi = my_papi_bind_start (papi.values, papi.num_events);
+	if ( t_papi != PAPI_OK ) {
+		fprintf(stderr, "*** error. <initializeHWPC> <my_papi_bind_start> code: %d\n", t_papi);
 		PM_Exit(0);
 		}
 	}
@@ -124,6 +133,11 @@ void PerfWatch::createPapiCounterList ()
 	int i_papi;
 
 	MPI_Comm_rank(MPI_COMM_WORLD, &my_id);
+	#ifdef DEBUG_PRINT_PAPI
+	if (my_id == 0) {
+		fprintf(stderr, " <createPapiCounterList> starts\n" );
+	}
+	#endif
 
 // 1. Identify the CPU architecture
 
@@ -459,10 +473,10 @@ void PerfWatch::createPapiCounterList ()
 		fprintf(stderr, "  i:%d hwpc_group.number[i]=%d, hwpc_group.index[i]=%d\n",
 						i, hwpc_group.number[i], hwpc_group.index[i]);
 		}
-		fprintf(stderr, " papi.num_events=%d, &papi=%lu \n", papi.num_events, &papi.num_events);
+		fprintf(stderr, " papi.num_events=%d, &papi=%p \n", papi.num_events, &papi.num_events);
 		for (int i=0; i<papi.num_events; i++) {
-		fprintf(stderr, " i=%d : %s : events[i]=%u \n",
-					i, papi.s_name[i].c_str(), papi.events[i]);
+		fprintf(stderr, "\t i=%d [%s] events[i]=%u, values[i]=%llu \n",
+					i, papi.s_name[i].c_str(), papi.events[i], papi.values[i]);
 		}
 		fprintf (stderr, " <createPapiCounterList> ends\n" );
 	}
@@ -794,54 +808,76 @@ void PerfWatch::outputPapiCounterLegend (FILE* fp)
 	fprintf(fp, "\t\t%s\n", hwinfo->vendor_string);
 	fprintf(fp, "\t\t%s\n", hwinfo->model_string);
 	fprintf(fp, "\t\tThe available PMlib HWPC events for this CPU are shown below.\n");
-	fprintf(fp, "\t\tThe values for each process as the sum of threads.\n");
-
 	fprintf(fp, "\tHWPC events legend: \n");
-	fprintf(fp, "\t\tFP_OPS: floating point operations\n");
-	if (hwpc_group.platform == "Xeon" ) { // Intel Xeon E5 specific
+// FLOPS
+	if (hwpc_group.platform == "Xeon" ) {
 	fprintf(fp, "\t\tSP_OPS: single precision floating point operations\n");
 	fprintf(fp, "\t\tDP_OPS: double precision floating point operations\n");
-	fprintf(fp, "\t\tVEC_SP: single precision vector floating point operations\n");
-	fprintf(fp, "\t\tVEC_DP: double precision vector floating point operations\n");
 	}
-	if (hwpc_group.platform == "SPARC64" ) { // Kei/FX10 Sparc64 specific
-	fprintf(fp, "\t\tVEC_INS: vector instructions\n");
-	fprintf(fp, "\t\tFMA_INS: Fused Multiply-and-Add instructions\n");
-	}
-	fprintf(fp, "\t\tLD_INS: memory load instructions\n");
-	fprintf(fp, "\t\tSR_INS: memory store instructions\n");
-	if (hwpc_group.platform == "Xeon" ) { // Intel Xeon E5 specific
-	fprintf(fp, "\t\tL1_HIT: level 1 cache hit\n");
-	fprintf(fp, "\t\tL2_HIT: level 2 cache hit\n");
-	fprintf(fp, "\t\tL3_HIT: level 3 cache hit\n");
-	fprintf(fp, "\t\tHIT_LFB cache line fill buffer hit\n");
+	if (hwpc_group.platform == "SPARC64" ) {
+	fprintf(fp, "\t\tFP_OPS: floating point operations\n");
 	}
 
-	fprintf(fp, "\t\tL1_TCM: level 1 cache miss\n");
-	if (hwpc_group.platform == "Xeon" ) { // Intel Xeon E5 specific
-	fprintf(fp, "\t\tL2_TCM: level 2 cache miss\n");
-	fprintf(fp, "\t\tL3_TCM: level 3 cache miss by demand\n");
-	fprintf(fp, "\t\tOFFCORE: demand and prefetch request cache miss \n");
+// BANDWIDTH
+	if (hwpc_group.platform == "Xeon" ) {
+	fprintf(fp, "\t\tLOAD_INS: memory load instructions\n");
+	fprintf(fp, "\t\tSTORE_INS: memory store instructions\n");
+	fprintf(fp, "\t\tL1_HIT: level 1 cache hit\n");
+	fprintf(fp, "\t\tLFB_HIT: cache line fill buffer hit\n");
+	fprintf(fp, "\t\tL2_HIT: level 2 cache hit\n");
+	fprintf(fp, "\t\tL2_TRANS: level 2 cache miss\n");
 	}
-	if (hwpc_group.platform == "SPARC64" ) { // Kei/FX10 Sparc64 specific
+	fprintf(fp, "\t\tL1_TCM: level 1 cache miss\n");
+	fprintf(fp, "\t\tL2_TCM: level 2 cache miss\n");
+	//	fprintf(fp, "\t\tL3_HIT: level 3 cache hit\n");
+	//	fprintf(fp, "\t\tL3_TCM: level 3 cache miss by demand\n");
+
+	if (hwpc_group.platform == "SPARC64" ) {
+	fprintf(fp, "\t\tLD+ST: memory load/store instructions\n");
+	fprintf(fp, "\t\tSIMDLD+ST: memory load/store SIMD instructions\n");
+	fprintf(fp, "\t\tXSIMDLD+ST: memory load/store extended SIMD instructions\n");
 	fprintf(fp, "\t\tL2_TCM: level 2 cache miss (by demand and by prefetch)\n");
 	fprintf(fp, "\t\tL2_WB_DM: level 2 cache miss by demand with writeback request\n");
 	fprintf(fp, "\t\tL2_WB_PF: level 2 cache miss by prefetch with writeback request\n");
 	}
-	fprintf(fp, "\t\tTOT_CYC: total cycles\n");
-	if (hwpc_group.platform == "SPARC64" ) { // Kei/FX10 Sparc64 specific
-	fprintf(fp, "\t\tMEM_SCY: Cycles Stalled Waiting for memory accesses\n");
-	fprintf(fp, "\t\tSTL_ICY: Cycles with no instruction issue\n");
+
+// VECTOR
+	if (hwpc_group.platform == "Xeon" ) {
+	fprintf(fp, "\t\tSP_SINGLE: single precision f.p. scalar instructions\n");
+	fprintf(fp, "\t\tSP_SSE: single precision f.p. SSE instructions\n");
+	fprintf(fp, "\t\tSP_AVX: single precision f.p. 256-bit AVX instructions\n");
+	fprintf(fp, "\t\tSP_AVXW: single precision f.p. 512-bit AVX instructions\n");
+	fprintf(fp, "\t\tDP_SINGLE: double precision f.p. scalar instructions\n");
+	fprintf(fp, "\t\tDP_SSE: double precision f.p. SSE instructions\n");
+	fprintf(fp, "\t\tDP_AVX: double precision f.p. 256-bit AVX instructions\n");
+	fprintf(fp, "\t\tDP_AVXW: double precision f.p. 512-bit AVX instructions\n");
+	}
+	if (hwpc_group.platform == "SPARC64" ) {
+		if (hwpc_group.i_platform == 8 || hwpc_group.i_platform == 9 ) {
+	fprintf(fp, "\t\tFP_INS: f.p. instructions\n");
+	fprintf(fp, "\t\tFMA_INS: FMA instructions\n");
+	fprintf(fp, "\t\tSIMD_FP: SIMD f.p. instructions\n");
+	fprintf(fp, "\t\tSIMD_FMA: SIMD FMA instructions\n");
+		}
+		if (hwpc_group.i_platform == 11 ) {
+	fprintf(fp, "\t\t1FP_OPS: 1 f.p. op instructions\n");
+	fprintf(fp, "\t\t2FP_OPS: 2 f.p. ops instructions\n");
+	fprintf(fp, "\t\t4FP_OPS: 4 f.p. ops instructions\n");
+	fprintf(fp, "\t\t8FP_OPS: 8 f.p. ops instructions\n");
+	fprintf(fp, "\t\t16FP_OPS: 16 f.p. ops instructions\n");
+		}
 	}
 
+// CACHE || CYCLE
+	fprintf(fp, "\t\tTOT_CYC: total cycles\n");
 	fprintf(fp, "\t\tTOT_INS: total instructions\n");
-	fprintf(fp, "\t\tFP_INS: floating point instructions\n");
 
 	fprintf(fp, "\tDerived statistics:\n");
 	fprintf(fp, "\t\t[GFlops]: floating point operations per nano seconds (10^-9)\n");
 	fprintf(fp, "\t\t[Mem GB/s]: memory bandwidth in load+store GB/s\n");
-	fprintf(fp, "\t\t[L1$ %]: Level 1 cache hit percentage \n");
-	fprintf(fp, "\t\t[LL$ %]: Last Level cache hit percentage \n");
+	fprintf(fp, "\t\t[VECTOR(%)]: percentage of vectorized operations\n");
+	fprintf(fp, "\t\t[Ins/cycle]: performed instructions per machine clock cycle\n");
+	fprintf(fp, "\t\t[Ins/sec]: Giga instructions per second \n");
 
 #endif // USE_PAPI
 }
