@@ -115,6 +115,8 @@ namespace pm_lib {
     /// MPI並列時の並列プロセス数と自ランク番号
     int num_process;
     int my_rank;
+    /// OpenMP並列時のスレッド数
+    int num_threads;
 
     /// bool値：  true/false
     bool m_is_first;      /// 測定区間が初めてstartされる場合かどうかのフラグ
@@ -146,8 +148,7 @@ namespace pm_lib {
     ///   @param[in] my_rank   自ランク番号
     ///   @param[in] exclusive 排他測定フラグ
     ///
-    void setProperties(const std::string& label, int id, int typeCalc, int nPEs, int my_rank, bool exclusive);
-
+    void setProperties(const std::string& label, int id, int typeCalc, int nPEs, int my_rank, int num_threads, bool exclusive);
 
     /// HWPCイベントを初期化する
     ///
