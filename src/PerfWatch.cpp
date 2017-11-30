@@ -728,10 +728,12 @@ namespace pm_lib {
   ///   @param[in] label     ラベル
   ///   @param[in] id       ラベルに対応する番号
   ///   @param[in] typeCalc  測定量のタイプ(0:通信, 1:計算)
+  ///   @param[in] nPEs            並列プロセス数
   ///   @param[in] my_rank_ID      ランク番号
+  ///   @param[in] nTHREADs     並列スレッド数
   ///   @param[in] exclusive 排他測定フラグ
   ///
-  void PerfWatch::setProperties(const std::string& label, int id, int typeCalc, int nPEs, int my_rank_ID, bool exclusive)
+  void PerfWatch::setProperties(const std::string& label, int id, int typeCalc, int nPEs, int my_rank_ID, int nTHREADs, bool exclusive)
   {
     m_label = label;
     m_id = id;
@@ -739,9 +741,11 @@ namespace pm_lib {
     m_exclusive =  exclusive;
     num_process = nPEs;
     my_rank = my_rank_ID;
+    num_threads = nTHREADs;
 #ifdef DEBUG_PRINT_WATCH
     if (my_rank == 0) {
-    fprintf(stderr, "<PerfWatch::setProperties> %s : id=%d, typeCalc=%d, nPEs=%d, my_rank_ID=%d, exclusive=%s\n", label.c_str(), id, typeCalc, nPEs, my_rank_ID, exclusive?"true":"false");
+    fprintf(stderr, "<PerfWatch::setProperties> [%s] id=%d, typeCalc=%d, nPEs=%d, my_rank_ID=%d, num_threads=%d, exclusive=%s\n",
+		label.c_str(), id, typeCalc, nPEs, my_rank_ID, num_threads, exclusive?"true":"false");
     }
 #endif
 
@@ -818,12 +822,12 @@ namespace pm_lib {
     if (id != 0) {
       m_is_OTF = 0;
     }
-#ifdef DEBUG_PRINT_OTF
+	#ifdef DEBUG_PRINT_OTF
     if (my_rank == 0) {
 		fprintf(stderr, "\t<labelOTF> label=%s, m_exclusive=%d, i_switch=%d\n",
 			label.c_str(), m_exclusive, i_switch);
     }
-#endif
+	#endif
 #endif
   }
 
@@ -881,8 +885,7 @@ namespace pm_lib {
       return;
     }
     if (m_exclusive && ExclusiveStarted) {
-      printError("start()",  "Overlapped the previous exclusive section.\n");
-      printError("start()",  "PMlib ignores this section.\n");
+      printError("start()",  "Section [%s] overlaps other exclusive section. This section is ignored.\n", m_label.c_str());
       m_is_healthy=false;
       return;
     }
@@ -900,36 +903,35 @@ namespace pm_lib {
 	if (m_is_first) {
 		my_papi = papi;
 		m_is_first = false;
+		for (int i=0; i<my_papi.num_events; i++){
+			my_papi.values[i] = 0;
+			my_papi.accumu[i] = 0;
+		}
 	}
 	for (int i=0; i<my_papi.num_events; i++){
 		my_papi.values[i] = 0;
 	}
-#ifdef DEBUG_PRINT_PAPI
+
+	#ifdef DEBUG_PRINT_PAPI
     if (my_rank == 0)
 		fprintf (stderr, "<PerfWatch::start> [%s] my_papi address=%p\n", m_label.c_str(), &my_papi);
-#endif
+	#endif
 
+	// Updated 2017/11/28
+	//	Since PAPI_start()/stop() pair clears out the event counters,
+	//	we call my_papi_bind_read() to preserve HWPC events for inclusive sections.
 	#pragma omp parallel
 	{
 		struct pmlib_papi_chooser th_papi = my_papi;
 		int i_ret;
 
-		i_ret = my_papi_bind_start (th_papi.values, th_papi.num_events);
-		//
-		//	Development note:
-		//	If we should support HWPC measurement for inclusive sections,
-		//	a start()/stop() pair may not be used, because it clears out
-		//	the event counters.
-		//	To produce the HWPC data for inclusive sections, we should use
-		//	my_papi_bind_read() instead of my_papi_bind_start/stop() as below.
-		//	In such a case, we will have to modify the my_papi.values[*]
-		//	and my_papi.accumu[*] usage.
-		//
-		//	i_ret = my_papi_bind_read (th_papi.values, th_papi.num_events);
+		i_ret = my_papi_bind_read (th_papi.values, th_papi.num_events);
+		//	i_ret = my_papi_bind_start (th_papi.values, th_papi.num_events);
 
 		if ( i_ret != PAPI_OK ) {
 			int i_thread = omp_get_thread_num();
-			fprintf(stderr, "*** error. <my_papi_bind_start> code: %d, thread:%d\n", i_ret, i_thread);
+			fprintf(stderr, "*** error. <my_papi_bind_read> code: %d, thread:%d\n", i_ret, i_thread);
+			//	fprintf(stderr, "*** error. <my_papi_bind_start> code: %d, thread:%d\n", i_ret, i_thread);
 			PM_Exit(0);
 		}
 
@@ -938,7 +940,7 @@ namespace pm_lib {
 		{
     		if (my_rank == 0) {
 			int i_thread = omp_get_thread_num();
-				fprintf (stderr, "\tthread:%d, th_papi.values[*]: ", i_thread);
+				fprintf (stderr, "\tthread:%d of %d, th_papi.values[*]: ", i_thread, num_threads);
 				for (int i=0; i<my_papi.num_events; i++) {
 				fprintf (stderr, "%llu, ", th_papi.values[i]);
 				}
@@ -946,8 +948,18 @@ namespace pm_lib {
 			}
 		}
 		#endif
-	}
+		#pragma omp critical
+		{
+			for (int i=0; i<my_papi.num_events; i++) {
+			my_papi.values[i] += th_papi.values[i];
+			}
+		}
+	}	// end of parallel region
 
+	for (int i=0; i<my_papi.num_events; i++) {
+		// save the average value of all threads
+		my_papi.values[i] = my_papi.values[i]/(double)num_threads;
+	}
 #endif // USE_PAPI
 
 #ifdef USE_OTF
@@ -1038,45 +1050,37 @@ namespace pm_lib {
 	#ifdef DEBUG_PRINT_PAPI
 		if (my_rank == 0) {
 		fprintf (stderr, "<PerfWatch::stop> sum up HWPC event values.\n");
+		fprintf (stderr, "\tBefore reading the new event values:\n");
+		for (int i=0; i<my_papi.num_events; i++) {
+			fprintf (stderr, "\t i=%d, my_papi.values[i]=%llu, my_papi.accumu[i]=%llu\n",
+						i, my_papi.values[i], my_papi.accumu[i]);
+			}
 		}
 	#endif
 
-	// HWPC event values are collected only inside of exclusive sections.
-	// This policy may change in the future releases.
+	// OpenMP reduction clause in C++ is only supported by OpenMP 4.0 and newer
+	// Thus we apply rather in efficient code below.
 
-	if (m_exclusive) {
-	#pragma omp parallel
+	long long sum_th[Max_chooser_events];
+	for (int i=0; i<my_papi.num_events; i++) {
+		sum_th[i]=0;
+	}
+	#pragma omp parallel shared(sum_th)
 	{
 		struct pmlib_papi_chooser th_papi = my_papi;
 		int i_ret;
 
-		i_ret = my_papi_bind_stop (th_papi.values, th_papi.num_events);
+	// Updated 2017/11/28
+	//	Since PAPI_start()/stop() pair clears out the event counters,
+	//	we call my_papi_bind_read() to preserve HWPC events for inclusive sections.
+
+		i_ret = my_papi_bind_read (th_papi.values, th_papi.num_events);
+		//	i_ret = my_papi_bind_stop (th_papi.values, th_papi.num_events);
 
 		if ( i_ret != PAPI_OK ) {
 			int i_thread = omp_get_thread_num();
-			printError("stop()",  "my_papi_bind_stop code: %d, i_thread:%d\n",
-								i_ret, i_thread);
-		}
-
-		// 2016/6/27 Development note:
-		// PAPIでは start()/stop() ペアによりカウンター情報がリセットされる
-		// このため非排他区間のHWPC情報を保存するためには my_papi データを
-		// 保持する仕組みに修正が必要となる
-		//	If we should support HWPC measurement for inclusive sections,
-		//	a start()/stop() pair may not be used, because it clears out
-		//	the event counters.
-		//	We will need to use my_papi_bind_read() instead, as below.
-		//	In such a case, we will have to modify the my_papi.values[*]
-		//	and my_papi.accumu[*] usage.
-		//
-		//	i_ret = my_papi_bind_read (th_papi.values, th_papi.num_events);
-
-
-		#pragma omp critical
-		{
-			for (int i=0; i<my_papi.num_events; i++) {
-			my_papi.values[i] += th_papi.values[i];
-			}
+			printError("stop()",  "<my_papi_bind_read> code: %d, i_thread:%d\n", i_ret, i_thread);
+			//	printError("stop()",  "<my_papi_bind_stop> code: %d, i_thread:%d\n", i_ret, i_thread);
 		}
 
 		#ifdef DEBUG_PRINT_PAPI_THREADS
@@ -1092,27 +1096,40 @@ namespace pm_lib {
 			}
 		}
 		#endif
-	} // end of #pragma omp parallel region
-	}
 
+		#pragma omp critical
+		{
+			for (int i=0; i<my_papi.num_events; i++) {
+			sum_th[i] += th_papi.values[i] - my_papi.values[i];
+			}
+			#ifdef DEBUG_PRINT_PAPI_THREADS
+    		if (my_rank == 0) {
+			int i_thread = omp_get_thread_num();
+				fprintf (stderr, "\tthread:%d, sum_th[*]: ", i_thread);
+				for (int i=0; i<my_papi.num_events; i++) {
+				fprintf (stderr, "%llu, ", sum_th[i]);
+				}
+				fprintf (stderr, "\n");
+			}
+			#endif
+		}
+
+	} // end of #pragma omp parallel region
 
 	for (int i=0; i<my_papi.num_events; i++) {
-		my_papi.accumu[i] += my_papi.values[i];
+		my_papi.accumu[i] += sum_th[i];
 	}
-
 	#ifdef DEBUG_PRINT_PAPI
     if (my_rank == 0) {
-		int n_thread = omp_get_max_threads();
-		fprintf (stderr, "  my_papi : num_events=%d, sum of %d threads \n",
-				my_papi.num_events, n_thread);
+		fprintf (stderr, "\t num_events=%d, sum of %d threads\n", my_papi.num_events, num_threads);
 		for (int i=0; i<my_papi.num_events; i++) {
-			fprintf (stderr, "  event i=%d, value=%llu, accumu=%llu\n",
-				i, my_papi.values[i], my_papi.accumu[i]);
+			fprintf (stderr, "\t my_papi.values[%d]=%12llu, my_papi.accume[%d]=%12llu\n",
+				i, my_papi.values[i], i, my_papi.accumu[i]);
 		}
 	}
 	#endif
 
-	}
+	}	// end of if (my_papi.num_events > 0) block
 #endif
 
 
@@ -1180,12 +1197,6 @@ namespace pm_lib {
   {
     //	m_started = true;
     //	m_startTime = getTime();
-#ifdef USE_PAPI
-	//	if (m_is_first) {
-		//	my_papi = papi;
-		//	m_is_first = false;
-	//	}
-#endif // USE_PAPI
 
     m_time = 0.0;
     m_count = 0;

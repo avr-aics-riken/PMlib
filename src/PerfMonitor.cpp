@@ -115,7 +115,7 @@ namespace pm_lib {
     int id = add_perf_label(label);	// The "Root Section" has id=0
     m_watchArray[id] = m_watchArray[0];
     m_nWatch++;
-    m_watchArray[0].setProperties(label, id, CALC, num_process, my_rank, false);
+    m_watchArray[0].setProperties(label, id, CALC, num_process, my_rank, num_threads, false);
 
     m_watchArray[0].initializeOTF();
     m_watchArray[0].start();
@@ -158,7 +158,8 @@ namespace pm_lib {
       watch_more = NULL;
       researved_nWatch = 2*researved_nWatch;
     }
-    m_watchArray[id].setProperties(label, id, type, num_process, my_rank, exclusive);
+    m_watchArray[id].setProperties(label, id, type, num_process, my_rank, num_threads, exclusive);
+
   }
 
 
