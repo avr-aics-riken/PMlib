@@ -5,7 +5,7 @@
 ---
 - 2017-11-30 Version 5.8.1
   - Added report for HWPC statistics of inclusive sections
-  - Internal API PAPI_read() is called in stead of PAPI_start()/PAPI_stop()
+  - Internal API `PAPI_read()` is called in stead of `PAPI_start()/PAPI_stop()`
 
 ---
 - 2017-10-07 Version 5.8.0
@@ -32,13 +32,13 @@
 ---
 - 2017-07-11 Version 5.6.7
   - update example scripts under doc/scripts/ and pdf under doc/tutorials/
-  - update CMAKE_Fortran_FLAGS handling : CMakeLists.txt and CompileOptionSelector.cmake
+  - update `CMAKE_Fortran_FLAGS` handling : CMakeLists.txt and CompileOptionSelector.cmake
   - link static PAPI 5.5.1+ for Intel and GNU : example/CMakeLists.txt
 
 
 ---
 - 2017-07-05 Version 5.6.6
-  - set(CMAKE_FIND_ROOT_PATH   /opt/FJSVtclang/1.2.0) in Toolchaon_K.cmake
+  - `set(CMAKE_FIND_ROOT_PATH   /opt/FJSVtclang/1.2.0)` in Toolchaon_K.cmake
 
 
 ---
@@ -63,7 +63,7 @@
 
 ---
 - 2017-03-30 Version 5.6.1
-  - change _PM_WITHOUT_MPI_ to DISABLE_MPI due to maintain the consistency with other libraries
+  - change `_PM_WITHOUT_MPI_` to `DISABLE_MPI` due to maintain the consistency with other libraries
 
 
 ---
@@ -79,9 +79,9 @@
 ---
 - 2017-03-20 Version 5.5.8
   - fix OTF option handling in CMakeLists.txt, src_otf_ext/CMakeLists.txt
-  - added PAPI and OTF headers in example/CMakeLists.txt : see include_directories() and link_directories() lines
+  - added PAPI and OTF headers in example/CMakeLists.txt : see `include_directories()` and `link_directories()` lines
   - added PAPI header in src/CMakeLists.txt see include_directories()
-  - bug fix to support old PAPI on FX10: src/PerfCpuType.cpp, include/pmlib_papi.h, cmake/CompileOption\*.cmake
+  - bug fix to support old PAPI on FX10: src/PerfCpuType.cpp, `include/pmlib_papi.h`, cmake/CompileOption\*.cmake
   - minor fix to reformat DEBUG_PRINT output : PerfProgFortran.cpp
   - minor fix to add OTF information in basic report : PerfWatch.cpp
 
