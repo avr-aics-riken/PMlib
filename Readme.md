@@ -97,7 +97,6 @@ The default compiler options are described in `cmake/CompilerOptionSelector.cmak
 ##### serial version
 In some Intel compiler environment, CC/CXX/F90/FC environemnt variables
 must be set for compiling.
-
 ~~~
 $ export CC=icc CXX=icpc F90=ifort FC=ifort	# needed for Intel compiler
 $ cmake -DINSTALL_DIR=${PM_HOME}/PMlib \
@@ -112,7 +111,6 @@ $ cmake -DINSTALL_DIR=${PM_HOME}/PMlib \
 ##### MPI version
 If PAPI and/or OTF library is available on the system, set their path
 as the example below to activate the functionality within PMlib.
-
 ~~~
 $ export CC=mpiicc CXX=mpiicpc F90=mpiifort FC=mpiifort	# for Intel compiler
 $ PAPI_DIR="#set PAPI library path such as /usr/local/papi-5.5"
@@ -128,7 +126,6 @@ $ cmake -DINSTALL_DIR=${PM_HOME}/PMlib \
 
 
 ### FUJITSU compiler / FX10 ,FX100, K on login nodes (Cross compilation) and Fujitsu TCS environment for intel PC
-
 ~~~
 $ cmake -DINSTALL_DIR=${PM_HOME}/PMlib \
             -DCMAKE_TOOLCHAIN_FILE=../cmake/Toolchain_fx10.cmake \
