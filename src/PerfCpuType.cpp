@@ -149,11 +149,13 @@ void PerfWatch::createPapiCounterList ()
 // ToDo: Create more robust API than PAPI_get_hardware_info(), and replace it.
 
 //	star:	: Intel(R) Core(TM)2 Duo CPU     E7500  @ 2.93GHz, has sse4
-//	eagles:	: Intel(R) Xeon(R) CPU E5-2650 v2 @ 2.60GHz, has avx
-//	ivy:	: Intel(R) Xeon(R) CPU E5-4620 v2 @ 2.60GHz, has avx
-// haswell:	: Intel(R) Xeon(R) CPU E5-2640 v3 @ 2.60GHz, has avx
-// vsh(snb) : Intel(R) Xeon(R) CPU E5-2670 0 @ 2.60GHz, has avx
-// chicago:	: Intel(R) Xeon(R) CPU E3-1220 v5 @ 3.00GHz (94), has avx
+// vsh-vsp	: Intel(R) Xeon(R) CPU E5-2670 0 @ 2.60GHz	# Sandybridge
+//	eagles:	: Intel(R) Xeon(R) CPU E5-2650 v2 @ 2.60GHz	# SandyBridge
+//	uv01:	: Intel(R) Xeon(R) CPU E5-4620 v2 @ 2.60GHz	# Ivybridge
+//	c01:	: Intel(R) Xeon(R) CPU E5-2640 v3 @ 2.60GHz	# Haswell
+// chicago:	: Intel(R) Xeon(R) CPU E3-1220 v5 @ 3.00GHz (94)# Skylake
+// ito-fep:	: Intel(R) Xeon(R) CPU E7-8880 v4 @ 2.20GHz	# Broadwell
+// water:	: Intel(R) Xeon(R) Gold 6148 CPU @ 2.40GHz	# Skylake
 
 
 //	with Linux, s_model_string is taken from "model name" in /proc/cpuinfo
@@ -291,6 +293,10 @@ void PerfWatch::createPapiCounterList ()
 				papi.s_name[ip] = "L2_TRANS:ALL_REQUESTS";
 				my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "L2_TRANS"; ip++;
 			} else
+			if (hwpc_group.i_platform == 4 ) {
+				papi.s_name[ip] = "L2_TRANS:ALL_REQUESTS";
+				my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "L2_TRANS"; ip++;
+			} else
 			if (hwpc_group.i_platform == 5 ) {
 				// Skylake PAPI events should be checked when they become available
 				//	"L2_TRANS:ALL" is missing on Skylake. Compromised stats.
@@ -298,7 +304,7 @@ void PerfWatch::createPapiCounterList ()
 				my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "L2_RQSTS"; ip++;
 			} else {
 				// This is not useful at all. Just putting here to avoid error termination
-				papi.s_name[ip] = "LLC_REFERENCE";
+				papi.s_name[ip] = "LLC_REFERENCES";
 				my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "LLC_REF"; ip++;
 			}
 
@@ -363,8 +369,22 @@ void PerfWatch::createPapiCounterList ()
 				papi.s_name[ip] = "SIMD_FP_256:PACKED_DOUBLE";				// 4 SIMD
 					my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "DP_AVX"; ip++;
 			} else
-				// hwpc_group.i_platform = 3;	// Haswell does not support VECTOR events
-				// hwpc_group.i_platform = 4;	// Broadwell. No access to Broadwell yet.
+			if ( hwpc_group.i_platform == 4 ) {
+				// Broadwell
+				hwpc_group.number[I_vector] += 6;
+				papi.s_name[ip] = "FP_ARITH:SCALAR_SINGLE";			//	scalar
+					my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "SP_SINGLE"; ip++;
+				papi.s_name[ip] = "FP_ARITH:128B_PACKED_SINGLE";	//	4 SIMD
+					my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "SP_SSE"; ip++;
+				papi.s_name[ip] = "FP_ARITH:256B_PACKED_SINGLE";	//	8 SIMD
+					my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "SP_AVX"; ip++;
+				papi.s_name[ip] = "FP_ARITH:SCALAR_DOUBLE";			//	scalar
+					my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "DP_SINGLE"; ip++;
+				papi.s_name[ip] = "FP_ARITH:128B_PACKED_DOUBLE";	//	2 SIMD
+					my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "DP_SSE"; ip++;
+				papi.s_name[ip] = "FP_ARITH:256B_PACKED_DOUBLE";	//	4 SIMD
+					my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "DP_AVX"; ip++;
+			} else
 			if ( hwpc_group.i_platform == 5 ) {
 				// Skylake and alike platform
 				hwpc_group.number[I_vector] += 8;
@@ -386,6 +406,7 @@ void PerfWatch::createPapiCounterList ()
 					my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "DP_AVXW"; ip++;
 			} else {
 				;	// no FLOPS support
+				// hwpc_group.i_platform = 3;	// Haswell does not support VECTOR events
 			}
 
 		} else
@@ -621,6 +642,17 @@ void PerfWatch::sortPapiCounterList (void)
 				fp_vector =          4.0*fp_sp4 + 8.0*fp_sp8 +          2.0*fp_dp2 + 4.0*fp_dp4;
 				fp_total  = fp_sp1 + 4.0*fp_sp4 + 8.0*fp_sp8 + fp_dp1 + 2.0*fp_dp2 + 4.0*fp_dp4;
 			} else
+			if (hwpc_group.i_platform == 4 ) {
+				fp_sp1  = my_papi.accumu[ip] ; 		//	 "FP_ARITH:SCALAR_SINGLE"; //	"SP_SINGLE";
+				fp_sp4  = my_papi.accumu[ip+1] ; 	//	 "FP_ARITH:128B_PACKED_SINGLE"; //	"SP_SSE";
+				fp_sp8  = my_papi.accumu[ip+2] ; 	//	 "FP_ARITH:256B_PACKED_SINGLE"; //	"SP_AVX";
+				fp_dp1  = my_papi.accumu[ip+3] ; 	//	 "FP_ARITH:SCALAR_DOUBLE"; //	"DP_SINGLE";
+				fp_dp2  = my_papi.accumu[ip+4] ; 	//	 "FP_ARITH:128B_PACKED_DOUBLE"; //	"DP_SSE";
+				fp_dp4  = my_papi.accumu[ip+5] ; 	//	 "FP_ARITH:256B_PACKED_DOUBLE"; //	"DP_AVX";
+				// DPP and FMA events have been counted twice by PAPI
+				fp_vector = 4.0*fp_sp4 + 8.0*fp_sp8 + 2.0*fp_dp2 + 4.0*fp_dp4;
+				fp_total  = fp_sp1 + fp_dp1 + fp_vector;
+			} else
 			if (hwpc_group.i_platform == 5 ) {
 				fp_sp1  = my_papi.accumu[ip] ; 		//	 "FP_ARITH:SCALAR_SINGLE"; //	"SP_SINGLE";
 				fp_sp4  = my_papi.accumu[ip+1] ; 	//	 "FP_ARITH:128B_PACKED_SINGLE"; //	"SP_SSE";
@@ -630,7 +662,6 @@ void PerfWatch::sortPapiCounterList (void)
 				fp_dp2  = my_papi.accumu[ip+5] ; 	//	 "FP_ARITH:128B_PACKED_DOUBLE"; //	"DP_SSE";
 				fp_dp4  = my_papi.accumu[ip+6] ; 	//	 "FP_ARITH:256B_PACKED_DOUBLE"; //	"DP_AVX";
 				fp_dp8  = my_papi.accumu[ip+7] ; 	//	 "FP_ARITH:512B_PACKED_DOUBLE"; //	"DP_AVXW";
-				// FMA events are not counted because of the event counter limit
 				fp_vector = 4.0*fp_sp4 + 8.0*fp_sp8 + 16.0*fp_sp16 + 2.0*fp_dp2 + 4.0*fp_dp4 + 8.0*fp_dp8;
 				fp_total  = fp_sp1 + fp_dp1 + fp_vector;
 			}
@@ -822,23 +853,23 @@ void PerfWatch::outputPapiCounterLegend (FILE* fp)
 	if (hwpc_group.platform == "Xeon" ) {
 	fprintf(fp, "\t\tLOAD_INS: memory load instructions\n");
 	fprintf(fp, "\t\tSTORE_INS: memory store instructions\n");
-	fprintf(fp, "\t\tL1_HIT: level 1 cache hit\n");
-	fprintf(fp, "\t\tLFB_HIT: cache line fill buffer hit\n");
-	fprintf(fp, "\t\tL2_HIT: level 2 cache hit\n");
-	fprintf(fp, "\t\tL2_TRANS: level 2 cache miss\n");
+	fprintf(fp, "\t\tL1_HIT: level 1 cache hits\n");
+	fprintf(fp, "\t\tLFB_HIT: cache line fill buffer hits\n");
+	fprintf(fp, "\t\tL2_HIT: level 2 cache hits\n");
+	fprintf(fp, "\t\tL2_TRANS: level 2 cache all transactions\n");
 	}
-	fprintf(fp, "\t\tL1_TCM: level 1 cache miss\n");
-	fprintf(fp, "\t\tL2_TCM: level 2 cache miss\n");
+	fprintf(fp, "\t\tL1_TCM: level 1 total cache misses\n");
+	fprintf(fp, "\t\tL2_TCM: level 2 total cache misses\n");
 	//	fprintf(fp, "\t\tL3_HIT: level 3 cache hit\n");
-	//	fprintf(fp, "\t\tL3_TCM: level 3 cache miss by demand\n");
+	//	fprintf(fp, "\t\tL3_TCM: level 3 total cache misses by demand\n");
 
 	if (hwpc_group.platform == "SPARC64" ) {
 	fprintf(fp, "\t\tLD+ST: memory load/store instructions\n");
 	fprintf(fp, "\t\tSIMDLD+ST: memory load/store SIMD instructions\n");
 	fprintf(fp, "\t\tXSIMDLD+ST: memory load/store extended SIMD instructions\n");
-	fprintf(fp, "\t\tL2_TCM: level 2 cache miss (by demand and by prefetch)\n");
-	fprintf(fp, "\t\tL2_WB_DM: level 2 cache miss by demand with writeback request\n");
-	fprintf(fp, "\t\tL2_WB_PF: level 2 cache miss by prefetch with writeback request\n");
+	fprintf(fp, "\t\tL2_TCM: level 2 cache misses (by demand and by prefetch)\n");
+	fprintf(fp, "\t\tL2_WB_DM: level 2 cache misses by demand with writeback request\n");
+	fprintf(fp, "\t\tL2_WB_PF: level 2 cache misses by prefetch with writeback request\n");
 	}
 
 // VECTOR
@@ -851,6 +882,7 @@ void PerfWatch::outputPapiCounterLegend (FILE* fp)
 	fprintf(fp, "\t\tDP_SSE: double precision f.p. SSE instructions\n");
 	fprintf(fp, "\t\tDP_AVX: double precision f.p. 256-bit AVX instructions\n");
 	fprintf(fp, "\t\tDP_AVXW: double precision f.p. 512-bit AVX instructions\n");
+	fprintf(fp, "\t\tremark. FMA(fused multiply-add) instructions are counted twice.\n");
 	}
 	if (hwpc_group.platform == "SPARC64" ) {
 		if (hwpc_group.i_platform == 8 || hwpc_group.i_platform == 9 ) {
