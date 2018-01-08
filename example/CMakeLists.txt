@@ -5,10 +5,10 @@
 # Copyright (c) 2010-2011 VCAD System Research Program, RIKEN.
 # All rights reserved.
 #
-# Copyright (c) 2012-2017 Advanced Institute for Computational Science(AICS), RIKEN.
+# Copyright (c) 2012-2018 Advanced Institute for Computational Science(AICS), RIKEN.
 # All rights reserved.
 #
-# Copyright (c) 2016-2017 Research Institute for Information Technology(RIIT), Kyushu University.
+# Copyright (c) 2016-2018 Research Institute for Information Technology(RIIT), Kyushu University.
 # All rights reserved.
 #
 ###################################################################################
@@ -155,8 +155,9 @@ if(enable_Fortran)
   add_executable(example4 ./test4/f_main.f90)
 
   if(CMAKE_CXX_COMPILER_ID STREQUAL "Intel")
+    elseif(CMAKE_Fortran_COMPILER_ID STREQUAL "PGI")
     else()
-  set_target_properties(example4 PROPERTIES LINKER_LANGUAGE CXX)
+    set_target_properties(example4 PROPERTIES LINKER_LANGUAGE CXX)
   endif()
 
   if(with_MPI)
