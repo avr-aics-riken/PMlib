@@ -3,6 +3,11 @@
 ## REVISION HISTORY
 
 ---
+- 2018-01-08 Version 5.8.2
+  - Build by PGI compiler
+  - change copyright year
+
+---
 - 2017-11-30 Version 5.8.1
   - Added report for HWPC statistics of inclusive sections
   - Internal API PAPI_read() is called in stead of PAPI_start()/PAPI_stop()

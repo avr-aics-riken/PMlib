@@ -5,10 +5,10 @@
 # Copyright (c) 2010-2011 VCAD System Research Program, RIKEN.
 # All rights reserved.
 #
-# Copyright (c) 2012-2017 Advanced Institute for Computational Science(AICS), RIKEN.
+# Copyright (c) 2012-2018 Advanced Institute for Computational Science(AICS), RIKEN.
 # All rights reserved.
 #
-# Copyright (c) 2016-2017 Research Institute for Information Technology(RIIT), Kyushu University.
+# Copyright (c) 2016-2018 Research Institute for Information Technology(RIIT), Kyushu University.
 # All rights reserved.
 #
 ###################################################################################
@@ -71,8 +71,8 @@ set (CMAKE_INSTALL_PREFIX "${INSTALL_DIR}")
 
 
 #######
-set(PROJECT_VERSION "5.8.1")
-set(LIB_REVISION "20171130_1300")
+set(PROJECT_VERSION "5.8.2")
+set(LIB_REVISION "20180108_1500")
 
 message(" ")
 message("${PROJECT_NAME} Version : ${PROJECT_VERSION}")
@@ -96,11 +96,11 @@ include(${PROJECT_SOURCE_DIR}/cmake/pm_package.cmake)
 # Options
 #######
 
+AddOptimizeOption()
+
 if(enable_Fortran)
   FreeForm()
 endif()
-
-AddOptimizeOption()
 
 checkOpenMP()
 

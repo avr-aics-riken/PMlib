@@ -5,10 +5,10 @@
 # Copyright (c) 2010-2011 VCAD System Research Program, RIKEN.
 # All rights reserved.
 #
-# Copyright (c) 2012-2017 Advanced Institute for Computational Science(AICS), RIKEN.
+# Copyright (c) 2012-2018 Advanced Institute for Computational Science(AICS), RIKEN.
 # All rights reserved.
 #
-# Copyright (c) 2016-2017 Research Institute for Information Technology(RIIT), Kyushu University.
+# Copyright (c) 2016-2018 Research Institute for Information Technology(RIIT), Kyushu University.
 # All rights reserved.
 #
 ###################################################################################
@@ -50,9 +50,9 @@ if (TARGET_ARCH STREQUAL "FX10")
     set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -fpp -O3")
 
   elseif(CMAKE_CXX_COMPILER_ID STREQUAL "PGI")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -Minfo=all -Mipa=inline")
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O3 -Minfo=all")
-    set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -O3 -Minfo=all")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fast -Minfo=all -Mipa=fast,inline -O3")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fast -Minfo=all -Mipa=fast,inline -O3")
+    set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -fast -Minfo=all -Mipa=fast,inline -O3")
   else()
     message("using default option")
   endif()
