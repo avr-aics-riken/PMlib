@@ -181,7 +181,7 @@ void PerfWatch::createPapiCounterList ()
 			if (s_model_string.find( "v3" ) != string::npos ) {
 				hwpc_group.i_platform = 3;	// Haswell
 			} else if (s_model_string.find( "v4" ) != string::npos ) {
-				hwpc_group.i_platform = 4;	// Broadwell: Minimal support.
+				hwpc_group.i_platform = 4;	// Broadwell
 			} else if (s_model_string.find( "v5" ) != string::npos ) {
 				hwpc_group.i_platform = 5;	// Skylake without avx-512
 			}
@@ -294,6 +294,7 @@ void PerfWatch::createPapiCounterList ()
 				my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "L2_TRANS"; ip++;
 			} else
 			if (hwpc_group.i_platform == 4 ) {
+				// Broadwell can count only 4 cache related events at a time.
 				papi.s_name[ip] = "L2_TRANS:ALL_REQUESTS";
 				my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "L2_TRANS"; ip++;
 			} else
