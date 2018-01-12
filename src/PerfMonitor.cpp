@@ -954,11 +954,11 @@ namespace pm_lib {
     if ( (is_unit == 0) || (is_unit == 1) ) {
       fprintf(fp, "| [user defined counter values ]\n");
     } else if ( (is_unit == 2) ) {
-      fprintf(fp, "| [hardware counter flop counts]\n");
-    } else if ( (is_unit == 3) ) {
       fprintf(fp, "| [hardware counter Byte counts]\n");
+    } else if ( (is_unit == 3) ) {
+      fprintf(fp, "| [hardware counter flop counts]\n");
     } else if ( (is_unit == 4) ) {
-      fprintf(fp, "| hardware vectorized F.P. operations \n");
+      fprintf(fp, "| hardware vectorized operations \n");
     } else {
       fprintf(fp, "| hardware cache miss and instructions\n");
     }

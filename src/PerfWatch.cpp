@@ -361,96 +361,134 @@ namespace pm_lib {
   }
 
 
+#if defined (USE_PRECISE_TIMER) // Platform specific precise timer
+	#if defined (__APPLE__)				// Mac Clang and/or GCC
+		#include <unistd.h>
+		#include <mach/mach.h>
+		#include <mach/mach_time.h>
+	#elif defined (__sparcv9)			// K computer and FX100
+		#include <fjcex.h>
+	#endif
+#endif
+
   /// 時刻を取得
   ///
   ///   @return 時刻値(秒)
   ///
-  //   		Windows: GetSystemTimeAsFileTime API(sph_win32_util.h)を使用???
-  ///
   double PerfWatch::getTime()
   {
+#if defined (USE_PRECISE_TIMER) // Platform specific precise timer
+	#if defined (__APPLE__)				// Mac Clang and/or GCC
+		//	printf("[__APPLE__] is defined.\n");
+		return ((double)mach_absolute_time() * second_per_cycle);
 
-// The default defined macro on K computer and FX100 is (__sparcv9)
-#if defined (PRECISE_SPARC)
-	#include <fjcex.h>
-	register double tval;
-	tval = __gettod()*1.0e-6;
-	return (tval);
-// The default defined macro on  Intel Xeon is (__x86_64__)
-#elif defined(PRECISE_X86_64)
-	#if defined (__INTEL_COMPILER) || (__gnu_linux__)
-    // Can replace the following code segment using inline assembler
-	unsigned long long tsc;
-	unsigned int lo, hi;
-	__asm __volatile__ ( "rdtsc" : "=a"(lo), "=d"(hi) );
-	tsc = ( (unsigned long long)lo)|( ((unsigned long long)hi)<<32 );
-	return ((double)tsc * second_per_cycle);
+	#elif defined (__sparcv9)			// K computer and FX100
+		//	printf("[__sparcv9] is defined.\n");
+		register double tval;
+		tval = __gettod()*1.0e-6;
+		return (tval);
+
+	#elif defined(__x86_64__)			// Intel Xeon processor
+		#if defined (__INTEL_COMPILER) || (__gnu_linux__)
+		// Can replace the following code segment using inline assembler
+		unsigned long long tsc;
+		unsigned int lo, hi;
+		__asm __volatile__ ( "rdtsc" : "=a"(lo), "=d"(hi) );
+		tsc = ( (unsigned long long)lo)|( ((unsigned long long)hi)<<32 );
+		return ((double)tsc * second_per_cycle);
+		#endif
+	#else		// precise timer is not available. use gettimeofday() instead.
+		struct timeval tv;
+		gettimeofday(&tv, 0);
+		return (double)tv.tv_sec + (double)tv.tv_usec * 1.0e-6;
 	#endif
-
-// Popular Linux, Unix, Macos platforms
-// We use this in PMlib generally
-#else
-    struct timeval tv;
-    gettimeofday(&tv, 0);
-    return (double)tv.tv_sec + (double)tv.tv_usec * 1.0e-6;
-
+#else // Portable timer on Linux, Unix, Macos
+	struct timeval tv;
+	gettimeofday(&tv, 0);
+	return (double)tv.tv_sec + (double)tv.tv_usec * 1.0e-6;
 #endif
+
   }
 
 
-  // This is just an alternative routine. We don't use it.
   void PerfWatch::read_cpu_clock_freq()
   {
-#if defined (__APPLE__)
-/*
-    // read the cpu freqency thru sysctl
-  FILE *fp;
-  char buf[256];
-  if ((fp = popen("sysctl -n machdep.cpu.brand_string", "r")) == NULL) {
-    fprintf(stderr, "Failure popen\n");
-    exit(-1);
-  }
-  while (fgets(buf, sizeof(buf), fp) != NULL) {
-    printf("%s", buf);
-  }
-  pclose(fp);
+	cpu_clock_freq = 1.0;
+	second_per_cycle = 1.0;
+#if defined (USE_PRECISE_TIMER)
+	#if defined (__APPLE__)
+		FILE *fp;
+		char buf[256];
+		long long llvalue;
+		//	fp = popen("sysctl -n machdep.cpu.brand_string", "r");
+		//		string "Intel(R) Core(TM) i7-6820HQ CPU @ 2.70GHz"
+		fp = popen("sysctl -n hw.cpufrequency", "r");
+		//		integer 2700000000
+		if (fp == NULL) {
+			printError("<read_cpu_clock_freq>",  "popen(sysctl) failed. \n");
+			return;
+		}
+		if (fgets(buf, sizeof(buf), fp) != NULL) {
+			//	fprintf(stderr, "<read_cpu_clock_freq> buf=%s \n", buf);
+			sscanf(buf, "%lld", &llvalue);
+			if (llvalue <= 0) {
+				printError("<read_cpu_clock_freq>",  "invalid hw.cpufrequency \n");
+				llvalue=1.0;
+			}
+			cpu_clock_freq = (double)llvalue;
+			second_per_cycle = 1.0/cpu_clock_freq;
+			#ifdef DEBUG_PRINT_WATCH
+			if (my_rank == 0) {
+				fprintf(stderr, "<read_cpu_clock_freq> cpu_clock_freq=%lf second_per_cycle=%lf \n",
+									cpu_clock_freq, second_per_cycle);
+			}
+			#endif
+		} else {
+			printError("<read_cpu_clock_freq>",  "can not detect hw.cpufrequency \n");
+		}
+		pclose(fp);
+		return;
 
-  // buf >> "Intel(R) Core(TM) i7-6567U CPU @ 3.30GHz"
-  */
+	#elif defined (__sparcv9)
+		//	__gettod() on K computer and FX100 doesn't require cpu_clock_freq
+		return;
 
-#elif defined(__x86_64__)					// Intel Xeon
-    #if defined (__INTEL_COMPILER) || defined(__gnu_linux__)
-/*
-    // read the cpu freqency from /proc/cpuinfo
-    cpu_clock_freq=0.0;
-    second_per_cycle=0.0;
+	#elif defined(__x86_64__)					// Intel Xeon
+		#if defined (__INTEL_COMPILER) || (__gnu_linux__)
+	    // read the cpu freqency from /proc/cpuinfo
 
-    FILE *fp;
-    double value;
-    char buffer[1024];
-    fp = fopen("/proc/cpuinfo","r");
-    if (fp == NULL) {
-    	printError("read_cpu_clock_freq()",  "Can not open /proc/cpuinfo \n");
-    	return;
-    }
-    while (fgets(buffer, 1024, fp) != NULL) {
-    	//	printf("%s", buffer);
-    	if (!strncmp(buffer, "cpu MHz",7)) {
-    		sscanf(buffer, "cpu MHz\t\t: %lf", &value);
-    		// sscanf handles regexp such as: sscanf (buffer, "%[^\t:]", value);
-    		cpu_clock_freq = (value * 1.0e6);
-    		break;
-    	}
-    }
-    fclose(fp);
-    if (cpu_clock_freq == 0.0) {
-    	printError("read_cpu_clock_freq()",  "Failed parsing /proc/cpuinfo \n");
-    	return;
-    }
-    second_per_cycle = 1.0/(double)cpu_clock_freq;
-*/
-    #endif
-#endif
+	    FILE *fp;
+	    double value;
+	    char buffer[1024];
+	    fp = fopen("/proc/cpuinfo","r");
+	    if (fp == NULL) {
+	    	printError("<read_cpu_clock_freq>",  "Can not open /proc/cpuinfo \n");
+	    	return;
+	    }
+	    while (fgets(buffer, 1024, fp) != NULL) {
+			//	fprintf(stderr, "<read_cpu_clock_freq> buffer=%s \n", buffer);
+	    	if (!strncmp(buffer, "cpu MHz",7)) {
+	    		sscanf(buffer, "cpu MHz\t\t: %lf", &value);
+	    		// sscanf handles regexp such as: sscanf (buffer, "%[^\t:]", value);
+	    		cpu_clock_freq = (value * 1.0e6);
+	    		break;
+	    	}
+	    }
+	    fclose(fp);
+	    if (cpu_clock_freq <= 0.0) {
+	    	printError("<read_cpu_clock_freq>",  "Failed parsing /proc/cpuinfo \n");
+	    	return;
+	    }
+	    second_per_cycle = 1.0/(double)cpu_clock_freq;
+		#ifdef DEBUG_PRINT_WATCH
+	   	if (my_rank == 0) {
+			fprintf(stderr, "<read_cpu_clock_freq> cpu_clock_freq=%lf second_per_cycle=%lf \n",
+								cpu_clock_freq, second_per_cycle);
+	   	 }
+		#endif
+	    #endif
+	#endif
+#endif	// (USE_PRECISE_TIMER)
     return;
   }
 

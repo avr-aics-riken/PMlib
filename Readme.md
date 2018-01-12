@@ -164,6 +164,19 @@ $ cmake -DINSTALL_DIR=${PM_HOME}/PMlib \
             -Dwith_OTF=no ..
 ~~~
 
+##### Using precise timer
+Precise timers are available on some platforms.
+Provide -DUSE_PRECISE_TIMER to C++ compiler option CMAKE_CXX_FLAGS
+when building the PMlib library.
+~~~
+$ CXXFLAGS="-DUSE_PRECISE_TIMER "           # for Intel Xeon
+$ CXXFLAGS="-DUSE_PRECISE_TIMER -Nfjcex "   # for K computer and FX100
+
+$ cmake -DINSTALL_DIR=${PM_HOME}/PMlib \
+        -DCMAKE_CXX_FLAGS="${CXXFLAGS}" \
+		..
+
+~~~
 
 ##### Note
 - On Fujitsu machines(fx10, K, fx100), confirm appropriate directrory path for compiler environment.

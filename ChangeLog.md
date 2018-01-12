@@ -3,6 +3,11 @@
 ## REVISION HISTORY
 
 ---
+- 2018-01-11 Version 5.8.3
+  - HWPC Support for Xeon Broadwell
+  - restore precise timer option thru USE_PRECISE_TIMER
+
+---
 - 2018-01-08 Version 5.8.2
   - Build by PGI compiler
   - change copyright year
