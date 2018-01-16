@@ -953,11 +953,11 @@ namespace pm_lib {
 
     if ( (is_unit == 0) || (is_unit == 1) ) {
       fprintf(fp, "| [user defined counter values ]\n");
-    } else if ( (is_unit == 2) ) {
+    } else if ( is_unit == 2 ) {
       fprintf(fp, "| [hardware counter Byte counts]\n");
-    } else if ( (is_unit == 3) ) {
+    } else if ( is_unit == 3 ) {
       fprintf(fp, "| [hardware counter flop counts]\n");
-    } else if ( (is_unit == 4) ) {
+    } else if ( is_unit == 4 ) {
       fprintf(fp, "| hardware vectorized operations \n");
     } else {
       fprintf(fp, "| hardware cache miss and instructions\n");
@@ -1078,28 +1078,30 @@ namespace pm_lib {
     fputc('\t', fp); for (int i = 0; i < maxLabelLen; i++) fputc('-', fp);
 	fprintf(fp,       "+----------+----------------------------------------+----------------------------\n");
 
-    // Subtotal of the flop counts and/or byte counts
+    // Subtotal of the flop counts and/or byte counts per process
 
-    if ( (is_unit == 0) || (is_unit == 2) ) {
+    if ( (is_unit == 0) || (is_unit == 1) || ( is_unit == 2) || ( is_unit == 3) ) {
+      if ( sum_time_comm > 0.0 ) {
       fprintf(fp, "\t%-*s %1s %9.3e", maxLabelLen+10, "Sections per process", "", sum_time_comm);
-      double comm_serial = PerfWatch::unitFlop(sum_comm/sum_time_comm, unit, is_unit);
+      double comm_serial = PerfWatch::unitFlop(sum_comm/sum_time_comm, unit, 0);
       fprintf(fp, "%30s  %8.3e          %7.2f %s\n", "-Exclusive COMM sections-", sum_comm, comm_serial, unit.c_str());
-	} else
-    if ( (is_unit == 1) || (is_unit == 3) ) {
+      }
+      if ( sum_time_flop > 0.0 ) {
       fprintf(fp, "\t%-*s %1s %9.3e", maxLabelLen+10, "Sections per process", "", sum_time_flop);
-      double flop_serial = PerfWatch::unitFlop(sum_flop/sum_time_flop, unit, is_unit);
+      double flop_serial = PerfWatch::unitFlop(sum_flop/sum_time_flop, unit, 1);
       fprintf(fp, "%30s  %8.3e          %7.2f %s\n", "-Exclusive CALC sections-", sum_flop, flop_serial, unit.c_str());
+      }
 	} else
     if ( is_unit == 4) {	// special case for vectorized percentage
       fprintf(fp, "\t%-*s %1s %9.3e", maxLabelLen+10, "Sections per process", "", sum_time_flop);
       double other_serial = PerfWatch::unitFlop((sum_other/sum_flop *100.0), unit, is_unit);
-      fprintf(fp, "%30s  %8.3e          %7.2f %s\n", "-Exclusive sections only-", sum_flop, other_serial, unit.c_str());
+      fprintf(fp, "%30s  %8.3e          %7.2f %s\n", "-Exclusive HWPC sections-", sum_flop, other_serial, unit.c_str());
 
 	} else
     if ( is_unit == 5) {
       fprintf(fp, "\t%-*s %1s %9.3e", maxLabelLen+10, "Sections per process", "", sum_time_other);
       double other_serial = PerfWatch::unitFlop(sum_other/sum_time_other, unit, is_unit);
-      fprintf(fp, "%30s  %8.3e          %7.2f %s\n", "-Exclusive sections only-", sum_other, other_serial, unit.c_str());
+      fprintf(fp, "%30s  %8.3e          %7.2f %s\n", "-Exclusive HWPC sections-", sum_other, other_serial, unit.c_str());
 	}
 
 
@@ -1108,33 +1110,36 @@ namespace pm_lib {
 
     // Job total flop counts and/or byte counts
 
-    if ( (is_unit == 0) || (is_unit == 2) ) {
+    if ( (is_unit == 0) || (is_unit == 1) || ( is_unit == 2) || ( is_unit == 3) ) {
+      if ( sum_time_comm > 0.0 ) {
       fprintf(fp, "\t%-*s %1s %9.3e", maxLabelLen+10, "Sections total job", "", sum_time_comm);
       double sum_comm_job = (double)num_process*sum_comm;
-      double comm_job = PerfWatch::unitFlop(sum_comm_job/sum_time_comm, unit, is_unit);
+      double comm_job = PerfWatch::unitFlop(sum_comm_job/sum_time_comm, unit, 0);
       fprintf(fp, "%30s  %8.3e          %7.2f %s\n", "-Exclusive COMM sections-", sum_comm_job, comm_job, unit.c_str());
-	} else
-    if ( (is_unit == 1) || (is_unit == 3) ) {
+      }
+      if ( sum_time_flop > 0.0 ) {
       fprintf(fp, "\t%-*s %1s %9.3e", maxLabelLen+10, "Sections total job", "", sum_time_flop);
       double sum_flop_job = (double)num_process*sum_flop;
-      double flop_job = PerfWatch::unitFlop(sum_flop_job/sum_time_flop, unit, is_unit);
+      double flop_job = PerfWatch::unitFlop(sum_flop_job/sum_time_flop, unit, 1);
       fprintf(fp, "%30s  %8.3e          %7.2f %s\n", "-Exclusive CALC sections-", sum_flop_job, flop_job, unit.c_str());
+      }
 	} else
     if ( is_unit == 4) {	// special case for vectorized percentage
       fprintf(fp, "\t%-*s %1s %9.3e", maxLabelLen+10, "Sections total job", "", sum_time_flop);
       double sum_flop_job = (double)num_process*sum_flop;
       double other_job = PerfWatch::unitFlop((sum_other/sum_flop *100.0), unit, is_unit);
-      fprintf(fp, "%30s  %8.3e          %7.2f %s\n", "-Exclusive sections only-", sum_flop_job, other_job, unit.c_str());
+      fprintf(fp, "%30s  %8.3e          %7.2f %s\n", "-Exclusive HWPC sections-", sum_flop_job, other_job, unit.c_str());
 
 	} else
     if ( is_unit == 5) {
       fprintf(fp, "\t%-*s %1s %9.3e", maxLabelLen+10, "Sections total job", "", sum_time_other);
       double sum_other_job = (double)num_process*sum_other;
       double other_job = PerfWatch::unitFlop(sum_other_job/sum_time_other, unit, is_unit);
-      fprintf(fp, "%30s  %8.3e          %7.2f %s\n", "-Exclusive sections only-", sum_other_job, other_job, unit.c_str());
+      fprintf(fp, "%30s  %8.3e          %7.2f %s\n", "-Exclusive HWPC sections-", sum_other_job, other_job, unit.c_str());
 	}
 
   }
 
 
 } /* namespace pm_lib */
+

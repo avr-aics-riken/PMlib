@@ -51,7 +51,7 @@ namespace pm_lib {
     };
 
   private:
-    unsigned m_nWatch;         ///< 測定区間数
+    int m_nWatch;         ///< 測定区間数
     int num_threads;           ///< 並列スレッド数
     int num_process;           ///< 並列プロセス数
     int my_rank;               ///< 自ランク番号
