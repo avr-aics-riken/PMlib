@@ -3,6 +3,10 @@
 ## REVISION HISTORY
 
 ---
+- 2018-01-16 Version 5.8.4
+  - bug fix for I/F to Macos precise timer mach_absolute_time()
+
+---
 - 2018-01-11 Version 5.8.3
   - HWPC Support for Xeon Broadwell
   - restore precise timer option thru USE_PRECISE_TIMER
