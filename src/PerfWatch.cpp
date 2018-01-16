@@ -114,12 +114,12 @@ namespace pm_lib {
       }
     }
 
-    if ((is_unit == 4))  {
+    if ( is_unit == 4 )  {
         ret = fops;
         unit = "(%)";
     }
 
-    if ((is_unit == 5))  {
+    if ( is_unit == 5 )  {
       if      ( fops > P ) {
         ret = fops / P;
         unit = "Pins/sec";
@@ -380,7 +380,9 @@ namespace pm_lib {
 #if defined (USE_PRECISE_TIMER) // Platform specific precise timer
 	#if defined (__APPLE__)				// Mac Clang and/or GCC
 		//	printf("[__APPLE__] is defined.\n");
-		return ((double)mach_absolute_time() * second_per_cycle);
+		//	return ((double)mach_absolute_time() * second_per_cycle);
+		// mach_absolute_time() appears to return nano-second unit value
+		return ((double)mach_absolute_time() * 1.0e-9);
 
 	#elif defined (__sparcv9)			// K computer and FX100
 		//	printf("[__sparcv9] is defined.\n");
@@ -439,7 +441,7 @@ namespace pm_lib {
 			second_per_cycle = 1.0/cpu_clock_freq;
 			#ifdef DEBUG_PRINT_WATCH
 			if (my_rank == 0) {
-				fprintf(stderr, "<read_cpu_clock_freq> cpu_clock_freq=%lf second_per_cycle=%lf \n",
+				fprintf(stderr, "<read_cpu_clock_freq> cpu_clock_freq=%lf second_per_cycle=%16.12lf \n",
 									cpu_clock_freq, second_per_cycle);
 			}
 			#endif
@@ -482,7 +484,7 @@ namespace pm_lib {
 	    second_per_cycle = 1.0/(double)cpu_clock_freq;
 		#ifdef DEBUG_PRINT_WATCH
 	   	if (my_rank == 0) {
-			fprintf(stderr, "<read_cpu_clock_freq> cpu_clock_freq=%lf second_per_cycle=%lf \n",
+			fprintf(stderr, "<read_cpu_clock_freq> cpu_clock_freq=%lf second_per_cycle=%16.12lf \n",
 								cpu_clock_freq, second_per_cycle);
 	   	 }
 		#endif
