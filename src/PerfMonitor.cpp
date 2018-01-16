@@ -1083,12 +1083,12 @@ namespace pm_lib {
     if ( (is_unit == 0) || (is_unit == 1) || ( is_unit == 2) || ( is_unit == 3) ) {
       if ( sum_time_comm > 0.0 ) {
       fprintf(fp, "\t%-*s %1s %9.3e", maxLabelLen+10, "Sections per process", "", sum_time_comm);
-      double comm_serial = PerfWatch::unitFlop(sum_comm/sum_time_comm, unit, is_unit);
+      double comm_serial = PerfWatch::unitFlop(sum_comm/sum_time_comm, unit, 0);
       fprintf(fp, "%30s  %8.3e          %7.2f %s\n", "-Exclusive COMM sections-", sum_comm, comm_serial, unit.c_str());
       }
       if ( sum_time_flop > 0.0 ) {
       fprintf(fp, "\t%-*s %1s %9.3e", maxLabelLen+10, "Sections per process", "", sum_time_flop);
-      double flop_serial = PerfWatch::unitFlop(sum_flop/sum_time_flop, unit, is_unit);
+      double flop_serial = PerfWatch::unitFlop(sum_flop/sum_time_flop, unit, 1);
       fprintf(fp, "%30s  %8.3e          %7.2f %s\n", "-Exclusive CALC sections-", sum_flop, flop_serial, unit.c_str());
       }
 	} else
@@ -1114,13 +1114,13 @@ namespace pm_lib {
       if ( sum_time_comm > 0.0 ) {
       fprintf(fp, "\t%-*s %1s %9.3e", maxLabelLen+10, "Sections total job", "", sum_time_comm);
       double sum_comm_job = (double)num_process*sum_comm;
-      double comm_job = PerfWatch::unitFlop(sum_comm_job/sum_time_comm, unit, is_unit);
+      double comm_job = PerfWatch::unitFlop(sum_comm_job/sum_time_comm, unit, 0);
       fprintf(fp, "%30s  %8.3e          %7.2f %s\n", "-Exclusive COMM sections-", sum_comm_job, comm_job, unit.c_str());
       }
       if ( sum_time_flop > 0.0 ) {
       fprintf(fp, "\t%-*s %1s %9.3e", maxLabelLen+10, "Sections total job", "", sum_time_flop);
       double sum_flop_job = (double)num_process*sum_flop;
-      double flop_job = PerfWatch::unitFlop(sum_flop_job/sum_time_flop, unit, is_unit);
+      double flop_job = PerfWatch::unitFlop(sum_flop_job/sum_time_flop, unit, 1);
       fprintf(fp, "%30s  %8.3e          %7.2f %s\n", "-Exclusive CALC sections-", sum_flop_job, flop_job, unit.c_str());
       }
 	} else
