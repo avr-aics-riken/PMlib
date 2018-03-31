@@ -41,7 +41,7 @@ namespace pm_lib {
   ///
   void PerfMonitor::initialize (int init_nWatch)
   {
-    char* c_env;
+    char* cp_env;
     std::string s;
 
     m_watchArray = new PerfWatch[init_nWatch];
@@ -53,11 +53,10 @@ namespace pm_lib {
     MPI_Comm_size(MPI_COMM_WORLD, &num_process);
 
 	#ifdef _OPENMP
-    // if OMP_NUM_THREADS environment variable is not defined, set it to 1
-    c_env = std::getenv("OMP_NUM_THREADS");
-    if (c_env == NULL) {
-        omp_set_num_threads(1);
-    }
+    //	cp_env = std::getenv("OMP_NUM_THREADS");
+    //	if (cp_env == NULL) {
+    //    omp_set_num_threads(1); // if OMP_NUM_THREADS env.var. is not defined, set it to 1
+    //	}
     num_threads = omp_get_max_threads();
 	#else
     num_threads = 1;
@@ -96,6 +95,20 @@ namespace pm_lib {
         parallel_mode = "OpenMP";
       }
     }
+
+    cp_env = std::getenv("HWPC_CHOOSER");
+    if (cp_env == NULL) {
+			env_str_hwpc = "user";
+    } else {
+		s = cp_env;
+    	if	(s == "FLOPS" || s == "BANDWIDTH" || s == "VECTOR" || s == "CACHE" ) {
+			env_str_hwpc = s;
+    	} else {
+			printDiag("PerfMonitor::initialize()",  "HWPC_CHOOSER value [%s] is not valid and is ignored.\n", cp_env);
+			env_str_hwpc = "user";
+		}
+	}
+
 
     // Start m_watchArray[0] instance
     // m_watchArray[] は PerfWatch classである(PerfMonitorではない)ことに留意
@@ -486,8 +499,9 @@ namespace pm_lib {
     //        HWPC値を各スレッド毎にブレークダウンして表示する機能は今後開発
     //        lsum2p HWPCのスレッド毎表示(0:なし、1:表示する)
 
+    if (my_rank != 0) return;
+
     // 	I. MPIランク別詳細レポート: MPIランク別測定結果を出力
-    if (my_rank == 0) {
       if (is_MPI_enabled) {
         fprintf(fp, "\n# PMlib Process Report --- Elapsed time for individual MPI ranks ------\n\n");
       } else {
@@ -520,18 +534,12 @@ namespace pm_lib {
         if (!m_watchArray[i].m_exclusive) continue;
         m_watchArray[i].printDetailRanks(fp, tot);
       }
-    }
 
 
 #ifdef USE_PAPI
     //	II. HWPC/PAPIレポート：HWPC計測結果を出力
-	char* c_env;
-    if (my_rank == 0) {
-		c_env = std::getenv("HWPC_CHOOSER");
-		if (c_env != NULL) {
+	if (env_str_hwpc != "user" ) {
         fprintf(fp, "\n# PMlib hardware performance counter (HWPC) Report -------------------------\n");
-		}
-    }
 
     for (int j = 0; j < m_nWatch; j++) {
         int i;
@@ -545,14 +553,14 @@ namespace pm_lib {
         m_watchArray[i].printDetailHWPCsums(fp, m_watchArray[i].m_label);
     }
 
-    if (my_rank == 0) {
       // HWPC Legend の表示はPerfMonitorクラスメンバとして分離する方が良いかも
       if (legend == 1) {
         m_watchArray[0].printHWPCLegend(fp);
         ;
       }
-    }
+	}
 #endif
+        fprintf(fp, "\n# End of PMlib Process Report ------------------------------------------------\n\n");
 
   }
 

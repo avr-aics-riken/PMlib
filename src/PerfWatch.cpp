@@ -343,8 +343,6 @@ namespace pm_lib {
     if (m_typeCalc == 0) { is_unit=0; }
     if (m_typeCalc == 1) { is_unit=1; }
 #ifdef USE_PAPI
-// If HWPC is available, initializeHWPC() and createPapiCounterList()
-// should have created the HWPC table
 
     if (hwpc_group.number[I_bandwidth] > 0) {
       is_unit=2;
@@ -669,8 +667,10 @@ namespace pm_lib {
     if (my_papi.num_events == 0) return;
     if (!m_exclusive) return;
     if ( m_count_sum == 0 ) return;
-    if (my_rank == 0) outputPapiCounterHeader (fp, s_label);
-    outputPapiCounterList (fp);
+    if (my_rank == 0) {
+      outputPapiCounterHeader (fp, s_label);
+      outputPapiCounterList (fp);
+    }
 #endif
   }
 
@@ -707,22 +707,29 @@ namespace pm_lib {
   void PerfWatch::printHWPCHeader(FILE* fp)
   {
    char* c_env;
+	std::string s;
 #ifdef USE_PAPI
 	const PAPI_hw_info_t *hwinfo = NULL;
 	using namespace std;
 
 	c_env = std::getenv("HWPC_CHOOSER");
 	if (c_env == NULL) {
-	  fprintf(fp, "\tThe environment variable HWPC_CHOOSER is not provided. No HWPC report.\n");
-   } else {
-	  fprintf(fp, "\tThe environment variable HWPC_CHOOSER=%s is provided.\n", c_env);
-   }
+		fprintf(fp, "\tHWPC_CHOOSER is not set. User API values are reported.\n");
+	} else {
+		s = c_env;
+		if  (s == "FLOPS" || s == "BANDWIDTH" || s == "VECTOR" || s == "CACHE" ) {
+			fprintf(fp, "\tHWPC_CHOOSER=%s environment variable is provided.\n", s.c_str());
+		} else {
+			fprintf(fp, "\tUnknown group HWPC_CHOOSER=%s is ignored. User API values are reported.\n", s.c_str());
+		}
+	}
+
 #endif
 
 #ifdef USE_OTF
     c_env = std::getenv("OTF_TRACING");
     if (c_env != NULL) {
-	  fprintf(fp, "\tThe environment variable OTF_TRACING=%s is provided.\n", c_env);
+	  fprintf(fp, "\tOTF_TRACING=%s environment variable is provided.\n", c_env);
     }
 #endif
   }
@@ -1049,7 +1056,7 @@ namespace pm_lib {
     (B) HWPCによる自動算出モード
       - HWPC/PAPIが利用可能なプラットフォームで利用できる
       - 環境変数HWPC_CHOOSERの値によりユーザ申告値を用いるかPAPI情報を
-        用いるかを切り替える。(FLOPS| BANDWIDTH| VECTOR| CACHE| CYCLE)
+        用いるかを切り替える。(FLOPS| BANDWIDTH| VECTOR| CACHE)
 
     ユーザ申告モードかHWPC自動算出モードかは、内部的に下記表の組み合わせ
     で決定される。
@@ -1063,7 +1070,6 @@ namespace pm_lib {
     BANDWIDTH       無視            無視         時間、HWPC自動計測Byte/s    BANDWIDTHに関連するHWPC統計情報
     VECTOR          無視            無視         時間、HWPC自動計測SIMD率    VECTORに関連するHWPC統計情報
     CACHE           無視            無視         時間、HWPC自動計測L1$,L2$   CACHEに関連するHWPC統計情報
-    CYCLE           無視            無視         時間、HWPC自動計測L1$,L2$   CACHEに関連するHWPC統計情報
      */
   void PerfWatch::stop(double flopPerTask, unsigned iterationCount)
   {

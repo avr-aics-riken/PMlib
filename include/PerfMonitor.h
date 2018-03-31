@@ -55,7 +55,10 @@ namespace pm_lib {
     int num_threads;           ///< 並列スレッド数
     int num_process;           ///< 並列プロセス数
     int my_rank;               ///< 自ランク番号
-    std::string parallel_mode; ///< 並列動作モード（"Serial", "OpenMP", "FlatMPI", "Hybrid"）
+    std::string parallel_mode; ///< 並列動作モード
+      // {"Serial", "OpenMP", "FlatMPI", "Hybrid"}
+    std::string env_str_hwpc;  ///< 環境変数HWPC_CHOOSERの値
+      // {"FLOPS", "BANDWIDTH", "VECTOR", "CACHE", "user"}
     PerfWatch* m_watchArray;   ///< 測定区間の配列
       // PerfWatchのインスタンスは全部で m_nWatch 生成され、その番号対応は以下
       // m_watchArray[0]  :PMlibが定義するRoot区間
