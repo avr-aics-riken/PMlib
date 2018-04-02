@@ -56,7 +56,7 @@ struct hwpc_group_chooser {
 	int index[Max_hwpc_output_group];
 	int i_platform;		// 1:Intel, 2:SPARC64
 	std::string platform;	// "Intel", "SPARC64"
-	std::string env_str_hwpc;	// "FLOPS", "BANDWIDTH", "VECTOR", "CACHE", "user"
+	std::string env_str_hwpc;	// "FLOPS", "BANDWIDTH", "VECTOR", "CACHE", "CYCLE", "user"
 };
 
 const int Max_chooser_events=12;
