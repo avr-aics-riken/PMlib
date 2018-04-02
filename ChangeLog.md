@@ -3,6 +3,12 @@
 ## REVISION HISTORY
 
 ---
+- 2018-03-31 Version 5.8.5
+  - update Xeon HWPC report to include memory bandwidth using uncore events
+  - bug fix for FX100 bandwidth
+  - update HWPC legend description
+
+---
 - 2018-01-16 Version 5.8.4
   - bug fix for I/F to Macos precise timer mach_absolute_time()
 

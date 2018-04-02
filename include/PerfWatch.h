@@ -78,6 +78,7 @@ namespace pm_lib {
     double m_flop;         ///< 浮動小数点演算量or通信量(バイト)
     unsigned long m_count; ///< 測定回数
                            // 区間の呼び出し回数はプロセス毎に異なる場合がある
+    double m_percentage;  ///< Percentage of vectorization or cache hit
 
     // 統計量
     double m_time_av;    ///< 時間の平均値(ランク0のみ)
@@ -94,7 +95,6 @@ namespace pm_lib {
                         //	marker		: otf_filename + .mdID + .marker
 
 	struct pmlib_papi_chooser my_papi;
-    double m_sortedLast;   ///< HWPC配列の最後の値
 
   private:
     // 測定時の補助変数
