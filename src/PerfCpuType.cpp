@@ -319,7 +319,7 @@ void PerfWatch::createPapiCounterList ()
 
 		} else
 		if (hwpc_group.platform == "SPARC64" ) {
-			hwpc_group.number[I_bandwidth] += 5;
+			hwpc_group.number[I_bandwidth] += 6;
 			// normal load and store counters can not be used together with cache counters
 			if (hwpc_group.i_platform == 8 || hwpc_group.i_platform == 9 ) {
 				papi.s_name[ip] = "LOAD_STORE_INSTRUCTIONS";
@@ -335,9 +335,14 @@ void PerfWatch::createPapiCounterList ()
 			}
 			//	BandWidth = (L2_MISS_DM + L2_MISS_PF + L2_WB_DM + L2_WB_PF) x 128 *1.0e-9 / time	// for K and FX10
 			//	BandWidth = (L2_MISS_DM + L2_MISS_PF + L2_WB_DM + L2_WB_PF) x 256 *1.0e-9 / time	// for FX100
-			//	SPARC64 event PAPI_L2_TCM == (L2_MISS_DM + L2_MISS_PF)
 
-			papi.s_name[ip] = "L2_TCM"; papi.events[ip] = PAPI_L2_TCM; ip++;
+			//	SPARC64 event PAPI_L2_TCM == (L2_MISS_DM + L2_MISS_PF)
+			//	papi.s_name[ip] = "L2_TCM"; papi.events[ip] = PAPI_L2_TCM; ip++;
+			papi.s_name[ip] = "L2_MISS_DM";
+				my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); ip++;
+			papi.s_name[ip] = "L2_MISS_PF";
+				my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); ip++;
+
 			// The following two events are not shown from papi_avail -d command.
 			// They show up from papi_event_chooser NATIVE L2_WB_DM (or L2_WB_PF) command.
 			papi.s_name[ip] = "L2_WB_DM";
@@ -494,20 +499,24 @@ void PerfWatch::createPapiCounterList ()
 			//	papi.s_name[ip] = "L3_TCM"; papi.events[ip] = PAPI_L3_TCM; ip++;
 		} else
 		if (hwpc_group.platform == "SPARC64" ) {
-			hwpc_group.number[I_cache] += 4;
 			// normal load and store counters can not be used together with cache counters
 			if (hwpc_group.i_platform == 8 || hwpc_group.i_platform == 9 ) {
+				hwpc_group.number[I_cache] += 2;
 				papi.s_name[ip] = "LOAD_STORE_INSTRUCTIONS";
 					my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "LD+ST"; ip++;
 				papi.s_name[ip] = "SIMD_LOAD_STORE_INSTRUCTIONS";
-					my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "SIMDLD+ST"; ip++;
+					my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "SIMD_LDST"; ip++;
 			}
 			else if (hwpc_group.i_platform == 11 ) {
+				hwpc_group.number[I_cache] += 3;
 				papi.s_name[ip] = "LOAD_STORE_INSTRUCTIONS";
 					my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "LD+ST"; ip++;
-				papi.s_name[ip] = "XSIMD_LOAD_STORE_INSTRUCTIONS";
-					my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "XSIMDLD+ST"; ip++;
+				papi.s_name[ip] = "SIMD_LOAD_STORE_INSTRUCTIONS";
+					my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "2SIMD_LDST"; ip++;
+				papi.s_name[ip] = "4SIMD_LOAD_STORE_INSTRUCTIONS";
+					my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "4SIMD_LDST"; ip++;
 			}
+			hwpc_group.number[I_cache] += 2;
 			papi.s_name[ip] = "L1_TCM"; papi.events[ip] = PAPI_L1_TCM; ip++;
 			papi.s_name[ip] = "L2_TCM"; papi.events[ip] = PAPI_L2_TCM; ip++;
 		}
@@ -572,7 +581,7 @@ void PerfWatch::sortPapiCounterList (void)
 {
 #ifdef USE_PAPI
 
-	int ip,jp;
+	int ip, jp, kp;
 	double counts;
 
 // if (FLOPS)
@@ -644,14 +653,16 @@ void PerfWatch::sortPapiCounterList (void)
 				d_load_store      = my_papi.accumu[ip] ;	//	"LOAD_STORE_INSTRUCTIONS";
 				d_simd_load_store = my_papi.accumu[ip+1] ;	//	"SIMD_LOAD_STORE_INSTRUCTIONS";
 			// BandWidth = (L2_MISS_DM + L2_MISS_PF + L2_WB_DM + L2_WB_PF) x 128 *1.0e-9 / time
-				counts  = my_papi.accumu[ip+2] + my_papi.accumu[ip+3] + my_papi.accumu[ip+4] ;
+				//	counts  = my_papi.accumu[ip+2] + my_papi.accumu[ip+3] + my_papi.accumu[ip+4] ;
+				counts  = my_papi.accumu[ip+2] + my_papi.accumu[ip+3] + my_papi.accumu[ip+4] + my_papi.accumu[ip+5] ;
 				bandwidth = counts * 128 / m_time; // K (and FX10) has 128 Byte $ line
 			}
 			else if (hwpc_group.i_platform == 11 ) {
 				d_load_store      = my_papi.accumu[ip] ;	//	"LOAD_STORE_INSTRUCTIONS";
 				d_simd_load_store = my_papi.accumu[ip+1] ;	//	"XSIMD_LOAD_STORE_INSTRUCTIONS";
 			// BandWidth = (L2_MISS_DM + L2_MISS_PF + L2_WB_DM + L2_WB_PF) x 256 *1.0e-9 / time
-				counts  = my_papi.accumu[ip+2] + my_papi.accumu[ip+3] + my_papi.accumu[ip+4] ;
+				//	counts  = my_papi.accumu[ip+2] + my_papi.accumu[ip+3] + my_papi.accumu[ip+4] ;
+				counts  = my_papi.accumu[ip+2] + my_papi.accumu[ip+3] + my_papi.accumu[ip+4] + my_papi.accumu[ip+5] ;
 				bandwidth = counts * 256 / m_time; // FX100 has 256 Byte $ line
 			}
 			my_papi.s_sorted[jp] = "Mem [B/s]" ;
@@ -802,13 +813,22 @@ void PerfWatch::sortPapiCounterList (void)
 		}
 		if (hwpc_group.platform == "SPARC64" ) {
 			ip = hwpc_group.index[I_cache];
-			d_load_store = my_papi.accumu[ip] ;	//  Load + Store
-			d_simd_load_store = my_papi.accumu[ip+1] ;	// SIMD (XSIMD) Load + Store
-			d_miss_L1 = my_papi.accumu[ip+4] ;	//	PAPI_L1_TCM
-			d_miss_L2 = my_papi.accumu[ip+5] ;	//	PAPI_L2_TCM
+			if (hwpc_group.i_platform == 8 || hwpc_group.i_platform == 9 ) {
+			//	[K and FX10] :  Load+Store	+ 2SIMD Load+Store
+				d_load_store = my_papi.accumu[ip] + my_papi.accumu[ip+1] ;
+				kp=2;
+			} else
+			if (hwpc_group.i_platform == 11 ) {
+			//	[FX100]	:  Load+Store	+ 2SIMD Load+Store	+ 4SIMD Load+Store
+				d_load_store = my_papi.accumu[ip] + my_papi.accumu[ip+1] + my_papi.accumu[ip+2] ;
+				kp=3;
+			}
 
-			d_L1_ratio = (d_load_store + d_simd_load_store - d_miss_L1) / (d_load_store + d_simd_load_store);
-			d_L2_ratio = (d_miss_L1 - d_miss_L2) / (d_load_store + d_simd_load_store);
+			d_miss_L1 = my_papi.accumu[ip +kp ] ;	//	PAPI_L1_TCM
+			d_miss_L2 = my_papi.accumu[ip +kp +1 ] ;	//	PAPI_L2_TCM
+
+			d_L1_ratio = (d_load_store - d_miss_L1) / d_load_store;
+			d_L2_ratio = (d_miss_L1 - d_miss_L2) / d_load_store;
 
 			my_papi.s_sorted[jp] = "[L1$ hit%]";
 			my_papi.v_sorted[jp] = d_L1_ratio * 100.0;
@@ -992,11 +1012,11 @@ void PerfWatch::outputPapiCounterLegend (FILE* fp)
 
 	if (hwpc_group.platform == "SPARC64" ) {
 	fprintf(fp, "\t\tLD+ST:     memory load/store instructions\n");
-	fprintf(fp, "\t\tSIMDLD+ST: memory load/store SIMD instructions\n");
 	fprintf(fp, "\t\tXSIMDLD+ST: memory load/store extended SIMD instructions\n");
-	fprintf(fp, "\t\tL2_TCM:    L2 cache misses (by demand and by prefetch)\n");
-	fprintf(fp, "\t\tL2_WB_DM:  L2 cache misses by demand with writeback request\n");
-	fprintf(fp, "\t\tL2_WB_PF:  L2 cache misses by prefetch with writeback request\n");
+	fprintf(fp, "\t\tL2_MISS_DM: L2 cache misses by demand request\n");
+	fprintf(fp, "\t\tL2_MISS_PF: L2 cache misses by prefetch request\n");
+	fprintf(fp, "\t\tL2_WB_DM:  writeback by demand L2 cache misses \n");
+	fprintf(fp, "\t\tL2_WB_PF:  writeback by prefetch L2 cache misses \n");
 	fprintf(fp, "\t\t[Mem B/s]: Memory bandwidth responding to demand read, prefetch and writeback reaching memory\n");
 	}
 	fprintf(fp, "\n");
@@ -1047,8 +1067,11 @@ void PerfWatch::outputPapiCounterLegend (FILE* fp)
 	fprintf(fp, "\t\t[L1$ hit%]: data access hit(%) in L1 data cache and Line Fill Buffer\n");
 	}
 	if (hwpc_group.platform == "SPARC64" ) {
-	fprintf(fp, "\t\tL1_TCM:    L1 total cache misses\n");
-	fprintf(fp, "\t\tL2_TCM:    L2 total cache misses\n");
+	fprintf(fp, "\t\tLD+ST:     memory load/store instructions\n");
+	fprintf(fp, "\t\t2SIMD:LDST: memory load/store SIMD instructions(2SIMD)\n");
+	fprintf(fp, "\t\t4SIMD:LDST: memory load/store extended SIMD instructions(4SIMD)\n");
+	fprintf(fp, "\t\tL1_TCM:    L1 cache misses (by demand and by prefetch)\n");
+	fprintf(fp, "\t\tL2_TCM:    L2 cache misses (by demand and by prefetch)\n");
 	fprintf(fp, "\t\t[L1$ hit%]: data access hit(%) in L1 cache \n");
 	}
 	fprintf(fp, "\t\t[L2$ hit%]: data access hit(%) in L2 cache\n");
