@@ -95,7 +95,7 @@ The default compiler options are described in `cmake/CompilerOptionSelector.cmak
 
 ####
 ##### serial version
-In some Intel compiler environment, CC/CXX/F90/FC environemnt variables
+In some Intel compiler environment, CC/CXX/F90/FC environement variables
 must be set for compiling.
 ~~~
 $ export CC=icc CXX=icpc F90=ifort FC=ifort	# needed for Intel compiler
@@ -179,7 +179,7 @@ $ cmake -DINSTALL_DIR=${PM_HOME}/PMlib \
 ~~~
 
 ##### Note
-- On Fujitsu machines(fx10, K, fx100), confirm appropriate directrory path for compiler environment.
+- On Fujitsu machines(fx10, K, fx100), confirm appropriate directory path for compiler environment.
 - Before rebuilding, execute the following command for cleaning up.
 ~~~
 $ make distclean
