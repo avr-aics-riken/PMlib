@@ -44,11 +44,6 @@ namespace pm_lib {
     char* cp_env;
     std::string s;
 
-    m_watchArray = new PerfWatch[init_nWatch];
-    m_gathered = false;
-    m_nWatch = 0 ;
-    m_order = NULL;
-    researved_nWatch = init_nWatch;
     (void) MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
     (void) MPI_Comm_size(MPI_COMM_WORLD, &num_process);
 #ifdef DEBUG_PRINT_MONITOR
@@ -131,9 +126,17 @@ namespace pm_lib {
     }
 #endif
 
+
+	// An object created by "new" operator can be accessed using pointer, not name.
+    //	m_watchArray = new PerfWatch[init_nWatch];
+    m_watchArray = new PerfWatch[1];
+    m_gathered = false;
+    m_nWatch = 0 ;
+    m_order = NULL;
+	reserved_nWatch = init_nWatch;
+
     m_watchArray[0].initializeHWPC();
-    int id = add_perf_label(label);	// The "Root Section" has id=0
-    m_watchArray[id] = m_watchArray[0];
+    int id = add_perf_label(label);	// id for "Root Section" should be 0
     m_nWatch++;
     m_watchArray[0].setProperties(label, id, CALC, num_process, my_rank, num_threads, false);
 
@@ -167,18 +170,32 @@ namespace pm_lib {
       //	return;
     }
 
-    m_nWatch++;
-    if (m_nWatch > researved_nWatch) {
-      PerfWatch* watch_more = new PerfWatch[2*researved_nWatch ];
-      for (int i = 0; i < researved_nWatch; i++) {
+    if (m_nWatch%reserved_nWatch == 1) {
+      PerfWatch* watch_more = new PerfWatch[reserved_nWatch+m_nWatch];
+      if (watch_more == NULL) {
+        printDiag("setProperties()",
+		"memory allocation failed. section [%s] is ignored.\n", label.c_str());
+        return;
+      }
+
+      for (int i = 0; i < m_nWatch; i++) {
           watch_more[i] = m_watchArray[i];
       }
-      delete [] m_watchArray;
       m_watchArray = watch_more;
+// DEBUG from here
+      //	delete [] watch_more;
       watch_more = NULL;
-      researved_nWatch = 2*researved_nWatch;
     }
+
+    m_nWatch++;
     m_watchArray[id].setProperties(label, id, type, num_process, my_rank, num_threads, exclusive);
+    #ifdef DEBUG_PRINT_MONITOR
+    if (my_rank == 0) {
+	  int i_thread = omp_get_thread_num();
+      fprintf(stderr, "<setProperties> [%s] m_nWatch=%d id=%d thread=%d\n", label.c_str(), m_nWatch, id, i_thread);
+       //	check_all_perf_label();
+    }
+    #endif
 
   }
 
@@ -968,7 +985,7 @@ namespace pm_lib {
 	fprintf(fp, "\t%-*s|    call  |        accumulated time[sec]           ", maxLabelLen, "Section");
 
     if ( is_unit == 0 || is_unit == 1 ) {
-      fprintf(fp, "| user defined argument values\n");
+      fprintf(fp, "| user defined numerical performance\n");
     } else if ( is_unit == 2 ) {
       fprintf(fp, "| hardware counted bandwidth events\n");
     } else if ( is_unit == 3 ) {
@@ -986,7 +1003,7 @@ namespace pm_lib {
 	fprintf(fp, "\t%-*s|          |      avr   avr[%%]     sdv    avr/call  ", maxLabelLen, "Label");
 
     if ( is_unit == 0 || is_unit == 1 ) {
-      fprintf(fp, "| user.value    sdv    user.perf\n");
+      fprintf(fp, "|  operations   sdv    performance\n");
     } else if ( is_unit == 2 ) {
       fprintf(fp, "|    Bytes      sdv   memory access\n");
     } else if ( is_unit == 3 ) {

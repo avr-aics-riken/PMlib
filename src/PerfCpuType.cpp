@@ -65,6 +65,8 @@ void PerfWatch::initializeHWPC ()
 
 #ifdef USE_PAPI
 	int i_papi;
+	//	int i_thread = omp_get_thread_num();
+	//	if (i_thread == 0) {
 	i_papi = PAPI_library_init( PAPI_VER_CURRENT );
 	if (i_papi != PAPI_VER_CURRENT ) {
 		fprintf (stderr, "*** error. <PAPI_library_init> return code: %d\n", i_papi);
@@ -72,18 +74,19 @@ void PerfWatch::initializeHWPC ()
 		PM_Exit(0);
 		return;
 		}
+	//	}
 
 	createPapiCounterList ();
 
 	#ifdef DEBUG_PRINT_PAPI
 	int my_id;
 	MPI_Comm_rank(MPI_COMM_WORLD, &my_id);
-	int *ip_debug;
-	ip_debug=&papi.num_events;
 	if (my_id == 0) {
-		fprintf(stderr, "<initializeHWPC> papi.num_events=%d, ip_debug=%p\n",
-			papi.num_events, ip_debug );
+		// struct papi is shared array and has the same address over threads.
+		fprintf(stderr, "<initializeHWPC> papi.num_events=%d, address=%p\n",
+			papi.num_events, &papi.num_events );
 	}
+	#pragma omp barrier
 	#endif
 
 	i_papi = PAPI_thread_init( (unsigned long (*)(void)) (omp_get_thread_num) );
@@ -848,8 +851,8 @@ void PerfWatch::sortPapiCounterList (void)
 		ip = hwpc_group.index[I_cycle];
 		jp=0;
 
-		//	papi.s_name[ip] = "TOT_CYC"; papi.events[ip] = PAPI_TOT_CYC; ip++;
-		//	papi.s_name[ip] = "TOT_INS"; papi.events[ip] = PAPI_TOT_INS; ip++;
+		//	events[0] = PAPI_TOT_CYC;
+		//	events[1] = PAPI_TOT_INS;
 
 		for(int i=0; i<hwpc_group.number[I_cycle] ; i++)
 		{

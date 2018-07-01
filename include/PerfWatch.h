@@ -110,13 +110,14 @@ namespace pm_lib {
     double* m_sortedArrayHWPC;   ///< 集計後ソートされたHWPC配列のポインタ
 
     /// 排他測定実行中フラグ. 非排他測定では未使用
-    static bool ExclusiveStarted;
+    bool ExclusiveStarted;
 
     /// MPI並列時の並列プロセス数と自ランク番号
     int num_process;
     int my_rank;
     /// OpenMP並列時のスレッド数
     int num_threads;
+    bool m_is_in_parallel;
 
     /// bool値：  true/false
     bool m_is_first;      /// 測定区間が初めてstartされる場合かどうかのフラグ
@@ -125,6 +126,7 @@ namespace pm_lib {
   public:
     /// コンストラクタ.
     PerfWatch() : m_time(0.0), m_flop(0.0), m_count(0), m_started(false),
+      ExclusiveStarted(false),
       my_rank(0), m_timeArray(0), m_flopArray(0), m_countArray(0),
       m_sortedArrayHWPC(0), m_is_first(true), m_is_healthy(true) {}
 

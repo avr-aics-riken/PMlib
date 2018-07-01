@@ -65,7 +65,7 @@ namespace pm_lib {
       // m_watchArray[1 .. m_nWatch] :ユーザーが定義する各区間
 
     unsigned *m_order;         ///< 経過時間でソートした測定区間のリストm_order[m_nWatch]
-    int researved_nWatch;      ///< 測定区間用にリザーブされたブロックの大きさ
+    int reserved_nWatch;      ///< 測定区間用にリザーブされたブロックの大きさ
     bool is_MPI_enabled;	     ///< PMlibの対応動作可能フラグ:MPI
     bool is_OpenMP_enabled;	   ///< PMlibの対応動作可能フラグ:OpenMP
     bool is_PAPI_enabled;	     ///< PMlibの対応動作可能フラグ:PAPI
@@ -335,7 +335,7 @@ namespace pm_lib {
 		// sometime later...
     	array_of_symbols.insert( make_pair(arg_st, ip) );
 		#ifdef DEBUG_PRINT_LABEL
-    	fprintf(stderr, "<add_perf_label> %s : %d\n", arg_st.c_str(), ip);
+    	fprintf(stderr, "<add_perf_label> [%s] [%d]\n", arg_st.c_str(), ip);
 		#endif
     	return ip;
     }

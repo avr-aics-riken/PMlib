@@ -47,7 +47,7 @@ namespace pm_lib {
   double cpu_clock_freq;        /// processor clock frequency, i.e. Hz
   double second_per_cycle;  /// real time to take each cycle
 
-  bool PerfWatch::ExclusiveStarted = false;
+  //	bool PerfWatch::ExclusiveStarted = false;
 
 
   /// 単位変換.
@@ -825,7 +825,7 @@ namespace pm_lib {
       } else if ((s == "full")) {
         m_is_OTF = 2;
       }
-      #ifdef DEBUG_PRINT_WATCH
+      #ifdef DEBUG_PRINT_OTF
       if (my_rank == 0) {
 	    fprintf(stderr, "\t<getenv> OTF_TRACING=%s is provided.\n", c_env);
       }
@@ -984,7 +984,6 @@ namespace pm_lib {
 		if ( i_ret != PAPI_OK ) {
 			int i_thread = omp_get_thread_num();
 			fprintf(stderr, "*** error. <my_papi_bind_read> code: %d, thread:%d\n", i_ret, i_thread);
-			//	fprintf(stderr, "*** error. <my_papi_bind_start> code: %d, thread:%d\n", i_ret, i_thread);
 			PM_Exit(0);
 		}
 
@@ -1134,7 +1133,6 @@ namespace pm_lib {
 		if ( i_ret != PAPI_OK ) {
 			int i_thread = omp_get_thread_num();
 			printError("stop()",  "<my_papi_bind_read> code: %d, i_thread:%d\n", i_ret, i_thread);
-			//	printError("stop()",  "<my_papi_bind_stop> code: %d, i_thread:%d\n", i_ret, i_thread);
 		}
 
 		#ifdef DEBUG_PRINT_PAPI_THREADS
@@ -1184,7 +1182,7 @@ namespace pm_lib {
 	#endif
 
 	}	// end of if (my_papi.num_events > 0) block
-#endif
+#endif	// end of #ifdef USE_PAPI
 
 
     int is_unit = statsSwitch();
@@ -1233,13 +1231,13 @@ namespace pm_lib {
 		my_otf_event_stop(my_rank, m_stopTime, m_id, is_unit, w);
 	}
 
-#ifdef DEBUG_PRINT_WATCH
+#ifdef DEBUG_PRINT_OTF
     if (my_rank == 0) {
-		fprintf (stderr, "\t[%s] w=%e, m_time=%f, m_flop=%e \n"
+		fprintf (stderr, "\t <PerfWatch::stop> OTF [%s] w=%e, m_time=%f, m_flop=%e \n"
 				, m_label.c_str(), w, m_time, m_flop );
     }
 #endif
-#endif
+#endif	// end of #ifdef USE_OTF
 
   }
 
