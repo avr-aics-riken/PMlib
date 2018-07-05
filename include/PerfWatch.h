@@ -115,9 +115,10 @@ namespace pm_lib {
     /// MPI並列時の並列プロセス数と自ランク番号
     int num_process;
     int my_rank;
-    /// OpenMP並列時のスレッド数
+    /// OpenMP並列時のスレッド数と自スレッド番号
     int num_threads;
-    bool m_is_in_parallel;
+    int my_thread;
+    bool m_in_parallel;		/// my_thread がparallel 領域内部であるかどうかのフラグ (false, true)
 
     /// bool値：  true/false
     bool m_is_first;      /// 測定区間が初めてstartされる場合かどうかのフラグ
@@ -314,6 +315,14 @@ namespace pm_lib {
     ///
     void printHWPCLegend(FILE* fp);
 
+    /// スレッド別詳細レポートを出力。
+    ///
+    ///   @param[in] fp           出力ファイルポインタ
+    ///   @param[in] rank_ID      出力対象プロセスのランク番号
+    ///   @param[in] totalTime    全排他測定区間での計算時間(平均値)の合計
+    ///
+    void printDetailThreads(FILE* fp, int rank_ID, double totalTime);
+
     /// HWPCイベントの測定結果と統計値を出力.
     ///
     ///   @param[in] fp 出力ファイルポインタ
@@ -355,6 +364,15 @@ namespace pm_lib {
     ///   @param[in] fmt  出力フォーマット文字列
     ///
     void printError(const char* func, const char* fmt, ...);
+
+    ///	start() calls following internal functions
+    void startSectionSerial();
+    void startSectionParallel();
+    ///	stop() calls following internal functions
+    void stopSectionSerial(double flopPerTask, unsigned iterationCount);
+    void stopSectionParallel(double flopPerTask, unsigned iterationCount);
+    ///
+    void selectRankPerfThreads(int rank_ID);
 
   private:
 	void createPapiCounterList (void);

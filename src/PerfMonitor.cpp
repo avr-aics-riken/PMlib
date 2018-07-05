@@ -520,8 +520,6 @@ namespace pm_lib {
     if (!m_gathered) {
       gather();
     }
-    //        HWPC値を各スレッド毎にブレークダウンして表示する機能は今後開発
-    //        lsum2p HWPCのスレッド毎表示(0:なし、1:表示する)
 
     if (my_rank != 0) return;
 
@@ -587,6 +585,61 @@ namespace pm_lib {
         fprintf(fp, "\n# End of PMlib Process Report ------------------------------------------------\n\n");
 
   }
+
+
+  /// 指定プロセス内のスレッド別詳細レポートを出力。
+  ///
+  ///   @param[in] fp           出力ファイルポインタ
+  ///   @param[in] rank_ID      出力対象プロセスのランク番号
+  ///   @param[in] seqSections  測定区間の表示順 (0:経過時間順、1:登録順で表示)
+  ///
+
+  void PerfMonitor::printThreads(FILE* fp, int rank_ID, int seqSections)
+  {
+
+    if (m_nWatch == 0) {
+      if (my_rank == 0) printDiag("PerfMonitor::printThreads",  "No section is defined. No report.\n");
+      return;
+    }
+    if (!m_gathered) {
+      gather();
+    }
+    if (my_rank == 0) {
+      if (is_MPI_enabled) {
+        fprintf(fp, "\n# PMlib Thread Report ------------ for MPI rank %d  ----------\n\n", rank_ID);
+      } else {
+        fprintf(fp, "\n# PMlib Thread Report ------------------------------------------------\n\n");
+      }
+    }
+
+    // initialize()からgather()までの区間（==Root区間）の測定時間を分母とする
+    double tot = 0.0;
+    if (0 == 0) {
+        tot =  m_watchArray[0].m_time_av;
+    } else {
+        for (int i = 0; i < m_nWatch; i++) {
+          if (m_watchArray[i].m_exclusive) {
+            tot +=  m_watchArray[i].m_time_av;
+          }
+        }
+    }
+
+    // 測定区間の時間と計算量を表示。表示順は引数 seqSections で指定されている。
+    for (int j = 0; j < m_nWatch; j++) {
+      int i;
+      if (seqSections == 0) {
+          i = m_order[j]; //	0:経過時間順
+      } else {
+          i = j; //	1:登録順で表示
+      }
+      if (i == 0) continue;	// 区間0 : Root区間は出力しない
+      if (!m_watchArray[i].m_exclusive) continue; // 排他的区間に対してのみレポート出力する
+
+      m_watchArray[i].printDetailThreads(fp, tot, rank_ID);
+    }
+    fprintf(fp, "\n# End of PMlib Thread Report ------------------------------------------------\n\n");
+  }
+
 
 
   /// 指定するMPIプロセスグループ毎にMPIランク詳細レポートを出力。

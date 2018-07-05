@@ -224,6 +224,15 @@ namespace pm_lib {
     void printDetail(FILE* fp, int legend=0, int seqSections=0);
 
 
+    /// 指定プロセスに対してスレッド別詳細レポートを出力。
+    ///
+    ///   @param[in] fp			出力ファイルポインタ
+    ///   @param[in] rank_ID	出力対象プロセスのランク番号
+    ///   @param[in] seqSections 測定区間の表示順 (0:経過時間順、1:登録順で表示)
+    ///
+    void printThreads(FILE* fp, int rank_ID=0, int seqSections=0);
+
+
     /// プロセスグループ単位でのMPIランク別詳細レポート、HWPC詳細レポート出力
     ///
     ///   @param[in] fp 出力ファイルポインタ

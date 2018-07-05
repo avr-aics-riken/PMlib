@@ -60,6 +60,7 @@ struct hwpc_group_chooser {
 };
 
 const int Max_chooser_events=12;
+const int Max_nthreads=50;
 
 struct pmlib_papi_chooser {
 	int num_events;				// number of PAPI events
@@ -70,6 +71,10 @@ struct pmlib_papi_chooser {
 	int num_sorted;			// number of sorted events to report
 	double v_sorted[Max_chooser_events];		// sorted event values
 	std::string s_sorted[Max_chooser_events];	// sorted event symbols
+	// additional array for storing thread private values
+	long long th_values[Max_chooser_events][Max_nthreads];	// values per thread
+	long long th_accumu[Max_chooser_events][Max_nthreads];	// accumu per thread
+	double th_v_sorted[Max_chooser_events][Max_nthreads];	// sorted values per thread
 };
 
 // Macro patches for K computer and FX10 which has fairly old PAPI 3.6
