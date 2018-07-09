@@ -182,7 +182,6 @@ namespace pm_lib {
     ///
     ///   @param[in] label ラベル文字列。測定区間を識別するために用いる。
     ///
-    ///
     void reset (const std::string& label);
 
 
@@ -190,6 +189,14 @@ namespace pm_lib {
     ///
     ///
     void resetAll (void);
+
+
+    ///  OpenMP並列処理されたPMlibスレッド測定区間のうち parallel regionから
+    ///  呼び出された測定区間のスレッド測定情報をマスタースレッドに集約する。
+    ///
+    ///   @note  内部で全測定区間をcheckして該当する測定区間を選択する。
+    ///
+    void mergeThreads(void);
 
 
     /// 測定結果の基本統計レポートを出力。
@@ -482,3 +489,4 @@ namespace pm_lib {
 } /* namespace pm_lib */
 
 #endif // _PM_PERFMONITOR_H_
+

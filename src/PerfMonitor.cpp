@@ -46,12 +46,6 @@ namespace pm_lib {
 
     (void) MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
     (void) MPI_Comm_size(MPI_COMM_WORLD, &num_process);
-#ifdef DEBUG_PRINT_MONITOR
-    //	fprintf(stderr, "<initialize> my_rank=%d , num_process=%d\n", my_rank, num_process );
-    //	(void) MPI_Barrier(MPI_COMM_WORLD);
-    //	(void) MPI_Finalize();
-	//	exit(1);
-#endif
 
 	#ifdef _OPENMP
     //	cp_env = std::getenv("OMP_NUM_THREADS");
@@ -120,10 +114,11 @@ namespace pm_lib {
     std::string label;
     label="Root Section";	// label="Total excution time";
 #ifdef DEBUG_PRINT_MONITOR
-      fprintf(stderr, "<initialize> [%s] called for my_rank=%d \n", label.c_str(), my_rank );
     if (my_rank == 0) {
-      fprintf(stderr, "<initialize> m_watchArray[0] instance [%s] is set [%s]\n", label.c_str(), env_str_hwpc.c_str());
+      fprintf(stderr, "<initialize> [%s] section as [%s] num_process=%d, num_threads=%d\n",
+		label.c_str(), env_str_hwpc.c_str(), num_process, num_threads);
     }
+
 #endif
 
 
@@ -164,8 +159,8 @@ namespace pm_lib {
 
     int id = add_perf_label(label);
     if (m_nWatch < 0) {
-      printDiag("setProperties()", "m_nWatch=%d, id=%d\n", m_nWatch, id);
-      printDiag("setProperties()", "This may be an internal bug.\n");
+      printDiag("setProperties()", "m_nWatch=%d, id=%d. PMlib internal bug.\n",
+		m_nWatch, id);
       PM_Exit(0);
       //	return;
     }
@@ -327,6 +322,20 @@ namespace pm_lib {
   }
 
 
+  ///  OpenMP並列処理されたPMlibスレッド測定区間のうち parallel regionから
+  ///  呼び出された測定区間のスレッド測定情報をマスタースレッドに集約する。
+  ///
+  ///   @note  内部で全測定区間をcheckして該当する測定区間を選択する。
+  ///
+  void PerfMonitor::mergeThreads (void)
+  {
+    for (int i=0; i<m_nWatch; i++) {
+      m_watchArray[i].mergeAllThreads();
+    }
+  }
+
+
+
   /**
     * @brief PMlibバージョン情報の文字列を返す
    */
@@ -349,6 +358,9 @@ namespace pm_lib {
   void PerfMonitor::gather(void)
   {
     if (m_gathered) return;
+#ifdef DEBUG_PRINT_MONITOR
+    if (my_rank == 0) { fprintf(stderr, "<gather>\n"); }
+#endif
 
     m_watchArray[0].stop(0.0, 1);
     gather_and_sort();
@@ -447,6 +459,9 @@ namespace pm_lib {
       gather();
     }
     if (my_rank != 0) return;
+#ifdef DEBUG_PRINT_MONITOR
+    if (my_rank == 0) fprintf(stderr, "<print> \n");
+#endif
 
     // 測定時間の分母
     // initialize()からgather()までの区間（==Root区間）の測定時間を分母とする
@@ -522,6 +537,9 @@ namespace pm_lib {
     }
 
     if (my_rank != 0) return;
+#ifdef DEBUG_PRINT_MONITOR
+    if (my_rank == 0) fprintf(stderr, "<printDetail> \n");
+#endif
 
     // 	I. MPIランク別詳細レポート: MPIランク別測定結果を出力
       if (is_MPI_enabled) {
@@ -582,8 +600,8 @@ namespace pm_lib {
       }
 	}
 #endif
-        fprintf(fp, "\n# End of PMlib Process Report ------------------------------------------------\n\n");
-
+//        fprintf(fp, "\n# End of PMlib Process Report ------------------------------------------------\n\n");
+//
   }
 
 
@@ -604,11 +622,15 @@ namespace pm_lib {
     if (!m_gathered) {
       gather();
     }
+#ifdef DEBUG_PRINT_MONITOR
+    if (my_rank == 0) fprintf(stderr, "<printThreads> \n");
+#endif
+
     if (my_rank == 0) {
       if (is_MPI_enabled) {
-        fprintf(fp, "\n# PMlib Thread Report ------------ for MPI rank %d  ----------\n\n", rank_ID);
+        fprintf(fp, "\n# PMlib Thread Report for MPI rank %d  ----------------------\n\n", rank_ID);
       } else {
-        fprintf(fp, "\n# PMlib Thread Report ------------------------------------------------\n\n");
+        fprintf(fp, "\n# PMlib Thread Report for the single process run ---------------------\n\n");
       }
     }
 
@@ -633,11 +655,13 @@ namespace pm_lib {
           i = j; //	1:登録順で表示
       }
       if (i == 0) continue;	// 区間0 : Root区間は出力しない
-      if (!m_watchArray[i].m_exclusive) continue; // 排他的区間に対してのみレポート出力する
+      if (!m_watchArray[i].m_exclusive) continue;
+      if (m_watchArray[i].m_count == 0) continue;
 
-      m_watchArray[i].printDetailThreads(fp, tot, rank_ID);
+      m_watchArray[i].printDetailThreads(fp, rank_ID, tot);
     }
-    fprintf(fp, "\n# End of PMlib Thread Report ------------------------------------------------\n\n");
+//    fprintf(fp, "\n# End of PMlib Thread Report ------------------------------------------------\n\n");
+//
   }
 
 

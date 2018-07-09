@@ -49,6 +49,15 @@ void PerfWatch::initializeHWPC ()
 {
 #include <string>
 
+	m_in_parallel = false;
+	my_thread = 0;
+	#ifdef _OPENMP
+	m_in_parallel = omp_in_parallel();
+	my_thread = omp_get_thread_num();
+	#endif
+
+	#pragma omp master
+	{
 	for (int i=0; i<Max_hwpc_output_group; i++) {
 		hwpc_group.number[i] = 0;
 		hwpc_group.index[i] = -999999;
@@ -60,33 +69,32 @@ void PerfWatch::initializeHWPC ()
 		papi.values[i] = 0;
 		papi.accumu[i] = 0;
 		}
+	} // #pragma omp master
+	#pragma omp barrier
 
 	read_cpu_clock_freq(); /// API for reading processor clock frequency.
 
 #ifdef USE_PAPI
 	int i_papi;
-	//	int i_thread = omp_get_thread_num();
-	//	if (i_thread == 0) {
+	#pragma omp master
+	{
 	i_papi = PAPI_library_init( PAPI_VER_CURRENT );
 	if (i_papi != PAPI_VER_CURRENT ) {
-		fprintf (stderr, "*** error. <PAPI_library_init> return code: %d\n", i_papi);
-		fprintf (stderr, "\t It should match %lu\n", (unsigned long)PAPI_VER_CURRENT);
+		fprintf (stderr, "*** error. <PAPI_library_init> code: %d\n", i_papi);
+		fprintf (stderr, "\t Check if correct version of PAPI library is linked.");
 		PM_Exit(0);
-		return;
+		//	return;
 		}
-	//	}
+	} // #pragma omp master
 
 	createPapiCounterList ();
 
 	#ifdef DEBUG_PRINT_PAPI
-	int my_id;
-	MPI_Comm_rank(MPI_COMM_WORLD, &my_id);
-	if (my_id == 0) {
-		// struct papi is shared array and has the same address over threads.
+	if (my_rank == 0 && my_thread == 0) {
 		fprintf(stderr, "<initializeHWPC> papi.num_events=%d, address=%p\n",
 			papi.num_events, &papi.num_events );
+		fprintf(stderr, "\t memo: struct papi is shared across threads.\n");
 	}
-	#pragma omp barrier
 	#endif
 
 	i_papi = PAPI_thread_init( (unsigned long (*)(void)) (omp_get_thread_num) );
@@ -95,24 +103,44 @@ void PerfWatch::initializeHWPC ()
 		PM_Exit(0);
 		return;
 		}
+
+	#pragma omp barrier
+	// In general the arguments to <my_papi_*> should be thread private.
+	// For APIs whose arguments do not change,  we use shared object.
+
+	if (m_in_parallel) {
+	int t_papi;
+	t_papi = my_papi_add_events (papi.events, papi.num_events);
+	if ( t_papi != PAPI_OK ) {
+		fprintf(stderr, "*** error. <initializeHWPC> <my_papi_add_events> code: %d\n"
+			"\n\t most likely un-supported HWPC PAPI combination.\n", t_papi);
+		papi.num_events = 0;
+		PM_Exit(0);
+		}
+	t_papi = my_papi_bind_start (papi.values, papi.num_events);
+	if ( t_papi != PAPI_OK ) {
+		fprintf(stderr, "*** error. <initializeHWPC> <my_papi_bind_start> code: %d\n", t_papi);
+		PM_Exit(0);
+		}
+
+	} else {
 	#pragma omp parallel
 	{
 	int t_papi;
 	t_papi = my_papi_add_events (papi.events, papi.num_events);
 	if ( t_papi != PAPI_OK ) {
 		fprintf(stderr, "*** error. <initializeHWPC> <my_papi_add_events> code: %d\n"
-			"\t most likely un-supported HWPC PAPI combination. HWPC is terminated.\n" , t_papi);
+			"\n\t most likely un-supported HWPC PAPI combination.\n", t_papi);
 		papi.num_events = 0;
 		PM_Exit(0);
 		}
-	// In general the arguments to <my_papi_*> should be thread private
-	// Here we use shared object, since <> does not change its content
 	t_papi = my_papi_bind_start (papi.values, papi.num_events);
 	if ( t_papi != PAPI_OK ) {
 		fprintf(stderr, "*** error. <initializeHWPC> <my_papi_bind_start> code: %d\n", t_papi);
 		PM_Exit(0);
 		}
-	}
+	} // end of #pragma omp parallel
+	} // end of if (m_in_parallel)
 
 #endif // USE_PAPI
 }
@@ -132,12 +160,11 @@ void PerfWatch::createPapiCounterList ()
 	const PAPI_hw_info_t *hwinfo = NULL;
 	std::string s_model_string;
 	using namespace std;
-	int my_id;
 	int i_papi;
 
-	MPI_Comm_rank(MPI_COMM_WORLD, &my_id);
 	#ifdef DEBUG_PRINT_PAPI
-	if (my_id == 0) {
+	#pragma omp barrier
+	if (my_rank == 0 && my_thread == 0) {
 		fprintf(stderr, " <createPapiCounterList> starts\n" );
 	}
 	#endif
@@ -551,7 +578,7 @@ void PerfWatch::createPapiCounterList ()
 // end of hwpc_group selection
 
 	#ifdef DEBUG_PRINT_PAPI
-	if (my_id == 0) {
+	if (my_rank == 0 && my_thread == 0) {
 		fprintf(stderr, " s_model_string=%s\n", s_model_string.c_str());
 
 		fprintf(stderr, " platform: %s\n", hwpc_group.platform.c_str());
@@ -865,9 +892,19 @@ void PerfWatch::sortPapiCounterList (void)
 		jp++;
 	}
 
-
 // count the number of reported events and derived matrices
 	my_papi.num_sorted = jp;
+
+#ifdef DEBUG_PRINT_PAPI
+	if (my_rank == 0) {
+		fprintf(stderr, "\t<sortPapiCounterList> [%15s], m_time=%e\n",
+			m_label.c_str(), m_time );
+		for (int i = 0; i < my_papi.num_sorted; i++) {
+			fprintf(stderr, "\t\t i=%d [%8s] v_sorted[i]=%e \n",
+			i, my_papi.s_sorted[i].c_str(), my_papi.v_sorted[i]);
+		}
+	}
+#endif
 
 #endif // USE_PAPI
 }

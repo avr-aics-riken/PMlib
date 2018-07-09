@@ -76,7 +76,7 @@ namespace pm_lib {
     // 測定値の積算量
     double m_time;         ///< 時間(秒)
     double m_flop;         ///< 浮動小数点演算量or通信量(バイト)
-    unsigned long m_count; ///< 測定回数
+    long m_count;          ///< 測定回数
                            // 区間の呼び出し回数はプロセス毎に異なる場合がある
     double m_percentage;  ///< Percentage of vectorization or cache hit
 
@@ -105,8 +105,8 @@ namespace pm_lib {
     // 測定値集計時の補助変数
     double* m_timeArray;         ///< 「時間」集計用配列
     double* m_flopArray;         ///< 「浮動小数点演算量or通信量」集計用配列
-    unsigned long* m_countArray; ///< 「測定回数」集計用配列
-    unsigned long  m_count_sum;  ///< 「測定回数」summed over all MPI ranks
+    long* m_countArray; ///< 「測定回数」集計用配列
+    long  m_count_sum;  ///< 「測定回数」summed over all MPI ranks
     double* m_sortedArrayHWPC;   ///< 集計後ソートされたHWPC配列のポインタ
 
     /// 排他測定実行中フラグ. 非排他測定では未使用
@@ -133,10 +133,10 @@ namespace pm_lib {
 
     /// デストラクタ.
     ~PerfWatch() {
-      //	if (m_timeArray)  delete[] m_timeArray;
-      //	if (m_flopArray)  delete[] m_flopArray;
-      //	if (m_countArray) delete[] m_countArray;
-      //	if (m_sortedArrayHWPC) delete[] m_sortedArrayHWPC;
+      if (m_timeArray != NULL)  delete[] m_timeArray;
+      if (m_flopArray != NULL)  delete[] m_flopArray;
+      if (m_countArray != NULL) delete[] m_countArray;
+      if (m_sortedArrayHWPC != NULL) delete[] m_sortedArrayHWPC;
     }
 
     /// 測定モードを返す
@@ -357,6 +357,11 @@ namespace pm_lib {
     ///
     void read_cpu_clock_freq();
 
+    ///
+    void mergeAllThreads(void);
+    ///
+    void selectPerfSingleThread(int i_thread);
+
   private:
     /// エラーメッセージ出力.
     ///
@@ -371,8 +376,6 @@ namespace pm_lib {
     ///	stop() calls following internal functions
     void stopSectionSerial(double flopPerTask, unsigned iterationCount);
     void stopSectionParallel(double flopPerTask, unsigned iterationCount);
-    ///
-    void selectRankPerfThreads(int rank_ID);
 
   private:
 	void createPapiCounterList (void);
@@ -381,7 +384,6 @@ namespace pm_lib {
 	void outputPapiCounterList (FILE* fp);
 	void outputPapiCounterLegend (FILE* fp);
 	void outputPapiCounterGroup (FILE* fp, MPI_Group p_group, int* pp_ranks);
-
   };
 
 } /* namespace pm_lib */
