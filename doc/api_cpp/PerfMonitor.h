@@ -65,7 +65,7 @@ namespace pm_lib {
       // m_watchArray[1 .. m_nWatch] :ユーザーが定義する各区間
 
     unsigned *m_order;         ///< 経過時間でソートした測定区間のリストm_order[m_nWatch]
-    int reserved_nWatch;      ///< 測定区間用にリザーブされたブロックの大きさ
+    int researved_nWatch;      ///< 測定区間用にリザーブされたブロックの大きさ
     bool is_MPI_enabled;	     ///< PMlibの対応動作可能フラグ:MPI
     bool is_OpenMP_enabled;	   ///< PMlibの対応動作可能フラグ:OpenMP
     bool is_PAPI_enabled;	     ///< PMlibの対応動作可能フラグ:PAPI
@@ -182,6 +182,7 @@ namespace pm_lib {
     ///
     ///   @param[in] label ラベル文字列。測定区間を識別するために用いる。
     ///
+    ///
     void reset (const std::string& label);
 
 
@@ -189,14 +190,6 @@ namespace pm_lib {
     ///
     ///
     void resetAll (void);
-
-
-    ///  OpenMP並列処理されたPMlibスレッド測定区間のうち parallel regionから
-    ///  呼び出された測定区間のスレッド測定情報をマスタースレッドに集約する。
-    ///
-    ///   @note  内部で全測定区間をcheckして該当する測定区間を選択する。
-    ///
-    void mergeThreads(void);
 
 
     /// 測定結果の基本統計レポートを出力。
@@ -229,15 +222,6 @@ namespace pm_lib {
     ///   @note 詳細レポートは排他測定区間のみを出力する
     ///
     void printDetail(FILE* fp, int legend=0, int seqSections=0);
-
-
-    /// 指定プロセスに対してスレッド別詳細レポートを出力。
-    ///
-    ///   @param[in] fp			出力ファイルポインタ
-    ///   @param[in] rank_ID	出力対象プロセスのランク番号
-    ///   @param[in] seqSections 測定区間の表示順 (0:経過時間順、1:登録順で表示)
-    ///
-    void printThreads(FILE* fp, int rank_ID=0, int seqSections=0);
 
 
     /// プロセスグループ単位でのMPIランク別詳細レポート、HWPC詳細レポート出力
@@ -351,7 +335,7 @@ namespace pm_lib {
 		// sometime later...
     	array_of_symbols.insert( make_pair(arg_st, ip) );
 		#ifdef DEBUG_PRINT_LABEL
-    	fprintf(stderr, "<add_perf_label> [%s] [%d]\n", arg_st.c_str(), ip);
+    	fprintf(stderr, "<add_perf_label> %s : %d\n", arg_st.c_str(), ip);
 		#endif
     	return ip;
     }
@@ -489,4 +473,3 @@ namespace pm_lib {
 } /* namespace pm_lib */
 
 #endif // _PM_PERFMONITOR_H_
-

@@ -80,7 +80,7 @@ void f_pm_initialize_ (int& init_nWatch)
 
 #ifdef _OPENMP
 	char* c_env = std::getenv("OMP_NUM_THREADS");
-	if (c_env == NULL) omp_set_num_threads(1);	// if not defined, set it as 1
+	//	if (c_env == NULL) omp_set_num_threads(1);	// if not defined, set it as 1
 	num_threads  = omp_get_max_threads();
 	//	PM.num_threads  = omp_get_max_threads();
 #else

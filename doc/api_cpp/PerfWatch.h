@@ -76,7 +76,7 @@ namespace pm_lib {
     // 測定値の積算量
     double m_time;         ///< 時間(秒)
     double m_flop;         ///< 浮動小数点演算量or通信量(バイト)
-    long m_count;          ///< 測定回数
+    unsigned long m_count; ///< 測定回数
                            // 区間の呼び出し回数はプロセス毎に異なる場合がある
     double m_percentage;  ///< Percentage of vectorization or cache hit
 
@@ -105,20 +105,18 @@ namespace pm_lib {
     // 測定値集計時の補助変数
     double* m_timeArray;         ///< 「時間」集計用配列
     double* m_flopArray;         ///< 「浮動小数点演算量or通信量」集計用配列
-    long* m_countArray; ///< 「測定回数」集計用配列
-    long  m_count_sum;  ///< 「測定回数」summed over all MPI ranks
+    unsigned long* m_countArray; ///< 「測定回数」集計用配列
+    unsigned long  m_count_sum;  ///< 「測定回数」summed over all MPI ranks
     double* m_sortedArrayHWPC;   ///< 集計後ソートされたHWPC配列のポインタ
 
     /// 排他測定実行中フラグ. 非排他測定では未使用
-    bool ExclusiveStarted;
+    static bool ExclusiveStarted;
 
     /// MPI並列時の並列プロセス数と自ランク番号
     int num_process;
     int my_rank;
-    /// OpenMP並列時のスレッド数と自スレッド番号
+    /// OpenMP並列時のスレッド数
     int num_threads;
-    int my_thread;
-    bool m_in_parallel;		/// my_thread がparallel 領域内部であるかどうかのフラグ (false, true)
 
     /// bool値：  true/false
     bool m_is_first;      /// 測定区間が初めてstartされる場合かどうかのフラグ
@@ -127,16 +125,15 @@ namespace pm_lib {
   public:
     /// コンストラクタ.
     PerfWatch() : m_time(0.0), m_flop(0.0), m_count(0), m_started(false),
-      ExclusiveStarted(false),
       my_rank(0), m_timeArray(0), m_flopArray(0), m_countArray(0),
       m_sortedArrayHWPC(0), m_is_first(true), m_is_healthy(true) {}
 
     /// デストラクタ.
     ~PerfWatch() {
-      if (m_timeArray != NULL)  delete[] m_timeArray;
-      if (m_flopArray != NULL)  delete[] m_flopArray;
-      if (m_countArray != NULL) delete[] m_countArray;
-      if (m_sortedArrayHWPC != NULL) delete[] m_sortedArrayHWPC;
+      //	if (m_timeArray)  delete[] m_timeArray;
+      //	if (m_flopArray)  delete[] m_flopArray;
+      //	if (m_countArray) delete[] m_countArray;
+      //	if (m_sortedArrayHWPC) delete[] m_sortedArrayHWPC;
     }
 
     /// 測定モードを返す
@@ -315,14 +312,6 @@ namespace pm_lib {
     ///
     void printHWPCLegend(FILE* fp);
 
-    /// スレッド別詳細レポートを出力。
-    ///
-    ///   @param[in] fp           出力ファイルポインタ
-    ///   @param[in] rank_ID      出力対象プロセスのランク番号
-    ///   @param[in] totalTime    全排他測定区間での計算時間(平均値)の合計
-    ///
-    void printDetailThreads(FILE* fp, int rank_ID, double totalTime);
-
     /// HWPCイベントの測定結果と統計値を出力.
     ///
     ///   @param[in] fp 出力ファイルポインタ
@@ -357,11 +346,6 @@ namespace pm_lib {
     ///
     void read_cpu_clock_freq();
 
-    ///
-    void mergeAllThreads(void);
-    ///
-    void selectPerfSingleThread(int i_thread);
-
   private:
     /// エラーメッセージ出力.
     ///
@@ -370,13 +354,6 @@ namespace pm_lib {
     ///
     void printError(const char* func, const char* fmt, ...);
 
-    ///	start() calls following internal functions
-    void startSectionSerial();
-    void startSectionParallel();
-    ///	stop() calls following internal functions
-    void stopSectionSerial(double flopPerTask, unsigned iterationCount);
-    void stopSectionParallel(double flopPerTask, unsigned iterationCount);
-
   private:
 	void createPapiCounterList (void);
 	void sortPapiCounterList (void);
@@ -384,6 +361,7 @@ namespace pm_lib {
 	void outputPapiCounterList (FILE* fp);
 	void outputPapiCounterLegend (FILE* fp);
 	void outputPapiCounterGroup (FILE* fp, MPI_Group p_group, int* pp_ranks);
+
   };
 
 } /* namespace pm_lib */
