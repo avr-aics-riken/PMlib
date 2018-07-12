@@ -634,18 +634,6 @@ namespace pm_lib {
       }
     }
 
-    // initialize()からgather()までの区間（==Root区間）の測定時間を分母とする
-    double tot = 0.0;
-    if (0 == 0) {
-        tot =  m_watchArray[0].m_time_av;
-    } else {
-        for (int i = 0; i < m_nWatch; i++) {
-          if (m_watchArray[i].m_exclusive) {
-            tot +=  m_watchArray[i].m_time_av;
-          }
-        }
-    }
-
     // 測定区間の時間と計算量を表示。表示順は引数 seqSections で指定されている。
     for (int j = 0; j < m_nWatch; j++) {
       int i;
@@ -658,7 +646,7 @@ namespace pm_lib {
       if (!m_watchArray[i].m_exclusive) continue;
       if (m_watchArray[i].m_count == 0) continue;
 
-      m_watchArray[i].printDetailThreads(fp, rank_ID, tot);
+      m_watchArray[i].printDetailThreads(fp, rank_ID);
     }
 //    fprintf(fp, "\n# End of PMlib Thread Report ------------------------------------------------\n\n");
 //
@@ -1021,16 +1009,14 @@ namespace pm_lib {
     }
 #ifdef USE_PAPI
     m_watchArray[0].printHWPCHeader(fp);
-#else
-    fprintf(fp, "\n");
 #endif
 
     fprintf(fp, "\n");
     //	fprintf(fp, "\tTotal execution time            = %12.6e [sec]\n", m_watchArray[0].m_time);
-    fprintf(fp, "\tTotal time (PMlib enabled elapsed time) = %12.6e [sec]\n", tot);
+    fprintf(fp, "\tTotal PMlib enabled time from initialize() to last stop() = %9.3e [sec]\n", tot);
     fprintf(fp, "\n");
-    fprintf(fp, "\tExclusive sections statistics per process and total job.\n");
-    fprintf(fp, "\tInclusive sections, marked with (*), are not added to the sections total values.\n");
+    fprintf(fp, "\tExclusive sections statistics are reported below.\n");
+    fprintf(fp, "\tInclusive sections, marked with (*), are also shown. They are not added to the total values.\n");
     fprintf(fp, "\n");
 
   }

@@ -315,13 +315,12 @@ namespace pm_lib {
     ///
     void printHWPCLegend(FILE* fp);
 
-    /// スレッド別詳細レポートを出力。
+    /// 指定するランクのスレッド別詳細レポートを出力。
     ///
     ///   @param[in] fp           出力ファイルポインタ
-    ///   @param[in] rank_ID      出力対象プロセスのランク番号
-    ///   @param[in] totalTime    全排他測定区間での計算時間(平均値)の合計
+    ///   @param[in] rank_ID      出力対象ランク番号を指定する
     ///
-    void printDetailThreads(FILE* fp, int rank_ID, double totalTime);
+    void printDetailThreads(FILE* fp, int rank_ID);
 
     /// HWPCイベントの測定結果と統計値を出力.
     ///
