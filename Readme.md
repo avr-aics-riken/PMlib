@@ -1,7 +1,7 @@
 # PMlib - Performance Monitor library
 
 * Copyright (c) 2010-2011 VCAD System Research Program, RIKEN. All rights reserved.
-* Copyright (c) 2012-2018 Advanced Institute for Computational Science (AICS), RIKEN. All rights reserved.
+* Copyright (c) 2012-2018 RIKEN Center for Computational Science (R-CCS). All rights reserved.
 * Copyright (c) 2016-2018 Research Institute for Information Technology (RIIT), Kyushu University. All rights reserved.
 
 ## OUTLINE
@@ -89,7 +89,7 @@ $ sudo make install
 The default compiler options are described in `cmake/CompilerOptionSelector.cmake` file. See BUILD OPTION section in CMakeLists.txt in detail.
 
 
-## Configure Examples
+## Cmake Examples
 
 ### INTEL/GNU/PGI compiler
 

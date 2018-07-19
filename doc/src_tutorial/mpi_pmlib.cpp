@@ -34,10 +34,6 @@ int main (int argc, char *argv[])
 	MPI_Comm_size(MPI_COMM_WORLD, &npes);
 
 #ifdef _OPENMP
-	char* c_env = std::getenv("OMP_NUM_THREADS");
-	if (c_env == NULL) {
-		omp_set_num_threads(1);	// OMP_NUM_THREADS was not defined. set as 1
-	}
 	num_threads  = omp_get_max_threads();
 #else
 	num_threads  = 1;
@@ -56,8 +52,8 @@ int main (int argc, char *argv[])
 
 	PM.setProperties("First section", PerfMonitor::CALC);
 	PM.setProperties("Second section", PerfMonitor::CALC, false);
-	PM.setProperties("Subsection X", PerfMonitor::COMM);
-	PM.setProperties("Subsection Y", PerfMonitor::CALC);
+	PM.setProperties("Subsection 1", PerfMonitor::COMM);
+	PM.setProperties("Subsection 2", PerfMonitor::CALC);
 	// Remard that "Second section" is not exclusive, i.e. inclusive
 
 
@@ -73,18 +69,18 @@ int main (int argc, char *argv[])
 	PM.start("Second section");
 	spacer();
 
-	PM.start("Subsection X");
+	PM.start("Subsection 1");
 	somekernel();
 	byte_count=pow (dsize, 3.0)*4.0*4.0;
 	//	byte_count=2000.0;
-	PM.stop ("Subsection X", byte_count, 1);
+	PM.stop ("Subsection 1", byte_count, 1);
 	spacer();
 
-	PM.start("Subsection Y");
+	PM.start("Subsection 2");
 	somekernel();
 	flop_count=pow (dsize, 3.0)*4.0 * 1.2;	// somewhat inflated number ...
 	//	flop_count=5000.0;
-	PM.stop ("Subsection Y", flop_count, 1);
+	PM.stop ("Subsection 2", flop_count, 1);
 	spacer();
 
 	somekernel();
@@ -94,8 +90,12 @@ int main (int argc, char *argv[])
 	spacer();
 
 	PM.gather();
-	PM.print(stdout, "", "Mr. Bean", 1);
-	PM.printDetail(stdout);
+	PM.print(stdout, "", "", 1);
+	PM.printDetail(stdout, 0, 0);
+	for (i=0; i<npes; i++){
+		PM.printThreads(stdout, i, 0);
+	}
+	PM.printLegend(stdout);
 
 	MPI_Finalize();
 	return 0;
@@ -106,7 +106,7 @@ void set_array()
 {
 int i, j, nsize;
 nsize = matrix.nsize;
-#pragma omp parallel
+#pragma omp parallel private(i,j)
 #pragma omp for
 	for (i=0; i<nsize; i++){
 	for (j=0; j<nsize; j++){
@@ -123,7 +123,7 @@ void somekernel()
 int i, j, k, nsize;
 float c1,c2,c3;
 nsize = matrix.nsize;
-#pragma omp parallel
+#pragma omp parallel private(i,j,k, c1,c2,c3)
 #pragma omp for
 	for (i=0; i<nsize; i++){
 	for (j=0; j<nsize; j++){

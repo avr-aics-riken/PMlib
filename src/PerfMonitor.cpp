@@ -39,7 +39,7 @@ namespace pm_lib {
   ///
   /// @note 測定区間数 m_nWatch は不足すると動的に増えていく
   ///
-  void PerfMonitor::initialize (int init_nWatch)
+  void PerfMonitor::initialize (int inn)
   {
     char* cp_env;
     std::string s;
@@ -52,6 +52,7 @@ namespace pm_lib {
 		is_PMlib_enabled = false;
 	}
     if (!is_PMlib_enabled) return;
+    init_nWatch = inn;
 
     (void) MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
     (void) MPI_Comm_size(MPI_COMM_WORLD, &num_process);
@@ -129,8 +130,7 @@ namespace pm_lib {
 	#endif
 
 	// An object created by "new" operator can be accessed using pointer, not name.
-    //	m_watchArray = new PerfWatch[init_nWatch];
-    m_watchArray = new PerfWatch[1];
+    m_watchArray = new PerfWatch[init_nWatch];
     m_gathered = false;
     m_nWatch = 0 ;
     m_order = NULL;
@@ -173,20 +173,27 @@ namespace pm_lib {
       //	return;
     }
 
-    if (m_nWatch%reserved_nWatch == 1) {
-      PerfWatch* watch_more = new PerfWatch[reserved_nWatch+m_nWatch];
+//
+// Move the existing PerfWatch class storage into the new address
+//
+    //	if (short of memory) {
+    if ((m_nWatch+1) >= reserved_nWatch) {
+
+      reserved_nWatch = m_nWatch + init_nWatch;
+      PerfWatch* watch_more = new PerfWatch[reserved_nWatch];
       if (watch_more == NULL) {
-        printDiag("setProperties()",
-		"memory allocation failed. section [%s] is ignored.\n", label.c_str());
+        printDiag("setProperties()", "memory allocation failed. section [%s] is ignored.\n", label.c_str());
+        reserved_nWatch = m_nWatch;
         return;
       }
 
       for (int i = 0; i < m_nWatch; i++) {
           watch_more[i] = m_watchArray[i];
       }
+
+      delete [] m_watchArray;
+      m_watchArray = NULL;
       m_watchArray = watch_more;
-// DEBUG from here
-      //	delete [] watch_more;
       watch_more = NULL;
     }
 

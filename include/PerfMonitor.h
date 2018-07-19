@@ -51,10 +51,20 @@ namespace pm_lib {
     };
 
   private:
-    int m_nWatch;         ///< 測定区間数
-    int num_threads;           ///< 並列スレッド数
     int num_process;           ///< 並列プロセス数
+    int num_threads;           ///< 並列スレッド数
     int my_rank;               ///< 自ランク番号
+    int m_nWatch;              ///< 測定区間数
+    int init_nWatch;           ///< 初期に確保する測定区間数
+    int reserved_nWatch;       ///< リザーブ済みの測定区間数
+
+    bool is_MPI_enabled;       ///< PMlibの対応動作可能フラグ:MPI
+    bool is_OpenMP_enabled;	   ///< PMlibの対応動作可能フラグ:OpenMP
+    bool is_PAPI_enabled;      ///< PMlibの対応動作可能フラグ:PAPI
+    bool is_OTF_enabled;       ///< 対応動作可能フラグ:OTF tracing 出力
+    bool m_gathered;           ///< 測定結果集計済みフラグ
+    bool is_PMlib_enabled;     ///< PMlibの動作を有効にするフラグ
+
     std::string parallel_mode; ///< 並列動作モード
       // {"Serial", "OpenMP", "FlatMPI", "Hybrid"}
     std::string env_str_hwpc;  ///< 環境変数HWPC_CHOOSERの値
@@ -63,18 +73,7 @@ namespace pm_lib {
       // PerfWatchのインスタンスは全部で m_nWatch 生成され、その番号対応は以下
       // m_watchArray[0]  :PMlibが定義するRoot区間
       // m_watchArray[1 .. m_nWatch] :ユーザーが定義する各区間
-
-    unsigned *m_order;         ///< 経過時間でソートした測定区間のリストm_order[m_nWatch]
-    int reserved_nWatch;       ///< 測定区間用にリザーブされたブロックの大きさ
-    bool is_MPI_enabled;       ///< PMlibの対応動作可能フラグ:MPI
-    bool is_OpenMP_enabled;	   ///< PMlibの対応動作可能フラグ:OpenMP
-    bool is_PAPI_enabled;      ///< PMlibの対応動作可能フラグ:PAPI
-    bool is_OTF_enabled;       ///< 対応動作可能フラグ:OTF tracing 出力
-    bool m_gathered;           ///< 測定結果集計済みフラグ
-      // std::string last_started_label;	///< 最後に start された測定区間
-      // 排他的区間がオーバーラップする間違った使い方をチェックするために使う
-      // エラー処理用のデータ ->  処理が遅くなる & 手間がかかるので使わない
-    bool is_PMlib_enabled;    ///< PMlibの動作を有効にするフラグ
+    unsigned *m_order;         ///< 測定区間ソート用のリストm_order[m_nWatch]
 
   public:
     /// コンストラクタ.
