@@ -45,7 +45,7 @@ subroutine submxm2d (msize,n,dflop,a,b,c)
 	real(kind=8) :: x
 	
 	dflop=2.0*dble(n)**3
-	!uncomment  !$omp parallel do private(x)
+	!uncomment  !$omp parallel do private(i,j,k,x)
 	do j=1, n
 	do i=1, n
 	x=0

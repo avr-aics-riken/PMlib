@@ -250,7 +250,6 @@ void f_pm_resetall_ (void)
 }
 
 
-
 /// PMlib Fortran インタフェイス
 /// 全プロセスの全測定結果情報をマスタープロセス(0)に集約
 ///
@@ -268,8 +267,7 @@ void f_pm_gather_ (void)
 /// 測定結果の基本統計レポートを出力
 ///
 ///   @param[in] char* fc 出力ファイル名(character文字列)
-///   @param[in] int psort 測定区間の表示順
-///						(0:経過時間順にソート後表示、1:登録順で表示)
+///   @param[in] int psort 測定区間の表示順(0:経過時間順にソート後表示、1:登録順で表示)
 ///   @param[in] int fc_size  出力ファイル名の文字数
 ///
 ///   @note  Fortranコンパイラはfc_size引数を自動的に追加してしまう
@@ -313,17 +311,16 @@ void f_pm_print_ (char* fc, int &psort, int fc_size)
 	if (user_file == 1) {
 		fclose(fp);
 	}
-
 	return;
 }
+
 
 /// PMlib Fortran インタフェイス
 /// MPIランク別詳細レポート、HWPC詳細レポートを出力。 非排他測定区間も出力
 ///
 ///   @param[in] char* fc 出力ファイル名(character文字列)
 ///   @param[in] int legend  HWPC 記号説明の表示(0:なし、1:表示する)
-///   @param[in] int psort 測定区間の表示順
-///                       (0:経過時間順にソート後表示、1:登録順で表示)
+///   @param[in] int psort 測定区間の表示順 (0:経過時間順にソート後表示、1:登録順で表示)
 ///   @param[in] int fc_size  出力ファイル名の文字数
 ///
 ///   @note  Fortranコンパイラはfc_size引数を自動的に追加してしまう
@@ -357,7 +354,86 @@ void f_pm_printdetail_ (char* fc, int& legend, int &psort, int fc_size)
 	if (user_file == 1) {
 		fclose(fp);
 	}
+	return;
+}
 
+
+/// PMlib Fortran インタフェイス
+/// 指定するプロセスのスレッド別詳細レポートを出力。
+///
+///   @param[in] char* fc	出力ファイル名(character文字列)
+///   @param[in] int rank_ID	指定するプロセスのランク番号
+///   @param[in] int psort 測定区間の表示順(0:経過時間順にソート、1:登録順で表示)
+///   @param[in] int fc_size  出力ファイル名の文字数
+///
+///   @note  Fortranコンパイラはfc_size引数を自動的に追加してしまう
+///
+void f_pm_printthreads_ (char* fc, int &rank_ID, int &psort, int fc_size)
+{
+	FILE *fp;
+	std::string s=std::string(fc,fc_size);
+#ifdef DEBUG_PRINT_MONITOR
+	fprintf(stderr, "<f_pm_printThreads_> fc=%s, rank_ID=%d, psort=%d, fc_size=%d \n", s.c_str(), rank_ID, psort, fc_size);
+#endif
+
+	int user_file;
+	if (s == "" || fc_size == 0) { // if filename is null, report to stdout
+		fp=stdout;
+		user_file=0;
+	} else {
+		fp=fopen(fc,"a");
+		if (fp == NULL) {
+			fprintf(stderr, "*** warning <f_pm_printThreads_> can not open: %s\n", fc);
+			fp=stdout;
+			user_file=0;
+		} else {
+			user_file=1;
+		}
+	}
+	if (psort != 0 && psort != 1) psort = 0;
+
+	PM.printThreads(fp, rank_ID, psort);
+
+	if (user_file == 1) {
+		fclose(fp);
+	}
+	return;
+}
+
+
+/// PMlib Fortran インタフェイス
+/// HWPC 記号の説明表示を出力。
+///
+///   @param[in] char* fc	出力ファイル名(character文字列)
+///   @param[in] int fc_size  出力ファイル名の文字数
+///
+///   @note  Fortranコンパイラはfc_size引数を自動的に追加してしまう
+///
+void f_pm_printlegend_ (char* fc, int fc_size)
+{
+	FILE *fp;
+	std::string s=std::string(fc,fc_size);
+
+	int user_file;
+	if (s == "" || fc_size == 0) { // if filename is null, report to stdout
+		fp=stdout;
+		user_file=0;
+	} else {
+		fp=fopen(fc,"a");
+		if (fp == NULL) {
+			fprintf(stderr, "*** warning <f_pm_printdetail_> can not open: %s\n", fc);
+			fp=stdout;
+			user_file=0;
+		} else {
+			user_file=1;
+		}
+	}
+
+	PM.printLegend(fp);
+
+	if (user_file == 1) {
+		fclose(fp);
+	}
 	return;
 }
 
@@ -501,3 +577,4 @@ void f_pm_posttrace_ (void)
 
 // PMlib Fortran インタフェイス終了
 } // closing extern "C"
+

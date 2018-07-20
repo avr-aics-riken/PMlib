@@ -68,6 +68,14 @@ void PerfWatch::initializeHWPC ()
 		papi.events[i] = 0;
 		papi.values[i] = 0;
 		papi.accumu[i] = 0;
+		papi.v_sorted[i] = 0;
+		}
+	for (int i=0; i<Max_chooser_events; i++){
+		for (int j=0; i<Max_nthreads; i++){
+			papi.th_values[i][j] = 0;
+			papi.th_accumu[i][j] = 0;
+			papi.th_v_sorted[i][j] = 0;
+			}
 		}
 	} // #pragma omp master
 	#pragma omp barrier
@@ -1015,29 +1023,35 @@ void PerfWatch::outputPapiCounterLegend (FILE* fp)
 	fprintf(fp, "\n\tDetected CPU architecture:\n" );
 	fprintf(fp, "\t\t%s\n", hwinfo->vendor_string);
 	fprintf(fp, "\t\t%s\n", hwinfo->model_string);
-	fprintf(fp, "\t\tThe available PMlib HWPC events for this CPU are shown below.\n");
+	fprintf(fp, "\t\tThe available HWPC_CHOOSER values and their HWPC events for this CPU are shown below.\n");
 	fprintf(fp, "\n");
-	fprintf(fp, "\tHWPC events legend: \n");
-// FLOPS
+
+// CYCLES
+	fprintf(fp, "\tHWPC_CHOOSER=CYCLE:\n");
 	fprintf(fp, "\t\tTOT_CYC:   total cycles\n");
 	fprintf(fp, "\t\tTOT_INS:   total instructions\n");
 	fprintf(fp, "\t\t[Ins/cyc]: performed instructions per machine clock cycle\n");
 
+// FLOPS
+	fprintf(fp, "\tHWPC_CHOOSER=FLOPS:\n");
 	if (hwpc_group.platform == "Xeon" ) {
 		if (hwpc_group.i_platform != 3 ) {
 	fprintf(fp, "\t\tSP_OPS:    single precision floating point operations\n");
 	fprintf(fp, "\t\tDP_OPS:    double precision floating point operations\n");
 	fprintf(fp, "\t\t[Flops]:   floating point operations per second \n");
+		} else {
+	fprintf(fp, "\t\t* Haswell processor does not have floating point operation counters,\n");
+	fprintf(fp, "\t\t* so PMlib does not produce HWPC report for FLOPS and VECTOR groups.\n");
 		}
 	}
 	if (hwpc_group.platform == "SPARC64" ) {
 	fprintf(fp, "\t\tFP_OPS:    floating point operations\n");
 	fprintf(fp, "\t\t[Flops]:   floating point operations per second \n");
 	}
-	fprintf(fp, "\n");
 
 
 // BANDWIDTH
+	fprintf(fp, "\tHWPC_CHOOSER=BANDWIDTH:\n");
 	if (hwpc_group.platform == "Xeon" ) {
 	fprintf(fp, "\t\tLOAD_INS:  memory load instructions\n");
 	fprintf(fp, "\t\tSTORE_INS: memory store instructions\n");
@@ -1059,9 +1073,9 @@ void PerfWatch::outputPapiCounterLegend (FILE* fp)
 	fprintf(fp, "\t\tL2_WB_PF:  writeback by prefetch L2 cache misses \n");
 	fprintf(fp, "\t\t[Mem B/s]: Memory bandwidth responding to demand read, prefetch and writeback reaching memory\n");
 	}
-	fprintf(fp, "\n");
 
 // VECTOR
+	fprintf(fp, "\tHWPC_CHOOSER=VECTOR:\n");
 	if (hwpc_group.platform == "Xeon" ) {
 		if (hwpc_group.i_platform != 3 ) {
 	fprintf(fp, "\t\tSP_SINGLE: single precision f.p. scalar instructions\n");
@@ -1075,6 +1089,9 @@ void PerfWatch::outputPapiCounterLegend (FILE* fp)
 	fprintf(fp, "\t\t[Total_FPs]: floating point operations as the sum of instructions*width \n");
 	fprintf(fp, "\t\t[Flops]:    floating point operations per second \n");
 	fprintf(fp, "\t\t[Vector %]: percentage of vectorized f.p. operations\n");
+		} else {
+	fprintf(fp, "\t\t Haswell processor does not have floating point operation counters,\n");
+	fprintf(fp, "\t\t so PMlib does not produce full HWPC report for FLOPS and VECTOR groups.\n");
 		}
 	}
 	if (hwpc_group.platform == "SPARC64" ) {
@@ -1095,9 +1112,9 @@ void PerfWatch::outputPapiCounterLegend (FILE* fp)
 	fprintf(fp, "\t\t[Flops]:    floating point operations per second \n");
 	fprintf(fp, "\t\t[Vector %]: percentage of vectorized f.p. operations\n");
 	}
-	fprintf(fp, "\n");
 
 // CACHE
+	fprintf(fp, "\tHWPC_CHOOSER=CACHE:\n");
 	if (hwpc_group.platform == "Xeon" ) {
 	fprintf(fp, "\t\tL1_HIT:    L1 data cache hits\n");
 	fprintf(fp, "\t\tLFB_HIT:   Cache Line Fill Buffer hits\n");
@@ -1116,17 +1133,14 @@ void PerfWatch::outputPapiCounterLegend (FILE* fp)
 	}
 	fprintf(fp, "\t\t[L2$ hit%]: data access hit(%) in L2 cache\n");
 	fprintf(fp, "\t\t[L1L2hit%]: sum of hit(%) in L1 and L2 cache\n");
-	fprintf(fp, "\n");
 
 // remarks
+	fprintf(fp, "\n");
 	fprintf(fp, "\tRemarks.\n");
 	fprintf(fp, "\t\t Symbols represent HWPC (hardware performance counter) native and derived events\n");
 	fprintf(fp, "\t\t Symbols in [] such as [Ins/cyc] are calculated statistics in shown unit.\n");
+
 	if (hwpc_group.platform == "Xeon" ) {
-		if (hwpc_group.i_platform == 3 ) {
-	fprintf(fp, "\t\t Haswell processor does not have floating point operation counters,\n");
-	fprintf(fp, "\t\t so PMlib does not produce full HWPC report for FLOPS and VECTOR groups.\n");
-		}
 	fprintf(fp, "\t\t The memory bandwidth is based on uncore events, not on memory controller information, \n");
 	fprintf(fp, "\t\t and is calculated as the sum of demand read and prefetch requests reaching to memory.\n");
 	fprintf(fp, "\t\t The symbols L3 cache and LLC both refer to the same Last Level Cache.\n");
