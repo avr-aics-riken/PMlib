@@ -1,13 +1,15 @@
 program check
 #ifndef DISABLE_MPI
-	include 'mpif.h'                                                                     
+	include 'mpif.h'
 #endif
 	parameter(msize=1000)
 	real(kind=8), allocatable :: a(:,:),b(:,:),c(:,:)
 	double precision dptime_omp
 	double precision dpt1,dpt0
-	integer nWatch=10
+	integer nWatch
+
 	myid=0
+	ncpus=1
 #ifndef DISABLE_MPI
 	call mpi_init(ierr )
 	call mpi_comm_rank( MPI_COMM_WORLD, myid, ierr )
@@ -43,14 +45,14 @@ program check
 	call f_pm_stop ("2nd section", dflop, 0)
 	end do
 	dpt1=dptime_omp()
-	flops=real(loops)*dflop/s*1.e-9
+	flops=real(loops)*dflop/(dpt1-dpt0)*1.e-9
 	write(6,'(f10.5,a, f10.5,a)') dpt1-dpt0, " seconds", flops, " Gflops"
 
 	call f_pm_gather ()
 	call f_pm_print ("", 0)
 	call f_pm_printdetail ("", 0, 0)
 	do i=1,ncpus
-	call f_pm_printthreads ("", i-1)
+	call f_pm_printthreads ("", i-1, 0)
 	end do
 	call f_pm_printlegend ("")
 #ifndef DISABLE_MPI
