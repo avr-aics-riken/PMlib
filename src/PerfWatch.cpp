@@ -47,7 +47,7 @@ namespace pm_lib {
   double cpu_clock_freq;        /// processor clock frequency, i.e. Hz
   double second_per_cycle;  /// real time to take each cycle
 
-  bool PerfWatch::ExclusiveStarted = false;
+  //	bool PerfWatch::ExclusiveStarted = false;
 
 
   /// 単位変換.
@@ -153,16 +153,18 @@ namespace pm_lib {
   void PerfWatch::gatherHWPC()
   {
 #ifdef USE_PAPI
-
 	if ( my_papi.num_events == 0) return;
+
+	#ifdef DEBUG_PRINT_WATCH
+	//	#ifdef DEBUG_PRINT_GATHER
+	if (my_rank == 0) {
+		fprintf(stderr, "<PerfWatch::gatherHWPC> [%15s] \n", m_label.c_str());
+	}
+	#endif
 
 	int is_unit = statsSwitch();
 	if ( (is_unit == 0) || (is_unit == 1) ) {
-		printError("gatherHWPC() internal", "PMlib should not reach here.\n");
-		printError("gatherHWPC()",
-			"my_rank=%d, my_papi.num_events=%d, exclusive=%s, is_unit=%d \n",
-			my_rank, my_papi.num_events, m_exclusive?"true":"false", is_unit);
-		PM_Exit(0);
+		printError("gatherHWPC", "internal error. my_rank=%d\n", my_rank); PM_Exit(0);
 	}
 
 	sortPapiCounterList ();
@@ -210,14 +212,6 @@ namespace pm_lib {
 		}
 	}
 
-	#ifdef DEBUG_PRINT_WATCH
-	double w;
-	w = my_papi.v_sorted[my_papi.num_sorted-1] ;
-    if (my_rank == 0) {
-        fprintf(stderr, "\t<gatherHWPC> [%15s], my_papi.num_events=%d, w(rate)=%e, m_time=%e\n",
-			m_label.c_str(), my_papi.num_events, w, m_time );
-    }
-	#endif
 #endif
   }
 
@@ -227,9 +221,10 @@ namespace pm_lib {
   void PerfWatch::gather()
   {
 	#ifdef DEBUG_PRINT_WATCH
+	//	#ifdef DEBUG_PRINT_GATHER
 	if (my_rank == 0) {
-		fprintf(stderr, "\t<gather> [%15s], m_time=%e, m_flop=%e, m_count=%lu\n",
-			m_label.c_str(), m_time, m_flop, m_count );
+		fprintf(stderr, "<PerfWatch::gather> [%15s], num_process=%d, m_time=%e, m_flop=%e, m_count=%lu\n",
+			m_label.c_str(), num_process, m_time, m_flop, m_count );
 	}
 	#endif
 
@@ -239,8 +234,8 @@ namespace pm_lib {
 	// The space is reserved only once as a fixed size array
 	if ( m_timeArray == NULL) m_timeArray  = new double[m_np];
 	if ( m_flopArray == NULL) m_flopArray  = new double[m_np];
-	if ( m_countArray == NULL) m_countArray  = new unsigned long[m_np];
-	if (!(m_timeArray) || !(m_timeArray) || !(m_timeArray)) {
+	if ( m_countArray == NULL) m_countArray  = new long[m_np];
+	if (!(m_timeArray) || !(m_flopArray) || !(m_countArray)) {
 		printError("gather()", "new memory failed. %d(process) x 3 x 8 \n",
 		num_process);
 		PM_Exit(0);
@@ -252,10 +247,10 @@ namespace pm_lib {
       m_countArray[0]= m_count;
       m_count_sum = m_count;
     } else {
-      if ( MPI_Gather(&m_time,  1, MPI_DOUBLE,        m_timeArray,  1, MPI_DOUBLE,        0, MPI_COMM_WORLD) != MPI_SUCCESS ) PM_Exit(0);
-      if ( MPI_Gather(&m_flop,  1, MPI_DOUBLE,        m_flopArray,  1, MPI_DOUBLE,        0, MPI_COMM_WORLD) != MPI_SUCCESS ) PM_Exit(0);
-      if ( MPI_Gather(&m_count, 1, MPI_UNSIGNED_LONG, m_countArray, 1, MPI_UNSIGNED_LONG, 0, MPI_COMM_WORLD) != MPI_SUCCESS ) PM_Exit(0);
-      if ( MPI_Allreduce(&m_count, &m_count_sum, 1, MPI_UNSIGNED_LONG, MPI_SUM, MPI_COMM_WORLD) != MPI_SUCCESS ) PM_Exit(0);
+      if (MPI_Gather(&m_time,  1, MPI_DOUBLE, m_timeArray, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD) != MPI_SUCCESS) PM_Exit(0);
+      if (MPI_Gather(&m_flop,  1, MPI_DOUBLE, m_flopArray, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD) != MPI_SUCCESS) PM_Exit(0);
+      if (MPI_Gather(&m_count, 1, MPI_LONG, m_countArray, 1, MPI_LONG, 0, MPI_COMM_WORLD) != MPI_SUCCESS) PM_Exit(0);
+      if (MPI_Allreduce(&m_count, &m_count_sum, 1, MPI_LONG, MPI_SUM, MPI_COMM_WORLD) != MPI_SUCCESS) PM_Exit(0);
     }
 	// Above arrays will be used by the subsequent routines, and should not be deleted here
 	// i.e. m_timeArray, m_flopArray, m_countArray
@@ -484,7 +479,7 @@ namespace pm_lib {
 	    }
 	    second_per_cycle = 1.0/(double)cpu_clock_freq;
 		#ifdef DEBUG_PRINT_WATCH
-	   	if (my_rank == 0) {
+	   	if (my_rank == 0 && my_thread == 0) {
 			fprintf(stderr, "<read_cpu_clock_freq> cpu_clock_freq=%lf second_per_cycle=%16.12lf \n",
 								cpu_clock_freq, second_per_cycle);
 	   	 }
@@ -517,16 +512,15 @@ namespace pm_lib {
 
     std::string unit;
     int is_unit = statsSwitch();
-    if (is_unit == 0) unit = "B/sec";	// 0: user set bandwidth
+    if (is_unit == 0) unit = "B/sec";		// 0: user set bandwidth
     if (is_unit == 1) unit = "Flops";		// 1: user set flop counts
-	//
-    if (is_unit == 2) unit = "B/sec(HWPC)";	// 2: HWPC measured bandwidth
-    if (is_unit == 3) unit = "Flops(HWPC)";	// 3: HWPC measured flop counts
+    if (is_unit == 2) unit = "B/sec(HWPC)";		// 2: HWPC measured bandwidth
+    if (is_unit == 3) unit = "Flops(HWPC)";		// 3: HWPC measured flop counts
     if (is_unit == 4) unit = "vector%(HWPC)";	// 4: HWPC measured vector %
     if (is_unit == 5) unit = "L1L2hit%(HWPC)";	// 5: HWPC measured cache hit%
     if (is_unit == 6) unit = "Ins/sec(HWPC)";	// 6: HWPC measured instructions
 
-    unsigned long total_count = 0;
+    long total_count = 0;
     for (int i = 0; i < m_np; i++) total_count += m_countArray[i];
 
     if ( total_count > 0 && is_unit <= 1) {
@@ -615,13 +609,12 @@ namespace pm_lib {
 
 
 
-    unsigned long total_count = 0;
+    long total_count = 0;
     for (int i = 0; i < m_np; i++) total_count += m_countArray[pp_ranks[i]];
 
     if ( total_count > 0 && is_unit <= 1) {
       fprintf(fp, "Label  %s%s\n", m_exclusive ? "" : "*", m_label.c_str());
-      // fprintf(fp, "Header ID  :     call   time[s] time[%%]  t_wait[s]  t[s]/call   flop|msg    speed              \n");
-      fprintf(fp, "Header ID  :     call   time[s] time[%%]  t_wait[s]  t[s]/call   counter     speed              \n");
+      fprintf(fp, "Header ID  :     call   time[s] time[%%]  t_wait[s]  t[s]/call   operations  performance\n");
       for (int i = 0; i < m_np; i++) {
 	ip = pp_ranks[i];
 	t_per_call = (m_countArray[ip]==0) ? 0.0: m_timeArray[ip]/m_countArray[ip];
@@ -668,8 +661,8 @@ namespace pm_lib {
   void PerfWatch::printDetailHWPCsums(FILE* fp, std::string s_label)
   {
 #ifdef USE_PAPI
-    char* c_env = std::getenv("HWPC_CHOOSER");
-    if (c_env == NULL) return;
+    //	char* c_env = std::getenv("HWPC_CHOOSER");
+    //	if (c_env == NULL) return;
     if (my_papi.num_events == 0) return;
     if (!m_exclusive) return;
     if ( m_count_sum == 0 ) return;
@@ -694,8 +687,8 @@ namespace pm_lib {
   void PerfWatch::printGroupHWPCsums(FILE* fp, std::string s_label, MPI_Group p_group, int* pp_ranks)
   {
 #ifdef USE_PAPI
-    char* c_env = std::getenv("HWPC_CHOOSER");
-    if (c_env == NULL) return;
+    //	char* c_env = std::getenv("HWPC_CHOOSER");
+    //	if (c_env == NULL) return;
     if (my_papi.num_events == 0) return;
     if (!m_exclusive) return;
     if ( m_count_sum == 0 ) return;
@@ -758,6 +751,216 @@ namespace pm_lib {
 
 
 
+  ///  OpenMP並列処理されたPMlibスレッド測定区間のうち parallel regionから
+  ///  呼び出された測定区間のスレッド測定情報をマスタースレッドに集約する。
+  ///
+  ///   @note  内部で全測定区間をcheckして該当する測定区間を選択する。
+  ///
+  void PerfWatch::mergeAllThreads(void)
+  {
+	#ifdef DEBUG_PRINT_WATCH
+    if (my_rank == 0) {
+    	fprintf(stderr, "\t<mergeAllThreads> [%s] \n", m_label.c_str());
+	}
+	#endif
+
+    int is_unit = statsSwitch();
+
+	if ( is_unit >= 2) { // PMlib HWPC counter mode
+		if (m_in_parallel) { // this section was executed inside parallel region
+			//  void PerfWatch::stop should have saved following variables
+			for (int i=0; i<my_papi.num_events; i++) {
+				papi.th_accumu[i][my_thread] = my_papi.th_accumu[i][my_thread];
+				papi.th_v_sorted[i][my_thread] = my_papi.th_v_sorted[i][my_thread];
+			}
+			#pragma omp barrier
+			for (int i=0; i<my_papi.num_events; i++) {
+			for (int j=0; j<num_threads; j++) {
+				my_papi.th_accumu[i][j] = papi.th_accumu[i][j] ;
+				my_papi.th_v_sorted[i][j] = papi.th_v_sorted[i][j] ;
+			}
+			}
+			#pragma omp barrier
+		} // end of if (m_in_parallel)
+
+		for (int i=0; i<my_papi.num_events; i++) {
+		my_papi.accumu[i] = 0.0;
+		for (int j=0; j<num_threads; j++) {
+			my_papi.accumu[i] += my_papi.th_accumu[i][j];
+		}
+		}
+		#pragma omp barrier
+
+		#ifdef DEBUG_PRINT_PAPI_THREADS
+    	if (my_rank == 0 && my_thread == 0) {
+		for (int i=0; i<my_papi.num_events; i++) {
+			fprintf(stderr, "\tevent i=%d [%8s]\n", i, my_papi.s_sorted[i].c_str());
+			fprintf(stderr, "\tmy_papi.accumu[%d]=%llu\n", i, my_papi.accumu[i]);
+			for (int j=0; j<num_threads; j++) {
+				fprintf(stderr, "\t\t my_papi.th_accumu[%d][%d]=%llu\n", i, j, my_papi.th_accumu[i][j]);
+			}
+		}
+    	}
+		#endif
+
+	} else {	// ( is_unit == 0 | is_unit == 1) : PMlib user counter mode
+		//	#pragma omp barrier
+		//  PerfWatch::stop() should have saved following variables
+		//	my_papi.th_v_sorted[0][my_thread] = (double)m_count;	// call
+		//	my_papi.th_v_sorted[1][my_thread] = m_time;				// time[s]
+		//	my_papi.th_v_sorted[2][my_thread] = m_flop;				// operations
+		for (int i=0; i<3; i++) {
+			papi.th_v_sorted[i][my_thread] = my_papi.th_v_sorted[i][my_thread];
+		}
+		#pragma omp barrier
+		for (int i=0; i<3; i++) {
+		for (int j=0; j<num_threads; j++) {
+			my_papi.th_v_sorted[i][j] = papi.th_v_sorted[i][j] ;
+		}
+		}
+		#pragma omp barrier
+		// update m_flop as the sum of all threads
+		m_flop = 0.0;
+		for (int j=0; j<num_threads; j++) {
+			m_flop += my_papi.th_v_sorted[2][j];
+		}
+		#pragma omp barrier
+
+		#ifdef DEBUG_PRINT_WATCH
+		#pragma omp critical
+		if (my_rank == 0) {
+			fprintf(stderr, "\tmy_thread=%d \n", my_thread);
+			for (int j=0; j<num_threads; j++) {
+				fprintf (stderr, "\t my_papi.th_v_sorted[0:2][%d]: %e, %e, %e \n",
+				j, my_papi.th_v_sorted[0][j], my_papi.th_v_sorted[1][j], my_papi.th_v_sorted[2][j]);
+			}
+		}
+		#endif
+		;
+	}
+
+  }
+
+
+  void PerfWatch::selectPerfSingleThread(int i_thread)
+  {
+	for (int ip=0; ip<my_papi.num_events; ip++) {
+		my_papi.accumu[ip] = my_papi.th_accumu[ip][i_thread];
+	}
+
+	m_count = llround(my_papi.th_v_sorted[0][i_thread]);
+	m_time = my_papi.th_v_sorted[1][i_thread];
+	m_flop = my_papi.th_v_sorted[2][i_thread];
+
+#ifdef DEBUG_PRINT_PAPI_THREADS
+    if (my_rank == 0) {
+    	fprintf(stderr, "\t <selectPerfSingleThread> [%s] i_thread=%d\n",
+			m_label.c_str(), i_thread);
+		for (int ip=0; ip<my_papi.num_events; ip++) {
+			fprintf(stderr, "\t\t i=%d [%8s] my_papi.accumu[i]=%llu \n",
+			ip, my_papi.s_sorted[ip].c_str(), my_papi.accumu[ip]);
+		}
+		fprintf(stderr, "\t\t m_time=%e, m_flop=%e, m_count=%lu\n",
+			m_time, m_flop, m_count );
+    }
+#endif
+  }
+
+
+  /// スレッド別詳細レポートを出力。
+  ///
+  ///   @param[in] fp           出力ファイルポインタ
+  ///   @param[in] rank_ID      出力対象プロセスのランク番号
+  ///
+  void PerfWatch::printDetailThreads(FILE* fp, int rank_ID)
+  {
+    double perf_rate, t0thread;
+	int i_fflush;
+	int i=rank_ID;
+	if(i<0 || i>num_process) return;
+
+    std::string unit;
+    int is_unit = statsSwitch();
+
+	if (is_unit < 2 && !m_in_parallel) {
+		//	if (my_rank == 0) {
+	   	//		fprintf(fp, "Label  %s%s\n", m_exclusive ? "" : "*", m_label.c_str());
+		//		fprintf(fp, "\tthread performance is not available for this section.\n");
+		//	}
+		return;
+	}
+
+    if (is_unit == 0) unit = "B/sec";		// 0: user set bandwidth
+    if (is_unit == 1) unit = "Flops";		// 1: user set flop counts
+    if (is_unit == 2) unit = "B/sec(HWPC)";		// 2: HWPC measured bandwidth
+    if (is_unit == 3) unit = "Flops(HWPC)";		// 3: HWPC measured flop counts
+    if (is_unit == 4) unit = "vector%(HWPC)";	// 4: HWPC measured vector %
+    if (is_unit == 5) unit = "L1L2hit%(HWPC)";	// 5: HWPC measured cache hit%
+    if (is_unit == 6) unit = "Ins/sec(HWPC)";	// 6: HWPC measured instructions
+
+	if (my_rank == 0 && is_unit < 2) {
+	    fprintf(fp, "Label  %s%s\n", m_exclusive ? "" : "*", m_label.c_str());
+    	fprintf(fp, "Thread  call  time[s]  ti/t0[%%]  operations  performance\n");
+	} else 
+	if (my_rank == 0 && is_unit >= 2) {
+	    fprintf(fp, "Label  %s%s\n", m_exclusive ? "" : "*", m_label.c_str());
+
+		std::string s;
+		int ip, jp, kp;
+    	fprintf(fp, "Thread  call  time[s]  ti/t0[%%]");
+		for(int i=0; i<my_papi.num_sorted; i++) {
+			kp = my_papi.s_sorted[i].find_last_of(':');
+			if ( kp < 0) {
+				s = my_papi.s_sorted[i];
+			} else {
+				s = my_papi.s_sorted[i].substr(kp+1);
+			}
+			fprintf (fp, " %10.10s", s.c_str() );
+		} fprintf (fp, "\n");
+	}	// end of if (my_rank == 0) 
+
+    t0thread = 1.0;
+	for (int j=0; j<num_threads; j++)
+	{
+		PerfWatch::selectPerfSingleThread(j);
+		PerfWatch::gatherHWPC();
+		PerfWatch::gather();
+
+		if (j == 0) t0thread = m_timeArray[i];
+
+		if (my_rank == 0 && is_unit < 2) {
+		perf_rate = (m_countArray[i]==0) ? 0.0 : m_flopArray[i]/m_timeArray[i];
+		fprintf(fp, " %3d%8ld  %9.3e  %5.1f  %9.3e  %9.3e %s\n",
+			j,
+			m_countArray[i], // コール回数
+			m_timeArray[i],  // 時間
+			100*m_timeArray[i]/t0thread, // スレッド0に対するスレッドjの計算時間の比率
+			m_flopArray[i],  // 演算数
+			perf_rate,       // スピード　Bytes/sec or Flops
+			unit.c_str()     // スピードの単位
+			);
+			(void) fflush(fp);
+		}
+		else 
+		if (my_rank == 0 && is_unit >= 2) {
+		fprintf(fp, " %3d%8ld  %9.3e  %5.1f",
+			j,
+			m_countArray[i], // コール回数
+			m_timeArray[i],  // 時間
+			100*m_timeArray[i]/t0thread);
+
+			for(int n=0; n<my_papi.num_sorted; n++) {
+			fprintf (fp, "  %9.3e", fabs(m_sortedArrayHWPC[i*my_papi.num_sorted + n]));
+			}
+			fprintf (fp, "\n");
+			(void) fflush(fp);
+		}	// end of if (my_rank == 0) 
+		#pragma omp barrier
+	}	// end of for (int j=0; j<num_threads; j++)
+  }
+
+
+
   /// エラーメッセージ出力.
   ///
   ///   @param[in] func メソッド名
@@ -766,7 +969,7 @@ namespace pm_lib {
   void PerfWatch::printError(const char* func, const char* fmt, ...)
   {
     if (my_rank == 0) {
-      fprintf(stderr, "*** Error. PerfWatch::%s [%s] ",
+      fprintf(stderr, "*** PMlib Error. PerfWatch::%s [%s] ",
                       func, m_label.c_str());
       va_list ap;
       va_start(ap, fmt);
@@ -795,11 +998,11 @@ namespace pm_lib {
     num_process = nPEs;
     my_rank = my_rank_ID;
     num_threads = nTHREADs;
-#ifdef DEBUG_PRINT_WATCH
-    if (my_rank == 0) {
-    fprintf(stderr, "<PerfWatch::setProperties> [%s] id=%d, typeCalc=%d, nPEs=%d, my_rank_ID=%d, num_threads=%d, exclusive=%s\n",
-		label.c_str(), id, typeCalc, nPEs, my_rank_ID, num_threads, exclusive?"true":"false");
-    }
+	m_in_parallel = false;
+	my_thread = 0;
+#ifdef _OPENMP
+	m_in_parallel = omp_in_parallel();
+	my_thread = omp_get_thread_num();
 #endif
 
 #ifdef USE_PAPI
@@ -825,13 +1028,21 @@ namespace pm_lib {
       } else if ((s == "full")) {
         m_is_OTF = 2;
       }
-      #ifdef DEBUG_PRINT_WATCH
+      #ifdef DEBUG_PRINT_OTF
       if (my_rank == 0) {
 	    fprintf(stderr, "\t<getenv> OTF_TRACING=%s is provided.\n", c_env);
       }
       #endif
     }
+#endif
 
+#ifdef DEBUG_PRINT_WATCH
+    if (my_rank == 0) {
+    fprintf(stderr, "<PerfWatch::setProperties> [%s] id=%d, typeCalc=%d, nPEs=%d, my_rank_ID=%d, num_threads=%d, exclusive=%s\n",
+		label.c_str(), id, typeCalc, nPEs, my_rank_ID, num_threads, exclusive?"true":"false");
+    fprintf(stderr, "\t\t [%s] my_thread=%d, m_in_parallel=%s, &(papi)=%p, &(my_papi)=%p\n",
+		label.c_str(), my_thread, m_in_parallel?"true ":"false", &papi.num_events, &my_papi.num_events);
+    }
 #endif
   }
 
@@ -928,7 +1139,6 @@ namespace pm_lib {
   }
 
 
-
   /// 測定区間スタート.
   ///
   void PerfWatch::start()
@@ -951,69 +1161,23 @@ namespace pm_lib {
 		fprintf (stderr, "<PerfWatch::start> [%s] \n", m_label.c_str());
 #endif
 
-#ifdef USE_PAPI
-
 	if (m_is_first) {
 		my_papi = papi;
 		m_is_first = false;
-		for (int i=0; i<my_papi.num_events; i++){
-			my_papi.values[i] = 0;
-			my_papi.accumu[i] = 0;
-		}
 	}
+#ifdef USE_PAPI
 	for (int i=0; i<my_papi.num_events; i++){
 		my_papi.values[i] = 0;
 	}
+#endif
 
-	#ifdef DEBUG_PRINT_PAPI
-    if (my_rank == 0)
-		fprintf (stderr, "<PerfWatch::start> [%s] my_papi address=%p\n", m_label.c_str(), &my_papi);
-	#endif
-
-	// Updated 2017/11/28
-	//	Since PAPI_start()/stop() pair clears out the event counters,
-	//	we call my_papi_bind_read() to preserve HWPC events for inclusive sections.
-	#pragma omp parallel
-	{
-		struct pmlib_papi_chooser th_papi = my_papi;
-		int i_ret;
-
-		i_ret = my_papi_bind_read (th_papi.values, th_papi.num_events);
-		//	i_ret = my_papi_bind_start (th_papi.values, th_papi.num_events);
-
-		if ( i_ret != PAPI_OK ) {
-			int i_thread = omp_get_thread_num();
-			fprintf(stderr, "*** error. <my_papi_bind_read> code: %d, thread:%d\n", i_ret, i_thread);
-			//	fprintf(stderr, "*** error. <my_papi_bind_start> code: %d, thread:%d\n", i_ret, i_thread);
-			PM_Exit(0);
-		}
-
-		#ifdef DEBUG_PRINT_PAPI_THREADS
-		#pragma omp critical
-		{
-    		if (my_rank == 0) {
-			int i_thread = omp_get_thread_num();
-				fprintf (stderr, "\tthread:%d of %d, th_papi.values[*]: ", i_thread, num_threads);
-				for (int i=0; i<my_papi.num_events; i++) {
-				fprintf (stderr, "%llu, ", th_papi.values[i]);
-				}
-				fprintf (stderr, "\n");
-			}
-		}
-		#endif
-		#pragma omp critical
-		{
-			for (int i=0; i<my_papi.num_events; i++) {
-			my_papi.values[i] += th_papi.values[i];
-			}
-		}
-	}	// end of parallel region
-
-	for (int i=0; i<my_papi.num_events; i++) {
-		// save the average value of all threads
-		my_papi.values[i] = my_papi.values[i]/(double)num_threads;
+	if ( m_in_parallel ) {
+		// The threads are active and running in parallel region
+		startSectionParallel();
+	} else {
+		// The thread is running in serial region
+		startSectionSerial();
 	}
-#endif // USE_PAPI
 
 #ifdef USE_OTF
     if (m_is_OTF != 0) {
@@ -1022,6 +1186,92 @@ namespace pm_lib {
       my_otf_event_start(my_rank, m_startTime, m_id, is_unit);
 	}
 #endif
+  }
+
+
+  void PerfWatch::startSectionSerial()
+  {
+	//	startSectionSerial() :	Only the master thread is active and is running in serial region
+#ifdef DEBUG_PRINT_WATCH
+    if (my_rank == 0) fprintf (stderr, "\t <startSectionSerial> [%s]\n", m_label.c_str());
+#endif
+
+    int is_unit = statsSwitch();
+	if ( is_unit >= 2) {
+#ifdef USE_PAPI
+	#pragma omp parallel
+	{
+		//	parallel regionの全スレッドの処理
+		int i_thread = omp_get_thread_num();
+		struct pmlib_papi_chooser th_papi = my_papi;
+		int i_ret;
+
+		//	We call my_papi_bind_read() to preserve HWPC events for inclusive sections,
+		//	in stead of calling my_papi_bind_start() which clears out the event counters.
+		i_ret = my_papi_bind_read (th_papi.values, th_papi.num_events);
+		if ( i_ret != PAPI_OK ) {
+			fprintf(stderr, "*** error. <my_papi_bind_read> code: %d, thread:%d\n", i_ret, i_thread);
+			//	PM_Exit(0);
+		}
+		#ifdef DEBUG_PRINT_PAPI_THREADS
+		#pragma omp critical
+    	if (my_rank == 0) {
+			fprintf (stderr, "\t thread:%d of %d, th_papi.values[*]: ", i_thread, num_threads);
+			for (int i=0; i<my_papi.num_events; i++) { fprintf (stderr, "%llu, ", th_papi.values[i]); }
+			fprintf (stderr, "\n");
+		}
+		#endif
+
+		for (int i=0; i<my_papi.num_events; i++) {
+			my_papi.th_values[i][i_thread] = th_papi.values[i];
+		}
+	}	// end of #pragma omp parallel region
+#endif // USE_PAPI
+	} else {
+		;
+	}
+  }
+
+
+
+  void PerfWatch::startSectionParallel()
+  {
+	//	startSectionParallel() : All threads are active and running in parallel region
+
+	#ifdef DEBUG_PRINT_WATCH
+	if (my_rank == 0) fprintf (stderr, "\t<startSectionParallel> [%s] my_thread=%d\n", m_label.c_str(), my_thread);
+	#endif
+
+    int is_unit = statsSwitch();
+	if ( is_unit >= 2) {
+#ifdef USE_PAPI
+	struct pmlib_papi_chooser th_papi = my_papi;
+	int i_ret;
+
+	//	we call my_papi_bind_read() to preserve HWPC events for inclusive sections in stead of
+	//	calling my_papi_bind_start() which clears out the event counters.
+	i_ret = my_papi_bind_read (th_papi.values, th_papi.num_events);
+	if ( i_ret != PAPI_OK ) {
+		fprintf(stderr, "*** error. <my_papi_bind_read> code: %d, my_thread:%d\n", i_ret, my_thread);
+		//	PM_Exit(0);
+	}
+
+	//	parallel regionの内側で呼ばれた場合は、my_threadはスレッドIDの値を持つ
+	for (int i=0; i<my_papi.num_events; i++) {
+		my_papi.th_values[i][my_thread] = th_papi.values[i];
+	}
+	#ifdef DEBUG_PRINT_PAPI_THREADS
+	#pragma omp critical
+	if (my_rank == 0) {
+    	fprintf (stderr, "\t\t my_thread=%d th_values[*]: ", my_thread);
+		for (int i=0; i<my_papi.num_events; i++) { fprintf (stderr, "%llu, ", my_papi.th_values[i][my_thread] ); }
+		fprintf (stderr, "\n");
+	}
+	#endif
+#endif // USE_PAPI
+	} else {
+		;
+	}
 
   }
 
@@ -1031,62 +1281,20 @@ namespace pm_lib {
   ///   @param[in] flopPerTask     測定区間の計算量(演算量Flopまたは通信量Byte)
   ///   @param[in] iterationCount  計算量の乗数（反復回数）
   ///
-  ///   @note  計算量または通信量をユーザが引数で明示的に指定する場合は、
-  ///          そのボリュームは１区間１回あたりでflopPerTask*iterationCount
-  ///          として算出される。
-  ///          引数とは関係なくHWPC内部で自動計測する場合もある。
-  ///          レポート出力する情報の選択方法は以下の規則による。
+  ///   @note  引数はユーザ指定モードの場合にのみ利用され、計算量を
+  ///          １区間１回あたりでflopPerTask*iterationCount として算出する。\n
+  ///          HWPCによる自動算出モードでは引数は無視され、
+  ///          内部で自動計測するHWPC統計情報から計算量を決定決定する。\n
+  ///          レポート出力する情報の選択方法はPerfMonitor::stop()の規則による。\n
   ///
-    /*
-    *
-    出力レポートに表示される情報はモード・引数の組み合わせで決める
-    (A) ユーザ申告モード
-      - HWPC APIが利用できないシステムや環境変数HWPC_CHOOSERが指定
-        されていないジョブでは自動的にユーザ申告モードで実行される。
-      - ユーザ申告モードでは(1):setProperties() と(2):stop()への引数により
-        出力内容が決定、HWPC詳細レポートは出力されない。
-      - (1) ::setProperties(区間名, type, exclusive)の第2引数typeは
-        測定量のタイプを指定する。計算(CALC)タイプか通信(COMM)タイプか
-        の選択を行なう、ユーザ申告モードで有効な引数。
-      - (2) ::stop (区間名, fPT, iC)の第2引数fPTは測定量。
-        計算（浮動小数点演算）あるいは通信（MPI通信やメモリロードストア
-        などデータ移動)の量を数値や式で与える。
-
-        setProperties()  stop()
-        type引数         fP引数     基本・詳細レポート出力
-        ---------------------------------------------------------
-        CALC             指定あり   時間、fPT引数によるFlops
-        COMM             指定あり   時間、fPT引数によるByte/s
-        任意             指定なし   時間のみ
-
-    (B) HWPCによる自動算出モード
-      - HWPC/PAPIが利用可能なプラットフォームで利用できる
-      - 環境変数HWPC_CHOOSERの値によりユーザ申告値を用いるかPAPI情報を
-        用いるかを切り替える。(FLOPS| BANDWIDTH| VECTOR| CACHE)
-
-    ユーザ申告モードかHWPC自動算出モードかは、内部的に下記表の組み合わせ
-    で決定される。
-
-    環境変数     setProperties()の  stop()の
-    HWPC_CHOOSER    type引数        fP引数       基本・詳細レポート出力      HWPCレポート出力
-    ------------------------------------------------------------------------------------------
-	NONE (無指定)   CALC            指定値       時間、fP引数によるFlops	 なし
-	NONE (無指定)   COMM            指定値       時間、fP引数によるByte/s    なし
-    FLOPS           無視            無視         時間、HWPC自動計測Flops     FLOPSに関連するHWPC統計情報
-    BANDWIDTH       無視            無視         時間、HWPC自動計測Byte/s    BANDWIDTHに関連するHWPC統計情報
-    VECTOR          無視            無視         時間、HWPC自動計測SIMD率    VECTORに関連するHWPC統計情報
-    CACHE           無視            無視         時間、HWPC自動計測L1$,L2$   CACHEに関連するHWPC統計情報
-    CYCLE           無視            無視         時間、HWPC自動計測cycle     CYCLEに関連するHWPC統計情報
-     */
   void PerfWatch::stop(double flopPerTask, unsigned iterationCount)
   {
     if (!(m_is_healthy)) {
-      printError("stop()",  "PMlib ignores this section.\n");
-      m_is_healthy=false;
+      printError("stop()",  "Section [%s] is not healthy. PMlib ignores this section.\n", m_label.c_str());
       return;
     }
     if (!m_started) {
-      printError("PerfWatch::stop()",  "not started\n");
+      printError("PerfWatch::stop()",  "Section [%s] has not been started\n", m_label.c_str());
       m_is_healthy=false;
       return;
     }
@@ -1097,119 +1305,32 @@ namespace pm_lib {
     m_started = false;
     if (m_exclusive) ExclusiveStarted = false;
 
-
-#ifdef USE_PAPI
-	if (my_papi.num_events > 0) {
-	#ifdef DEBUG_PRINT_PAPI
-		if (my_rank == 0) {
-		fprintf (stderr, "<PerfWatch::stop> sum up HWPC event values.\n");
-		fprintf (stderr, "\tBefore reading the new event values:\n");
-		for (int i=0; i<my_papi.num_events; i++) {
-			fprintf (stderr, "\t i=%d, my_papi.values[i]=%llu, my_papi.accumu[i]=%llu\n",
-						i, my_papi.values[i], my_papi.accumu[i]);
-			}
+	if ( m_in_parallel ) {
+		// The threads are active and running in parallel region
+		stopSectionParallel(flopPerTask, iterationCount);
+		my_papi.th_v_sorted[0][my_thread] = (double)m_count;
+		my_papi.th_v_sorted[1][my_thread] = m_time;
+		my_papi.th_v_sorted[2][my_thread] = m_flop;
+	} else {
+		// The thread is running in serial region
+		stopSectionSerial(flopPerTask, iterationCount);
+		for (int j=0; j<num_threads; j++) {
+			my_papi.th_v_sorted[0][j] = (double)m_count;
+			my_papi.th_v_sorted[1][j] = m_time;
+			my_papi.th_v_sorted[2][j] = m_flop;
 		}
-	#endif
-
-	// OpenMP reduction clause in C++ is only supported by OpenMP 4.0 and newer
-	// Thus we apply rather in efficient code below.
-
-	long long sum_th[Max_chooser_events];
-	for (int i=0; i<my_papi.num_events; i++) {
-		sum_th[i]=0;
 	}
-	#pragma omp parallel shared(sum_th)
-	{
-		struct pmlib_papi_chooser th_papi = my_papi;
-		int i_ret;
 
-	// Updated 2017/11/28
-    // PMlib now collects HWPC in the inclusive sections as well as the exclusive sections.
-	//	Since PAPI_start()/stop() pair clears out the event counters,
-	//	we call my_papi_bind_read() to preserve HWPC events for inclusive sections.
-
-		i_ret = my_papi_bind_read (th_papi.values, th_papi.num_events);
-		//	i_ret = my_papi_bind_stop (th_papi.values, th_papi.num_events);
-
-		if ( i_ret != PAPI_OK ) {
-			int i_thread = omp_get_thread_num();
-			printError("stop()",  "<my_papi_bind_read> code: %d, i_thread:%d\n", i_ret, i_thread);
-			//	printError("stop()",  "<my_papi_bind_stop> code: %d, i_thread:%d\n", i_ret, i_thread);
-		}
-
-		#ifdef DEBUG_PRINT_PAPI_THREADS
-    	if (my_rank == 0) {
-			#pragma omp critical
-			{
-			int i_thread = omp_get_thread_num();
-				fprintf (stderr, "\tthread:%d, th_papi.values[*]: ", i_thread);
-				for (int i=0; i<my_papi.num_events; i++) {
-				fprintf (stderr, "%llu, ", th_papi.values[i]);
-				}
-				fprintf (stderr, "\n");
-			}
-		}
-		#endif
-
-		#pragma omp critical
-		{
-			for (int i=0; i<my_papi.num_events; i++) {
-			sum_th[i] += th_papi.values[i] - my_papi.values[i];
-			}
-			#ifdef DEBUG_PRINT_PAPI_THREADS
-    		if (my_rank == 0) {
-			int i_thread = omp_get_thread_num();
-				fprintf (stderr, "\tthread:%d, sum_th[*]: ", i_thread);
-				for (int i=0; i<my_papi.num_events; i++) {
-				fprintf (stderr, "%llu, ", sum_th[i]);
-				}
-				fprintf (stderr, "\n");
-			}
-			#endif
-		}
-
-	} // end of #pragma omp parallel region
-
-	for (int i=0; i<my_papi.num_events; i++) {
-		my_papi.accumu[i] += sum_th[i];
-	}
-	#ifdef DEBUG_PRINT_PAPI
-    if (my_rank == 0) {
-		fprintf (stderr, "\t num_events=%d, sum of %d threads\n", my_papi.num_events, num_threads);
-		for (int i=0; i<my_papi.num_events; i++) {
-			fprintf (stderr, "\t my_papi.values[%d]=%12llu, my_papi.accume[%d]=%12llu\n",
-				i, my_papi.values[i], i, my_papi.accumu[i]);
-		}
+	#ifdef DEBUG_PRINT_WATCH
+	if (my_rank == 0) {
+		fprintf (stderr, "<PerfWatch::stop> [%s] my_thread=%d, fPT=%e, itC=%u, m_count=%ld, m_time=%f, m_flop=%e\n",
+			m_label.c_str(), my_thread, flopPerTask, iterationCount, m_count, m_time, m_flop);
 	}
 	#endif
-
-	}	// end of if (my_papi.num_events > 0) block
-#endif
-
-
-    int is_unit = statsSwitch();
-	if ( (is_unit == 0) || (is_unit == 1) ) {
-		// ユーザが引数で指定した計算量
-		m_flop += flopPerTask * (double)iterationCount;
-	#ifdef DEBUG_PRINT_PAPI
-    if (my_rank == 0) {
-		fprintf (stderr, "\t Explicit mode: stop() uses fPT=%e\n", flopPerTask);
-    }
-	#endif
-	}
-
-#ifdef DEBUG_PRINT_WATCH
-    if (my_rank == 0) {
-		fprintf (stderr, "<PerfWatch::stop> [%s] fPT=%e, itC=%u, m_time=%f, m_flop=%e\n"
-			, m_label.c_str(), flopPerTask, iterationCount, m_time, m_flop);
-    }
-#endif
-
-
 
 #ifdef USE_OTF
+    int is_unit = statsSwitch();
 	double w=0.0;
-
 	if (m_is_OTF == 0) {
 		// OTFファイル出力なし
 		;
@@ -1233,16 +1354,106 @@ namespace pm_lib {
 		my_otf_event_stop(my_rank, m_stopTime, m_id, is_unit, w);
 	}
 
-#ifdef DEBUG_PRINT_WATCH
+#ifdef DEBUG_PRINT_OTF
     if (my_rank == 0) {
-		fprintf (stderr, "\t[%s] w=%e, m_time=%f, m_flop=%e \n"
+		fprintf (stderr, "\t <PerfWatch::stop> OTF [%s] w=%e, m_time=%f, m_flop=%e \n"
 				, m_label.c_str(), w, m_time, m_flop );
     }
 #endif
-#endif
-
+#endif	// end of #ifdef USE_OTF
   }
 
+
+  void PerfWatch::stopSectionSerial(double flopPerTask, unsigned iterationCount)
+  {
+	//	Only the master thread is active and is running in serial region
+
+    int is_unit = statsSwitch();
+	if ( is_unit >= 2) {
+#ifdef USE_PAPI
+	if (my_papi.num_events > 0) {
+	#pragma omp parallel 
+	{
+		int i_thread = omp_get_thread_num();
+		struct pmlib_papi_chooser th_papi = my_papi;
+		int i_ret;
+
+		i_ret = my_papi_bind_read (th_papi.values, th_papi.num_events);
+		if ( i_ret != PAPI_OK ) {
+			printError("stop()",  "<my_papi_bind_read> code: %d, i_thread:%d\n", i_ret, i_thread);
+		}
+
+		for (int i=0; i<my_papi.num_events; i++) {
+			my_papi.th_accumu[i][i_thread] += (th_papi.values[i] - my_papi.th_values[i][i_thread]);
+		}
+	}	// end of #pragma omp parallel region
+
+	#ifdef DEBUG_PRINT_PAPI_THREADS
+		if (my_rank == 0) {
+		for (int i=0; i<my_papi.num_events; i++) {
+			fprintf (stderr, "\t<stopSectionSerial> [%s] event %d:\n", m_label.c_str(), i);
+			for (int j=0; j<num_threads; j++) {
+				fprintf (stderr, "\t thread#j=%d, my_papi.th_accumu[i][j]=%llu\n",
+					j, my_papi.th_accumu[i][j]);
+			}
+		}
+		}
+	#endif
+	}	// end of if (my_papi.num_events > 0) block
+#endif	// end of #ifdef USE_PAPI
+	} else
+	if ( (is_unit == 0) || (is_unit == 1) ) {
+		// ユーザが引数で指定した計算量
+		m_flop += flopPerTask * (double)iterationCount;
+		#ifdef DEBUG_PRINT_WATCH
+    	if (my_rank == 0) fprintf (stderr, "\t<stopSectionSerial> Explicit mode: my_thread=%d, m_flop=%e\n", my_thread, m_flop);
+		#endif
+	}
+  }
+
+
+  void PerfWatch::stopSectionParallel(double flopPerTask, unsigned iterationCount)
+  {
+	//	All threads are active and running inside parallel region
+
+    int is_unit = statsSwitch();
+	if ( is_unit >= 2) {
+#ifdef USE_PAPI
+	if (my_papi.num_events > 0) {
+	struct pmlib_papi_chooser th_papi = my_papi;
+	int i_ret;
+
+	i_ret = my_papi_bind_read (th_papi.values, th_papi.num_events);
+	if ( i_ret != PAPI_OK ) {
+		printError("stop()",  "<my_papi_bind_read> code: %d, my_thread:%d\n", i_ret, my_thread);
+	}
+
+	for (int i=0; i<my_papi.num_events; i++) {
+		my_papi.th_accumu[i][my_thread] += (th_papi.values[i] - my_papi.th_values[i][my_thread]);
+	}
+
+	#ifdef DEBUG_PRINT_WATCH
+	//	#pragma omp critical
+	if (my_rank == 0) {
+		#ifdef DEBUG_PRINT_PAPI_THREADS
+		for (int i=0; i<my_papi.num_events; i++) {
+			fprintf (stderr, "\t<stopSectionParallel> event i=%d, my_thread j=%d, my_papi.th_accumu[i][j]=%llu\n",
+					i, my_thread, my_papi.th_accumu[i][my_thread]);
+		}
+		#endif
+	}
+	#endif
+	}	// end of if (my_papi.num_events > 0) {
+#endif	// end of #ifdef USE_PAPI
+	} else
+	if ( (is_unit == 0) || (is_unit == 1) ) {
+		// ユーザが引数で指定した計算量
+		m_flop += flopPerTask * (double)iterationCount;
+		#ifdef DEBUG_PRINT_WATCH
+    	if (my_rank == 0) fprintf (stderr, "\t<stopSectionParallel> Explicit mode: my_thread=%d, m_flop=%e\n", my_thread, m_flop);
+		#endif
+	}
+  }
 
 
   /// 測定区間リセット

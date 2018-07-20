@@ -49,6 +49,15 @@ void PerfWatch::initializeHWPC ()
 {
 #include <string>
 
+	m_in_parallel = false;
+	my_thread = 0;
+	#ifdef _OPENMP
+	m_in_parallel = omp_in_parallel();
+	my_thread = omp_get_thread_num();
+	#endif
+
+	#pragma omp master
+	{
 	for (int i=0; i<Max_hwpc_output_group; i++) {
 		hwpc_group.number[i] = 0;
 		hwpc_group.index[i] = -999999;
@@ -59,30 +68,40 @@ void PerfWatch::initializeHWPC ()
 		papi.events[i] = 0;
 		papi.values[i] = 0;
 		papi.accumu[i] = 0;
+		papi.v_sorted[i] = 0;
 		}
+	for (int i=0; i<Max_chooser_events; i++){
+		for (int j=0; i<Max_nthreads; i++){
+			papi.th_values[i][j] = 0;
+			papi.th_accumu[i][j] = 0;
+			papi.th_v_sorted[i][j] = 0;
+			}
+		}
+	} // #pragma omp master
+	#pragma omp barrier
 
 	read_cpu_clock_freq(); /// API for reading processor clock frequency.
 
 #ifdef USE_PAPI
 	int i_papi;
+	#pragma omp master
+	{
 	i_papi = PAPI_library_init( PAPI_VER_CURRENT );
 	if (i_papi != PAPI_VER_CURRENT ) {
-		fprintf (stderr, "*** error. <PAPI_library_init> return code: %d\n", i_papi);
-		fprintf (stderr, "\t It should match %lu\n", (unsigned long)PAPI_VER_CURRENT);
+		fprintf (stderr, "*** error. <PAPI_library_init> code: %d\n", i_papi);
+		fprintf (stderr, "\t Check if correct version of PAPI library is linked.");
 		PM_Exit(0);
-		return;
+		//	return;
 		}
+	} // #pragma omp master
 
 	createPapiCounterList ();
 
 	#ifdef DEBUG_PRINT_PAPI
-	int my_id;
-	MPI_Comm_rank(MPI_COMM_WORLD, &my_id);
-	int *ip_debug;
-	ip_debug=&papi.num_events;
-	if (my_id == 0) {
-		fprintf(stderr, "<initializeHWPC> papi.num_events=%d, ip_debug=%p\n",
-			papi.num_events, ip_debug );
+	if (my_rank == 0 && my_thread == 0) {
+		fprintf(stderr, "<initializeHWPC> papi.num_events=%d, address=%p\n",
+			papi.num_events, &papi.num_events );
+		fprintf(stderr, "\t memo: struct papi is shared across threads.\n");
 	}
 	#endif
 
@@ -92,24 +111,44 @@ void PerfWatch::initializeHWPC ()
 		PM_Exit(0);
 		return;
 		}
+
+	#pragma omp barrier
+	// In general the arguments to <my_papi_*> should be thread private.
+	// For APIs whose arguments do not change,  we use shared object.
+
+	if (m_in_parallel) {
+	int t_papi;
+	t_papi = my_papi_add_events (papi.events, papi.num_events);
+	if ( t_papi != PAPI_OK ) {
+		fprintf(stderr, "*** error. <initializeHWPC> <my_papi_add_events> code: %d\n"
+			"\n\t most likely un-supported HWPC PAPI combination.\n", t_papi);
+		papi.num_events = 0;
+		PM_Exit(0);
+		}
+	t_papi = my_papi_bind_start (papi.values, papi.num_events);
+	if ( t_papi != PAPI_OK ) {
+		fprintf(stderr, "*** error. <initializeHWPC> <my_papi_bind_start> code: %d\n", t_papi);
+		PM_Exit(0);
+		}
+
+	} else {
 	#pragma omp parallel
 	{
 	int t_papi;
 	t_papi = my_papi_add_events (papi.events, papi.num_events);
 	if ( t_papi != PAPI_OK ) {
 		fprintf(stderr, "*** error. <initializeHWPC> <my_papi_add_events> code: %d\n"
-			"\t most likely un-supported HWPC PAPI combination. HWPC is terminated.\n" , t_papi);
+			"\n\t most likely un-supported HWPC PAPI combination.\n", t_papi);
 		papi.num_events = 0;
 		PM_Exit(0);
 		}
-	// In general the arguments to <my_papi_*> should be thread private
-	// Here we use shared object, since <> does not change its content
 	t_papi = my_papi_bind_start (papi.values, papi.num_events);
 	if ( t_papi != PAPI_OK ) {
 		fprintf(stderr, "*** error. <initializeHWPC> <my_papi_bind_start> code: %d\n", t_papi);
 		PM_Exit(0);
 		}
-	}
+	} // end of #pragma omp parallel
+	} // end of if (m_in_parallel)
 
 #endif // USE_PAPI
 }
@@ -129,12 +168,11 @@ void PerfWatch::createPapiCounterList ()
 	const PAPI_hw_info_t *hwinfo = NULL;
 	std::string s_model_string;
 	using namespace std;
-	int my_id;
 	int i_papi;
 
-	MPI_Comm_rank(MPI_COMM_WORLD, &my_id);
 	#ifdef DEBUG_PRINT_PAPI
-	if (my_id == 0) {
+	#pragma omp barrier
+	if (my_rank == 0 && my_thread == 0) {
 		fprintf(stderr, " <createPapiCounterList> starts\n" );
 	}
 	#endif
@@ -548,7 +586,7 @@ void PerfWatch::createPapiCounterList ()
 // end of hwpc_group selection
 
 	#ifdef DEBUG_PRINT_PAPI
-	if (my_id == 0) {
+	if (my_rank == 0 && my_thread == 0) {
 		fprintf(stderr, " s_model_string=%s\n", s_model_string.c_str());
 
 		fprintf(stderr, " platform: %s\n", hwpc_group.platform.c_str());
@@ -848,8 +886,8 @@ void PerfWatch::sortPapiCounterList (void)
 		ip = hwpc_group.index[I_cycle];
 		jp=0;
 
-		//	papi.s_name[ip] = "TOT_CYC"; papi.events[ip] = PAPI_TOT_CYC; ip++;
-		//	papi.s_name[ip] = "TOT_INS"; papi.events[ip] = PAPI_TOT_INS; ip++;
+		//	events[0] = PAPI_TOT_CYC;
+		//	events[1] = PAPI_TOT_INS;
 
 		for(int i=0; i<hwpc_group.number[I_cycle] ; i++)
 		{
@@ -862,9 +900,19 @@ void PerfWatch::sortPapiCounterList (void)
 		jp++;
 	}
 
-
 // count the number of reported events and derived matrices
 	my_papi.num_sorted = jp;
+
+#ifdef DEBUG_PRINT_PAPI
+	if (my_rank == 0) {
+		fprintf(stderr, "\t<sortPapiCounterList> [%15s], m_time=%e\n",
+			m_label.c_str(), m_time );
+		for (int i = 0; i < my_papi.num_sorted; i++) {
+			fprintf(stderr, "\t\t i=%d [%8s] v_sorted[i]=%e \n",
+			i, my_papi.s_sorted[i].c_str(), my_papi.v_sorted[i]);
+		}
+	}
+#endif
 
 #endif // USE_PAPI
 }
@@ -975,29 +1023,35 @@ void PerfWatch::outputPapiCounterLegend (FILE* fp)
 	fprintf(fp, "\n\tDetected CPU architecture:\n" );
 	fprintf(fp, "\t\t%s\n", hwinfo->vendor_string);
 	fprintf(fp, "\t\t%s\n", hwinfo->model_string);
-	fprintf(fp, "\t\tThe available PMlib HWPC events for this CPU are shown below.\n");
+	fprintf(fp, "\t\tThe available HWPC_CHOOSER values and their HWPC events for this CPU are shown below.\n");
 	fprintf(fp, "\n");
-	fprintf(fp, "\tHWPC events legend: \n");
-// FLOPS
+
+// CYCLES
+	fprintf(fp, "\tHWPC_CHOOSER=CYCLE:\n");
 	fprintf(fp, "\t\tTOT_CYC:   total cycles\n");
 	fprintf(fp, "\t\tTOT_INS:   total instructions\n");
 	fprintf(fp, "\t\t[Ins/cyc]: performed instructions per machine clock cycle\n");
 
+// FLOPS
+	fprintf(fp, "\tHWPC_CHOOSER=FLOPS:\n");
 	if (hwpc_group.platform == "Xeon" ) {
 		if (hwpc_group.i_platform != 3 ) {
 	fprintf(fp, "\t\tSP_OPS:    single precision floating point operations\n");
 	fprintf(fp, "\t\tDP_OPS:    double precision floating point operations\n");
 	fprintf(fp, "\t\t[Flops]:   floating point operations per second \n");
+		} else {
+	fprintf(fp, "\t\t* Haswell processor does not have floating point operation counters,\n");
+	fprintf(fp, "\t\t* so PMlib does not produce HWPC report for FLOPS and VECTOR groups.\n");
 		}
 	}
 	if (hwpc_group.platform == "SPARC64" ) {
 	fprintf(fp, "\t\tFP_OPS:    floating point operations\n");
 	fprintf(fp, "\t\t[Flops]:   floating point operations per second \n");
 	}
-	fprintf(fp, "\n");
 
 
 // BANDWIDTH
+	fprintf(fp, "\tHWPC_CHOOSER=BANDWIDTH:\n");
 	if (hwpc_group.platform == "Xeon" ) {
 	fprintf(fp, "\t\tLOAD_INS:  memory load instructions\n");
 	fprintf(fp, "\t\tSTORE_INS: memory store instructions\n");
@@ -1019,9 +1073,9 @@ void PerfWatch::outputPapiCounterLegend (FILE* fp)
 	fprintf(fp, "\t\tL2_WB_PF:  writeback by prefetch L2 cache misses \n");
 	fprintf(fp, "\t\t[Mem B/s]: Memory bandwidth responding to demand read, prefetch and writeback reaching memory\n");
 	}
-	fprintf(fp, "\n");
 
 // VECTOR
+	fprintf(fp, "\tHWPC_CHOOSER=VECTOR:\n");
 	if (hwpc_group.platform == "Xeon" ) {
 		if (hwpc_group.i_platform != 3 ) {
 	fprintf(fp, "\t\tSP_SINGLE: single precision f.p. scalar instructions\n");
@@ -1035,6 +1089,9 @@ void PerfWatch::outputPapiCounterLegend (FILE* fp)
 	fprintf(fp, "\t\t[Total_FPs]: floating point operations as the sum of instructions*width \n");
 	fprintf(fp, "\t\t[Flops]:    floating point operations per second \n");
 	fprintf(fp, "\t\t[Vector %]: percentage of vectorized f.p. operations\n");
+		} else {
+	fprintf(fp, "\t\t Haswell processor does not have floating point operation counters,\n");
+	fprintf(fp, "\t\t so PMlib does not produce full HWPC report for FLOPS and VECTOR groups.\n");
 		}
 	}
 	if (hwpc_group.platform == "SPARC64" ) {
@@ -1055,9 +1112,9 @@ void PerfWatch::outputPapiCounterLegend (FILE* fp)
 	fprintf(fp, "\t\t[Flops]:    floating point operations per second \n");
 	fprintf(fp, "\t\t[Vector %]: percentage of vectorized f.p. operations\n");
 	}
-	fprintf(fp, "\n");
 
 // CACHE
+	fprintf(fp, "\tHWPC_CHOOSER=CACHE:\n");
 	if (hwpc_group.platform == "Xeon" ) {
 	fprintf(fp, "\t\tL1_HIT:    L1 data cache hits\n");
 	fprintf(fp, "\t\tLFB_HIT:   Cache Line Fill Buffer hits\n");
@@ -1076,17 +1133,14 @@ void PerfWatch::outputPapiCounterLegend (FILE* fp)
 	}
 	fprintf(fp, "\t\t[L2$ hit%]: data access hit(%) in L2 cache\n");
 	fprintf(fp, "\t\t[L1L2hit%]: sum of hit(%) in L1 and L2 cache\n");
-	fprintf(fp, "\n");
 
 // remarks
+	fprintf(fp, "\n");
 	fprintf(fp, "\tRemarks.\n");
 	fprintf(fp, "\t\t Symbols represent HWPC (hardware performance counter) native and derived events\n");
 	fprintf(fp, "\t\t Symbols in [] such as [Ins/cyc] are calculated statistics in shown unit.\n");
+
 	if (hwpc_group.platform == "Xeon" ) {
-		if (hwpc_group.i_platform == 3 ) {
-	fprintf(fp, "\t\t Haswell processor does not have floating point operation counters,\n");
-	fprintf(fp, "\t\t so PMlib does not produce full HWPC report for FLOPS and VECTOR groups.\n");
-		}
 	fprintf(fp, "\t\t The memory bandwidth is based on uncore events, not on memory controller information, \n");
 	fprintf(fp, "\t\t and is calculated as the sum of demand read and prefetch requests reaching to memory.\n");
 	fprintf(fp, "\t\t The symbols L3 cache and LLC both refer to the same Last Level Cache.\n");

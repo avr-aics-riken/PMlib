@@ -39,24 +39,23 @@ namespace pm_lib {
   ///
   /// @note 測定区間数 m_nWatch は不足すると動的に増えていく
   ///
-  void PerfMonitor::initialize (int init_nWatch)
+  void PerfMonitor::initialize (int inn)
   {
     char* cp_env;
     std::string s;
 
-    m_watchArray = new PerfWatch[init_nWatch];
-    m_gathered = false;
-    m_nWatch = 0 ;
-    m_order = NULL;
-    researved_nWatch = init_nWatch;
+	is_PMlib_enabled = true;
+    cp_env = std::getenv("BYPASS_PMLIB");
+    if (cp_env == NULL) {
+		is_PMlib_enabled = true;
+    } else {
+		is_PMlib_enabled = false;
+	}
+    if (!is_PMlib_enabled) return;
+    init_nWatch = inn;
+
     (void) MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
     (void) MPI_Comm_size(MPI_COMM_WORLD, &num_process);
-#ifdef DEBUG_PRINT_MONITOR
-    //	fprintf(stderr, "<initialize> my_rank=%d , num_process=%d\n", my_rank, num_process );
-    //	(void) MPI_Barrier(MPI_COMM_WORLD);
-    //	(void) MPI_Finalize();
-	//	exit(1);
-#endif
 
 	#ifdef _OPENMP
     //	cp_env = std::getenv("OMP_NUM_THREADS");
@@ -115,7 +114,6 @@ namespace pm_lib {
 		}
 	}
 
-
     // Start m_watchArray[0] instance
     // m_watchArray[] は PerfWatch classである(PerfMonitorではない)ことに留意
     // PerfWatchのインスタンスは全部で m_nWatch 生成される
@@ -124,16 +122,22 @@ namespace pm_lib {
 
     std::string label;
     label="Root Section";	// label="Total excution time";
-#ifdef DEBUG_PRINT_MONITOR
-      fprintf(stderr, "<initialize> [%s] called for my_rank=%d \n", label.c_str(), my_rank );
+	#ifdef DEBUG_PRINT_MONITOR
     if (my_rank == 0) {
-      fprintf(stderr, "<initialize> m_watchArray[0] instance [%s] is set [%s]\n", label.c_str(), env_str_hwpc.c_str());
+      fprintf(stderr, "<initialize> [%s] section as [%s] num_process=%d, num_threads=%d\n",
+		label.c_str(), env_str_hwpc.c_str(), num_process, num_threads);
     }
-#endif
+	#endif
+
+	// An object created by "new" operator can be accessed using pointer, not name.
+    m_watchArray = new PerfWatch[init_nWatch];
+    m_gathered = false;
+    m_nWatch = 0 ;
+    m_order = NULL;
+	reserved_nWatch = init_nWatch;
 
     m_watchArray[0].initializeHWPC();
-    int id = add_perf_label(label);	// The "Root Section" has id=0
-    m_watchArray[id] = m_watchArray[0];
+    int id = add_perf_label(label);	// id for "Root Section" should be 0
     m_nWatch++;
     m_watchArray[0].setProperties(label, id, CALC, num_process, my_rank, num_threads, false);
 
@@ -154,6 +158,8 @@ namespace pm_lib {
   void PerfMonitor::setProperties(const std::string& label, Type type, bool exclusive)
   {
 
+    if (!is_PMlib_enabled) return;
+
     if (label.empty()) {
       printDiag("setProperties()",  "label is blank. Ignoring this call.\n");
       return;
@@ -161,24 +167,46 @@ namespace pm_lib {
 
     int id = add_perf_label(label);
     if (m_nWatch < 0) {
-      printDiag("setProperties()", "m_nWatch=%d, id=%d\n", m_nWatch, id);
-      printDiag("setProperties()", "This may be an internal bug.\n");
+      printDiag("setProperties()", "m_nWatch=%d, id=%d. PMlib internal bug.\n",
+		m_nWatch, id);
       PM_Exit(0);
       //	return;
     }
 
-    m_nWatch++;
-    if (m_nWatch > researved_nWatch) {
-      PerfWatch* watch_more = new PerfWatch[2*researved_nWatch ];
-      for (int i = 0; i < researved_nWatch; i++) {
+//
+// Move the existing PerfWatch class storage into the new address
+//
+    //	if (short of memory) {
+    if ((m_nWatch+1) >= reserved_nWatch) {
+
+      reserved_nWatch = m_nWatch + init_nWatch;
+      PerfWatch* watch_more = new PerfWatch[reserved_nWatch];
+      if (watch_more == NULL) {
+        printDiag("setProperties()", "memory allocation failed. section [%s] is ignored.\n", label.c_str());
+        reserved_nWatch = m_nWatch;
+        return;
+      }
+
+      for (int i = 0; i < m_nWatch; i++) {
           watch_more[i] = m_watchArray[i];
       }
+
       delete [] m_watchArray;
+      m_watchArray = NULL;
       m_watchArray = watch_more;
       watch_more = NULL;
-      researved_nWatch = 2*researved_nWatch;
     }
+
+    m_nWatch++;
     m_watchArray[id].setProperties(label, id, type, num_process, my_rank, num_threads, exclusive);
+
+    #ifdef DEBUG_PRINT_MONITOR
+    if (my_rank == 0) {
+	  int i_thread = omp_get_thread_num();
+      fprintf(stderr, "<setProperties> [%s] m_nWatch=%d id=%d thread=%d\n", label.c_str(), m_nWatch, id, i_thread);
+       //	check_all_perf_label();
+    }
+    #endif
 
   }
 
@@ -192,6 +220,8 @@ namespace pm_lib {
   ///
   void PerfMonitor::setParallelMode(const std::string& p_mode, const int n_thread, const int n_proc)
   {
+    if (!is_PMlib_enabled) return;
+
     parallel_mode = p_mode;
     if ((n_thread != num_threads) || (n_proc != num_process)) {
       if (my_rank == 0) {
@@ -211,6 +241,8 @@ namespace pm_lib {
   ///
   void PerfMonitor::start (const std::string& label)
   {
+    if (!is_PMlib_enabled) return;
+
     int id;
     if (label.empty()) {
       printDiag("start()",  "label is blank. Ignored the call.\n");
@@ -240,9 +272,12 @@ namespace pm_lib {
   ///   @param[in] flopPerTask 測定区間の計算量(演算量Flopまたは通信量Byte):省略値0
   ///   @param[in] iterationCount  計算量の乗数（反復回数）:省略値1
   ///
-  ///   @note  引数とレポート出力情報の関連はPerfWatch::stop()に詳しく説明されている。
+  ///   @note  引数とレポート出力情報の関連は PerfMonitor.h に詳しく説明されている。
+  ///
   void PerfMonitor::stop(const std::string& label, double flopPerTask, unsigned iterationCount)
   {
+    if (!is_PMlib_enabled) return;
+
     int id;
     if (label.empty()) {
       printDiag("stop()",  "label is blank. Ignored the call.\n");
@@ -271,6 +306,8 @@ namespace pm_lib {
   ///
   void PerfMonitor::reset (const std::string& label)
   {
+    if (!is_PMlib_enabled) return;
+
     int id;
     if (label.empty()) {
       printDiag("reset()",  "label is blank. Ignored the call.\n");
@@ -298,6 +335,8 @@ namespace pm_lib {
   ///
   void PerfMonitor::resetAll (void)
   {
+    if (!is_PMlib_enabled) return;
+
     for (int i=0; i<m_nWatch; i++) {
       m_watchArray[i].reset();
     }
@@ -320,23 +359,58 @@ namespace pm_lib {
   }
 
 
-  /// 全プロセスの測定結果をマスタープロセス(0)に集約.
+  /// 全プロセスの測定結果、全スレッドの測定結果を集約
   ///
-  ///   @note  gather() は以下の処理を行う。
-  /// 各測定区間の全プロセスの測定結果情報をノード０に集約。
-  /// 測定結果の平均値・標準偏差などの基礎的な統計計算。
-  /// 経過時間でソートした測定区間のリストm_order[m_nWatch] を作成する。
-  /// 各測定区間のHWPCイベントの統計値を取得する。
-  ///   @note  gather() は１回だけ呼び出し可能で、２回め以降は何もしない。
+  /// @note  以下の処理を行う。
+  ///       各測定区間の全プロセスの測定結果情報をマスタープロセスに集約。
+  ///       測定結果の平均値・標準偏差などの基礎的な統計計算。
+  ///       経過時間でソートした測定区間のリストm_order[m_nWatch] を作成する。
+  ///       各測定区間のHWPCイベントの統計値を取得する。
+  ///       各プロセスの全スレッド測定結果をマスタースレッドに集約
   ///
   void PerfMonitor::gather(void)
   {
+    if (!is_PMlib_enabled) return;
+
     if (m_gathered) return;
+	#ifdef DEBUG_PRINT_MONITOR
+    if (my_rank == 0) { fprintf(stderr, "<gather>\n"); }
+	#endif
 
-    m_watchArray[0].stop(0.0, 1);
-    gather_and_sort();
-    m_gathered = true;
+	#ifdef _OPENMP
+	bool in_parallel;
+	in_parallel = omp_in_parallel();
+	if (in_parallel) {
+    	mergeThreads();
+    	//	m_gathered = false;	// untouch
+	} else {
+    	m_watchArray[0].stop(0.0, 1);
+    	mergeThreads();
+    	gather_and_sort();
+    	m_gathered = true;
+	}
 
+	#else
+   	m_watchArray[0].stop(0.0, 1);
+   	gather_and_sort();
+   	m_gathered = true;
+
+	#endif
+  }
+
+
+  ///  OpenMP並列処理されたPMlibスレッド測定区間のうち parallel regionから
+  ///  呼び出された測定区間のスレッド測定情報をマスタースレッドに集約する。
+  ///
+  ///   @note  内部で全測定区間をcheckして該当する測定区間を選択する。
+  ///
+  void PerfMonitor::mergeThreads (void)
+  {
+    if (!is_PMlib_enabled) return;
+
+    for (int i=0; i<m_nWatch; i++) {
+      m_watchArray[i].mergeAllThreads();
+    }
   }
 
 
@@ -352,6 +426,8 @@ namespace pm_lib {
 
   void PerfMonitor::gather_and_sort(void)
   {
+
+    if (!is_PMlib_enabled) return;
 
     if (m_nWatch == 0) return; // No section defined with setProperties()
 
@@ -420,6 +496,8 @@ namespace pm_lib {
 
   void PerfMonitor::print(FILE* fp, std::string hostname, const std::string comments, int seqSections)
   {
+    if (!is_PMlib_enabled) return;
+
     if (m_nWatch == 0) {
       if (my_rank == 0) {
         fprintf(fp, "\n\t#<PerfMonitor::print> No section has been defined.\n");
@@ -430,6 +508,9 @@ namespace pm_lib {
       gather();
     }
     if (my_rank != 0) return;
+	#ifdef DEBUG_PRINT_MONITOR
+    if (my_rank == 0) fprintf(stderr, "<print> \n");
+	#endif
 
     // 測定時間の分母
     // initialize()からgather()までの区間（==Root区間）の測定時間を分母とする
@@ -493,6 +574,8 @@ namespace pm_lib {
   void PerfMonitor::printDetail(FILE* fp, int legend, int seqSections)
   {
 
+    if (!is_PMlib_enabled) return;
+
     if (m_nWatch == 0) {
       if (my_rank == 0) {
       fprintf(fp, "\n# PMlib printDetail():: No section has been defined via setProperties().\n");
@@ -503,10 +586,11 @@ namespace pm_lib {
     if (!m_gathered) {
       gather();
     }
-    //        HWPC値を各スレッド毎にブレークダウンして表示する機能は今後開発
-    //        lsum2p HWPCのスレッド毎表示(0:なし、1:表示する)
 
     if (my_rank != 0) return;
+	#ifdef DEBUG_PRINT_MONITOR
+    if (my_rank == 0) fprintf(stderr, "<printDetail> \n");
+	#endif
 
     // 	I. MPIランク別詳細レポート: MPIランク別測定結果を出力
       if (is_MPI_enabled) {
@@ -567,9 +651,72 @@ namespace pm_lib {
       }
 	}
 #endif
-        fprintf(fp, "\n# End of PMlib Process Report ------------------------------------------------\n\n");
-
   }
+
+
+  /// 指定プロセス内のスレッド別詳細レポートを出力。
+  ///
+  ///   @param[in] fp           出力ファイルポインタ
+  ///   @param[in] rank_ID      出力対象プロセスのランク番号
+  ///   @param[in] seqSections  測定区間の表示順 (0:経過時間順、1:登録順で表示)
+  ///
+
+  void PerfMonitor::printThreads(FILE* fp, int rank_ID, int seqSections)
+  {
+
+    if (!is_PMlib_enabled) return;
+
+    if (m_nWatch == 0) {
+      if (my_rank == 0) printDiag("PerfMonitor::printThreads",  "No section is defined. No report.\n");
+      return;
+    }
+    if (!m_gathered) {
+      gather();
+    }
+	#ifdef DEBUG_PRINT_MONITOR
+    if (my_rank == 0) fprintf(stderr, "<printThreads> \n");
+	#endif
+
+    if (my_rank == 0) {
+      if (is_MPI_enabled) {
+        fprintf(fp, "\n# PMlib Thread Report for MPI rank %d  ----------------------\n\n", rank_ID);
+      } else {
+        fprintf(fp, "\n# PMlib Thread Report for the single process run ---------------------\n\n");
+      }
+    }
+
+    // 測定区間の時間と計算量を表示。表示順は引数 seqSections で指定されている。
+    for (int j = 0; j < m_nWatch; j++) {
+      int i;
+      if (seqSections == 0) {
+          i = m_order[j]; //	0:経過時間順
+      } else {
+          i = j; //	1:登録順で表示
+      }
+      if (i == 0) continue;	// 区間0 : Root区間は出力しない
+      if (!m_watchArray[i].m_exclusive) continue;
+      if (m_watchArray[i].m_count == 0) continue;
+
+      m_watchArray[i].printDetailThreads(fp, rank_ID);
+    }
+  }
+
+
+
+  /// HWPC 記号の説明表示を出力。
+  ///
+  ///   @param[in] fp 出力ファイルポインタ
+  ///
+  void PerfMonitor::printLegend(FILE* fp)
+  {
+    if (!is_PMlib_enabled) return;
+
+    if (my_rank == 0) {
+      fprintf(fp, "\n# PMlib Legend - HWPC symbols used in the PMlib report ----------------\n");
+      m_watchArray[0].printHWPCLegend(fp);
+    }
+  }
+
 
 
   /// 指定するMPIプロセスグループ毎にMPIランク詳細レポートを出力。
@@ -592,6 +739,8 @@ namespace pm_lib {
   void PerfMonitor::printGroup(FILE* fp, MPI_Group p_group, MPI_Comm p_comm, int* pp_ranks, int group, int legend, int seqSections)
   {
 
+    if (!is_PMlib_enabled) return;
+
     //   全プロセスの情報が PerfWatch::gather() によりrank 0に集計ずみのはず
     if (!m_gathered) {
       gather();
@@ -601,13 +750,13 @@ namespace pm_lib {
     MPI_Group_size(p_group, &new_size);
     MPI_Group_rank(p_group, &new_id);
 
-//  #define DEBUG_PRINT_MPI_GROUP 1
-#ifdef DEBUG_PRINT_MPI_GROUP
+	//  #define DEBUG_PRINT_MPI_GROUP 1
+	#ifdef DEBUG_PRINT_MPI_GROUP
     if (my_rank == 0) {
     	fprintf(fp, "<printGroup> MPI group:%d, ranks:%d \n", group, new_size);
     	for (int i = 0; i < new_size; i++) { fprintf(fp, "%3d ", pp_ranks[i]); }
     }
-#endif
+	#endif
 
     // 	I. MPIランク別詳細レポート: MPIランク別測定結果を出力
     if (my_rank == 0) {
@@ -680,6 +829,8 @@ namespace pm_lib {
   void PerfMonitor::printComm (FILE* fp, MPI_Comm new_comm, int icolor, int key, int legend, int seqSections)
   {
 
+    if (!is_PMlib_enabled) return;
+
 	int my_id, num_process;
 	MPI_Group my_group;
 	MPI_Comm_group(MPI_COMM_WORLD, &my_group);
@@ -724,8 +875,8 @@ namespace pm_lib {
 		p_size[gid] = ip - p_gid[gid];
 		gid++;
 	}
-//	#define DEBUG_PRINT_MPI_GROUP 1
-#ifdef DEBUG_PRINT_MPI_GROUP
+	//	#define DEBUG_PRINT_MPI_GROUP 1
+	#ifdef DEBUG_PRINT_MPI_GROUP
 	fprintf(stderr, "<printComm> The number of produced MPI groups=%d\n", ngroups);
 	for (int i=0; i<ngroups; i++) {
 		fprintf(stderr, "group:%d, color=%d, size=%d, g_myid[%d]:",
@@ -735,7 +886,7 @@ namespace pm_lib {
 		}
 		fprintf(stderr, "\n");
 	}
-#endif
+	#endif
 
 	MPI_Group new_group;
 	for (int i=0; i<ngroups; i++) {
@@ -764,6 +915,8 @@ namespace pm_lib {
   ///
   void PerfMonitor::printProgress(FILE* fp, std::string comments, int seqSections)
   {
+    if (!is_PMlib_enabled) return;
+
     if (m_nWatch == 0) return; // No section defined with setProperties()
 
     gather_and_sort();
@@ -815,13 +968,15 @@ namespace pm_lib {
   void PerfMonitor::postTrace(void)
   {
 
+    if (!is_PMlib_enabled) return;
+
     if (m_nWatch == 0) return; // No section defined with setProperties()
 
-#ifdef DEBUG_PRINT_MONITOR
+	#ifdef DEBUG_PRINT_MONITOR
     if (my_rank == 0) {
 	  fprintf(stderr, "\t<postTrace> \n");
     }
-#endif
+	#endif
 
     gather_and_sort();
 
@@ -836,12 +991,12 @@ namespace pm_lib {
       m_watchArray[0].finalizeOTF();
     }
 #endif
-    //	int iret = MPI_Barrier(MPI_COMM_WORLD);
-#ifdef DEBUG_PRINT_MONITOR
+
+	#ifdef DEBUG_PRINT_MONITOR
     if (my_rank == 0) {
 	  fprintf(stderr, "\t<postTrace> ends\n");
     }
-#endif
+	#endif
   }
 
 
@@ -854,6 +1009,8 @@ namespace pm_lib {
   ///
   void PerfMonitor::printBasicHeader(FILE* fp, std::string hostname, const std::string comments, double tot)
   {
+
+    if (!is_PMlib_enabled) return;
 
     // タイムスタンプの取得
     struct tm *date;
@@ -927,16 +1084,14 @@ namespace pm_lib {
     }
 #ifdef USE_PAPI
     m_watchArray[0].printHWPCHeader(fp);
-#else
-    fprintf(fp, "\n");
 #endif
 
     fprintf(fp, "\n");
     //	fprintf(fp, "\tTotal execution time            = %12.6e [sec]\n", m_watchArray[0].m_time);
-    fprintf(fp, "\tTotal time (PMlib enabled elapsed time) = %12.6e [sec]\n", tot);
+    fprintf(fp, "\tTotal PMlib enabled time from initialize() to last stop() = %9.3e [sec]\n", tot);
     fprintf(fp, "\n");
-    fprintf(fp, "\tExclusive sections statistics per process and total job.\n");
-    fprintf(fp, "\tInclusive sections, marked with (*), are not added to the sections total values.\n");
+    fprintf(fp, "\tExclusive sections statistics are reported below.\n");
+    fprintf(fp, "\tInclusive sections, marked with (*), are also shown. They are not added to the total values.\n");
     fprintf(fp, "\n");
 
   }
@@ -961,6 +1116,8 @@ namespace pm_lib {
                                   double& sum_time_flop, double& sum_time_comm, double& sum_time_other,
                                   std::string unit, int seqSections)
   {
+    if (!is_PMlib_enabled) return;
+
 	// this member is call by rank 0 process only
 
     int is_unit;
@@ -968,7 +1125,7 @@ namespace pm_lib {
 	fprintf(fp, "\t%-*s|    call  |        accumulated time[sec]           ", maxLabelLen, "Section");
 
     if ( is_unit == 0 || is_unit == 1 ) {
-      fprintf(fp, "| user defined argument values\n");
+      fprintf(fp, "| user defined numerical performance\n");
     } else if ( is_unit == 2 ) {
       fprintf(fp, "| hardware counted bandwidth events\n");
     } else if ( is_unit == 3 ) {
@@ -986,7 +1143,7 @@ namespace pm_lib {
 	fprintf(fp, "\t%-*s|          |      avr   avr[%%]     sdv    avr/call  ", maxLabelLen, "Label");
 
     if ( is_unit == 0 || is_unit == 1 ) {
-      fprintf(fp, "| user.value    sdv    user.perf\n");
+      fprintf(fp, "|  operations   sdv    performance\n");
     } else if ( is_unit == 2 ) {
       fprintf(fp, "|    Bytes      sdv   memory access\n");
     } else if ( is_unit == 3 ) {
@@ -1110,6 +1267,8 @@ namespace pm_lib {
                                      double sum_time_flop, double sum_time_comm, double sum_time_other,
                                      std::string unit)
   {
+
+    if (!is_PMlib_enabled) return;
 
     int is_unit;
     is_unit = m_watchArray[0].statsSwitch();

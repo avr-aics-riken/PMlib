@@ -76,7 +76,7 @@ namespace pm_lib {
     // 測定値の積算量
     double m_time;         ///< 時間(秒)
     double m_flop;         ///< 浮動小数点演算量or通信量(バイト)
-    unsigned long m_count; ///< 測定回数
+    long m_count;          ///< 測定回数
                            // 区間の呼び出し回数はプロセス毎に異なる場合がある
     double m_percentage;  ///< Percentage of vectorization or cache hit
 
@@ -105,18 +105,20 @@ namespace pm_lib {
     // 測定値集計時の補助変数
     double* m_timeArray;         ///< 「時間」集計用配列
     double* m_flopArray;         ///< 「浮動小数点演算量or通信量」集計用配列
-    unsigned long* m_countArray; ///< 「測定回数」集計用配列
-    unsigned long  m_count_sum;  ///< 「測定回数」summed over all MPI ranks
+    long* m_countArray; ///< 「測定回数」集計用配列
+    long  m_count_sum;  ///< 「測定回数」summed over all MPI ranks
     double* m_sortedArrayHWPC;   ///< 集計後ソートされたHWPC配列のポインタ
 
     /// 排他測定実行中フラグ. 非排他測定では未使用
-    static bool ExclusiveStarted;
+    bool ExclusiveStarted;
 
     /// MPI並列時の並列プロセス数と自ランク番号
     int num_process;
     int my_rank;
-    /// OpenMP並列時のスレッド数
+    /// OpenMP並列時のスレッド数と自スレッド番号
     int num_threads;
+    int my_thread;
+    bool m_in_parallel;		/// my_thread がparallel 領域内部であるかどうかのフラグ (false, true)
 
     /// bool値：  true/false
     bool m_is_first;      /// 測定区間が初めてstartされる場合かどうかのフラグ
@@ -125,15 +127,16 @@ namespace pm_lib {
   public:
     /// コンストラクタ.
     PerfWatch() : m_time(0.0), m_flop(0.0), m_count(0), m_started(false),
+      ExclusiveStarted(false),
       my_rank(0), m_timeArray(0), m_flopArray(0), m_countArray(0),
       m_sortedArrayHWPC(0), m_is_first(true), m_is_healthy(true) {}
 
     /// デストラクタ.
     ~PerfWatch() {
-      //	if (m_timeArray)  delete[] m_timeArray;
-      //	if (m_flopArray)  delete[] m_flopArray;
-      //	if (m_countArray) delete[] m_countArray;
-      //	if (m_sortedArrayHWPC) delete[] m_sortedArrayHWPC;
+      if (m_timeArray != NULL)  delete[] m_timeArray;
+      if (m_flopArray != NULL)  delete[] m_flopArray;
+      if (m_countArray != NULL) delete[] m_countArray;
+      if (m_sortedArrayHWPC != NULL) delete[] m_sortedArrayHWPC;
     }
 
     /// 測定モードを返す
@@ -162,59 +165,17 @@ namespace pm_lib {
     ///
     void start();
 
-  /// 測定区間ストップ.
-  ///
-  ///   @param[in] flopPerTask     測定区間の計算量(演算量Flopまたは通信量Byte)
-  ///   @param[in] iterationCount  計算量の乗数（反復回数）
-  ///
-  ///   @note  計算量をユーザが引数で明示的に指定する場合は、そのボリュームは
-  ///          １区間１回あたりでflopPerTask*iterationCount
-  ///          として算出される。
-  ///          引数とは関係なくHWPC内部で自動計測する場合もある。
-  ///          レポート出力する情報の選択方法は以下の規則による。
-  ///   @verbatim
-    /**
-    *
-    出力レポートに表示される情報はモード・引数の組み合わせで決める
-    (A) ユーザ申告モード
-      - HWPC APIが利用できないシステムや環境変数HWPC_CHOOSERが指定
-        されていないジョブでは自動的にユーザ申告モードで実行される。
-      - ユーザ申告モードでは(1):setProperties() と(2):stop()への引数により
-        出力内容が決定、HWPC詳細レポートは出力されない。
-      - (1) ::setProperties(区間名, type, exclusive)の第2引数typeは
-        測定量のタイプを指定する。計算(CALC)タイプか通信(COMM)タイプか
-        の選択を行なう、ユーザ申告モードで有効な引数。
-      - (2) ::stop (区間名, fPT, iC)の第2引数fPTは測定量。
-        計算（浮動小数点演算）あるいは通信（MPI通信やメモリロードストア
-        などデータ移動)の量を数値や式で与える。
-
-        setProperties()  stop()
-        type引数         fP引数     基本・詳細レポート出力
-        ---------------------------------------------------------
-        CALC	         指定あり   時間、fPT引数によるFlops
-        COMM		     指定あり   時間、fPT引数によるByte/s
-        任意             指定なし   時間のみ
-
-    (B) HWPCによる自動算出モード
-      - HWPC/PAPIが利用可能なプラットフォームで利用できる
-      - 環境変数HWPC_CHOOSERの値によりユーザ申告値を用いるかPAPI情報を
-        用いるかを切り替える。(FLOPS| BANDWIDTH| VECTOR| CACHE| CYCLE)
-
-    ユーザ申告モードかHWPC自動算出モードかは、内部的に下記表の組み合わせ
-    で決定される。
-
-    環境変数     setProperties()の  stop()の
-    HWPC_CHOOSER    type引数        fP引数       基本・詳細レポート出力      HWPCレポート出力
-    ------------------------------------------------------------------------------------------
-	NONE (無指定)   CALC            指定値       時間、fP引数によるFlops	 なし
-	NONE (無指定)   COMM            指定値       時間、fP引数によるByte/s    なし
-    FLOPS           無視            無視         時間、HWPC自動計測Flops     FLOPSに関連するHWPC統計情報
-    VECTOR          無視            無視         時間、HWPC自動計測SIMD率    VECTORに関連するHWPC統計情報
-    BANDWIDTH       無視            無視         時間、HWPC自動計測Byte/s    BANDWIDTHに関連するHWPC統計情報
-    CACHE           無視            無視         時間、HWPC自動計測L1$,L2$   CACHEに関連するHWPC統計情報
-     **/
-  ///   @endverbatim
-  ///
+    /// 測定区間ストップ.
+    ///
+    ///   @param[in] flopPerTask     測定区間の計算量(演算量Flopまたは通信量Byte)
+    ///   @param[in] iterationCount  計算量の乗数（反復回数）
+    ///
+    ///   @note  引数はユーザ申告モードの場合にのみ利用され、計算量を
+    ///          １区間１回あたりでflopPerTask*iterationCount として算出する。\n
+    ///          HWPCによる自動算出モードでは引数は無視され、
+    ///          内部で自動計測するHWPC統計情報から計算量を決定決定する。\n
+    ///          レポート出力する情報の選択方法はPerfMonitor::stop()の規則による。\n
+    ///
     void stop(double flopPerTask, unsigned iterationCount);
 
     /// 測定のリセット
@@ -312,6 +273,13 @@ namespace pm_lib {
     ///
     void printHWPCLegend(FILE* fp);
 
+    /// 指定するランクのスレッド別詳細レポートを出力。
+    ///
+    ///   @param[in] fp           出力ファイルポインタ
+    ///   @param[in] rank_ID      出力対象ランク番号を指定する
+    ///
+    void printDetailThreads(FILE* fp, int rank_ID);
+
     /// HWPCイベントの測定結果と統計値を出力.
     ///
     ///   @param[in] fp 出力ファイルポインタ
@@ -346,6 +314,11 @@ namespace pm_lib {
     ///
     void read_cpu_clock_freq();
 
+    ///
+    void mergeAllThreads(void);
+    ///
+    void selectPerfSingleThread(int i_thread);
+
   private:
     /// エラーメッセージ出力.
     ///
@@ -354,6 +327,13 @@ namespace pm_lib {
     ///
     void printError(const char* func, const char* fmt, ...);
 
+    ///	start() calls following internal functions
+    void startSectionSerial();
+    void startSectionParallel();
+    ///	stop() calls following internal functions
+    void stopSectionSerial(double flopPerTask, unsigned iterationCount);
+    void stopSectionParallel(double flopPerTask, unsigned iterationCount);
+
   private:
 	void createPapiCounterList (void);
 	void sortPapiCounterList (void);
@@ -361,7 +341,6 @@ namespace pm_lib {
 	void outputPapiCounterList (FILE* fp);
 	void outputPapiCounterLegend (FILE* fp);
 	void outputPapiCounterGroup (FILE* fp, MPI_Group p_group, int* pp_ranks);
-
   };
 
 } /* namespace pm_lib */

@@ -31,6 +31,7 @@ namespace pm_lib {
 #define MPI_CHAR 2
 #define MPI_DOUBLE 3
 #define MPI_UNSIGNED_LONG 4
+#define MPI_LONG 4
 
   typedef int MPI_Comm;
   typedef int MPI_Datatype;

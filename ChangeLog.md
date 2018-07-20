@@ -3,6 +3,12 @@
 ## REVISION HISTORY
 
 ---
+- 2018-07-09 Version 6.0.0
+  - Add support for thread level performance report
+  - New API printThread() for typical MPI x OpenMP hybrid usage.
+  - Partial support for a new thread mode calling from OpenMP parallel region, i.e. thread safe implementation.
+
+---
 - 2018-03-31 Version 5.8.5
   - update Xeon HWPC report to include memory bandwidth using uncore events
   - bug fix for FX100 bandwidth
