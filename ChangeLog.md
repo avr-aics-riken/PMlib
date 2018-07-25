@@ -2,6 +2,11 @@
 
 ## REVISION HISTORY
 
+
+---
+- 2018-07-25 Version 6.1.0
+  - Add support for thread private call, i.e. calling from OpenMP parallel region
+
 ---
 - 2018-07-09 Version 6.0.0
   - Add support for thread level performance report
