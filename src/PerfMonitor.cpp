@@ -44,6 +44,8 @@ namespace pm_lib {
     char* cp_env;
     std::string s;
 
+	int my_thread;	// Note this my_thread is just a local variable
+
 	is_PMlib_enabled = true;
     cp_env = std::getenv("BYPASS_PMLIB");
     if (cp_env == NULL) {
@@ -58,13 +60,13 @@ namespace pm_lib {
     (void) MPI_Comm_size(MPI_COMM_WORLD, &num_process);
 
 	#ifdef _OPENMP
-    //	cp_env = std::getenv("OMP_NUM_THREADS");
-    //	if (cp_env == NULL) {
-    //    omp_set_num_threads(1); // if OMP_NUM_THREADS env.var. is not defined, set it to 1
-    //	}
-    num_threads = omp_get_max_threads();
+    is_OpenMP_enabled = true;
+	my_thread = omp_get_thread_num();		// a local variable
+    num_threads = omp_get_max_threads();	// class variable
 	#else
-    num_threads = 1;
+    is_OpenMP_enabled = false;
+	my_thread = 0;		// a local variable
+    num_threads = 1;	// class variable
 	#endif
 
 	// Preserve the parallel mode information while PMlib is being made.
@@ -123,13 +125,13 @@ namespace pm_lib {
     std::string label;
     label="Root Section";	// label="Total excution time";
 	#ifdef DEBUG_PRINT_MONITOR
-    if (my_rank == 0) {
-      fprintf(stderr, "<initialize> [%s] section as [%s] num_process=%d, num_threads=%d\n",
-		label.c_str(), env_str_hwpc.c_str(), num_process, num_threads);
+    if (my_rank == 0 && my_thread == 0) {
+    fprintf(stderr, "<initialize> [%s]  HWPC[%s] num_process=%d, num_threads=%d my_rank=%d\n",
+		label.c_str(), env_str_hwpc.c_str(), num_process, num_threads, my_rank);
     }
 	#endif
 
-	// An object created by "new" operator can be accessed using pointer, not name.
+	// objects created by "new" operator can be accessed using pointer, not name.
     m_watchArray = new PerfWatch[init_nWatch];
     m_gathered = false;
     m_nWatch = 0 ;
@@ -158,20 +160,37 @@ namespace pm_lib {
   void PerfMonitor::setProperties(const std::string& label, Type type, bool exclusive)
   {
 
-    if (!is_PMlib_enabled) return;
+	int i_thread;
+	bool in_parallel;
+	#ifdef _OPENMP
+	i_thread = omp_get_thread_num();
+	in_parallel = omp_in_parallel();
+	#else
+	i_thread = 0;
+	in_parallel = false;
+	#endif
 
+    #ifdef DEBUG_PRINT_MONITOR
+    if (my_rank == 0) {
+		fprintf(stderr, "<setProperties> [%s] my_rank=%d, i_thread=%d, is_PMlib_enabled=%s\n",
+			label.c_str(), my_rank, i_thread, is_PMlib_enabled?"true":"false");
+	}
+	#endif
+
+    if (!is_PMlib_enabled) return;
     if (label.empty()) {
       printDiag("setProperties()",  "label is blank. Ignoring this call.\n");
       return;
     }
 
-    int id = add_perf_label(label);
-    if (m_nWatch < 0) {
-      printDiag("setProperties()", "m_nWatch=%d, id=%d. PMlib internal bug.\n",
-		m_nWatch, id);
-      PM_Exit(0);
-      //	return;
-    }
+    int id;
+    id = find_perf_label(label);
+    if (id >= 0) {
+      printDiag("setProperties()", "[%s] has been registered already.\n",
+		label.c_str() );
+      	return;
+	}
+    id = add_perf_label(label);
 
 //
 // Move the existing PerfWatch class storage into the new address
@@ -195,6 +214,12 @@ namespace pm_lib {
       m_watchArray = NULL;
       m_watchArray = watch_more;
       watch_more = NULL;
+      #ifdef DEBUG_PRINT_MONITOR
+		if (my_rank == 0) {
+		fprintf(stderr, "\t <setProperties> my_rank=%d, i_thread=%d expanded m_watchArray for [%s]. new reserved_nWatch=%d\n",
+			my_rank, i_thread, label.c_str(), reserved_nWatch);
+		}
+      #endif
     }
 
     m_nWatch++;
@@ -202,9 +227,8 @@ namespace pm_lib {
 
     #ifdef DEBUG_PRINT_MONITOR
     if (my_rank == 0) {
-	  int i_thread = omp_get_thread_num();
-      fprintf(stderr, "<setProperties> [%s] m_nWatch=%d id=%d thread=%d\n", label.c_str(), m_nWatch, id, i_thread);
-       //	check_all_perf_label();
+		fprintf(stderr, "Finishing <setProperties> [%s] id=%d my_rank=%d, i_thread=%d\n", label.c_str(), id, my_rank, i_thread);
+		check_all_perf_label();
     }
     #endif
 
@@ -374,7 +398,7 @@ namespace pm_lib {
 
     if (m_gathered) return;
 	#ifdef DEBUG_PRINT_MONITOR
-    if (my_rank == 0) { fprintf(stderr, "<gather>\n"); }
+    if (my_rank == 0) { fprintf(stderr, "<gather> starts\n"); }
 	#endif
 
 	#ifdef _OPENMP
@@ -394,7 +418,10 @@ namespace pm_lib {
    	m_watchArray[0].stop(0.0, 1);
    	gather_and_sort();
    	m_gathered = true;
+	#endif
 
+	#ifdef DEBUG_PRINT_MONITOR
+    if (my_rank == 0) { fprintf(stderr, "<gather> ends\n"); }
 	#endif
   }
 
@@ -407,6 +434,7 @@ namespace pm_lib {
   void PerfMonitor::mergeThreads (void)
   {
     if (!is_PMlib_enabled) return;
+    if (!is_OpenMP_enabled) return;
 
     for (int i=0; i<m_nWatch; i++) {
       m_watchArray[i].mergeAllThreads();
@@ -508,9 +536,18 @@ namespace pm_lib {
       gather();
     }
     if (my_rank != 0) return;
-	#ifdef DEBUG_PRINT_MONITOR
-    if (my_rank == 0) fprintf(stderr, "<print> \n");
+
+	int my_thread;
+	#ifdef _OPENMP
+	#pragma omp barrier
+	my_thread = omp_get_thread_num();		// a local variable
+	#else
+	my_thread = 0;		// a local variable
 	#endif
+	#ifdef DEBUG_PRINT_MONITOR
+    if (my_rank == 0 && my_thread == 0) fprintf(stderr, "\n\n<print>\n\n");
+	#endif
+
 
     // 測定時間の分母
     // initialize()からgather()までの区間（==Root区間）の測定時間を分母とする

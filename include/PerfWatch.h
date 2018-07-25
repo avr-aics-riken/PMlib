@@ -109,8 +109,6 @@ namespace pm_lib {
     long  m_count_sum;  ///< 「測定回数」summed over all MPI ranks
     double* m_sortedArrayHWPC;   ///< 集計後ソートされたHWPC配列のポインタ
 
-    /// 排他測定実行中フラグ. 非排他測定では未使用
-    bool ExclusiveStarted;
 
     /// MPI並列時の並列プロセス数と自ランク番号
     int num_process;
@@ -118,11 +116,15 @@ namespace pm_lib {
     /// OpenMP並列時のスレッド数と自スレッド番号
     int num_threads;
     int my_thread;
-    bool m_in_parallel;		/// my_thread がparallel 領域内部であるかどうかのフラグ (false, true)
 
-    /// bool値：  true/false
-    bool m_is_first;      /// 測定区間が初めてstartされる場合かどうかのフラグ
-    bool m_is_healthy;    /// 測定区間に排他性・非排他性の矛盾がないかのフラグ
+
+    /// 測定区間に関する各種の判定フラグ ：  bool値(true|false)
+    bool ExclusiveStarted;	/// 排他測定実行中フラグ. 非排他測定では未使用
+    bool m_is_first;      /// 測定区間が初めてstartされる場合かどうか
+    bool m_is_healthy;    /// 測定区間に排他性・非排他性の矛盾がないか
+    bool m_in_parallel;	/// my_thread がparallel 領域内部であるかどうか
+    bool m_threads_merged;	/// 全スレッドの情報をマスタースレッドに集約済みか
+
 
   public:
     /// コンストラクタ.

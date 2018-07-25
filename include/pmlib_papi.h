@@ -68,18 +68,21 @@ struct pmlib_papi_chooser {
 	long long values[Max_chooser_events];	// incremental HW counter values
 	long long accumu[Max_chooser_events];	// accumulated HW counter values
 	std::string s_name[Max_chooser_events];	// event symbol name
+
 	int num_sorted;			// number of sorted events to report
 	double v_sorted[Max_chooser_events];		// sorted event values
 	std::string s_sorted[Max_chooser_events];	// sorted event symbols
 
 	// additional array for exchanging thread private values across threads
-	long long th_values[Max_chooser_events][Max_nthreads];	// values per thread
-	long long th_accumu[Max_chooser_events][Max_nthreads];	// accumu per thread
-	double th_v_sorted[Max_chooser_events][Max_nthreads];	// sorted values per thread
-	// Note1  Exchange the dimention
 	// from [Max_chooser_events][Max_nthreads]
-	//   to [Max_nthreads][Max_chooser_events]
-	// Note2  Change the name from th_v_sorted[][] to th_user[][]
+	// to   [Max_nthreads][Max_chooser_events]
+			//	long long th_values[Max_chooser_events][Max_nthreads];
+			//	long long th_accumu[Max_chooser_events][Max_nthreads];
+			//	double th_v_sorted[Max_chooser_events][Max_nthreads];
+	long long th_values[Max_nthreads][Max_chooser_events];	// values per thread
+	long long th_accumu[Max_nthreads][Max_chooser_events];	// accumu per thread
+	double th_v_sorted[Max_nthreads][Max_chooser_events];	// sorted values per thread
+	// Note2  Shall we change the name from th_v_sorted[][] to th_user[][] ?
 };
 
 // Macro patches for K computer and FX10 which has fairly old PAPI 3.6

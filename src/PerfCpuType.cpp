@@ -56,7 +56,8 @@ void PerfWatch::initializeHWPC ()
 	my_thread = omp_get_thread_num();
 	#endif
 
-	#pragma omp master
+	//	#pragma omp master
+	if (my_thread == 0)
 	{
 	for (int i=0; i<Max_hwpc_output_group; i++) {
 		hwpc_group.number[i] = 0;
@@ -70,21 +71,21 @@ void PerfWatch::initializeHWPC ()
 		papi.accumu[i] = 0;
 		papi.v_sorted[i] = 0;
 		}
+	for (int j=0; j<Max_nthreads; j++){
 	for (int i=0; i<Max_chooser_events; i++){
-		for (int j=0; i<Max_nthreads; i++){
-			papi.th_values[i][j] = 0;
-			papi.th_accumu[i][j] = 0;
-			papi.th_v_sorted[i][j] = 0;
-			}
+			papi.th_values[j][i] = 0;
+			papi.th_accumu[j][i] = 0;
+			papi.th_v_sorted[j][i] = 0;
 		}
-	} // #pragma omp master
-	#pragma omp barrier
+		}
+	}
 
 	read_cpu_clock_freq(); /// API for reading processor clock frequency.
 
 #ifdef USE_PAPI
 	int i_papi;
-	#pragma omp master
+	//	#pragma omp master
+	if (my_thread == 0)
 	{
 	i_papi = PAPI_library_init( PAPI_VER_CURRENT );
 	if (i_papi != PAPI_VER_CURRENT ) {
@@ -93,24 +94,24 @@ void PerfWatch::initializeHWPC ()
 		PM_Exit(0);
 		//	return;
 		}
-	} // #pragma omp master
+
+	i_papi = PAPI_thread_init( (unsigned long (*)(void)) (omp_get_thread_num) );
+	if (i_papi != PAPI_OK ) {
+		fprintf (stderr, "*** error. <PAPI_thread_init> failed. code=%d, my_thread=%d\n", i_papi, my_thread);
+		PM_Exit(0);
+		//	return;
+		}
 
 	createPapiCounterList ();
 
 	#ifdef DEBUG_PRINT_PAPI
 	if (my_rank == 0 && my_thread == 0) {
-		fprintf(stderr, "<initializeHWPC> papi.num_events=%d, address=%p\n",
+		fprintf(stderr, "<initializeHWPC> created struct papi: papi.num_events=%d, address=%p\n",
 			papi.num_events, &papi.num_events );
-		fprintf(stderr, "\t memo: struct papi is shared across threads.\n");
+		fprintf(stderr, "\t\t memo: struct papi is shared across threads.\n");
 	}
 	#endif
-
-	i_papi = PAPI_thread_init( (unsigned long (*)(void)) (omp_get_thread_num) );
-	if (i_papi != PAPI_OK ) {
-		fprintf (stderr, "*** error. <PAPI_thread_init> failed. %d\n", i_papi);
-		PM_Exit(0);
-		return;
-		}
+	}
 
 	#pragma omp barrier
 	// In general the arguments to <my_papi_*> should be thread private.
@@ -158,7 +159,7 @@ void PerfWatch::initializeHWPC ()
   /// Construct the available list of PAPI counters for the targer processor
   /// @note  this routine needs the processor hardware information
   ///
-  /// this routine is called by PerfMonitor class instance
+  /// this routine is called by PerfWatch::initializeHWPC() only once
   ///
 void PerfWatch::createPapiCounterList ()
 {
@@ -170,19 +171,13 @@ void PerfWatch::createPapiCounterList ()
 	using namespace std;
 	int i_papi;
 
-	#ifdef DEBUG_PRINT_PAPI
-	#pragma omp barrier
-	if (my_rank == 0 && my_thread == 0) {
-		fprintf(stderr, " <createPapiCounterList> starts\n" );
-	}
-	#endif
-
 // 1. Identify the CPU architecture
 
 	hwinfo = PAPI_get_hardware_info();
 	if (hwinfo == NULL) {
 		fprintf (stderr, "*** error. <PAPI_get_hardware_info> failed.\n" );
 	}
+
 
 // ToDo: Create more robust API than PAPI_get_hardware_info(), and replace it.
 
@@ -586,7 +581,9 @@ void PerfWatch::createPapiCounterList ()
 // end of hwpc_group selection
 
 	#ifdef DEBUG_PRINT_PAPI
-	if (my_rank == 0 && my_thread == 0) {
+	//	if (my_rank == 0 && my_thread == 0) {
+	if (my_rank == 0) {
+		fprintf (stderr, " <createPapiCounterList> ends\n" );
 		fprintf(stderr, " s_model_string=%s\n", s_model_string.c_str());
 
 		fprintf(stderr, " platform: %s\n", hwpc_group.platform.c_str());
@@ -601,7 +598,6 @@ void PerfWatch::createPapiCounterList ()
 		fprintf(stderr, "\t i=%d [%s] events[i]=%u, values[i]=%llu \n",
 					i, papi.s_name[i].c_str(), papi.events[i], papi.values[i]);
 		}
-		fprintf (stderr, " <createPapiCounterList> ends\n" );
 	}
 	#endif
 #endif // USE_PAPI
@@ -904,9 +900,11 @@ void PerfWatch::sortPapiCounterList (void)
 	my_papi.num_sorted = jp;
 
 #ifdef DEBUG_PRINT_PAPI
+	#pragma omp barrier
+	#pragma omp critical
 	if (my_rank == 0) {
-		fprintf(stderr, "\t<sortPapiCounterList> [%15s], m_time=%e\n",
-			m_label.c_str(), m_time );
+		fprintf(stderr, "\t<sortPapiCounterList> [%15s], my_thread=%d, m_time=%e\n",
+			m_label.c_str(), my_thread, m_time );
 		for (int i = 0; i < my_papi.num_sorted; i++) {
 			fprintf(stderr, "\t\t i=%d [%8s] v_sorted[i]=%e \n",
 			i, my_papi.s_sorted[i].c_str(), my_papi.v_sorted[i]);

@@ -35,6 +35,7 @@
 
 using namespace pm_lib;
 PerfMonitor PM;
+#pragma omp threadprivate(PM)
 
 // Fortran interface should avoid C++ name space mangling, thus this extern.
 extern "C" {
@@ -50,6 +51,7 @@ extern "C" {
 ///
 void f_pm_initialize_ (int& init_nWatch)
 {
+
     int num_threads;
     int num_process;
     int my_rank;
@@ -274,10 +276,18 @@ void f_pm_gather_ (void)
 ///
 void f_pm_print_ (char* fc, int &psort, int fc_size)
 {
+
 	FILE *fp;
 	std::string s=std::string(fc,fc_size);
 #ifdef DEBUG_PRINT_MONITOR
-	fprintf(stderr, "<f_pm_print_> fc=%s, psort=%d, fc_size=%d\n", s.c_str(), psort, fc_size);
+	#ifdef _OPENMP
+	#pragma omp barrier
+	#endif
+	int my_rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
+	if (my_rank == 0) {
+		fprintf(stderr, "\n<f_pm_print_> fc=%s, psort=%d, fc_size=%d\n", s.c_str(), psort, fc_size);
+	}
 #endif
 	std::string h;
 	std::string u="Fortran API";

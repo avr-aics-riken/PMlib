@@ -343,9 +343,10 @@ namespace pm_lib {
     	// perhaps it is better to return ip showing the insert status.
 		// sometime later...
     	array_of_symbols.insert( make_pair(arg_st, ip) );
-		#ifdef DEBUG_PRINT_LABEL
-    	fprintf(stderr, "<add_perf_label> [%s] [%d]\n", arg_st.c_str(), ip);
-		#endif
+	#ifdef DEBUG_PRINT_LABEL
+    	fprintf(stderr, "<add_perf_label> [%s] &array_of_symbols(%p) [%d] \n",
+    		arg_st.c_str(), &array_of_symbols, ip);
+	#endif
     	return ip;
     }
 
@@ -362,7 +363,7 @@ namespace pm_lib {
     		p_id = array_of_symbols[arg_st] ;
     	}
 		#ifdef DEBUG_PRINT_LABEL
-    	fprintf(stderr, "<find_perf_label> %s : %d\n", arg_st.c_str(), p_id);
+    	//fprintf(stderr, "<find_perf_label> %s : %d\n", arg_st.c_str(), p_id);
 		#endif
     	return p_id;
     }
@@ -477,7 +478,7 @@ namespace pm_lib {
     void printDiag(const char* func, const char* fmt, ...)
     {
       if (my_rank == 0) {
-        fprintf(stderr, "*** Error. PerfMonitor::%s: ", func );
+        fprintf(stderr, "*** PMlib Error. PerfMonitor::%s: ", func );
         va_list ap;
         va_start(ap, fmt);
         vfprintf(stderr, fmt, ap);
