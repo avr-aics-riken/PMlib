@@ -88,7 +88,6 @@ int main (int argc, char *argv[])
 	}
 	PM.stop ("section-2");
 
-	PM.gather();
 	PM.print(stdout, "", "");
 	PM.printDetail(stdout);
 	PM.printComm (stdout, new_comm, icolor, key);

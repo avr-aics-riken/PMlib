@@ -49,15 +49,17 @@ void PerfWatch::initializeHWPC ()
 {
 #include <string>
 
-	m_in_parallel = false;
-	my_thread = 0;
+	bool root_in_parallel;
+	int root_thread;
+
+	root_in_parallel = false;
+	root_thread = 0;
 	#ifdef _OPENMP
-	m_in_parallel = omp_in_parallel();
-	my_thread = omp_get_thread_num();
+	root_in_parallel = omp_in_parallel();
+	root_thread = omp_get_thread_num();
 	#endif
 
-	//	#pragma omp master
-	if (my_thread == 0)
+	if (root_thread == 0)
 	{
 	for (int i=0; i<Max_hwpc_output_group; i++) {
 		hwpc_group.number[i] = 0;
@@ -84,8 +86,7 @@ void PerfWatch::initializeHWPC ()
 
 #ifdef USE_PAPI
 	int i_papi;
-	//	#pragma omp master
-	if (my_thread == 0)
+	if (root_thread == 0)
 	{
 	i_papi = PAPI_library_init( PAPI_VER_CURRENT );
 	if (i_papi != PAPI_VER_CURRENT ) {
@@ -97,7 +98,7 @@ void PerfWatch::initializeHWPC ()
 
 	i_papi = PAPI_thread_init( (unsigned long (*)(void)) (omp_get_thread_num) );
 	if (i_papi != PAPI_OK ) {
-		fprintf (stderr, "*** error. <PAPI_thread_init> failed. code=%d, my_thread=%d\n", i_papi, my_thread);
+		fprintf (stderr, "*** error. <PAPI_thread_init> failed. code=%d, root_thread=%d\n", i_papi, root_thread);
 		PM_Exit(0);
 		//	return;
 		}
@@ -105,7 +106,7 @@ void PerfWatch::initializeHWPC ()
 	createPapiCounterList ();
 
 	#ifdef DEBUG_PRINT_PAPI
-	if (my_rank == 0 && my_thread == 0) {
+	if (my_rank == 0 && root_thread == 0) {
 		fprintf(stderr, "<initializeHWPC> created struct papi: papi.num_events=%d, address=%p\n",
 			papi.num_events, &papi.num_events );
 		fprintf(stderr, "\t\t memo: struct papi is shared across threads.\n");
@@ -117,7 +118,7 @@ void PerfWatch::initializeHWPC ()
 	// In general the arguments to <my_papi_*> should be thread private.
 	// For APIs whose arguments do not change,  we use shared object.
 
-	if (m_in_parallel) {
+	if (root_in_parallel) {
 	int t_papi;
 	t_papi = my_papi_add_events (papi.events, papi.num_events);
 	if ( t_papi != PAPI_OK ) {
@@ -149,7 +150,7 @@ void PerfWatch::initializeHWPC ()
 		PM_Exit(0);
 		}
 	} // end of #pragma omp parallel
-	} // end of if (m_in_parallel)
+	} // end of if (root_in_parallel)
 
 #endif // USE_PAPI
 }
@@ -606,9 +607,10 @@ void PerfWatch::createPapiCounterList ()
 
   /// Sort out the list of counters linked with the user input parameter
   ///
-  /// @note this routine is called by PerfWatch class instance
-  ///  gather() -> gatherHWPC() -> sortPapiCounterList()
-  ///  each of the labeled measuring sections call this API
+  /// @note this routine is called from 2 classes.
+  /// PerfMonitor::gather() -> gatherHWPC() -> sortPapiCounterList()
+  ///   PerfWatch::gather() -> gatherHWPC() -> sortPapiCounterList()
+  /// each of the labeled measuring sections call this API
   ///
 
 void PerfWatch::sortPapiCounterList (void)
@@ -617,6 +619,23 @@ void PerfWatch::sortPapiCounterList (void)
 
 	int ip, jp, kp;
 	double counts;
+	double perf_rate=0.0;
+	if ( m_time > 0.0 ) { perf_rate = 1.0/m_time; }
+
+#ifdef DEBUG_PRINT_PAPI
+//	#pragma omp barrier
+//	#pragma omp critical
+//	{
+//	if (my_rank == 0) {
+//		fprintf(stderr, "\t<sortPapiCounterList> [%15s], my_rank=%d, my_thread=%d, starting:\n",
+//			m_label.c_str(), my_rank, my_thread);
+//		for (int i = 0; i < 3; i++) {
+//			fprintf(stderr, "\t\t i=%d [%8s] accumu[i]=%ld \n",
+//			i, my_papi.s_sorted[i].c_str(), my_papi.accumu[i]);
+//		}
+//	}
+//	}
+#endif
 
 // if (FLOPS)
 	if ( hwpc_group.number[I_flops] > 0 ) {
@@ -631,7 +650,8 @@ void PerfWatch::sortPapiCounterList (void)
 			ip++;jp++;
 		}
 		my_papi.s_sorted[jp] = "[Flops]" ;
-		my_papi.v_sorted[jp] = counts / m_time ; // * 1.0e-9;
+		//	my_papi.v_sorted[jp] = counts / m_time ; // * 1.0e-9;
+		my_papi.v_sorted[jp] = counts * perf_rate;
 		jp++;
 	}
 
@@ -664,17 +684,20 @@ void PerfWatch::sortPapiCounterList (void)
 			d_hit_LLC = my_papi.accumu[ip+4] ;	//	LLC data read hit + prefetch hit: "L3_HIT"
 			d_miss_LLC = my_papi.accumu[ip+5] ;	//	LLC data read miss + prefetch miss: "L3_MISS"
 
-			bandwidth = d_hit_L2 *64.0/m_time;	// L2 bandwidth
+			//	bandwidth = d_hit_L2 *64.0/m_time;	// L2 bandwidth
+			bandwidth = d_hit_L2 * 64.0 * perf_rate;	// L2 bandwidth
 			my_papi.s_sorted[jp] = "L2$ [B/s]" ;
 			my_papi.v_sorted[jp] = bandwidth ;	//	* 1.0e-9;
 			jp++;
 
-			bandwidth = d_hit_LLC *64.0/m_time;	// LLC bandwidth
+			//	bandwidth = d_hit_LLC *64.0/m_time;	// LLC bandwidth
+			bandwidth = d_hit_LLC * 64.0 * perf_rate;
 			my_papi.s_sorted[jp] = "L3$ [B/s]" ;
 			my_papi.v_sorted[jp] = bandwidth ;	//	* 1.0e-9;
 			jp++;
 
-			bandwidth = d_miss_LLC *64.0/m_time;	// Memory bandwidth
+			//	bandwidth = d_miss_LLC *64.0/m_time;	// Memory bandwidth
+			bandwidth = d_miss_LLC * 64.0 * perf_rate;
 			my_papi.s_sorted[jp] = "Mem [B/s]" ;
 			my_papi.v_sorted[jp] = bandwidth ;	//	* 1.0e-9;
 			jp++;
@@ -686,18 +709,20 @@ void PerfWatch::sortPapiCounterList (void)
 			if (hwpc_group.i_platform == 8 || hwpc_group.i_platform == 9 ) {
 				d_load_store      = my_papi.accumu[ip] ;	//	"LOAD_STORE_INSTRUCTIONS";
 				d_simd_load_store = my_papi.accumu[ip+1] ;	//	"SIMD_LOAD_STORE_INSTRUCTIONS";
-			// BandWidth = (L2_MISS_DM + L2_MISS_PF + L2_WB_DM + L2_WB_PF) x 128 *1.0e-9 / time
+			// BandWidth = (L2_MISS_DM + L2_MISS_PF + L2_WB_DM + L2_WB_PF) x 128 *1.0e-9 / time		// K (and FX10) has 128 Byte $ line
 				//	counts  = my_papi.accumu[ip+2] + my_papi.accumu[ip+3] + my_papi.accumu[ip+4] ;
 				counts  = my_papi.accumu[ip+2] + my_papi.accumu[ip+3] + my_papi.accumu[ip+4] + my_papi.accumu[ip+5] ;
-				bandwidth = counts * 128 / m_time; // K (and FX10) has 128 Byte $ line
+				//	bandwidth = counts * 128 / m_time; // K (and FX10) has 128 Byte $ line
+				bandwidth = counts * 128.0 * perf_rate;
 			}
 			else if (hwpc_group.i_platform == 11 ) {
 				d_load_store      = my_papi.accumu[ip] ;	//	"LOAD_STORE_INSTRUCTIONS";
 				d_simd_load_store = my_papi.accumu[ip+1] ;	//	"XSIMD_LOAD_STORE_INSTRUCTIONS";
-			// BandWidth = (L2_MISS_DM + L2_MISS_PF + L2_WB_DM + L2_WB_PF) x 256 *1.0e-9 / time
+			// BandWidth = (L2_MISS_DM + L2_MISS_PF + L2_WB_DM + L2_WB_PF) x 256 *1.0e-9 / time		// FX100 has 256 Byte $ line
 				//	counts  = my_papi.accumu[ip+2] + my_papi.accumu[ip+3] + my_papi.accumu[ip+4] ;
 				counts  = my_papi.accumu[ip+2] + my_papi.accumu[ip+3] + my_papi.accumu[ip+4] + my_papi.accumu[ip+5] ;
-				bandwidth = counts * 256 / m_time; // FX100 has 256 Byte $ line
+				//	bandwidth = counts * 256 / m_time;
+				bandwidth = counts * 256.0 * perf_rate;
 			}
 			my_papi.s_sorted[jp] = "Mem [B/s]" ;
 			my_papi.v_sorted[jp] = bandwidth ; //* 1.0e-9;
@@ -762,7 +787,11 @@ void PerfWatch::sortPapiCounterList (void)
 				fp_total  = fp_sp1 + fp_dp1 + fp_vector;
 			}
 			if (m_exclusive) {
+				if ( fp_total > 0.0 ) {
 				vector_percent = fp_vector/fp_total;
+				} else {
+				vector_percent = 0.0;
+				}
 			}
 
 		} else
@@ -790,14 +819,19 @@ void PerfWatch::sortPapiCounterList (void)
 				fp_total  = (fp_dp1 + 2.0*fp_dp2 + 4.0*fp_dp4 + 8.0*fp_dp8 + 16.0*fp_dp16);
 			}
 			if (m_exclusive) {
+				if ( fp_total > 0.0 ) {
 				vector_percent = fp_vector/fp_total;
+				} else {
+				vector_percent = 0.0;
+				}
 			}
 		}
 		my_papi.s_sorted[jp] = "Total_FPs" ;
 		my_papi.v_sorted[jp] = fp_total;
 		jp++;
 		my_papi.s_sorted[jp] = "FLOPS" ;
-		my_papi.v_sorted[jp] = fp_total / m_time;
+		//	my_papi.v_sorted[jp] = fp_total / m_time;
+		my_papi.v_sorted[jp] = fp_total * perf_rate;
 		jp++;
 		my_papi.s_sorted[jp] = "VECTOR(%)" ;
 		my_papi.v_sorted[jp] = vector_percent * 100.0;
@@ -808,10 +842,11 @@ void PerfWatch::sortPapiCounterList (void)
 	else
 // if (CACHE)
 	if ( hwpc_group.number[I_cache] > 0 ) {
-			double d_load_ins, d_store_ins;
-			double d_load_store, d_simd_load_store, d_xsimd_load_store;
-			double d_hit_LFB, d_hit_L1, d_miss_L1, d_miss_L2, d_miss_L3;
-			double d_L1_ratio, d_L2_ratio;
+		double d_load_ins, d_store_ins;
+		double d_load_store, d_simd_load_store, d_xsimd_load_store;
+		double d_hit_LFB, d_hit_L1, d_miss_L1, d_miss_L2, d_miss_L3;
+		double d_L1_ratio, d_L2_ratio, d_cache_transaction;
+
 		ip = hwpc_group.index[I_cache];
 		jp=0;
 		for(int i=0; i<hwpc_group.number[I_cache]; i++)
@@ -820,7 +855,6 @@ void PerfWatch::sortPapiCounterList (void)
 			counts += my_papi.v_sorted[jp] = my_papi.accumu[ip] ;
 			ip++;jp++;
 		}
-
 		if (hwpc_group.platform == "Xeon" ) {
 			//	We saved 7 events for Xeon
 			ip = hwpc_group.index[I_cache];
@@ -834,17 +868,22 @@ void PerfWatch::sortPapiCounterList (void)
 			//	d_miss_L3 = my_papi.accumu[ip+6] ;	//	PAPI_L3_TCM
 			//	We do not display L3_TCM since it is no use and likely to cause confusion
 
-			//	d_L2_ratio = (d_hit_LFB + d_hit_L1 + d_miss_L1) / (d_hit_LFB + d_hit_L1 + d_miss_L1 + d_miss_L2) ;
-			d_L1_ratio = (d_hit_LFB + d_hit_L1) / (d_hit_LFB + d_hit_L1 + d_miss_L1) ;
-			d_L2_ratio = (d_miss_L1 - d_miss_L2) / (d_hit_LFB + d_hit_L1 + d_miss_L1) ;
-
+			d_cache_transaction = d_hit_L1 + d_hit_LFB + d_miss_L1 ;
+			if ( d_cache_transaction > 0.0 ) {
+				//	d_L1_ratio = (d_hit_LFB + d_hit_L1) / (d_hit_LFB + d_hit_L1 + d_miss_L1) ;
+				//	d_L2_ratio = (d_miss_L1 - d_miss_L2) / (d_hit_LFB + d_hit_L1 + d_miss_L1) ;
+				d_L1_ratio = (d_hit_LFB + d_hit_L1) / d_cache_transaction;
+				d_L2_ratio = (d_miss_L1 - d_miss_L2) / d_cache_transaction;
+			} else {
+				d_L1_ratio = d_L2_ratio = 0.0;
+			}
 			my_papi.s_sorted[jp] = "[L1$ hit%]";
 			my_papi.v_sorted[jp] = d_L1_ratio * 100.0;
 			jp++;
 			my_papi.s_sorted[jp] = "[L2$ hit%]";
 			my_papi.v_sorted[jp] = d_L2_ratio * 100.0;
 			jp++;
-		}
+		} else
 		if (hwpc_group.platform == "SPARC64" ) {
 			ip = hwpc_group.index[I_cache];
 			if (hwpc_group.i_platform == 8 || hwpc_group.i_platform == 9 ) {
@@ -861,8 +900,12 @@ void PerfWatch::sortPapiCounterList (void)
 			d_miss_L1 = my_papi.accumu[ip +kp ] ;	//	PAPI_L1_TCM
 			d_miss_L2 = my_papi.accumu[ip +kp +1 ] ;	//	PAPI_L2_TCM
 
-			d_L1_ratio = (d_load_store - d_miss_L1) / d_load_store;
-			d_L2_ratio = (d_miss_L1 - d_miss_L2) / d_load_store;
+			if ( d_load_store > 0.0 ) {
+				d_L1_ratio = (d_load_store - d_miss_L1) / d_load_store;
+				d_L2_ratio = (d_miss_L1 - d_miss_L2) / d_load_store;
+			} else {
+				d_L1_ratio = d_L2_ratio = 0.0;
+			}
 
 			my_papi.s_sorted[jp] = "[L1$ hit%]";
 			my_papi.v_sorted[jp] = d_L1_ratio * 100.0;
@@ -874,6 +917,15 @@ void PerfWatch::sortPapiCounterList (void)
 		my_papi.s_sorted[jp] = "[L1L2hit%]";
 		my_papi.v_sorted[jp] = (d_L1_ratio + d_L2_ratio) * 100.0;
 		jp++;
+
+		#ifdef DEBUG_PRINT_PAPI
+		#pragma omp barrier
+		#pragma omp critical
+		if (my_rank == 0) {
+		fprintf(stderr, "<debug> d_load_ins=%e, d_store_ins=%e, d_hit_L1=%e, d_hit_LFB=%e, d_miss_L1=%e, d_miss_L2=%e, d_cache_transaction=%e, d_L1_ratio=%e, d_L2_ratio=%e\n",
+			d_load_ins, d_store_ins, d_hit_L1, d_hit_LFB, d_miss_L1, d_miss_L2, d_cache_transaction, d_L1_ratio, d_L2_ratio);
+		}
+		#endif
 	}
 
 	else
@@ -892,7 +944,12 @@ void PerfWatch::sortPapiCounterList (void)
 			ip++;jp++;
 		}
 		my_papi.s_sorted[jp] = "[Ins/cyc]" ;
-		my_papi.v_sorted[jp] = my_papi.v_sorted[jp-1] / my_papi.v_sorted[jp-2];
+		if ( my_papi.v_sorted[jp-2] > 0.0 ) {
+			my_papi.v_sorted[jp] = my_papi.v_sorted[jp-1] / my_papi.v_sorted[jp-2];
+		} else {
+			my_papi.v_sorted[jp] = 0.0;
+		}
+
 		jp++;
 	}
 
@@ -902,18 +959,21 @@ void PerfWatch::sortPapiCounterList (void)
 #ifdef DEBUG_PRINT_PAPI
 	#pragma omp barrier
 	#pragma omp critical
+	{
 	if (my_rank == 0) {
-		fprintf(stderr, "\t<sortPapiCounterList> [%15s], my_thread=%d, m_time=%e\n",
-			m_label.c_str(), my_thread, m_time );
+		fprintf(stderr, "\t<sortPapiCounterList> [%15s], my_rank=%d, my_thread=%d, returning m_time=%e\n",
+			m_label.c_str(), my_rank, my_thread, m_time );
 		for (int i = 0; i < my_papi.num_sorted; i++) {
 			fprintf(stderr, "\t\t i=%d [%8s] v_sorted[i]=%e \n",
 			i, my_papi.s_sorted[i].c_str(), my_papi.v_sorted[i]);
 		}
 	}
+	}
 #endif
 
 #endif // USE_PAPI
 }
+
 
 
   /// Display the HWPC header lines
@@ -1018,6 +1078,10 @@ void PerfWatch::outputPapiCounterLegend (FILE* fp)
 	using namespace std;
 
 	hwinfo = PAPI_get_hardware_info();
+	if (hwinfo == NULL) {
+		fprintf (fp, "\n\tHWPC legend is not available. <PAPI_get_hardware_info> failed. \n" );
+		return;
+	}
 	fprintf(fp, "\n\tDetected CPU architecture:\n" );
 	fprintf(fp, "\t\t%s\n", hwinfo->vendor_string);
 	fprintf(fp, "\t\t%s\n", hwinfo->model_string);

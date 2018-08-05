@@ -65,7 +65,7 @@ int main (int argc, char *argv[])
 	PM.start("Section-B");
 	PM.stop ("Section-B", flop_count, 1);
 
-	PM.gather();
+	PM.mergeThreads();
 }
 
 	fprintf(stderr, "\n *** Now starting print sections. ***\n");

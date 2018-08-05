@@ -62,13 +62,13 @@ namespace pm_lib {
     bool is_OpenMP_enabled;	   ///< PMlibの対応動作可能フラグ:OpenMP
     bool is_PAPI_enabled;      ///< PMlibの対応動作可能フラグ:PAPI
     bool is_OTF_enabled;       ///< 対応動作可能フラグ:OTF tracing 出力
-    bool m_gathered;           ///< 測定結果集計済みフラグ
     bool is_PMlib_enabled;     ///< PMlibの動作を有効にするフラグ
+    bool is_Root_active;       ///< 背景区間(Root区間)の動作フラグ
 
     std::string parallel_mode; ///< 並列動作モード
       // {"Serial", "OpenMP", "FlatMPI", "Hybrid"}
     std::string env_str_hwpc;  ///< 環境変数HWPC_CHOOSERの値
-      // {"FLOPS", "BANDWIDTH", "VECTOR", "CACHE", "user"}
+      // {"FLOPS", "BANDWIDTH", "VECTOR", "CACHE", "CYCLE", "user"}
     PerfWatch* m_watchArray;   ///< 測定区間の配列
       // PerfWatchのインスタンスは全部で m_nWatch 生成され、その番号対応は以下
       // m_watchArray[0]  :PMlibが定義するRoot区間
@@ -179,6 +179,7 @@ namespace pm_lib {
 
 
     /// 全プロセスの測定結果、全スレッドの測定結果を集約
+    /// 利用者は通常このAPIを呼び出す必要はない。
     ///
     /// @note  以下の処理を行う。
     ///       各測定区間の全プロセスの測定結果情報をマスタープロセスに集約。
@@ -186,17 +187,18 @@ namespace pm_lib {
     ///       経過時間でソートした測定区間のリストm_order[m_nWatch] を作成する。
     ///       各測定区間のHWPCイベントの統計値を取得する。
     ///       各プロセスの全スレッド測定結果をマスタースレッドに集約
-    ///
-    ///		このAPIは通常PMlib内部で必要な時に自動的に実行されるため
-    ///		利用者がこのAPIを呼び出すケースは少ない。
-    ///		このAPIを呼び出す必要があるのは、OpenMP parallel region 内の
-    ///		個別スレッドが測定区間を start/stop するスレッド並列タイプの場合。
-    ///		このようなPosix スレッド的な並列処理モードは現在はC++プログラムだけでサポートしている
-    ///		OpenMPの並列タイプが
-    ///		測定区間 start/stopの間でdo all/for all タイプの並列スレッドを発生する、
-    ///		一般的なOpenMPスレッド並列処理であれば、このAPIを呼び出す必要はない。
+    ///		通常はこのAPIはPMlib内部で自動的に実行される
     ///
     void gather(void);
+
+
+    ///  OpenMP並列処理されたPMlibスレッド測定区間のうち parallel regionから
+    ///  呼び出された測定区間のスレッド測定情報をマスタースレッドに集約する。
+    ///  通常このAPIはPMlib内部で自動的に実行され、利用者が呼び出す必要はない。
+    ///
+    ///   @note  内部で全測定区間をcheckして該当する測定区間を選択する。
+    ///
+    void mergeThreads(void);
 
 
     /// 測定結果の基本統計レポートを出力。
@@ -331,6 +333,7 @@ namespace pm_lib {
 
 
   private:
+
     std::map<std::string, int > array_of_symbols;
 
     /// 測定区間のラベルに対応する区間番号を追加作成する
@@ -405,14 +408,6 @@ namespace pm_lib {
 		}
     }
 
-
-    ///  OpenMP並列処理されたPMlibスレッド測定区間のうち parallel regionから
-    ///  呼び出された測定区間のスレッド測定情報をマスタースレッドに集約する。
-    ///
-    ///   @note  内部で全測定区間をcheckして該当する測定区間を選択する。
-    ///
-    void mergeThreads(void);
-
     /// 全プロセスの測定中経過情報を集約
     ///
     ///   @note  以下の処理を行う。
@@ -478,7 +473,7 @@ namespace pm_lib {
     void printDiag(const char* func, const char* fmt, ...)
     {
       if (my_rank == 0) {
-        fprintf(stderr, "*** PMlib Error. PerfMonitor::%s: ", func );
+        fprintf(stderr, "*** PMlib message. PerfMonitor::%s: ", func );
         va_list ap;
         va_start(ap, fmt);
         vfprintf(stderr, fmt, ap);

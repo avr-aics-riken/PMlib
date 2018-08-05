@@ -28,7 +28,7 @@ call f_pm_start ("Section-B")
 call f_pm_stop  ("Section-B", 0.0, 1)
 end do
 !$omp barrier
-call f_pm_gather ()
+call f_pm_mergethreads()
 !$omp end parallel
 
 call f_pm_setproperties ("Section-C", icalc, iexclusive)

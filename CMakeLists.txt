@@ -72,7 +72,7 @@ set (CMAKE_INSTALL_PREFIX "${INSTALL_DIR}")
 
 #######
 set(PROJECT_VERSION "6.1.0")
-set(LIB_REVISION "20180725_1700")
+set(LIB_REVISION "20180805_0000")
 
 message(" ")
 message("${PROJECT_NAME} Version : ${PROJECT_VERSION}")

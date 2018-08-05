@@ -57,7 +57,7 @@ void f_pm_initialize_ (int& init_nWatch)
     int my_rank;
 
 #ifdef DEBUG_PRINT_MONITOR
-	fprintf(stderr, "<f_pm_initialize_> init_nWatch=%d\n", init_nWatch);
+	//	fprintf(stderr, "<f_pm_initialize_> init_nWatch=%d\n", init_nWatch);
 #endif
 
 	PM.initialize(init_nWatch);
@@ -81,10 +81,9 @@ void f_pm_initialize_ (int& init_nWatch)
 #endif
 
 #ifdef _OPENMP
-	char* c_env = std::getenv("OMP_NUM_THREADS");
-	//	if (c_env == NULL) omp_set_num_threads(1);	// if not defined, set it as 1
+	//	char* c_env = std::getenv("OMP_NUM_THREADS");
+	//	if (c_env == NULL) omp_set_num_threads(1);
 	num_threads  = omp_get_max_threads();
-	//	PM.num_threads  = omp_get_max_threads();
 #else
 	num_threads  = 1;
 #endif
@@ -119,7 +118,7 @@ void f_pm_setproperties_ (char* fc, int& f_type, int& f_exclusive, int fc_size)
     PerfMonitor::Type arg_type; /// 測定対象タイプ from PerfMonitor.h
 
 #ifdef DEBUG_PRINT_MONITOR
-	fprintf(stderr, "<f_pm_setproperties_> fc=%s, f_type=%d, f_exclusive=%d, fc_size=%d\n", s.c_str(), f_type, f_exclusive, fc_size);
+	//	fprintf(stderr, "<f_pm_setproperties_> fc=%s, f_type=%d, f_exclusive=%d, fc_size=%d\n", s.c_str(), f_type, f_exclusive, fc_size);
 #endif
 	if (s == "" || fc_size == 0) {
 		fprintf(stderr, "<f_pm_setproperties> argument fc is (null). The call is ignored.\n");
@@ -160,7 +159,7 @@ void f_pm_start_ (char* fc, int fc_size)
 	std::string s=std::string(fc,fc_size);
 
 #ifdef DEBUG_PRINT_MONITOR
-	fprintf(stderr, "<f_pm_start_> fc=%s, fc_size=%d\n", s.c_str(), fc_size);
+	//	fprintf(stderr, "<f_pm_start_> fc=%s, fc_size=%d\n", s.c_str(), fc_size);
 #endif
 	if (s == "") {
 		fprintf(stderr, "<f_pm_start_> argument fc is empty(null)\n");
@@ -195,7 +194,7 @@ void f_pm_stop_ (char* fc, double& fpt, unsigned& tic, int fc_size)
 	std::string s=std::string(fc,fc_size);
 
 #ifdef DEBUG_PRINT_MONITOR
-	fprintf(stderr, "<f_pm_stop_> fc=%s, fpt=%8.0lf, tic=%d, fc_size=%d\n", s.c_str(), fpt, tic, fc_size);
+	//	fprintf(stderr, "<f_pm_stop_> fc=%s, fpt=%8.0lf, tic=%d, fc_size=%d\n", s.c_str(), fpt, tic, fc_size);
 #endif
 	if (s == "") {
 		fprintf(stderr, "<f_pm_stop_> ");
@@ -223,7 +222,7 @@ void f_pm_reset_ (char* fc, int fc_size)
 	std::string s=std::string(fc,fc_size);
 
 #ifdef DEBUG_PRINT_MONITOR
-	fprintf(stderr, "<f_pm_reset_> fc=%s, fc_size=%d\n", s.c_str(), fc_size);
+	//	fprintf(stderr, "<f_pm_reset_> fc=%s, fc_size=%d\n", s.c_str(), fc_size);
 #endif
 	if (s == "") {
 		fprintf(stderr, "<f_pm_reset_> argument fc is empty(null)\n");
@@ -245,7 +244,7 @@ void f_pm_reset_ (char* fc, int fc_size)
 void f_pm_resetall_ (void)
 {
 #ifdef DEBUG_PRINT_MONITOR
-	fprintf(stderr, "<f_pm_resetall_> \n");
+	//	fprintf(stderr, "<f_pm_resetall_> \n");
 #endif
 	PM.resetAll();
 	return;
@@ -258,9 +257,23 @@ void f_pm_resetall_ (void)
 void f_pm_gather_ (void)
 {
 #ifdef DEBUG_PRINT_MONITOR
-	fprintf(stderr, "<f_pm_gather_> \n");
+	//	fprintf(stderr, "<f_pm_gather_> \n");
 #endif
 	PM.gather();
+	return;
+}
+
+
+/// PMlib Fortran インタフェイス
+///  OpenMP並列処理されたPMlibスレッド測定区間のうち parallel regionから
+///  呼び出された測定区間のスレッド測定情報をマスタースレッドに集約する。
+///
+void f_pm_mergethreads_ (void)
+{
+#ifdef DEBUG_PRINT_MONITOR
+	//	fprintf(stderr, "<f_pm_mergethreads_> \n");
+#endif
+	PM.mergeThreads();
 	return;
 }
 
@@ -280,14 +293,14 @@ void f_pm_print_ (char* fc, int &psort, int fc_size)
 	FILE *fp;
 	std::string s=std::string(fc,fc_size);
 #ifdef DEBUG_PRINT_MONITOR
-	#ifdef _OPENMP
-	#pragma omp barrier
-	#endif
-	int my_rank;
-    MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
-	if (my_rank == 0) {
-		fprintf(stderr, "\n<f_pm_print_> fc=%s, psort=%d, fc_size=%d\n", s.c_str(), psort, fc_size);
-	}
+	//	#ifdef _OPENMP
+	//	#pragma omp barrier
+	//	#endif
+	//	int my_rank;
+    //	MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
+	//	if (my_rank == 0) {
+	//		fprintf(stderr, "\n<f_pm_print_> fc=%s, psort=%d, fc_size=%d\n", s.c_str(), psort, fc_size);
+	//	}
 #endif
 	std::string h;
 	std::string u="Fortran API";
@@ -340,7 +353,7 @@ void f_pm_printdetail_ (char* fc, int& legend, int &psort, int fc_size)
 	FILE *fp;
 	std::string s=std::string(fc,fc_size);
 #ifdef DEBUG_PRINT_MONITOR
-	fprintf(stderr, "<f_pm_printdetail_> fc=%s, legend=%d, psort=%d, fc_size=%d \n", s.c_str(), legend, psort, fc_size);
+	//	fprintf(stderr, "<f_pm_printdetail_> fc=%s, legend=%d, psort=%d, fc_size=%d \n", s.c_str(), legend, psort, fc_size);
 #endif
 
 	int user_file;
@@ -383,7 +396,7 @@ void f_pm_printthreads_ (char* fc, int &rank_ID, int &psort, int fc_size)
 	FILE *fp;
 	std::string s=std::string(fc,fc_size);
 #ifdef DEBUG_PRINT_MONITOR
-	fprintf(stderr, "<f_pm_printThreads_> fc=%s, rank_ID=%d, psort=%d, fc_size=%d \n", s.c_str(), rank_ID, psort, fc_size);
+	//	fprintf(stderr, "<f_pm_printThreads_> fc=%s, rank_ID=%d, psort=%d, fc_size=%d \n", s.c_str(), rank_ID, psort, fc_size);
 #endif
 
 	int user_file;
@@ -470,7 +483,7 @@ void f_pm_printgroup_ (char* fc, MPI_Group p_group, MPI_Comm p_comm, int* pp_ran
 	FILE *fp;
 	std::string s=std::string(fc,fc_size);
 #ifdef DEBUG_PRINT_MONITOR
-	fprintf(stderr, "<f_pm_printgroup_> fc=%s, group=%d, legend=%d, psort=%d, fc_size=%d \n", s.c_str(), group, legend, psort, fc_size);
+	//	fprintf(stderr, "<f_pm_printgroup_> fc=%s, group=%d, legend=%d, psort=%d, fc_size=%d \n", s.c_str(), group, legend, psort, fc_size);
 #endif
 
 	if (s == "" || fc_size == 0) {
@@ -511,8 +524,8 @@ void f_pm_printcomm_ (char* fc, MPI_Comm new_comm, int& icolor, int& key, int& l
 	FILE *fp;
 	std::string s=std::string(fc,fc_size);
 #ifdef DEBUG_PRINT_MONITOR
-	fprintf(stderr, "<f_pm_printcomm_> fc=%s, new_comm=%d, icolor=%d, key=%d, legend=%d, psort=%d, fc_size=%d \n",
-		s.c_str(), new_comm, icolor, key, legend, psort, fc_size);
+	//	fprintf(stderr, "<f_pm_printcomm_> fc=%s, new_comm=%d, icolor=%d, key=%d, legend=%d, psort=%d, fc_size=%d \n",
+	//		s.c_str(), new_comm, icolor, key, legend, psort, fc_size);
 #endif
 
 	if (s == "" || fc_size == 0) {
@@ -548,8 +561,8 @@ void f_pm_printprogress_ (char* fc, char* comments, int& psort, int fc_size, int
 	FILE *fp;
 	std::string s=std::string(fc,fc_size);
 #ifdef DEBUG_PRINT_MONITOR
-	fprintf(stderr, "<f_pm_printprogress_> fc=%s, comments=%s, psort=%d, fc_size=%d, comments_size=%d \n",
-		s.c_str(), comments, psort, fc_size, comments_size);
+	//	fprintf(stderr, "<f_pm_printprogress_> fc=%s, comments=%s, psort=%d, fc_size=%d, comments_size=%d \n",
+	//		s.c_str(), comments, psort, fc_size, comments_size);
 #endif
 
 	if (s == "" || fc_size == 0) {
@@ -576,7 +589,7 @@ void f_pm_printprogress_ (char* fc, char* comments, int& psort, int fc_size, int
 void f_pm_posttrace_ (void)
 {
 #ifdef DEBUG_PRINT_MONITOR
-	fprintf(stderr, "<f_pm_posttrace_> \n");
+	//	fprintf(stderr, "<f_pm_posttrace_> \n");
 #endif
 
 	PM.postTrace ();

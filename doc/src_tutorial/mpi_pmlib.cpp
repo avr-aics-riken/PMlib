@@ -72,20 +72,17 @@ int main (int argc, char *argv[])
 	PM.start("Subsection 1");
 	somekernel();
 	byte_count=pow (dsize, 3.0)*4.0*4.0;
-	//	byte_count=2000.0;
 	PM.stop ("Subsection 1", byte_count, 1);
 	spacer();
 
 	PM.start("Subsection 2");
 	somekernel();
 	flop_count=pow (dsize, 3.0)*4.0 * 1.2;	// somewhat inflated number ...
-	//	flop_count=5000.0;
 	PM.stop ("Subsection 2", flop_count, 1);
 	spacer();
 
 	somekernel();
 	flop_count=pow (dsize, 3.0)*4.0 * 1.5;	// somewhat inflated number ...
-	//	flop_count=1000.0;
 	PM.stop("Second section", flop_count, 1);
 	spacer();
 

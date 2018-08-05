@@ -111,7 +111,7 @@ namespace pm_lib {
     	if	(s == "FLOPS" || s == "BANDWIDTH" || s == "VECTOR" || s == "CACHE" || s == "CYCLE" ) {
 			env_str_hwpc = s;
     	} else {
-			printDiag("PerfMonitor::initialize()",  "HWPC_CHOOSER value [%s] is not valid and is ignored.\n", cp_env);
+			printDiag("initialize()",  "HWPC_CHOOSER value [%s] is not valid. User API values will be reported.\n", cp_env);
 			env_str_hwpc = "user";
 		}
 	}
@@ -119,7 +119,7 @@ namespace pm_lib {
     // Start m_watchArray[0] instance
     // m_watchArray[] は PerfWatch classである(PerfMonitorではない)ことに留意
     // PerfWatchのインスタンスは全部で m_nWatch 生成される
-    // m_watchArray[0]  :PMlibが定義する特別な区間(Root)
+    // m_watchArray[0]  :PMlibが定義する特別な背景区間(Root)
     // m_watchArray[1 .. m_nWatch] :ユーザーが定義する各区間
 
     std::string label;
@@ -133,7 +133,6 @@ namespace pm_lib {
 
 	// objects created by "new" operator can be accessed using pointer, not name.
     m_watchArray = new PerfWatch[init_nWatch];
-    m_gathered = false;
     m_nWatch = 0 ;
     m_order = NULL;
 	reserved_nWatch = init_nWatch;
@@ -142,9 +141,9 @@ namespace pm_lib {
     int id = add_perf_label(label);	// id for "Root Section" should be 0
     m_nWatch++;
     m_watchArray[0].setProperties(label, id, CALC, num_process, my_rank, num_threads, false);
-
     m_watchArray[0].initializeOTF();
     m_watchArray[0].start();
+    is_Root_active = true;			// "Root Section" is now active
 
   }
 
@@ -396,29 +395,20 @@ namespace pm_lib {
   {
     if (!is_PMlib_enabled) return;
 
-    if (m_gathered) return;
 	#ifdef DEBUG_PRINT_MONITOR
     if (my_rank == 0) { fprintf(stderr, "<gather> starts\n"); }
 	#endif
 
-	#ifdef _OPENMP
-	bool in_parallel;
-	in_parallel = omp_in_parallel();
-	if (in_parallel) {
-    	mergeThreads();
-    	//	m_gathered = false;	// untouch
-	} else {
+    if (is_Root_active) {
     	m_watchArray[0].stop(0.0, 1);
-    	mergeThreads();
-    	gather_and_sort();
-    	m_gathered = true;
+    	is_Root_active = false;
 	}
 
-	#else
-   	m_watchArray[0].stop(0.0, 1);
-   	gather_and_sort();
-   	m_gathered = true;
+	#ifdef _OPENMP
+    mergeThreads();
 	#endif
+
+   	gather_and_sort();
 
 	#ifdef DEBUG_PRINT_MONITOR
     if (my_rank == 0) { fprintf(stderr, "<gather> ends\n"); }
@@ -485,7 +475,6 @@ namespace pm_lib {
     if ( !(m_tcost = new double[m_nWatch]) ) PM_Exit(0);
     for (int i = 0; i < m_nWatch; i++) {
       PerfWatch& w = m_watchArray[i];
-      //	if (!w.m_exclusive) continue;   //
       if ( w.m_count > 0 ) {
         m_tcost[i] = w.m_time_av;
       }
@@ -495,11 +484,9 @@ namespace pm_lib {
     unsigned tmp_u;
     for (int i=0; i<m_nWatch-1; i++) {
       PerfWatch& w = m_watchArray[i];
-      //	if (!w.m_exclusive) continue;   //
       if (w.m_label.empty()) continue;  //
       for (int j=i+1; j<m_nWatch; j++) {
         PerfWatch& q = m_watchArray[j];
-        //	if (!q.m_exclusive) continue;   //
         if (q.m_label.empty()) continue;  //
         if ( m_tcost[i] < m_tcost[j] ) {
           tmp_d=m_tcost[i]; m_tcost[i]=m_tcost[j]; m_tcost[j]=tmp_d;
@@ -532,9 +519,8 @@ namespace pm_lib {
       }
       return;
     }
-    if (!m_gathered) {
-      gather();
-    }
+    gather();
+
     if (my_rank != 0) return;
 
 	int my_thread;
@@ -619,10 +605,8 @@ namespace pm_lib {
       }
       return;
     }
-    //   全プロセスの情報が PerfWatch::gather() によりrank 0に集計ずみのはず
-    if (!m_gathered) {
-      gather();
-    }
+
+    gather();
 
     if (my_rank != 0) return;
 	#ifdef DEBUG_PRINT_MONITOR
@@ -666,6 +650,7 @@ namespace pm_lib {
 
 #ifdef USE_PAPI
     //	II. HWPC/PAPIレポート：HWPC計測結果を出力
+	if (m_watchArray[0].my_papi.num_events == 0) return;
 	if (env_str_hwpc != "user" ) {
         fprintf(fp, "\n# PMlib hardware performance counter (HWPC) Report -------------------------\n");
 
@@ -707,9 +692,9 @@ namespace pm_lib {
       if (my_rank == 0) printDiag("PerfMonitor::printThreads",  "No section is defined. No report.\n");
       return;
     }
-    if (!m_gathered) {
-      gather();
-    }
+
+    gather();
+
 	#ifdef DEBUG_PRINT_MONITOR
     if (my_rank == 0) fprintf(stderr, "<printThreads> \n");
 	#endif
@@ -732,7 +717,6 @@ namespace pm_lib {
       }
       if (i == 0) continue;	// 区間0 : Root区間は出力しない
       if (!m_watchArray[i].m_exclusive) continue;
-      if (m_watchArray[i].m_count == 0) continue;
 
       m_watchArray[i].printDetailThreads(fp, rank_ID);
     }
@@ -747,6 +731,7 @@ namespace pm_lib {
   void PerfMonitor::printLegend(FILE* fp)
   {
     if (!is_PMlib_enabled) return;
+    if (!is_PAPI_enabled) return;
 
     if (my_rank == 0) {
       fprintf(fp, "\n# PMlib Legend - HWPC symbols used in the PMlib report ----------------\n");
@@ -778,21 +763,18 @@ namespace pm_lib {
 
     if (!is_PMlib_enabled) return;
 
-    //   全プロセスの情報が PerfWatch::gather() によりrank 0に集計ずみのはず
-    if (!m_gathered) {
-      gather();
-    }
+    //	gather(); is always called by print()
+
     // check the size of the group
     int new_size, new_id;
     MPI_Group_size(p_group, &new_size);
     MPI_Group_rank(p_group, &new_id);
 
-	//  #define DEBUG_PRINT_MPI_GROUP 1
 	#ifdef DEBUG_PRINT_MPI_GROUP
-    if (my_rank == 0) {
-    	fprintf(fp, "<printGroup> MPI group:%d, ranks:%d \n", group, new_size);
+    //	if (my_rank == 0) {
+    	fprintf(fp, "<printGroup> MPI group:%d, new_size=%d, ranks: ", group, new_size);
     	for (int i = 0; i < new_size; i++) { fprintf(fp, "%3d ", pp_ranks[i]); }
-    }
+    //	}
 	#endif
 
     // 	I. MPIランク別詳細レポート: MPIランク別測定結果を出力
@@ -826,6 +808,7 @@ namespace pm_lib {
 
 #ifdef USE_PAPI
     //	II. HWPC/PAPIレポート：HWPC計測結果を出力
+	if (m_watchArray[0].my_papi.num_events == 0) return;
     if (my_rank == 0) {
       fprintf(fp, "\n# PMlib Process Group [%5d] hardware performance counter (HWPC) Report ---\n", group);
     }
@@ -879,7 +862,13 @@ namespace pm_lib {
 	g_icolor = new int[num_process]();
 	MPI_Gather(&icolor,1,MPI_INT, g_icolor,1,MPI_INT, 0, MPI_COMM_WORLD);
 
-	if(my_id != 0) return;
+	#ifdef DEBUG_PRINT_MPI_GROUP
+	(void) MPI_Barrier(MPI_COMM_WORLD);
+	fprintf(stderr, "<printComm> MPI_Gather finished. my_id=%d, my_group=%d\n",
+		my_id, my_group);
+	#endif
+
+	//	if(my_id != 0) return;
 
 	int *g_myid;
 	int *p_gid;
@@ -912,7 +901,6 @@ namespace pm_lib {
 		p_size[gid] = ip - p_gid[gid];
 		gid++;
 	}
-	//	#define DEBUG_PRINT_MPI_GROUP 1
 	#ifdef DEBUG_PRINT_MPI_GROUP
 	fprintf(stderr, "<printComm> The number of produced MPI groups=%d\n", ngroups);
 	for (int i=0; i<ngroups; i++) {
@@ -1125,10 +1113,9 @@ namespace pm_lib {
 
     fprintf(fp, "\n");
     //	fprintf(fp, "\tTotal execution time            = %12.6e [sec]\n", m_watchArray[0].m_time);
-    fprintf(fp, "\tTotal PMlib enabled time from initialize() to last stop() = %9.3e [sec]\n", tot);
-    fprintf(fp, "\n");
-    fprintf(fp, "\tExclusive sections statistics are reported below.\n");
-    fprintf(fp, "\tInclusive sections, marked with (*), are also shown. They are not added to the total values.\n");
+    fprintf(fp, "\tPMlib enabled elapse time (from initialize to print) = %9.3e [sec]\n", tot);
+    fprintf(fp, "\tExclusive sections and inclusive sections are reported below.\n");
+    fprintf(fp, "\tInclusive sections, marked with (*), are not added in the statistics total.\n");
     fprintf(fp, "\n");
 
   }
@@ -1138,12 +1125,13 @@ namespace pm_lib {
   ///
   ///   @param[in] fp       出力ファイルポインタ
   ///   @param[in] maxLabelLen    ラベル文字長
-  ///   @param[in] sum_time_flop  演算経過時間
-  ///   @param[in] sum_time_comm  通信経過時間
-  ///   @param[in] sum_time_other  その他経過時間
-  ///   @param[in] sum_flop  演算量
-  ///   @param[in] sum_comm  通信量
-  ///   @param[in] sum_other  その他（% percentage で表示される量）
+  ///   @param[in] tot  Root区間の経過時間
+  ///   @param[out] sum_time_flop  演算経過時間
+  ///   @param[out] sum_time_comm  通信経過時間
+  ///   @param[out] sum_time_other  その他経過時間
+  ///   @param[out] sum_flop  演算量
+  ///   @param[out] sum_comm  通信量
+  ///   @param[out] sum_other  その他（% percentage で表示される量）
   ///   @param[in] unit 計算量の単位
   ///   @param[in] seqSections int型 測定区間の表示順 (0:経過時間順、1:登録順)
   ///
@@ -1206,6 +1194,8 @@ namespace pm_lib {
     double fops;
     std::string p_label;
 
+    double tav;
+
     // 測定区間の時間と計算量を表示。表示順は引数 seqSections で指定されている。
     for (int j = 0; j < m_nWatch; j++) {
 
@@ -1218,8 +1208,17 @@ namespace pm_lib {
       if (i == 0) continue;
 
       PerfWatch& w = m_watchArray[i];
-      if ( !(w.m_count > 0) ) continue;
+
+      if ( !(w.m_count_sum > 0) ) continue;
+      //	if ( !(w.m_count > 0) ) continue;
       //	if ( !w.m_exclusive || w.m_label.empty()) continue;
+
+		//	tav = ( (w.m_count==0) ? 0.0 : w.m_time_av/w.m_count ); // 1回あたりの時間
+		if (w.m_count_av != 0) {
+			tav = w.m_time_av/(double)w.m_count_av;
+		} else {
+			tav = (double)num_process*w.m_time_av/(double)w.m_count_sum;
+		}
 
       is_unit = w.statsSwitch();
 
@@ -1229,24 +1228,23 @@ namespace pm_lib {
       fprintf(fp, "\t%-*s: %8ld   %9.3e %6.2f  %8.2e  %9.3e",
               maxLabelLen,
               p_label.c_str(),
-              w.m_count,            // 測定区間のコール回数
+              w.m_count_av,         // 測定区間の平均コール回数 // w.m_count
               w.m_time_av,          // 測定区間の時間(全プロセスの平均値)
               100*w.m_time_av/tot,  // 測定区間の時間/全区間（=Root区間）の時間
-                                    // 分母 = initialize()からgather()までの区間
               w.m_time_sd,          // 標準偏差
-              (w.m_count==0) ? 0.0 : w.m_time_av/w.m_count); // 1回あたりの時間
+              tav);                 // コール1回あたりの時間
 
       if (w.m_time_av == 0.0) {
         fops = 0.0;
       } else {
         if ( is_unit >= 0 && is_unit <= 3 ) {
-          fops = (w.m_count==0) ? 0.0 : w.m_flop_av/w.m_time_av;
+          fops = (w.m_count_av==0) ? 0.0 : w.m_flop_av/w.m_time_av;
         } else
         if ( is_unit == 4 || is_unit == 5 ) {
           fops = w.m_percentage;
         } else
         if ( is_unit == 6 ) {
-          fops = (w.m_count==0) ? 0.0 : w.m_flop_av/w.m_time_av;
+          fops = (w.m_count_av==0) ? 0.0 : w.m_flop_av/w.m_time_av;
         }
       }
 
@@ -1259,8 +1257,6 @@ namespace pm_lib {
             w.m_flop_sd,          // 計算量の標準偏差(全プロセスの平均値)
             uF,                   // 測定区間の計算速度(全プロセスの平均値)
             p_label.c_str());		// 計算速度の単位
-
-// DEBUG from here
 
       if (w.m_exclusive) {
         if ( is_unit == 0 ) {

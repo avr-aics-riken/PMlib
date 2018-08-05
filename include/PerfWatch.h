@@ -74,18 +74,19 @@ namespace pm_lib {
     bool m_exclusive;      ///< 排他測定フラグ (false, true)
 
     // 測定値の積算量
+    long m_count;          ///< 測定回数 (プロセス内の全スレッドの最大値)
     double m_time;         ///< 時間(秒)
     double m_flop;         ///< 浮動小数点演算量or通信量(バイト)
-    long m_count;          ///< 測定回数
-                           // 区間の呼び出し回数はプロセス毎に異なる場合がある
-    double m_percentage;  ///< Percentage of vectorization or cache hit
+    double m_percentage;   ///< Percentage of vectorization or cache hit
 
-    // 統計量
-    double m_time_av;    ///< 時間の平均値(ランク0のみ)
-    double m_time_sd;    ///< 時間の標準偏差(ランク0のみ)
-    double m_flop_av;    ///< 浮動小数点演算量or通信量の平均値(ランク0のみ)
-    double m_flop_sd;    ///< 浮動小数点演算量or通信量の標準偏差(ランク0のみ)
-    double m_time_comm;  ///< 通信部分の最大値（ランク0のみ）
+    // 統計量(全プロセスに関する統計量でランク0のみが保持する)
+    long m_count_sum;    ///< 測定回数 (全プロセスの合計値)
+    long m_count_av;     ///< 測定回数の平均値
+    double m_time_av;    ///< 時間の平均値
+    double m_time_sd;    ///< 時間の標準偏差
+    double m_flop_av;    ///< 浮動小数点演算量or通信量の平均値
+    double m_flop_sd;    ///< 浮動小数点演算量or通信量の標準偏差
+    double m_time_comm;  ///< 通信部分の最大値
 
     int m_is_OTF;	     ///< OTF tracing 出力のフラグ 0(no), 1(yes), 2(full)
     std::string otf_filename;    ///< OTF filename headings
@@ -100,15 +101,12 @@ namespace pm_lib {
     // 測定時の補助変数
     double m_startTime;  ///< 測定区間の測定開始時刻
     double m_stopTime;   ///< 測定区間の測定終了時刻
-    bool m_started;      ///< 測定区間の測定中フラグ
 
     // 測定値集計時の補助変数
     double* m_timeArray;         ///< 「時間」集計用配列
     double* m_flopArray;         ///< 「浮動小数点演算量or通信量」集計用配列
     long* m_countArray; ///< 「測定回数」集計用配列
-    long  m_count_sum;  ///< 「測定回数」summed over all MPI ranks
     double* m_sortedArrayHWPC;   ///< 集計後ソートされたHWPC配列のポインタ
-
 
     /// MPI並列時の並列プロセス数と自ランク番号
     int num_process;
@@ -117,13 +115,15 @@ namespace pm_lib {
     int num_threads;
     int my_thread;
 
-
     /// 測定区間に関する各種の判定フラグ ：  bool値(true|false)
-    bool ExclusiveStarted;	/// 排他測定実行中フラグ. 非排他測定では未使用
-    bool m_is_first;      /// 測定区間が初めてstartされる場合かどうか
-    bool m_is_healthy;    /// 測定区間に排他性・非排他性の矛盾がないか
-    bool m_in_parallel;	/// my_thread がparallel 領域内部であるかどうか
-    bool m_threads_merged;	/// 全スレッドの情報をマスタースレッドに集約済みか
+    bool m_is_set;         /// 測定区間がプロパティ設定済みかどうか
+    bool m_is_healthy;     /// 測定区間に排他性・非排他性の矛盾がないか
+    bool m_in_parallel;    /// 測定区間が並列領域内部のスレッドであるかどうか
+    bool m_threads_merged; /// 全スレッドの情報をマスタースレッドに集約済みか
+    bool m_gathered;       /// 全プロセスの結果をランク0に集計済みかどうか
+    bool m_started;        /// 測定区間がstart済みかどうか
+    bool ExclusiveStarted; /// 排他測定実行中フラグ. 非排他測定では未使用
+
 
 
   public:
@@ -131,7 +131,7 @@ namespace pm_lib {
     PerfWatch() : m_time(0.0), m_flop(0.0), m_count(0), m_started(false),
       ExclusiveStarted(false),
       my_rank(0), m_timeArray(0), m_flopArray(0), m_countArray(0),
-      m_sortedArrayHWPC(0), m_is_first(true), m_is_healthy(true) {}
+      m_sortedArrayHWPC(0), m_is_set(false), m_is_healthy(true) {}
 
     /// デストラクタ.
     ~PerfWatch() {

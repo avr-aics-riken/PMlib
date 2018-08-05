@@ -73,16 +73,18 @@ struct pmlib_papi_chooser {
 	double v_sorted[Max_chooser_events];		// sorted event values
 	std::string s_sorted[Max_chooser_events];	// sorted event symbols
 
-	// additional array for exchanging thread private values across threads
-	// from [Max_chooser_events][Max_nthreads]
-	// to   [Max_nthreads][Max_chooser_events]
-			//	long long th_values[Max_chooser_events][Max_nthreads];
-			//	long long th_accumu[Max_chooser_events][Max_nthreads];
-			//	double th_v_sorted[Max_chooser_events][Max_nthreads];
+	// Arrays for exchanging thread private values across threads
+	// These keep  m_count, m_time, m_flop until sortPapiCounterList() is called.
+	//	th_v_sorted[my_thread][0] = (double)m_count;
+	//	th_v_sorted[my_thread][1] = m_time;
+	//	th_v_sorted[my_thread][2] = m_flop;
+	// After sortPapiCounterList() is called, they will keep HWPC and sorted values
+
 	long long th_values[Max_nthreads][Max_chooser_events];	// values per thread
 	long long th_accumu[Max_nthreads][Max_chooser_events];	// accumu per thread
 	double th_v_sorted[Max_nthreads][Max_chooser_events];	// sorted values per thread
-	// Note2  Shall we change the name from th_v_sorted[][] to th_user[][] ?
+	// Note 1. Exchanged dimension [Max_chooser_events] <-> [Max_nthreads]
+	// Note 2. Shall we change the name from th_v_sorted[][] to th_user[][] ? To be checked.
 };
 
 // Macro patches for K computer and FX10 which has fairly old PAPI 3.6
