@@ -49,7 +49,7 @@ void print_state_HighLevelInfo(HighLevelInfo *state)
 		return;
 	}
 
-	#ifdef DEBUG_PRINT_PAPI
+	#ifdef DEBUG_PRINT_PAPI_EXT
 	fprintf(stderr,"\t <print_state_HighLevelInfo> starts\n");
 	fprintf(stderr,"\t struct state:  EventSet=%d, num_evts=%d, running=%d\n",
 						state->EventSet, state->num_evts, state->running);
@@ -65,7 +65,7 @@ int my_papi_add_events ( int *events, int num_events)
 	if ( num_events == 0 ) {
 		return PAPI_OK;
 	}
-	#ifdef DEBUG_PRINT_PAPI
+	#ifdef DEBUG_PRINT_PAPI_EXT
 	fprintf(stderr,"\t <my_papi_add_events> num_events=%d\n", num_events);
 	for (i=0; i<num_events; i++){
 		fprintf(stderr, "  i:%d events[i]:%u\n", i,events[i]);
@@ -97,7 +97,7 @@ int my_papi_bind_start ( long long *values, int num_events)
 	if ( num_events == 0 ) {
 		return PAPI_OK;
 	}
-	#ifdef DEBUG_PRINT_PAPI
+	#ifdef DEBUG_PRINT_PAPI_EXT
 	fprintf(stderr,"\t <my_papi_bind_start> num_events=%d\n", num_events);
 	#endif
 
@@ -130,7 +130,7 @@ int my_papi_bind_stop ( long long *values, int num_events)
 	if ( num_events == 0 ) {
 		return PAPI_OK;
 	}
-	#ifdef DEBUG_PRINT_PAPI
+	#ifdef DEBUG_PRINT_PAPI_EXT
 	fprintf(stderr,"\t <my_papi_bind_stop> num_events=%d\n", num_events);
 	#endif
 
@@ -160,7 +160,7 @@ int my_papi_bind_read ( long long *values, int num_events)
 	if ( num_events == 0 ) {
 		return PAPI_OK;
 	}
-	#ifdef DEBUG_PRINT_PAPI
+	#ifdef DEBUG_PRINT_PAPI_EXT
 	fprintf(stderr,"\t <my_papi_bind_read> \n");
 	#endif
 
@@ -186,7 +186,7 @@ void my_papi_name_to_code ( char* c_event, int* i_event)
 		fprintf(stderr,"*** error. <PAPI_event_name_to_code> c_event=[%s], retval=%d\n", c_event, retval);
 		return;
 	}
-	#ifdef DEBUG_PRINT_PAPI
+	#ifdef DEBUG_PRINT_PAPI_EXT
 	fprintf(stderr,"\t <my_papi_name_to_code> c_event=[%s], i_event=%u\n",
 		c_event, *i_event);
 	#endif
