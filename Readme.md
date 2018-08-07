@@ -98,18 +98,22 @@ The default compiler options are described in `cmake/CompilerOptionSelector.cmak
 In most system, CC/CXX/F90/FC and other environement variables must be set
 for choosing the right compilers.
 CMAKE_*_FLAGS options can be used for passing compiler options as shown below.
-Adding OpenMP option is generally recommended.
+Adding OpenMP options and fast timer option (-DUSE_PRECISE_TIMER) is generally recommended
+on Intel Xeon platform.
 ~~~
 Intel: CC=icc  CXX=icpc F90=ifort FC=ifort
-		CXXFLAGS="-qopenmp" FCFLAGS="-qopenmp -fpp"
+		CXXFLAGS="-qopenmp -DUSE_PRECISE_TIMER" FCFLAGS="-qopenmp -fpp"
 PGI  : CC=pgcc CXX=pgc++ F90=pgf90 FC=pgfortran
 		CXXFLAGS="-mp" FCFLAGS="-mp -Mpreprocess" LDFLAGS="-pgc++libs"
 GNU  : CC=gcc  CXX=g++  F90=gfortran FC=gfortran
 		CXXFLAGS="-fopenmp" FCFLAGS="-fopenmp -cpp"
+~~~
 
+An example of cmake command and options for Intel compiler is shown below.
+~~~
 $ # Intel compiler example
 $ export CC=icc CXX=icpc F90=ifort FC=ifort
-$ CXXFLAGS="-qopenmp -DUSE_PRECISE_TIMER "
+$ CXXFLAGS="-qopenmp "
 $ FCFLAGS="-qopenmp -fpp "
 $ cmake -DINSTALL_DIR=${PM_HOME}/PMlib \
 	-DCMAKE_CXX_FLAGS="${CXXFLAGS} ${LDFLAGS}" \
