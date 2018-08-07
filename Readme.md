@@ -60,7 +60,7 @@ $ sudo make install
 
 `-D INSTALL_DIR=install_directory`
 
->  Specify the directory that this library will be installed. Built library is installed at `install_directory/lib` and the header files are placed at `install_directory/include`. The default install directory is `/usr/local/PMlib`.
+>  Specify the directory where PMlib will be installed. PMlib libraries are installed at `install_directory/lib` and the header files are placed at `install_directory/include`. The default install directory is `/usr/local/PMlib`.
 
 `-D with_example=` {no | yes}
 
@@ -95,11 +95,25 @@ The default compiler options are described in `cmake/CompilerOptionSelector.cmak
 
 ####
 ##### serial version
-In some Intel compiler environment, CC/CXX/F90/FC environement variables
-must be set for compiling.
+In most system, CC/CXX/F90/FC and other environement variables must be set
+for choosing the right compilers.
+CMAKE_*_FLAGS options can be used for passing compiler options as shown below.
+Adding OpenMP option is generally recommended.
 ~~~
-$ export CC=icc CXX=icpc F90=ifort FC=ifort	# needed for Intel compiler
+Intel: CC=icc  CXX=icpc F90=ifort FC=ifort
+		CXXFLAGS="-qopenmp" FCFLAGS="-qopenmp -fpp"
+PGI  : CC=pgcc CXX=pgc++ F90=pgf90 FC=pgfortran
+		CXXFLAGS="-mp" FCFLAGS="-mp -Mpreprocess" LDFLAGS="-pgc++libs"
+GNU  : CC=gcc  CXX=g++  F90=gfortran FC=gfortran
+		CXXFLAGS="-fopenmp" FCFLAGS="-fopenmp -cpp"
+
+$ # Intel compiler example
+$ export CC=icc CXX=icpc F90=ifort FC=ifort
+$ CXXFLAGS="-qopenmp -DUSE_PRECISE_TIMER "
+$ FCFLAGS="-qopenmp -fpp "
 $ cmake -DINSTALL_DIR=${PM_HOME}/PMlib \
+	-DCMAKE_CXX_FLAGS="${CXXFLAGS} ${LDFLAGS}" \
+	-DCMAKE_Fortran_FLAGS="${FCFLAGS} ${LDFLAGS}" \
 	-Denable_OPENMP=no \
 	-Dwith_MPI=no \
 	-Denable_Fortran=yes \
@@ -112,7 +126,8 @@ $ cmake -DINSTALL_DIR=${PM_HOME}/PMlib \
 If PAPI and/or OTF library is available on the system, set their path
 as the example below to activate the functionality within PMlib.
 ~~~
-$ export CC=mpiicc CXX=mpiicpc F90=mpiifort FC=mpiifort	# for Intel compiler
+$ # Intel compiler example
+$ export CC=mpiicc CXX=mpiicpc F90=mpiifort FC=mpiifort
 $ PAPI_DIR="#set PAPI library path such as /usr/local/papi-5.5"
 $ OTF_DIR="#set OTF library path such as /usr/local/otf-1.12"
 $ cmake -DINSTALL_DIR=${PM_HOME}/PMlib \
@@ -125,7 +140,7 @@ $ cmake -DINSTALL_DIR=${PM_HOME}/PMlib \
 ~~~
 
 
-### FUJITSU compiler / FX10 ,FX100, K on login nodes (Cross compilation) and Fujitsu TCS environment for intel PC
+### FUJITSU FX100, K computer (Cross compilation on login nodes) and Fujitsu TCS environment for intel PC
 ~~~
 $ cmake -DINSTALL_DIR=${PM_HOME}/PMlib \
             -DCMAKE_TOOLCHAIN_FILE=../cmake/Toolchain_fx10.cmake \

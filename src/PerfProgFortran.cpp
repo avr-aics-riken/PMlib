@@ -35,7 +35,16 @@
 
 using namespace pm_lib;
 PerfMonitor PM;
+#if defined (__INTEL_COMPILER) || (__PGI) || (__FUJITSU)
+// PMlib now supports openmp non-worksharing parallel construct, i.e. thread safe.
 #pragma omp threadprivate(PM)
+	// PGI interpretation of mixed-language openmp threadprivate class construct is
+	// different from other compilers. PMlib needs main program to be C++ for dealing this.
+	#ifdef __PGI
+	extern "C" void main_(void);
+	int main(void) { (void) main_(); }
+	#endif
+#endif
 
 // Fortran interface should avoid C++ name space mangling, thus this extern.
 extern "C" {

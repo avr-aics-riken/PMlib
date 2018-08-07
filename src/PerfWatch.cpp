@@ -756,6 +756,7 @@ namespace pm_lib {
   ///
   void PerfWatch::mergeAllThreads(void)
   {
+  #ifdef _OPENMP
 	if (m_threads_merged) return;
 	if (m_started) return;	// still active in the middle of start/stop pair
 
@@ -872,6 +873,7 @@ namespace pm_lib {
     }
 	#endif
 
+  #endif
   }
 
 
@@ -965,9 +967,26 @@ namespace pm_lib {
 	save_m_flop  = m_flop;
 	save_m_time_av  = m_time_av;
 
-
 	for (int j=0; j<num_threads; j++)
 	{
+		if ( !m_in_parallel && is_unit < 2 ) {
+
+			if (j == 1) {
+				if (my_rank == 0) {
+				// user mode thread statistics for worksharing construct
+				// are always represented by thread 0, because they can not be
+				// split into threads in artificial manner.
+				fprintf(fp, " %3d\t\t user mode statistics are represented by thread 0\n", j);
+				}
+				continue;
+			}
+			if (j >= 1) {
+				if (my_rank == 0) {
+				fprintf(fp, " %3d\t\t ditto\n", j);
+				}
+				continue;
+			}
+		}
 
 		PerfWatch::selectPerfSingleThread(j);
 
@@ -982,7 +1001,7 @@ namespace pm_lib {
 				j,
 				m_countArray[i], // コール回数
 				m_timeArray[i],  // 時間
-				100*m_timeArray[i]/m_time_av, // スレッド0に対するスレッドjの計算時間の比率
+				100*m_timeArray[i]/m_time_av, // 時間の比率
 				m_flopArray[i],  // 演算数
 				perf_rate,       // スピード　Bytes/sec or Flops
 				unit.c_str()     // スピードの単位
@@ -1060,12 +1079,10 @@ namespace pm_lib {
 	m_threads_merged = false;
 #endif
 
-#ifdef USE_PAPI
 	if (!m_is_set) {
 		my_papi = papi;
 		m_is_set = true;
 	}
-#endif
 
     m_is_OTF = 0;
 #ifdef USE_OTF
