@@ -1,5 +1,5 @@
-#ifdef __PGI
-subroutine main
+#if defined(__PGI) && (FORCE_CXX_MAIN)
+subroutine fortmain
 #else
 program main
 #endif
@@ -16,9 +16,7 @@ call mpi_comm_rank( MPI_COMM_WORLD, my_id, ierr )
 call mpi_comm_size( MPI_COMM_WORLD, npes, ierr )
 #endif
 
-#if defined (__INTEL_COMPILER) || (__PGI) || (__FUJITSU)
 !$omp parallel private(ip,x,i)
-#endif
 
 ip=omp_get_thread_num()
 call f_pm_initialize (10)
@@ -43,26 +41,24 @@ endif
 end do
 call f_pm_mergethreads ()
 
-#if defined (__INTEL_COMPILER) || (__PGI) || (__FUJITSU)
 !$omp end parallel
-#endif
 
 call f_pm_setproperties ("Section-C", icalc, iexclusive)
 call f_pm_start ("Section-C")
 call check_thread(x)
 call f_pm_stop  ("Section-C", 111.0d0, 1)
 
-
 call f_pm_print ("", 1)
 call f_pm_printdetail ("", 0, 1)
 id=0
 call f_pm_printthreads ("", id, 1)
 
-#ifdef DISABLE_MPI
-#else
+#if !defined(DISABLE_MPI)
 call MPI_Finalize( ierr )
 #endif
-stop
+#if defined(__PGI) && (FORCE_CXX_MAIN)
+return
+#endif
 end
 
 subroutine check_thread(x)

@@ -188,7 +188,7 @@ namespace pm_lib {
 	if ( m_sortedArrayHWPC == NULL) {
 		m_sortedArrayHWPC = new double[num_process*my_papi.num_sorted];
 		if (!(m_sortedArrayHWPC)) {
-			printError("gatherHWPC()", "new memory failed. %d x %d x 8\n", num_process, my_papi.num_sorted);
+			printError("gatherHWPC", "new memory failed. %d x %d x 8\n", num_process, my_papi.num_sorted);
 			PM_Exit(0);
 		}
 	}
@@ -199,7 +199,7 @@ namespace pm_lib {
 					m_sortedArrayHWPC, my_papi.num_sorted, MPI_DOUBLE,
 					0, MPI_COMM_WORLD);
 		if ( iret != 0 ) {
-			printError("gatherHWPC()", " MPI_Allather failed.\n");
+			printError("gatherHWPC", " MPI_Allather failed.\n");
 			PM_Exit(0);
 		}
 	} else {
@@ -226,8 +226,7 @@ namespace pm_lib {
 	if ( m_flopArray == NULL) m_flopArray  = new double[m_np];
 	if ( m_countArray == NULL) m_countArray  = new long[m_np];
 	if (!(m_timeArray) || !(m_flopArray) || !(m_countArray)) {
-		printError("gather()", "new memory failed. %d(process) x 3 x 8 \n",
-		num_process);
+		printError("gather", "new memory failed. %d(process) x 3 x 8 \n", num_process);
 		PM_Exit(0);
 	}
 
@@ -976,7 +975,7 @@ namespace pm_lib {
 				// user mode thread statistics for worksharing construct
 				// are always represented by thread 0, because they can not be
 				// split into threads in artificial manner.
-				fprintf(fp, " %3d\t\t user mode statistics are represented by thread 0\n", j);
+				fprintf(fp, " %3d\t\t user mode worksharing threads are represented by thread 0\n", j);
 				}
 				continue;
 			}
@@ -1084,6 +1083,17 @@ namespace pm_lib {
 		m_is_set = true;
 	}
 
+	if (m_in_parallel) {
+	#if defined (__INTEL_COMPILER) || (__PGI)
+		// Go ahead.
+	#else
+		// Nop. This compiler does not support threadprivate C++ class.
+		printError("setProperties", "section is not measured. This compiler does not support threadprivate C++ class.\n");
+		m_is_set = false;
+	#endif
+	}
+
+
     m_is_OTF = 0;
 #ifdef USE_OTF
 	// 環境変数OTF_TRACING が指定された場合
@@ -1110,10 +1120,8 @@ namespace pm_lib {
 
 #ifdef DEBUG_PRINT_WATCH
     if (my_rank == 0) {
-    fprintf(stderr, "<PerfWatch::setProperties> [%s] id=%d, typeCalc=%d, nPEs=%d, my_rank_ID=%d, num_threads=%d, exclusive=%s\n",
-		label.c_str(), id, typeCalc, nPEs, my_rank_ID, num_threads, exclusive?"true":"false");
-    	fprintf(stderr, "\t my_thread=%d, m_in_parallel=%s, &(papi)=%p, &(my_papi)=%p\n",
-			my_thread, m_in_parallel?"true ":"false", &papi.num_events, &my_papi.num_events);
+    fprintf(stderr, "<PerfWatch::setProperties> [%s] id=%d, typeCalc=%d, nPEs=%d, my_rank_ID=%d, num_threads=%d, exclusive=%s, m_in_parallel=%s\n",
+	label.c_str(), id, typeCalc, nPEs, my_rank_ID, num_threads, exclusive?"true":"false", m_in_parallel?"true":"false");
 	#ifdef DEBUG_PRINT_PAPI_THREADS
 		#pragma omp barrier
 		#pragma omp critical
@@ -1230,17 +1238,19 @@ namespace pm_lib {
   ///
   void PerfWatch::start()
   {
+    if (!m_is_healthy) return;
+
     if (m_started) {
-      printError("start()",  "Section [%s] was started already. Duplicated start is ignored.\n", m_label.c_str());
+      printError("start()",  "Section was started already. Duplicated start is ignored.\n");
       return;
     }
 	if (!m_is_set) {
-      printError("start()",  "Section [%s] has not been defined by setProperties(). start() is ignored.\n", m_label.c_str());
+      printError("start()",  "Section has not been defined correctly by setProperties(). start() is ignored.\n");
       m_is_healthy=false;
       return;
 	}
     if (m_exclusive && ExclusiveStarted) {
-      printError("start()",  "Section [%s] overlaps other exclusive section. start() is ignored.\n", m_label.c_str());
+      printError("start()",  "Section overlaps other exclusive section. start() is ignored.\n");
       m_is_healthy=false;
       return;
     }
@@ -1377,12 +1387,10 @@ namespace pm_lib {
   ///
   void PerfWatch::stop(double flopPerTask, unsigned iterationCount)
   {
-    if (!(m_is_healthy)) {
-      printError("stop()",  "Section [%s] is not healthy. PMlib ignores this section.\n", m_label.c_str());
-      return;
-    }
+    if (!m_is_healthy) return;
+
     if (!m_started) {
-      printError("PerfWatch::stop()",  "Section [%s] has not been started\n", m_label.c_str());
+      printError("stop()",  "Section has not been started\n");
       m_is_healthy=false;
       return;
     }
@@ -1471,7 +1479,7 @@ namespace pm_lib {
 
 		i_ret = my_papi_bind_read (th_papi.values, th_papi.num_events);
 		if ( i_ret != PAPI_OK ) {
-			printError("stop()",  "<my_papi_bind_read> code: %d, i_thread:%d\n", i_ret, i_thread);
+			printError("stop",  "<my_papi_bind_read> code: %d, i_thread:%d\n", i_ret, i_thread);
 		}
 
 		#pragma ivdep
@@ -1529,7 +1537,7 @@ namespace pm_lib {
 
 	i_ret = my_papi_bind_read (th_papi.values, th_papi.num_events);
 	if ( i_ret != PAPI_OK ) {
-		printError("stop()",  "<my_papi_bind_read> code: %d, my_thread:%d\n", i_ret, my_thread);
+		printError("stop",  "<my_papi_bind_read> code: %d, my_thread:%d\n", i_ret, my_thread);
 	}
 
 	#pragma ivdep

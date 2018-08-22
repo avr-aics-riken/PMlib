@@ -95,10 +95,14 @@ The default compiler options are described in `cmake/CompilerOptionSelector.cmak
 
 ####
 ##### serial version
-In most system, CC/CXX/F90/FC and other environement variables must be set
+In this document, serial version means single process (non-MPI) version
+with possible OpenMP thread parallel model, if OpenMP is available on the
+target platform.
+On most system, CC/CXX/F90/FC and other environement variables must be set
 for choosing the right compilers.
 CMAKE_*_FLAGS options can be used for passing compiler options as shown below.
-Adding OpenMP options and fast timer option (-DUSE_PRECISE_TIMER) is generally recommended
+Adding OpenMP options and fast timer option (-DUSE_PRECISE_TIMER) is generally
+recommended
 on Intel Xeon platform.
 ~~~
 Intel: CC=icc  CXX=icpc F90=ifort FC=ifort
@@ -127,6 +131,8 @@ $ cmake -DINSTALL_DIR=${PM_HOME}/PMlib \
 ~~~
 
 ##### MPI version
+In this document, MPI version means multi process (MPI) version with possible
+OpenMP thread parallel model, if OpenMP is available on the target platform.
 If PAPI and/or OTF library is available on the system, set their path
 as the example below to activate the functionality within PMlib.
 ~~~

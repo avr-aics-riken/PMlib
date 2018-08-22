@@ -4,8 +4,8 @@
 
 
 ---
-- 2018-08-07 Version 6.1.0
-  - Implemented support for calling from parallel region, i.e. thread safe PMlib.
+- 2018-08-22 Version 6.1.0
+  - Implemented support for calling from parallel region, i.e. thread safe PMlib, for Intel compiler and PGI compiler.
   - New API mergeThreads()/f_pm_mergethreads() to merge stats from task private threads
 
 ---
