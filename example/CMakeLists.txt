@@ -155,8 +155,10 @@ if(enable_Fortran)
   add_executable(example4 ./test4/f_main.f90)
 
   if(CMAKE_CXX_COMPILER_ID STREQUAL "Intel")
-    elseif(CMAKE_Fortran_COMPILER_ID STREQUAL "PGI")
-    else()
+  elseif(CMAKE_Fortran_COMPILER_ID STREQUAL "PGI")
+    set_target_properties(example4 PROPERTIES LINKER_LANGUAGE Fortran)
+    target_link_libraries(example4 -pgf90libs)
+  else()
     set_target_properties(example4 PROPERTIES LINKER_LANGUAGE CXX)
   endif()
 
