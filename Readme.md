@@ -86,6 +86,15 @@ $ sudo make install
 
 >  If you use OTF library, specify this option `with_OTF` value pointing to the OTF library installed directory.
 
+`-D enable_PreciseTimer=` {yes | no}
+
+> Precise timers are available on some platforms. This option provides -DUSE_PRECISE_TIMER to C++ compiler option CMAKE_CXX_FLAGS when building the PMlib library.
+~~~
+-DUSE_PRECISE_TIMER            # for Intel Xeon
+-DUSE_PRECISE_TIMER -Nfjcex    # for K computer and FX100 and TCS env.?
+~~~
+
+
 The default compiler options are described in `cmake/CompilerOptionSelector.cmake` file. See BUILD OPTION section in CMakeLists.txt in detail.
 
 
@@ -98,7 +107,7 @@ The default compiler options are described in `cmake/CompilerOptionSelector.cmak
 In this document, serial version means single process (non-MPI) version
 with possible OpenMP thread parallel model, if OpenMP is available on the
 target platform.
-On most system, CC/CXX/F90/FC and other environement variables must be set
+On most system, CC/CXX/F90/FC and other environment variables must be set
 for choosing the right compilers.
 CMAKE_*_FLAGS options can be used for passing compiler options as shown below.
 Adding OpenMP options and fast timer option (-DUSE_PRECISE_TIMER) is generally
@@ -115,19 +124,16 @@ GNU  : CC=gcc  CXX=g++  F90=gfortran FC=gfortran
 
 An example of cmake command and options for Intel compiler is shown below.
 ~~~
-$ # Intel compiler example
+$ # Intel compiler SERIAL
 $ export CC=icc CXX=icpc F90=ifort FC=ifort
-$ CXXFLAGS="-qopenmp "
-$ FCFLAGS="-qopenmp -fpp "
 $ cmake -DINSTALL_DIR=${PM_HOME}/PMlib \
-	-DCMAKE_CXX_FLAGS="${CXXFLAGS} ${LDFLAGS}" \
-	-DCMAKE_Fortran_FLAGS="${FCFLAGS} ${LDFLAGS}" \
-	-Denable_OPENMP=no \
+	-Denable_OPENMP=yes \
 	-Dwith_MPI=no \
 	-Denable_Fortran=yes \
 	-Dwith_example=no \
 	-Dwith_PAPI=no \
-	-Dwith_OTF=no ..
+	-Dwith_OTF=no \
+  -Denable_PreciseTimer=yes ..
 ~~~
 
 ##### MPI version
@@ -146,7 +152,8 @@ $ cmake -DINSTALL_DIR=${PM_HOME}/PMlib \
 	-Denable_Fortran=yes \
 	-Dwith_example=yes \
 	-Dwith_PAPI="${PAPI_DIR}" \
-	-Dwith_OTF="${OTF_DIR}" ..
+	-Dwith_OTF="${OTF_DIR}" \
+  -Denable_PreciseTimer=yes ..
 ~~~
 
 
@@ -159,7 +166,8 @@ $ cmake -DINSTALL_DIR=${PM_HOME}/PMlib \
             -Denable_Fortran=no \
             -Dwith_example=no \
             -Dwith_PAPI=no \
-            -Dwith_OTF=no ..
+            -Dwith_OTF=no \
+            -Denable_PreciseTimer=yes ..
 
 $ cmake -DINSTALL_DIR=${PM_HOME}/PMlib \
             -DCMAKE_TOOLCHAIN_FILE=../cmake/Toolchain_fx100.cmake \
@@ -168,7 +176,8 @@ $ cmake -DINSTALL_DIR=${PM_HOME}/PMlib \
             -Denable_Fortran=no \
             -Dwith_example=no \
             -Dwith_PAPI=no \
-            -Dwith_OTF=no ..
+            -Dwith_OTF=no \
+            -Denable_PreciseTimer=yes ..
 
 $ cmake -DINSTALL_DIR=${PM_HOME}/PMlib \
             -DCMAKE_TOOLCHAIN_FILE=../cmake/Toolchain_K.cmake \
@@ -177,7 +186,8 @@ $ cmake -DINSTALL_DIR=${PM_HOME}/PMlib \
             -Denable_Fortran=no \
             -Dwith_example=no \
             -Dwith_PAPI=no \
-            -Dwith_OTF=no ..
+            -Dwith_OTF=no \
+            -Denable_PreciseTimer=yes ..
 
 $ cmake -DINSTALL_DIR=${PM_HOME}/PMlib \
             -DCMAKE_TOOLCHAIN_FILE=../cmake/Toolchain_intel_F_TCS.cmake \
@@ -186,22 +196,10 @@ $ cmake -DINSTALL_DIR=${PM_HOME}/PMlib \
             -Denable_Fortran=no \
             -Dwith_example=no \
             -Dwith_PAPI=no \
-            -Dwith_OTF=no ..
+            -Dwith_OTF=no \
+            -Denable_PreciseTimer=yes ..
 ~~~
 
-##### Using precise timer
-Precise timers are available on some platforms.
-Provide -DUSE_PRECISE_TIMER to C++ compiler option CMAKE_CXX_FLAGS
-when building the PMlib library.
-~~~
-$ CXXFLAGS="-DUSE_PRECISE_TIMER "           # for Intel Xeon
-$ CXXFLAGS="-DUSE_PRECISE_TIMER -Nfjcex "   # for K computer and FX100
-
-$ cmake -DINSTALL_DIR=${PM_HOME}/PMlib \
-        -DCMAKE_CXX_FLAGS="${CXXFLAGS}" \
-		..
-
-~~~
 
 ##### Note
 - On Fujitsu machines(fx10, K, fx100), confirm appropriate directory path for compiler environment.
@@ -266,6 +264,12 @@ execute the intrinsic tests by;
 Meanwhile, the summary is displayed for stdout.
 
 
+## PAPI install (intel compiler)
+~~~
+$ ./configure --prefix=${PREFIX} CC=icc F77=ifort
+$ make
+$ make install-all
+~~~
 
 
 ## CONTRIBUTORS

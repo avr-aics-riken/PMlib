@@ -34,6 +34,8 @@
 #
 # -D with_OTF={no|installed_directory}
 #
+# -D enable_PreciseTimer={yes|no}
+#
 
 cmake_minimum_required(VERSION 2.6)
 
@@ -48,6 +50,7 @@ option (with_MPI "Enable MPI" "OFF")
 option (enable_OPENMP "Enable OpenMP" "OFF")
 option (with_PAPI "Enable PAPI" "OFF")
 option (with_OTF "Enable tracing" "OFF")
+option (enable_PRECISE_TIMER "Enable PRECISE TIMER" "ON")
 
 #######
 # Project setting
@@ -71,8 +74,8 @@ set (CMAKE_INSTALL_PREFIX "${INSTALL_DIR}")
 
 
 #######
-set(PROJECT_VERSION "6.1.0")
-set(LIB_REVISION "20180805_0000")
+set(PROJECT_VERSION "6.2.1")
+set(LIB_REVISION "20180915_1430")
 
 message(" ")
 message("${PROJECT_NAME} Version : ${PROJECT_VERSION}")
@@ -110,6 +113,9 @@ if(NOT with_MPI)
   SET(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -DDISABLE_MPI")
 endif()
 
+if(enable_PreciseTimer)
+  SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DUSE_PRECISE_TIMER")
+endif()
 
 #######
 # Find libraries to depend

@@ -2,6 +2,15 @@
 
 ## REVISION HISTORY
 
+---
+- 2018-09-15 Version 6.2.1
+  - with_PAPI
+
+  
+---
+- 2018-09-14 Version 6.2.0
+  - enable_PreciseTimer
+  - package
 
 ---
 - 2018-08-22 Version 6.1.0
@@ -46,7 +55,7 @@
 
 ---
 - 2017-08-31 Version 5.7.0
-  - rmove -Nfjcex from entire source
+  - remove -Nfjcex from entire source
 
 
 ---
