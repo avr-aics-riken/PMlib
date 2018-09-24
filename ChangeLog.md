@@ -3,10 +3,16 @@
 ## REVISION HISTORY
 
 ---
+- 2018-09-24 Version 6.2.2
+  - CMP0012
+  - CMAKE_INSTALL_SYSTEM_RUNTIME_LIBS_NO_WARNINGS TRUE
+
+
+---
 - 2018-09-15 Version 6.2.1
   - with_PAPI
 
-  
+
 ---
 - 2018-09-14 Version 6.2.0
   - enable_PreciseTimer
