@@ -717,6 +717,7 @@ namespace pm_lib {
       }
       if (i == 0) continue;	// 区間0 : Root区間は出力しない
       if (!m_watchArray[i].m_exclusive) continue;
+      if (!(m_watchArray[i].m_count_sum > 0)) continue;
 
       m_watchArray[i].printDetailThreads(fp, rank_ID);
     }
