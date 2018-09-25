@@ -35,7 +35,43 @@
 
 using namespace pm_lib;
 PerfMonitor PM;
-#pragma omp threadprivate(PM)
+
+
+#ifdef _OPENMP
+// Worksharing parallel construct is generally supported.
+// Non-worksharing parallel construct is limited to Intel and PGI only.
+
+#if defined (__INTEL_COMPILER)
+	#pragma omp threadprivate(PM)
+
+#elif defined (__PGI)
+	#pragma omp threadprivate(PM)
+
+	#if defined (FORCE_CXX_MAIN)
+	// PGI mixed Fortran and C++ non-worksharing openmp parallel construct
+	// needs this small main driver, i.e. PGI's undocumented restrictions.
+	// This main driver handles threadprivate class member variables
+	// passed across Fortran and C++
+	extern "C" void fortmain_(void);
+	extern "C" void main(void);
+	void main(void)
+	{
+		(void) fortmain_();
+	}
+	#endif
+
+#endif
+
+	//#elif defined (__FUJITSU)
+	// FX100 and K compiler does not support threadprivate class instance
+	//#elif defined (__clang__)
+	// Clang does not support OpenMP
+	//#elif defined (__GNUC__)
+	// g++ version 5.5 causes compile error against threadprivate class instance
+	//#else
+	// Other compilers to be tested
+#endif
+
 
 // Fortran interface should avoid C++ name space mangling, thus this extern.
 extern "C" {
@@ -46,7 +82,7 @@ extern "C" {
 /// @param[in] init_nWatch 最初に確保する測定区間数。
 ///
 /// @note   測定区間数 m_nWatch は不足すると内部で自動的に追加する
-/// @note   Fortran とC++間のインタフェイスでは引数を省略する事はできないため、
+/// @note   Fortran インタフェイスでは引数を省略する事はできない。
 ///         PMlib C++の引数仕様と異なる事に注意
 ///
 void f_pm_initialize_ (int& init_nWatch)
@@ -103,7 +139,8 @@ void f_pm_initialize_ (int& init_nWatch)
 ///
 ///   @note ラベルは測定区間を識別するために用いる。
 ///   		各ラベル毎に対応した区間番号は内部で自動生成する
-///   @note  Fortranコンパイラはfc_size引数を自動的に追加してしまう
+///   @note fc_sizeはFortranコンパイラが自動的に追加してしまう引数。
+///			ユーザがFortranプログラムから呼び出す場合に指定する必要はない。
 ///
 void f_pm_setproperties_ (char* fc, int& f_type, int& f_exclusive, int fc_size)
 {
@@ -152,7 +189,8 @@ void f_pm_setproperties_ (char* fc, int& f_type, int& f_exclusive, int fc_size)
 ///   @param[in] label ラベル文字列。測定区間を識別するために用いる。
 ///   @param[in] int fc_size  character文字列ラベルの長さ（文字数）
 ///
-///   @note  Fortranコンパイラはfc_size引数を自動的に追加してしまう
+///   @note fc_sizeはFortranコンパイラが自動的に追加してしまう引数。
+///			ユーザがFortranプログラムから呼び出す場合に指定する必要はない。
 ///
 void f_pm_start_ (char* fc, int fc_size)
 {
@@ -187,7 +225,8 @@ void f_pm_start_ (char* fc, int fc_size)
 ///   @note  Fortran PMlib インタフェイスでは引数を省略する事はできない。
 ///          引数値 fpt*tic が非0の場合はその数値が採用され、値が0の場合は
 ///          HWPC自動計測値が採用される。
-///   @note  Fortranコンパイラはfc_size引数を自動的に追加してしまう
+///   @note fc_sizeはFortranコンパイラが自動的に追加してしまう引数。
+///			ユーザがFortranプログラムから呼び出す場合に指定する必要はない。
 ///
 void f_pm_stop_ (char* fc, double& fpt, unsigned& tic, int fc_size)
 {
@@ -215,7 +254,8 @@ void f_pm_stop_ (char* fc, double& fpt, unsigned& tic, int fc_size)
 ///   @param[in] label ラベル文字列。測定区間を識別するために用いる。
 ///   @param[in] int fc_size  character文字列ラベルの長さ（文字数）
 ///
-///   @note  Fortranコンパイラはfc_size引数を自動的に追加してしまう
+///   @note fc_sizeはFortranコンパイラが自動的に追加してしまう引数。
+///			ユーザがFortranプログラムから呼び出す場合に指定する必要はない。
 ///
 void f_pm_reset_ (char* fc, int fc_size)
 {
@@ -285,7 +325,8 @@ void f_pm_mergethreads_ (void)
 ///   @param[in] int psort 測定区間の表示順(0:経過時間順にソート後表示、1:登録順で表示)
 ///   @param[in] int fc_size  出力ファイル名の文字数
 ///
-///   @note  Fortranコンパイラはfc_size引数を自動的に追加してしまう
+///   @note fc_sizeはFortranコンパイラが自動的に追加してしまう引数。
+///			ユーザがFortranプログラムから呼び出す場合に指定する必要はない。
 ///
 void f_pm_print_ (char* fc, int &psort, int fc_size)
 {
@@ -346,7 +387,8 @@ void f_pm_print_ (char* fc, int &psort, int fc_size)
 ///   @param[in] int psort 測定区間の表示順 (0:経過時間順にソート後表示、1:登録順で表示)
 ///   @param[in] int fc_size  出力ファイル名の文字数
 ///
-///   @note  Fortranコンパイラはfc_size引数を自動的に追加してしまう
+///   @note fc_sizeはFortranコンパイラが自動的に追加してしまう引数。
+///			ユーザがFortranプログラムから呼び出す場合に指定する必要はない。
 ///
 void f_pm_printdetail_ (char* fc, int& legend, int &psort, int fc_size)
 {
@@ -389,7 +431,8 @@ void f_pm_printdetail_ (char* fc, int& legend, int &psort, int fc_size)
 ///   @param[in] int psort 測定区間の表示順(0:経過時間順にソート、1:登録順で表示)
 ///   @param[in] int fc_size  出力ファイル名の文字数
 ///
-///   @note  Fortranコンパイラはfc_size引数を自動的に追加してしまう
+///   @note fc_sizeはFortranコンパイラが自動的に追加してしまう引数。
+///			ユーザがFortranプログラムから呼び出す場合に指定する必要はない。
 ///
 void f_pm_printthreads_ (char* fc, int &rank_ID, int &psort, int fc_size)
 {
@@ -430,7 +473,8 @@ void f_pm_printthreads_ (char* fc, int &rank_ID, int &psort, int fc_size)
 ///   @param[in] char* fc	出力ファイル名(character文字列)
 ///   @param[in] int fc_size  出力ファイル名の文字数
 ///
-///   @note  Fortranコンパイラはfc_size引数を自動的に追加してしまう
+///   @note fc_sizeはFortranコンパイラが自動的に追加してしまう引数。
+///			ユーザがFortranプログラムから呼び出す場合に指定する必要はない。
 ///
 void f_pm_printlegend_ (char* fc, int fc_size)
 {
@@ -475,7 +519,8 @@ void f_pm_printlegend_ (char* fc, int fc_size)
 ///   @param[in] int	fc_size  character文字列ラベルの長さ（文字数）
 ///
 ///   @note  MPI_Group, MPI_Comm型は呼び出すFortran側では integer 型である
-///   @note  Fortranコンパイラはfc_size引数を自動的に追加してしまう
+///   @note fc_sizeはFortranコンパイラが自動的に追加してしまう引数。
+///			ユーザがFortranプログラムから呼び出す場合に指定する必要はない。
 ///   @note  HWPCを測定した計集結果があればそれも出力する
 ///
 void f_pm_printgroup_ (char* fc, MPI_Group p_group, MPI_Comm p_comm, int* pp_ranks, int& group, int& legend, int &psort, int fc_size)
@@ -517,7 +562,8 @@ void f_pm_printgroup_ (char* fc, MPI_Group p_group, MPI_Comm p_comm, int* pp_ran
 ///   @param[in] int	fc_size  character文字列ラベルの長さ（文字数）
 ///
 ///   @note  MPI_Group, MPI_Comm型は呼び出すFortran側では integer 型である
-///   @note  Fortranコンパイラはfc_size引数を自動的に追加してしまう
+///   @note fc_sizeはFortranコンパイラが自動的に追加してしまう引数。
+///			ユーザがFortranプログラムから呼び出す場合に指定する必要はない。
 ///
 void f_pm_printcomm_ (char* fc, MPI_Comm new_comm, int& icolor, int& key, int& legend, int& psort, int fc_size)
 {
@@ -554,7 +600,8 @@ void f_pm_printcomm_ (char* fc, MPI_Comm new_comm, int& icolor, int& key, int& l
 ///   @param[in] fc_size  fc文字列の長さ（文字数）
 ///   @param[in] comments_size  comments文字列の長さ（文字数）
 ///
-///   @note  Fortranコンパイラはfc_size引数を自動的に追加してしまう
+///   @note fc_sizeはFortranコンパイラが自動的に追加してしまう引数。
+///			ユーザがFortranプログラムから呼び出す場合に指定する必要はない。
 ///
 void f_pm_printprogress_ (char* fc, char* comments, int& psort, int fc_size, int comments_size)
 {
