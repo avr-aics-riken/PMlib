@@ -227,7 +227,6 @@ namespace pm_lib {
     #ifdef DEBUG_PRINT_MONITOR
     if (my_rank == 0) {
 		fprintf(stderr, "Finishing <setProperties> [%s] id=%d my_rank=%d, i_thread=%d\n", label.c_str(), id, my_rank, i_thread);
-		check_all_perf_label();
     }
     #endif
 
@@ -396,7 +395,7 @@ namespace pm_lib {
     if (!is_PMlib_enabled) return;
 
 	#ifdef DEBUG_PRINT_MONITOR
-    if (my_rank == 0) { fprintf(stderr, "<gather> starts\n"); }
+    if (my_rank == 0) { fprintf(stderr, "<PerfMonitor::gather> starts\n"); }
 	#endif
 
     if (is_Root_active) {
@@ -411,7 +410,7 @@ namespace pm_lib {
    	gather_and_sort();
 
 	#ifdef DEBUG_PRINT_MONITOR
-    if (my_rank == 0) { fprintf(stderr, "<gather> ends\n"); }
+    if (my_rank == 0) { fprintf(stderr, "<PerfMonitor::gather> finishes\n"); }
 	#endif
   }
 
@@ -495,6 +494,28 @@ namespace pm_lib {
       }
     }
     delete[] m_tcost; m_tcost = NULL;
+
+
+	#ifdef DEBUG_PRINT_MONITOR
+	(void) MPI_Barrier(MPI_COMM_WORLD);
+	if (my_rank == 0) fprintf(stderr, "\n<gather_and_sort> DEBUG print starts.\n");
+
+	for (int i=0; i<num_process; i++) {
+		(void) MPI_Barrier(MPI_COMM_WORLD);
+    	if (i == my_rank) {
+			fprintf(stderr, "<gather_and_sort> my_rank=%d  m_order[*]:\n", my_rank );
+    		for (int j=0; j<m_nWatch; j++) {
+				int k=m_order[j];
+				fprintf(stderr, "\t\t rank:%d, m_order[%d]=%d time_av=%10.2e [%s]\n",
+					my_rank, j, k, m_watchArray[k].m_time_av, m_watchArray[k].m_label.c_str() );
+			}
+		}
+		(void) MPI_Barrier(MPI_COMM_WORLD);
+	}
+	if (my_rank == 0) fprintf(stderr, "<gather_and_sort> ends");
+	(void) MPI_Barrier(MPI_COMM_WORLD);
+	#endif
+
   }
 
 
@@ -694,10 +715,6 @@ namespace pm_lib {
     }
 
     gather();
-
-	#ifdef DEBUG_PRINT_MONITOR
-    if (my_rank == 0) fprintf(stderr, "<printThreads> \n");
-	#endif
 
     if (my_rank == 0) {
       if (is_MPI_enabled) {

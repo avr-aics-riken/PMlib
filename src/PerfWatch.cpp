@@ -147,7 +147,7 @@ namespace pm_lib {
 
 
 
-  /// HWPCによるイベントカウンターの測定値を PAPI APIで取得収集する
+  /// HWPCによるイベントカウンターの測定値を Allgather する
   ///
   ///
   void PerfWatch::gatherHWPC()
@@ -158,12 +158,6 @@ namespace pm_lib {
 		return;
 	}
 	//	if ( my_papi.num_events == 0) return;
-
-	#ifdef DEBUG_PRINT_WATCH
-	if (my_rank == 0) {
-		fprintf(stderr, "<PerfWatch::gatherHWPC> [%15s]  my_rank=%d\n", m_label.c_str(), my_rank);
-	}
-	#endif
 
 	sortPapiCounterList ();
 
@@ -195,9 +189,8 @@ namespace pm_lib {
 
 	if ( num_process > 1 ) {
 		int iret =
-		MPI_Gather (my_papi.v_sorted, my_papi.num_sorted, MPI_DOUBLE,
-					m_sortedArrayHWPC, my_papi.num_sorted, MPI_DOUBLE,
-					0, MPI_COMM_WORLD);
+		MPI_Allgather (my_papi.v_sorted, my_papi.num_sorted, MPI_DOUBLE,
+					m_sortedArrayHWPC, my_papi.num_sorted, MPI_DOUBLE, MPI_COMM_WORLD);
 		if ( iret != 0 ) {
 			printError("gatherHWPC", " MPI_Allather failed.\n");
 			PM_Exit(0);
@@ -208,6 +201,10 @@ namespace pm_lib {
 			m_sortedArrayHWPC[i] = my_papi.v_sorted[i];
 		}
 	}
+
+	//	#ifdef DEBUG_PRINT_PAPI_THREADS
+	//	fprintf(stderr, "\t<PerfWatch::gatherHWPC> finishing [%15s]  my_rank=%d, m_count=%d\n", m_label.c_str(), my_rank, m_count);
+	//	#endif
 
 #endif
   }
@@ -221,13 +218,20 @@ namespace pm_lib {
     int m_np;
     m_np = num_process;
 
-	// The space is reserved only once as a fixed size array
-	if ( m_timeArray == NULL) m_timeArray  = new double[m_np];
-	if ( m_flopArray == NULL) m_flopArray  = new double[m_np];
-	if ( m_countArray == NULL) m_countArray  = new long[m_np];
-	if (!(m_timeArray) || !(m_flopArray) || !(m_countArray)) {
-		printError("gather", "new memory failed. %d(process) x 3 x 8 \n", num_process);
-		PM_Exit(0);
+	// The space should be reserved only once as fixed size arrays
+	if (( m_timeArray == NULL) && ( m_flopArray == NULL) && ( m_countArray == NULL)) {
+		m_timeArray  = new double[m_np];
+		m_flopArray  = new double[m_np];
+		m_countArray  = new long[m_np];
+		if (!(m_timeArray) || !(m_flopArray) || !(m_countArray)) {
+			printError("PerfWatch::gather", "new memory failed. %d(process) x 3 x 8 \n", num_process);
+			PM_Exit(0);
+		}
+
+		#ifdef DEBUG_PRINT_WATCH
+		fprintf(stderr, "\t<PerfWatch::gather> [%15s] my_rank=%d. Allocated new m_countArray[%d] at address:%p and others.\n",
+			m_label.c_str(), my_rank, m_np, m_countArray);
+		#endif
 	}
 
     if ( m_np == 1 ) {
@@ -236,21 +240,20 @@ namespace pm_lib {
       m_countArray[0]= m_count;
       m_count_sum = m_count;
     } else {
-      if (MPI_Gather(&m_time,  1, MPI_DOUBLE, m_timeArray, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD) != MPI_SUCCESS) PM_Exit(0);
-      if (MPI_Gather(&m_flop,  1, MPI_DOUBLE, m_flopArray, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD) != MPI_SUCCESS) PM_Exit(0);
-      //	if (MPI_Gather(&m_count, 1, MPI_LONG, m_countArray, 1, MPI_LONG, 0, MPI_COMM_WORLD) != MPI_SUCCESS) PM_Exit(0);
+      if (MPI_Allgather(&m_time,  1, MPI_DOUBLE, m_timeArray, 1, MPI_DOUBLE, MPI_COMM_WORLD) != MPI_SUCCESS) PM_Exit(0);
+      if (MPI_Allgather(&m_flop,  1, MPI_DOUBLE, m_flopArray, 1, MPI_DOUBLE, MPI_COMM_WORLD) != MPI_SUCCESS) PM_Exit(0);
       if (MPI_Allgather(&m_count, 1, MPI_LONG, m_countArray, 1, MPI_LONG, MPI_COMM_WORLD) != MPI_SUCCESS) PM_Exit(0);
       if (MPI_Allreduce(&m_count, &m_count_sum, 1, MPI_LONG, MPI_SUM, MPI_COMM_WORLD) != MPI_SUCCESS) PM_Exit(0);
     }
 	// Above arrays will be used by the subsequent routines, and should not be deleted here
 	// i.e. m_timeArray, m_flopArray, m_countArray
 	#ifdef DEBUG_PRINT_WATCH
+	(void) MPI_Barrier(MPI_COMM_WORLD);
 	if (my_rank == 0) {
-		fprintf(stderr, "<PerfWatch::gather> [%15s] m_count=%d, m_countArray[0:*]:",
-			m_label.c_str(), m_count);
-		for (int i=0; i<num_process; i++) { fprintf(stderr, " %d",  m_countArray[i]); }
-		fprintf(stderr, "\n");
+		fprintf(stderr, "\t<PerfWatch::gather> [%15s] m_countArray[0:*]:", m_label.c_str() );
+		for (int i=0; i<num_process; i++) { fprintf(stderr, " %d",  m_countArray[i]); } fprintf(stderr, "\n");
 	}
+	(void) MPI_Barrier(MPI_COMM_WORLD);
 	#endif
   }
 
@@ -262,7 +265,7 @@ namespace pm_lib {
   ///
   void PerfWatch::statsAverage()
   {
-	if (my_rank != 0) return;
+	//	if (my_rank != 0) return;	// This was a bad idea. All ranks should compute the stats.
 
 	// 平均値
 	m_time_av = 0.0;
@@ -949,13 +952,6 @@ namespace pm_lib {
 	//		fprintf(fp, "\t thread performance statistics is not available.\n");
 
 	int i=rank_ID;
-
-	#ifdef DEBUG_PRINT_PAPI_THREADS
-	//	if (my_rank == 0) { 
-	fprintf(stderr, "<printDetailThreads> *** [%15s] my_rank=%d, m_countArray[%d]=%d, m_time_av=%6.3f \n",
-		m_label.c_str(),  my_rank, rank_ID, m_countArray[i], m_time_av);
-	//	}
-	#endif
 
 	// Well, we are going to destroy the process based stats with thread based stat.
 	// Let's save some of them for later re-use.
