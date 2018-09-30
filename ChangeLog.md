@@ -3,6 +3,10 @@
 ## REVISION HISTORY
 
 ---
+- 2018-09-30 Version 6.2.4
+  - bugfix for thread report option in printThreads( , , seqSections);
+
+---
 - 2018-09-25 Version 6.2.3
   - checkOpenMPマクロを明示的に変更
 
