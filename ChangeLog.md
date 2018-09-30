@@ -3,6 +3,10 @@
 ## REVISION HISTORY
 
 ---
+- 2018-09-25 Version 6.2.3
+  - checkOpenMPマクロを明示的に変更
+
+---
 - 2018-09-24 Version 6.2.2
   - CMP0012
   - CMAKE_INSTALL_SYSTEM_RUNTIME_LIBS_NO_WARNINGS TRUE
