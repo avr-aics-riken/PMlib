@@ -212,7 +212,7 @@ namespace pm_lib {
     ///   @note 基本統計レポートは排他測定区間, 非排他測定区間をともに出力する。
     ///      MPIの場合、rank0プロセスの測定回数が１以上の区間のみを表示する。
     ///   @note  内部では以下の処理を行う。
-    ///      各測定区間の全プロセス途中経過状況を集約。 gather_and_sort();
+    ///      各測定区間の全プロセス途中経過状況を集約。 gather_and_stats();
     ///      測定結果の平均値・標準偏差などの基礎的な統計計算。
     ///      経過時間でソートした測定区間のリストm_order[m_nWatch] を作成する。
     ///      各測定区間のHWPCイベントの統計値を取得する。
@@ -378,34 +378,33 @@ namespace pm_lib {
     ///
     void loop_perf_label(const int ip, std::string& p_label)
     {
-		std::map<std::string, int>::const_iterator it;
-		int p_id;
+	std::map<std::string, int>::const_iterator it;
+	int p_id;
 
-		for(it = array_of_symbols.begin(); it != array_of_symbols.end(); ++it) {
-			p_label = it->first;
-			p_id = it->second;
-			if (p_id == ip) {
-				return;
-			}
+	for(it = array_of_symbols.begin(); it != array_of_symbols.end(); ++it) {
+		p_label = it->first;
+		p_id = it->second;
+		if (p_id == ip) {
+			return;
 		}
-		// should not reach here
-		fprintf(stderr, "<loop_perf_label> search failed. ip=%d\n", ip);
 	}
+	// should not reach here
+	fprintf(stderr, "<loop_perf_label> p_label search failed. ip=%d\n", ip);
+    }
 
     /// 全測定区間のラベルと番号を登録順で表示
     ///
     void check_all_perf_label(void)
     {
-		std::map<std::string, int>::const_iterator it;
-		std::string p_label;
-		int p_id;
-		fprintf(stderr, "<check_all_perf_label> internal map: label, value\n");
-		//	fprintf(stderr, "\t\t %s, %d\n", "<Root Section>:", 0);
-		for(it = array_of_symbols.begin(); it != array_of_symbols.end(); ++it) {
-			p_label = it->first;
-			p_id = it->second;
-			fprintf(stderr, "\t\t <%s> : %d\n", p_label.c_str(), p_id);
-		}
+	std::map<std::string, int>::const_iterator it;
+	std::string p_label;
+	int p_id;
+	fprintf(stderr, "\t<check_all_perf_label> map: label, value\n");
+	for(it = array_of_symbols.begin(); it != array_of_symbols.end(); ++it) {
+		p_label = it->first;
+		p_id = it->second;
+		fprintf(stderr, "\t\t <%s> : %d\n", p_label.c_str(), p_id);
+	}
     }
 
     /// 全プロセスの測定中経過情報を集約
@@ -413,9 +412,12 @@ namespace pm_lib {
     ///   @note  以下の処理を行う。
     ///    各測定区間の全プロセス途中経過状況を集約。
     ///    測定結果の平均値・標準偏差などの基礎的な統計計算。
-    ///    経過時間でソートした測定区間のリストm_order[m_nWatch] を作成する。
     ///    各測定区間のHWPCイベントの統計値を取得する。
-    void gather_and_sort(void);
+    void gather_and_stats(void);
+
+    /// 経過時間でソートした測定区間のリストm_order[m_nWatch] を作成する。
+    ///
+    void sort_m_order(void);
 
     /// 基本統計レポートのヘッダ部分を出力。
     ///
