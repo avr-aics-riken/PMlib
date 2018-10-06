@@ -260,7 +260,7 @@ namespace pm_lib {
 
   /// Statistics among processes
   /// Translate in Japanese later on...
-  /// 測定結果の平均値・標準偏差などの基礎的な統計計算
+  /// 全プロセスの測定結果の平均値・標準偏差などの基礎的な統計計算
   /// 測定区間の呼び出し回数はプロセス毎に異なる場合がありえる
   ///
   void PerfWatch::statsAverage()
