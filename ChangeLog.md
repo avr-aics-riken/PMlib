@@ -2,6 +2,40 @@
 
 ## REVISION HISTORY
 
+---
+- 2018-10-06 Version 6.3.1
+  - bugfix for sorting rank averaged list
+
+---
+- 2018-10-02 Version 6.3.0
+  - release package
+
+  
+---
+- 2018-09-30 Version 6.2.4
+  - bugfix for thread report option in printThreads( , , seqSections);
+
+
+---
+- 2018-09-25 Version 6.2.3
+  - checkOpenMPマクロを明示的に変更
+
+
+---
+- 2018-09-24 Version 6.2.2
+  - CMP0012
+  - CMAKE_INSTALL_SYSTEM_RUNTIME_LIBS_NO_WARNINGS TRUE
+
+
+---
+- 2018-09-15 Version 6.2.1
+  - with_PAPI
+
+
+---
+- 2018-09-14 Version 6.2.0
+  - enable_PreciseTimer
+  - package
 
 ---
 - 2018-08-22 Version 6.1.0
@@ -46,7 +80,7 @@
 
 ---
 - 2017-08-31 Version 5.7.0
-  - rmove -Nfjcex from entire source
+  - remove -Nfjcex from entire source
 
 
 ---

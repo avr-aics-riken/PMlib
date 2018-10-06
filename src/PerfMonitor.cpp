@@ -227,7 +227,6 @@ namespace pm_lib {
     #ifdef DEBUG_PRINT_MONITOR
     if (my_rank == 0) {
 		fprintf(stderr, "Finishing <setProperties> [%s] id=%d my_rank=%d, i_thread=%d\n", label.c_str(), id, my_rank, i_thread);
-		check_all_perf_label();
     }
     #endif
 
@@ -396,22 +395,24 @@ namespace pm_lib {
     if (!is_PMlib_enabled) return;
 
 	#ifdef DEBUG_PRINT_MONITOR
-    if (my_rank == 0) { fprintf(stderr, "<gather> starts\n"); }
+    if (my_rank == 0) { fprintf(stderr, "<PerfMonitor::gather> starts\n"); }
 	#endif
 
     if (is_Root_active) {
     	m_watchArray[0].stop(0.0, 1);
     	is_Root_active = false;
-	}
+    }
 
 	#ifdef _OPENMP
     mergeThreads();
 	#endif
 
-   	gather_and_sort();
+    gather_and_stats();
+
+    sort_m_order();
 
 	#ifdef DEBUG_PRINT_MONITOR
-    if (my_rank == 0) { fprintf(stderr, "<gather> ends\n"); }
+    if (my_rank == 0) { fprintf(stderr, "<PerfMonitor::gather> finishes\n"); }
 	#endif
   }
 
@@ -431,18 +432,16 @@ namespace pm_lib {
     }
   }
 
-
   /// 全プロセスの測定中経過情報を集約
   ///
   ///   @note  以下の処理を行う。
   ///    各測定区間の全プロセス途中経過状況を集約。
   ///    測定結果の平均値・標準偏差などの基礎的な統計計算。
-  ///    経過時間でソートした測定区間のリストm_order[m_nWatch] を作成する。
   ///    各測定区間のHWPCイベントの統計値を取得する。
-  ///   @note  gather_and_sort() は複数回呼び出し可能。
+  ///   @note  gather_and_stats() は複数回呼び出し可能。
   ///
 
-  void PerfMonitor::gather_and_sort(void)
+  void PerfMonitor::gather_and_stats(void)
   {
 
     if (!is_PMlib_enabled) return;
@@ -461,6 +460,21 @@ namespace pm_lib {
     for (int i = 0; i < m_nWatch; i++) {
       m_watchArray[i].statsAverage();
     }
+
+  }
+
+
+  /// 経過時間でソートした測定区間のリストm_order[m_nWatch] を作成する。
+  /// Remark.
+  /// 	Each process stores its own sorted list. Be careful when reporting from rank 0.
+  ///
+  ///
+
+  void PerfMonitor::sort_m_order(void)
+  {
+    if (!is_PMlib_enabled) return;
+    if (m_nWatch == 0) return;
+
     // 経過時間でソートした測定区間のリストm_order[m_nWatch] を作成する
     // This delete/new may look redundant, but is needed if m_nWatch has
     // increased since last call...
@@ -475,8 +489,10 @@ namespace pm_lib {
     if ( !(m_tcost = new double[m_nWatch]) ) PM_Exit(0);
     for (int i = 0; i < m_nWatch; i++) {
       PerfWatch& w = m_watchArray[i];
-      if ( w.m_count > 0 ) {
+      if ( w.m_count_sum > 0 ) {
         m_tcost[i] = w.m_time_av;
+      } else {
+        m_tcost[i] = 0.0;
       }
     }
     // 降順ソート O(n^2) Brute force　
@@ -495,6 +511,27 @@ namespace pm_lib {
       }
     }
     delete[] m_tcost; m_tcost = NULL;
+
+	#ifdef DEBUG_PRINT_MONITOR
+	(void) MPI_Barrier(MPI_COMM_WORLD);
+	if (my_rank == 0) fprintf(stderr, "\n<sort_m_order> DEBUG print starts.\n");
+
+	for (int i=0; i<num_process; i++) {
+		(void) MPI_Barrier(MPI_COMM_WORLD);
+    		if (i == my_rank) {
+			fprintf(stderr, "<sort_m_order> my_rank=%d  m_order[*]:\n", my_rank );
+    			for (int j=0; j<m_nWatch; j++) {
+			int k=m_order[j];
+			fprintf(stderr, "\t\t rank:%d, m_order[%d]=%d time_av=%10.2e [%s]\n",
+			my_rank, j, k, m_watchArray[k].m_time_av, m_watchArray[k].m_label.c_str());
+			}
+		}
+		(void) MPI_Barrier(MPI_COMM_WORLD);
+	}
+	if (my_rank == 0) fprintf(stderr, "<sort_m_order> ends");
+	(void) MPI_Barrier(MPI_COMM_WORLD);
+	#endif
+
   }
 
 
@@ -693,11 +730,8 @@ namespace pm_lib {
       return;
     }
 
-    gather();
-
-	#ifdef DEBUG_PRINT_MONITOR
-    if (my_rank == 0) fprintf(stderr, "<printThreads> \n");
-	#endif
+    //	gather();	// m_order[] should not be overwriten/re-created for each thread
+    gather_and_stats();
 
     if (my_rank == 0) {
       if (is_MPI_enabled) {
@@ -717,6 +751,7 @@ namespace pm_lib {
       }
       if (i == 0) continue;	// 区間0 : Root区間は出力しない
       if (!m_watchArray[i].m_exclusive) continue;
+      if (!(m_watchArray[i].m_count_sum > 0)) continue;
 
       m_watchArray[i].printDetailThreads(fp, rank_ID);
     }
@@ -933,7 +968,7 @@ namespace pm_lib {
   ///   @note 基本レポートと同様なフォーマットで出力する。
   ///      MPIの場合、rank0プロセスの測定回数が１以上の区間のみを表示する。
   ///   @note  内部では以下の処理を行う。
-  ///    各測定区間の全プロセス途中経過状況を集約。 gather_and_sort();
+  ///    各測定区間の全プロセス途中経過状況を集約。 gather_and_stats();
   ///    測定結果の平均値・標準偏差などの基礎的な統計計算。
   ///    経過時間でソートした測定区間のリストm_order[m_nWatch] を作成する。
   ///    各測定区間のHWPCイベントの統計値を取得する。
@@ -944,7 +979,7 @@ namespace pm_lib {
 
     if (m_nWatch == 0) return; // No section defined with setProperties()
 
-    gather_and_sort();
+    gather_and_stats();
 
     if (my_rank != 0) return;
 
@@ -1003,7 +1038,7 @@ namespace pm_lib {
     }
 	#endif
 
-    gather_and_sort();
+    gather_and_stats();
 
 #ifdef USE_OTF
     // OTFファイルの出力と終了処理
