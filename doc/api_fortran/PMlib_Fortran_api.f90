@@ -138,15 +138,31 @@ end subroutine
 subroutine f_pm_gather ()
 end subroutine
 
+
+!> PMlib Fortran   OpenMP parallel region内のマージ処理
+!!
+!!  @note \n
+!!  OpenMPスレッド並列処理された測定区間のうち、 parallel regionの内側から
+!!  区間を測定した場合、（測定区間の外側にparallel 構文がある場合）
+!!  に限って呼び出しが必要な関数。
+!!  parallel region内で呼び出された全測定区間のスレッド情報をマスタースレッドに集約する。
+!!  parallel regionが全て測定区間の内側にある場合は呼び出し不要。
+!!
+subroutine f_pm_mergethreads ()
+end subroutine
+
+
+
 !> PMlib Fortran 測定結果の基本レポートを出力
 !!
 !!   @param[in] character*(*) fc	出力ファイル名(character文字列)
-!!   @param[in] integer		psort	測定区間の表示順 (0/1)
-!!							(0:経過時間順にソート後表示、1:登録順で表示)
+!!   @param[in] character*(*) fh 	ホスト名 (character文字列. ""の場合はrank 0 実行ホスト名を表示)
+!!   @param[in] character*(*) fcmt 	任意のコメント (character文字列)
+!!   @param[in] integer		psort	測定区間の表示順 (0:経過時間順に表示、1:登録順)
 !!
-!!   @note  基本統計レポートでは非排他測定区間の情報も出力する 
+!!   @note  基本レポートでは非排他測定区間の情報も出力する 
 !!
-subroutine f_pm_print (fc, psort)
+subroutine f_pm_print (fc, fh, fcmt, psort)
 end subroutine
 
 
