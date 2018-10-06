@@ -3,6 +3,10 @@
 ## REVISION HISTORY
 
 ---
+- 2018-10-06 Version 6.3.1
+  - bugfix for sorting rank averaged list
+
+---
 - 2018-10-02 Version 6.3.0
   - release package
 
