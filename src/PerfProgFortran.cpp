@@ -305,14 +305,16 @@ void f_pm_gather_ (void)
 
 
 /// PMlib Fortran インタフェイス
-///  OpenMP並列処理されたPMlibスレッド測定区間のうち parallel regionから
-///  呼び出された測定区間のスレッド測定情報をマスタースレッドに集約する。
-///
+///  OpenMP parallel region内のマージ処理
+///  OpenMPスレッド並列処理された測定区間のうち、 parallel regionの内側から
+///  区間を測定した場合（測定区間の外側にparallel 構文がある場合）に限って
+///  呼び出しが必要な関数。
+///  parallel region内で呼び出された全測定区間のスレッド情報を
+///  マスタースレッドに集約する。
+///  parallel regionが全て測定区間の内側にある場合は呼び出し不要。
+
 void f_pm_mergethreads_ (void)
 {
-#ifdef DEBUG_PRINT_MONITOR
-	//	fprintf(stderr, "<f_pm_mergethreads_> \n");
-#endif
 	PM.mergeThreads();
 	return;
 }
@@ -321,40 +323,27 @@ void f_pm_mergethreads_ (void)
 /// PMlib Fortran インタフェイス
 /// 測定結果の基本統計レポートを出力
 ///
-///   @param[in] char* fc 出力ファイル名(character文字列)
-///   @param[in] int psort 測定区間の表示順(0:経過時間順にソート後表示、1:登録順で表示)
-///   @param[in] int fc_size  出力ファイル名の文字数
+///   @param[in] char* fc 出力ファイル名(character文字列. ""の場合はstdoutへ出力する)
+///   @param[in] char* fh ホスト名 (character文字列. ""の場合はrank 0 実行ホスト名を表示)
+///   @param[in] char* fcmt 任意のコメント (character文字列)
+///   @param[in] int fp_sort 測定区間の表示順(0:経過時間順にソート後表示、1:登録順で表示)
+///   @param[in] int fc_size  fcの文字数
+///   @param[in] int fh_size  fhの文字数
+///   @param[in] int fcmt_size  fcmtの文字数
 ///
-///   @note fc_sizeはFortranコンパイラが自動的に追加してしまう引数。
+///   @note fc_size, fh_size, fcmt_sizeはFortranコンパイラが自動的に追加してしまう引数。
 ///			ユーザがFortranプログラムから呼び出す場合に指定する必要はない。
 ///
-void f_pm_print_ (char* fc, int &psort, int fc_size)
+	// void f_pm_print_ (char* fc, int &fp_sort, int fc_size)
+void f_pm_print_ (char* fc, char* fh, char* fcmt, int &fp_sort, int fc_size, int fh_size, int fcmt_size)
 {
-
 	FILE *fp;
 	std::string s=std::string(fc,fc_size);
-#ifdef DEBUG_PRINT_MONITOR
-	//	#ifdef _OPENMP
-	//	#pragma omp barrier
-	//	#endif
-	//	int my_rank;
-    //	MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
-	//	if (my_rank == 0) {
-	//		fprintf(stderr, "\n<f_pm_print_> fc=%s, psort=%d, fc_size=%d\n", s.c_str(), psort, fc_size);
-	//	}
-#endif
-	std::string h;
-	std::string u="Fortran API";
-	char hostname[512];
-	hostname[0]='\0';
-	if (gethostname(hostname, sizeof(hostname)) != 0) {
-		fprintf(stderr, "*** warning <f_pm_print_> can not obtain hostname\n");
-		h="unknown";
-	} else {
-		h=hostname;
-	}
-
+	std::string h=std::string(fh,fh_size);
+	std::string u=std::string(fcmt,fcmt_size);
 	int user_file;
+	char hostname[512];
+
 	if (s == "" || fc_size == 0) { // if filename is null, report to stdout
 		fp=stdout;
 		user_file=0;
@@ -368,9 +357,24 @@ void f_pm_print_ (char* fc, int &psort, int fc_size)
 			user_file=1;
 		}
 	}
-	if (psort != 0 && psort != 1) psort = 0;
 
-	PM.print(fp, h, u, psort);
+	if (h == "" || fh_size == 0) {
+		hostname[0]='\0';
+		if (gethostname(hostname, sizeof(hostname)) != 0) {
+			// hostname is not available
+			h = "unknown";
+		} else {
+			h = hostname;
+		}
+	}
+
+	if (u == "" || fcmt_size == 0) {
+		u="Fortran API";
+	}
+
+	if (fp_sort != 0 && fp_sort != 1) fp_sort = 0;
+
+	PM.print(fp, h, u, fp_sort);
 
 	if (user_file == 1) {
 		fclose(fp);
@@ -384,18 +388,18 @@ void f_pm_print_ (char* fc, int &psort, int fc_size)
 ///
 ///   @param[in] char* fc 出力ファイル名(character文字列)
 ///   @param[in] int legend  HWPC 記号説明の表示(0:なし、1:表示する)
-///   @param[in] int psort 測定区間の表示順 (0:経過時間順にソート後表示、1:登録順で表示)
+///   @param[in] int fp_sort 測定区間の表示順 (0:経過時間順にソート後表示、1:登録順で表示)
 ///   @param[in] int fc_size  出力ファイル名の文字数
 ///
 ///   @note fc_sizeはFortranコンパイラが自動的に追加してしまう引数。
 ///			ユーザがFortranプログラムから呼び出す場合に指定する必要はない。
 ///
-void f_pm_printdetail_ (char* fc, int& legend, int &psort, int fc_size)
+void f_pm_printdetail_ (char* fc, int& legend, int &fp_sort, int fc_size)
 {
 	FILE *fp;
 	std::string s=std::string(fc,fc_size);
 #ifdef DEBUG_PRINT_MONITOR
-	//	fprintf(stderr, "<f_pm_printdetail_> fc=%s, legend=%d, psort=%d, fc_size=%d \n", s.c_str(), legend, psort, fc_size);
+	//	fprintf(stderr, "<f_pm_printdetail_> fc=%s, legend=%d, fp_sort=%d, fc_size=%d \n", s.c_str(), legend, fp_sort, fc_size);
 #endif
 
 	int user_file;
@@ -412,9 +416,9 @@ void f_pm_printdetail_ (char* fc, int& legend, int &psort, int fc_size)
 			user_file=1;
 		}
 	}
-	if (psort != 0 && psort != 1) psort = 0;
+	if (fp_sort != 0 && fp_sort != 1) fp_sort = 0;
 
-	PM.printDetail(fp, legend, psort);
+	PM.printDetail(fp, legend, fp_sort);
 
 	if (user_file == 1) {
 		fclose(fp);
@@ -428,18 +432,21 @@ void f_pm_printdetail_ (char* fc, int& legend, int &psort, int fc_size)
 ///
 ///   @param[in] char* fc	出力ファイル名(character文字列)
 ///   @param[in] int rank_ID	指定するプロセスのランク番号
-///   @param[in] int psort 測定区間の表示順(0:経過時間順にソート、1:登録順で表示)
+///   @param[in] int fp_sort 測定区間の表示順(0:経過時間順にソート、1:登録順で表示)
 ///   @param[in] int fc_size  出力ファイル名の文字数
 ///
 ///   @note fc_sizeはFortranコンパイラが自動的に追加してしまう引数。
 ///			ユーザがFortranプログラムから呼び出す場合に指定する必要はない。
 ///
-void f_pm_printthreads_ (char* fc, int &rank_ID, int &psort, int fc_size)
+void f_pm_printthreads_ (char* fc, int &rank_ID, int &fp_sort, int fc_size)
 {
 	FILE *fp;
 	std::string s=std::string(fc,fc_size);
 #ifdef DEBUG_PRINT_MONITOR
-	//	fprintf(stderr, "<f_pm_printThreads_> fc=%s, rank_ID=%d, psort=%d, fc_size=%d \n", s.c_str(), rank_ID, psort, fc_size);
+    int my_rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
+	fprintf(stderr, "<f_pm_printThreads_> fc=%s, rank_ID=%d, fp_sort=%d, my_rank=%d, fc_size=%d \n",
+		s.c_str(), rank_ID, fp_sort, my_rank, fc_size);
 #endif
 
 	int user_file;
@@ -456,9 +463,9 @@ void f_pm_printthreads_ (char* fc, int &rank_ID, int &psort, int fc_size)
 			user_file=1;
 		}
 	}
-	if (psort != 0 && psort != 1) psort = 0;
+	if (fp_sort != 0 && fp_sort != 1) fp_sort = 0;
 
-	PM.printThreads(fp, rank_ID, psort);
+	PM.printThreads(fp, rank_ID, fp_sort);
 
 	if (user_file == 1) {
 		fclose(fp);
@@ -514,7 +521,7 @@ void f_pm_printlegend_ (char* fc, int fc_size)
 ///   @param[in] int**型	pp_ranks groupを構成するrank番号配列へのポインタ
 ///   @param[in] int	group    プロセスグループ番号
 ///   @param[in] int	legend  HWPC 記号説明の表示(0:なし、1:表示する)
-///   @param[in] int	psort 測定区間の表示順
+///   @param[in] int	fp_sort 測定区間の表示順
 ///                       (0:経過時間順にソート後表示、1:登録順で表示)
 ///   @param[in] int	fc_size  character文字列ラベルの長さ（文字数）
 ///
@@ -523,12 +530,12 @@ void f_pm_printlegend_ (char* fc, int fc_size)
 ///			ユーザがFortranプログラムから呼び出す場合に指定する必要はない。
 ///   @note  HWPCを測定した計集結果があればそれも出力する
 ///
-void f_pm_printgroup_ (char* fc, MPI_Group p_group, MPI_Comm p_comm, int* pp_ranks, int& group, int& legend, int &psort, int fc_size)
+void f_pm_printgroup_ (char* fc, MPI_Group p_group, MPI_Comm p_comm, int* pp_ranks, int& group, int& legend, int &fp_sort, int fc_size)
 {
 	FILE *fp;
 	std::string s=std::string(fc,fc_size);
 #ifdef DEBUG_PRINT_MONITOR
-	//	fprintf(stderr, "<f_pm_printgroup_> fc=%s, group=%d, legend=%d, psort=%d, fc_size=%d \n", s.c_str(), group, legend, psort, fc_size);
+	//	fprintf(stderr, "<f_pm_printgroup_> fc=%s, group=%d, legend=%d, fp_sort=%d, fc_size=%d \n", s.c_str(), group, legend, fp_sort, fc_size);
 #endif
 
 	if (s == "" || fc_size == 0) {
@@ -541,9 +548,9 @@ void f_pm_printgroup_ (char* fc, MPI_Group p_group, MPI_Comm p_comm, int* pp_ran
 			fp=stdout;
 		}
 	}
-	if (psort != 0 && psort != 1) psort = 0;
+	if (fp_sort != 0 && fp_sort != 1) fp_sort = 0;
 
-	PM.printGroup(fp, p_group, p_comm, pp_ranks, group, legend, psort);
+	PM.printGroup(fp, p_group, p_comm, pp_ranks, group, legend, fp_sort);
 
 	return;
 }
@@ -557,7 +564,7 @@ void f_pm_printgroup_ (char* fc, MPI_Group p_group, MPI_Comm p_comm, int* pp_ran
 ///   @param[in] int	icolor   MPI_Comm_split()のカラー変数
 ///   @param[in] int	key      MPI_Comm_split()のkey変数
 ///   @param[in] int	legend  HWPC 記号説明の表示(0:なし、1:表示する)
-///   @param[in] int	psort 測定区間の表示順
+///   @param[in] int	fp_sort 測定区間の表示順
 ///                       (0:経過時間順にソート後表示、1:登録順で表示)
 ///   @param[in] int	fc_size  character文字列ラベルの長さ（文字数）
 ///
@@ -565,13 +572,13 @@ void f_pm_printgroup_ (char* fc, MPI_Group p_group, MPI_Comm p_comm, int* pp_ran
 ///   @note fc_sizeはFortranコンパイラが自動的に追加してしまう引数。
 ///			ユーザがFortranプログラムから呼び出す場合に指定する必要はない。
 ///
-void f_pm_printcomm_ (char* fc, MPI_Comm new_comm, int& icolor, int& key, int& legend, int& psort, int fc_size)
+void f_pm_printcomm_ (char* fc, MPI_Comm new_comm, int& icolor, int& key, int& legend, int& fp_sort, int fc_size)
 {
 	FILE *fp;
 	std::string s=std::string(fc,fc_size);
 #ifdef DEBUG_PRINT_MONITOR
-	//	fprintf(stderr, "<f_pm_printcomm_> fc=%s, new_comm=%d, icolor=%d, key=%d, legend=%d, psort=%d, fc_size=%d \n",
-	//		s.c_str(), new_comm, icolor, key, legend, psort, fc_size);
+	//	fprintf(stderr, "<f_pm_printcomm_> fc=%s, new_comm=%d, icolor=%d, key=%d, legend=%d, fp_sort=%d, fc_size=%d \n",
+	//		s.c_str(), new_comm, icolor, key, legend, fp_sort, fc_size);
 #endif
 
 	if (s == "" || fc_size == 0) {
@@ -583,9 +590,9 @@ void f_pm_printcomm_ (char* fc, MPI_Comm new_comm, int& icolor, int& key, int& l
 			fp=stdout;
 		}
 	}
-	if (psort != 0 && psort != 1) psort = 0;
+	if (fp_sort != 0 && fp_sort != 1) fp_sort = 0;
 
-	PM.printComm (fp, new_comm, icolor, key, legend, psort);
+	PM.printComm (fp, new_comm, icolor, key, legend, fp_sort);
 
 	return;
 }
@@ -596,20 +603,20 @@ void f_pm_printcomm_ (char* fc, MPI_Comm new_comm, int& icolor, int& key, int& l
 ///
 ///   @param[in] fc	出力ファイル名(character文字列)
 ///   @param[in] comments	任意のコメント(character文字列)
-///   @param[in] psort 測定区間の表示順 (0:経過時間順に表示、1:登録順で表示)
+///   @param[in] fp_sort 測定区間の表示順 (0:経過時間順に表示、1:登録順で表示)
 ///   @param[in] fc_size  fc文字列の長さ（文字数）
 ///   @param[in] comments_size  comments文字列の長さ（文字数）
 ///
 ///   @note fc_sizeはFortranコンパイラが自動的に追加してしまう引数。
 ///			ユーザがFortranプログラムから呼び出す場合に指定する必要はない。
 ///
-void f_pm_printprogress_ (char* fc, char* comments, int& psort, int fc_size, int comments_size)
+void f_pm_printprogress_ (char* fc, char* comments, int& fp_sort, int fc_size, int comments_size)
 {
 	FILE *fp;
 	std::string s=std::string(fc,fc_size);
 #ifdef DEBUG_PRINT_MONITOR
-	//	fprintf(stderr, "<f_pm_printprogress_> fc=%s, comments=%s, psort=%d, fc_size=%d, comments_size=%d \n",
-	//		s.c_str(), comments, psort, fc_size, comments_size);
+	//	fprintf(stderr, "<f_pm_printprogress_> fc=%s, comments=%s, fp_sort=%d, fc_size=%d, comments_size=%d \n",
+	//		s.c_str(), comments, fp_sort, fc_size, comments_size);
 #endif
 
 	if (s == "" || fc_size == 0) {
@@ -621,10 +628,10 @@ void f_pm_printprogress_ (char* fc, char* comments, int& psort, int fc_size, int
 			fp=stdout;
 		}
 	}
-	if (psort != 0 && psort != 1) psort = 0;
+	if (fp_sort != 0 && fp_sort != 1) fp_sort = 0;
 
 	std::string s2=std::string(comments,comments_size);
-	PM.printProgress (fp, s2, psort);
+	PM.printProgress (fp, s2, fp_sort);
 
 	return;
 }
