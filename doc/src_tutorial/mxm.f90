@@ -21,7 +21,7 @@ program check
 	call submxm2d (msize,n,dflop,a,b,c)
     !uncomment	call f_pm_stop ("Label-1", 0.0, 0)
 	
-    !uncomment	call f_pm_print ("")
+    !uncomment	call f_pm_print ("","","",0)
     !uncomment	call f_pm_printdetail ("",0)
 	write(*,*)  'something was computed', c(msize,msize)
 	

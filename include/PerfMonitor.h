@@ -97,9 +97,9 @@ namespace pm_lib {
     void initialize (int init_nWatch=100);
 
 
-    /// 測定区間にプロパティを設定.
+    /// 測定区間とそのプロパティを設定.
     ///
-    ///   @param[in] label ラベルとなる文字列
+    ///   @param[in] label 測定区間に与える名前の文字列
     ///   @param[in] type  測定計算量のタイプ(COMM:通信, CALC:演算)
     ///   @param[in] exclusive 排他測定フラグ。bool型(省略時true)、
     ///                        Fortran仕様は整数型(0:false, 1:true)

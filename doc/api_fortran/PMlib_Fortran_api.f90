@@ -29,13 +29,18 @@ subroutine f_pm_initialize (nWatch)
 end subroutine
 
 
-!> PMlib Fortran 測定区間にプロパティを設定.
+!> PMlib Fortran 測定区間とそのプロパティを設定
 !!
-!!   @param[in] character*(*) fc	測定区間を識別するラベル文字列。
+!!   @param[in] character*(*) fc	測定区間に与える名前のラベル文字列
 !!   @param[in] integer f_type  測定対象タイプ(0:COMM:通信, 1:CALC:計算)
 !!   @param[in] integer f_exclusive 排他測定フラグ(0:false, 1:true)
 !!
-!!   @note ラベルは測定区間を識別するために用いる。
+!!   @note ラベル文字列は測定区間を識別するために用いる。
+!!   各ラベル毎に対応した区間番号を内部で自動生成する
+!!   @ 最初に確保した区間数init_nWatchが不足したら動的に追加する
+    ///   第１引数は必須。第２引数は明示的な自己申告モードの場合に必須。
+    ///   第３引数は省略可
+
 !!
 subroutine f_pm_setproperties (fc, f_type, f_exclusive)
 end subroutine
