@@ -3,14 +3,15 @@
 ## REVISION HISTORY
 
 ---
-- 2018-10-06 Version 6.3.1
+- 2018-10-07 Version 6.3.1
   - bugfix for sorting rank averaged list
+
 
 ---
 - 2018-10-02 Version 6.3.0
   - release package
 
-  
+
 ---
 - 2018-09-30 Version 6.2.4
   - bugfix for thread report option in printThreads( , , seqSections);
