@@ -3,6 +3,11 @@
 ## REVISION HISTORY
 
 ---
+- 2019-01-16 Version 6.3.2
+  - bugfix for a fortran example in example/test4
+
+
+---
 - 2018-10-07 Version 6.3.1
   - bugfix for sorting rank averaged list
 

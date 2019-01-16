@@ -76,7 +76,7 @@ program main
 
 !cx call f_pm_posttrace ()
 
-	call f_pm_print ("", 0)
+	call f_pm_print ("", "", "", 0)
 	call f_pm_printdetail ("", 0, 0)
     call f_pm_printthreads ("", 0, 0)
     call f_pm_printlegend ("")
