@@ -62,13 +62,10 @@ program main
 	call f_pm_stop ("Kernel-Fast", dflop, 1)
 	call spacer (msize,n,a,b,c)
 
-	call f_pm_printprogress ("", "for checking", 0)
-	if(i.eq.3) then
-	call f_pm_reset ("Kernel-Slow")
-	endif
-	if(i.eq.4) then
-	call f_pm_resetall ()
-	endif
+	!cx call f_pm_printprogress ("", "for checking", 0)
+	!cx if(i.eq.4) then
+	!cx call f_pm_resetall ()
+	!cx endif
 
 	end do
 

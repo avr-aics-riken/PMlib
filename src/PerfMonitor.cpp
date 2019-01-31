@@ -105,14 +105,14 @@ namespace pm_lib {
 
     cp_env = std::getenv("HWPC_CHOOSER");
     if (cp_env == NULL) {
-			env_str_hwpc = "user";
+			env_str_hwpc = "USER";
     } else {
 		s = cp_env;
-    	if	(s == "FLOPS" || s == "BANDWIDTH" || s == "VECTOR" || s == "CACHE" || s == "CYCLE" ) {
+    	if	(s == "FLOPS" || s == "BANDWIDTH" || s == "VECTOR" || s == "CACHE" || s == "CYCLE" || s == "WRITEBACK" ) {
 			env_str_hwpc = s;
     	} else {
 			printDiag("initialize()",  "HWPC_CHOOSER value [%s] is not valid. User API values will be reported.\n", cp_env);
-			env_str_hwpc = "user";
+			env_str_hwpc = "USER";
 		}
 	}
 
@@ -688,7 +688,7 @@ namespace pm_lib {
 #ifdef USE_PAPI
     //	II. HWPC/PAPIレポート：HWPC計測結果を出力
 	if (m_watchArray[0].my_papi.num_events == 0) return;
-	if (env_str_hwpc != "user" ) {
+	if (env_str_hwpc != "USER" ) {
         fprintf(fp, "\n# PMlib hardware performance counter (HWPC) Report -------------------------\n");
 
     for (int j = 0; j < m_nWatch; j++) {
@@ -981,6 +981,8 @@ namespace pm_lib {
 
     gather_and_stats();
 
+    sort_m_order();
+
     if (my_rank != 0) return;
 
     // 測定時間の分母
@@ -1179,6 +1181,13 @@ namespace pm_lib {
     if (!is_PMlib_enabled) return;
 
 	// this member is call by rank 0 process only
+	#ifdef DEBUG_PRINT_MONITOR
+	if (my_rank == 0) {
+		fprintf(stderr, "\n debug <printBasicSections> m_nWatch=%d\n",m_nWatch);
+		fprintf(stderr, "\t address of m_order=%p\n", m_order);
+	}
+	#endif
+
 
     int is_unit;
     is_unit = m_watchArray[0].statsSwitch();
@@ -1196,7 +1205,10 @@ namespace pm_lib {
       fprintf(fp, "| hardware counted cache utilization\n");
     } else if ( is_unit == 6 ) {
       fprintf(fp, "| hardware counted instructions\n");
+    } else if ( is_unit == 7 ) {
+      fprintf(fp, "| hardware counted bandwidth events\n");
     } else {
+      fprintf(fp, "| *** internal bug. <printBasicSections> ***\n");
 		;	// should not reach here
     }
 
@@ -1205,7 +1217,7 @@ namespace pm_lib {
     if ( is_unit == 0 || is_unit == 1 ) {
       fprintf(fp, "|  operations   sdv    performance\n");
     } else if ( is_unit == 2 ) {
-      fprintf(fp, "|    Bytes      sdv   memory access\n");
+      fprintf(fp, "|    Bytes      sdv   memory read\n");
     } else if ( is_unit == 3 ) {
       fprintf(fp, "|  f.p.ops      sdv    f.p.perf.\n");
     } else if ( is_unit == 4 ) {
@@ -1214,6 +1226,11 @@ namespace pm_lib {
       fprintf(fp, "| load+store    sdv    L1+L2 hit%%\n");
     } else if ( is_unit == 6 ) {
       fprintf(fp, "| instructions  sdv    perf.\n");
+    } else if ( is_unit == 7 ) {
+      fprintf(fp, "|    Bytes      sdv   memory write\n");
+    } else {
+      fprintf(fp, "| *** internal bug. <printBasicSections> ***\n");
+		;	// should not reach here
 	}
 
 	fputc('\t', fp); for (int i = 0; i < maxLabelLen; i++) fputc('-', fp);
@@ -1278,7 +1295,7 @@ namespace pm_lib {
         if ( is_unit == 4 || is_unit == 5 ) {
           fops = w.m_percentage;
         } else
-        if ( is_unit == 6 ) {
+        if ( is_unit == 6 || is_unit == 7 ) {
           fops = (w.m_count_av==0) ? 0.0 : w.m_flop_av/w.m_time_av;
         }
       }
@@ -1302,7 +1319,7 @@ namespace pm_lib {
           sum_time_flop += w.m_time_av;
           sum_flop += w.m_flop_av;
         } else
-        if ( (is_unit == 2) || (is_unit == 3) || (is_unit == 6) ) {
+        if ( (is_unit == 2) || (is_unit == 3) || (is_unit == 6) || (is_unit == 7) ) {
           sum_time_flop += w.m_time_av;
           sum_flop += w.m_flop_av;
 
@@ -1358,7 +1375,7 @@ namespace pm_lib {
       fprintf(fp, "%30s  %8.3e          %7.2f %s\n", "-Exclusive CALC sections-", sum_flop, flop_serial, unit.c_str());
       }
 	} else
-    if ( (is_unit == 2) || (is_unit == 3) || (is_unit == 6) ) {
+    if ( (is_unit == 2) || (is_unit == 3) || (is_unit == 6) || (is_unit == 7) ) {
       fprintf(fp, "\t%-*s %1s %9.3e", maxLabelLen+10, "Sections per process", "", sum_time_flop);
       double flop_serial = PerfWatch::unitFlop(sum_flop/sum_time_flop, unit, is_unit);
       fprintf(fp, "%30s  %8.3e          %7.2f %s\n", "-Exclusive HWPC sections-", sum_flop, flop_serial, unit.c_str());
@@ -1391,7 +1408,7 @@ namespace pm_lib {
       fprintf(fp, "%30s  %8.3e          %7.2f %s\n", "-Exclusive CALC sections-", sum_flop_job, flop_job, unit.c_str());
       }
 	} else
-    if ( (is_unit == 2) || (is_unit == 3) || (is_unit == 6) ) {
+    if ( (is_unit == 2) || (is_unit == 3) || (is_unit == 6) || (is_unit == 7) ) {
       fprintf(fp, "\t%-*s %1s %9.3e", maxLabelLen+10, "Sections total job", "", sum_time_flop);
       double sum_flop_job = (double)num_process*sum_flop;
       double flop_job = PerfWatch::unitFlop(sum_flop_job/sum_time_flop, unit, is_unit);

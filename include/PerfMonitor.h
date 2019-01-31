@@ -68,7 +68,8 @@ namespace pm_lib {
     std::string parallel_mode; ///< 並列動作モード
       // {"Serial", "OpenMP", "FlatMPI", "Hybrid"}
     std::string env_str_hwpc;  ///< 環境変数HWPC_CHOOSERの値
-      // {"FLOPS", "BANDWIDTH", "VECTOR", "CACHE", "CYCLE", "user"}
+      // "USER" or one of the followings
+      // "FLOPS", "BANDWIDTH", "VECTOR", "CACHE", "CYCLE", "WRITEBACK"
     PerfWatch* m_watchArray;   ///< 測定区間の配列
       // PerfWatchのインスタンスは全部で m_nWatch 生成され、その番号対応は以下
       // m_watchArray[0]  :PMlibが定義するRoot区間
@@ -145,20 +146,21 @@ namespace pm_lib {
 
     (B) HWPCによる自動算出モード
       - HWPC/PAPIが利用可能なプラットフォームで利用できる
-      - 環境変数HWPC_CHOOSERの値により測定情報を選択する。(FLOPS| BANDWIDTH| VECTOR| CACHE| CYCLE)
+      - 環境変数HWPC_CHOOSERの値により測定情報を選択する。(FLOPS| BANDWIDTH| VECTOR| CACHE| CYCLE| WRITEBACK)
 
     ユーザ申告モードかHWPC自動算出モードかは、内部的に下記表の組み合わせで決定される。
 
     環境変数     setProperties()  stop()
     HWPC_CHOOSER   type引数      fP引数      基本・詳細レポート出力      HWPC詳細レポート出力
     -----------------------------------------------------------------------------------------
-    NONE (無指定)   CALC         指定値      時間、fP引数によるFlops     なし
-    NONE (無指定)   COMM         指定値      時間、fP引数によるByte/s    なし
+    USER (無指定)   CALC         指定値      時間、fP引数によるFlops     なし
+    USER (無指定)   COMM         指定値      時間、fP引数によるByte/s    なし
     FLOPS           無視         無視        時間、HWPC自動計測Flops     FLOPSに関連するHWPC統計情報
     VECTOR          無視         無視        時間、HWPC自動計測SIMD率    VECTORに関連するHWPC統計情報
     BANDWIDTH       無視         無視        時間、HWPC自動計測Byte/s    BANDWIDTHに関連するHWPC統計情報
     CACHE           無視         無視        時間、HWPC自動計測L1$,L2$   CACHEに関連するHWPC統計情報
     CYCLE           無視         無視        時間、HWPC自動計測cycle     CYCLEに関連するHWPC統計情報
+    WRITEBACK       無視         無視        時間、HWPC自動計測Byte/s    MEM(WRITE)に関するHWPC統計情報
      **/
     ///   @endverbatim
     ///
