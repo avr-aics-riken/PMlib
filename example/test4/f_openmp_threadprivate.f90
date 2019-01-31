@@ -48,7 +48,7 @@ call f_pm_start ("Section-C")
 call check_thread(x)
 call f_pm_stop  ("Section-C", 111.0d0, 1)
 
-call f_pm_print ("", 1)
+call f_pm_print ("", "", "", 1)
 call f_pm_printdetail ("", 0, 1)
 id=0
 call f_pm_printthreads ("", id, 1)

@@ -20,7 +20,7 @@
 
 //! @file   PerfMonitor.h
 //! @brief  PerfMonitor class Header
-//! @version rev.5.8
+//! @version rev.6.3
 
 #ifdef DISABLE_MPI
 #include "mpi_stubs.h"
@@ -68,7 +68,8 @@ namespace pm_lib {
     std::string parallel_mode; ///< 並列動作モード
       // {"Serial", "OpenMP", "FlatMPI", "Hybrid"}
     std::string env_str_hwpc;  ///< 環境変数HWPC_CHOOSERの値
-      // {"FLOPS", "BANDWIDTH", "VECTOR", "CACHE", "CYCLE", "user"}
+      // "USER" or one of the followings
+      // "FLOPS", "BANDWIDTH", "VECTOR", "CACHE", "CYCLE", "WRITEBACK"
     PerfWatch* m_watchArray;   ///< 測定区間の配列
       // PerfWatchのインスタンスは全部で m_nWatch 生成され、その番号対応は以下
       // m_watchArray[0]  :PMlibが定義するRoot区間
@@ -97,9 +98,9 @@ namespace pm_lib {
     void initialize (int init_nWatch=100);
 
 
-    /// 測定区間にプロパティを設定.
+    /// 測定区間とそのプロパティを設定.
     ///
-    ///   @param[in] label ラベルとなる文字列
+    ///   @param[in] label 測定区間に与える名前の文字列
     ///   @param[in] type  測定計算量のタイプ(COMM:通信, CALC:演算)
     ///   @param[in] exclusive 排他測定フラグ。bool型(省略時true)、
     ///                        Fortran仕様は整数型(0:false, 1:true)
@@ -145,20 +146,21 @@ namespace pm_lib {
 
     (B) HWPCによる自動算出モード
       - HWPC/PAPIが利用可能なプラットフォームで利用できる
-      - 環境変数HWPC_CHOOSERの値により測定情報を選択する。(FLOPS| BANDWIDTH| VECTOR| CACHE| CYCLE)
+      - 環境変数HWPC_CHOOSERの値により測定情報を選択する。(FLOPS| BANDWIDTH| VECTOR| CACHE| CYCLE| WRITEBACK)
 
     ユーザ申告モードかHWPC自動算出モードかは、内部的に下記表の組み合わせで決定される。
 
     環境変数     setProperties()  stop()
     HWPC_CHOOSER   type引数      fP引数      基本・詳細レポート出力      HWPC詳細レポート出力
     -----------------------------------------------------------------------------------------
-    NONE (無指定)   CALC         指定値      時間、fP引数によるFlops     なし
-    NONE (無指定)   COMM         指定値      時間、fP引数によるByte/s    なし
+    USER (無指定)   CALC         指定値      時間、fP引数によるFlops     なし
+    USER (無指定)   COMM         指定値      時間、fP引数によるByte/s    なし
     FLOPS           無視         無視        時間、HWPC自動計測Flops     FLOPSに関連するHWPC統計情報
     VECTOR          無視         無視        時間、HWPC自動計測SIMD率    VECTORに関連するHWPC統計情報
     BANDWIDTH       無視         無視        時間、HWPC自動計測Byte/s    BANDWIDTHに関連するHWPC統計情報
     CACHE           無視         無視        時間、HWPC自動計測L1$,L2$   CACHEに関連するHWPC統計情報
     CYCLE           無視         無視        時間、HWPC自動計測cycle     CYCLEに関連するHWPC統計情報
+    WRITEBACK       無視         無視        時間、HWPC自動計測Byte/s    MEM(WRITE)に関するHWPC統計情報
      **/
     ///   @endverbatim
     ///
@@ -207,7 +209,7 @@ namespace pm_lib {
     ///   @param[in] fp       出力ファイルポインタ
     ///   @param[in] hostname ホスト名(省略時はrank 0 実行ホスト名)
     ///   @param[in] comments 任意のコメント
-    ///   @param[in] seqSections (省略可)測定区間の表示順 (0:経過時間順、1:登録順で表示)
+    ///   @param[in] op_sort    測定区間の表示順 (0:経過時間順、1:登録順)
     ///
     ///   @note 基本統計レポートは排他測定区間, 非排他測定区間をともに出力する。
     ///      MPIの場合、rank0プロセスの測定回数が１以上の区間のみを表示する。
@@ -217,29 +219,27 @@ namespace pm_lib {
     ///      経過時間でソートした測定区間のリストm_order[m_nWatch] を作成する。
     ///      各測定区間のHWPCイベントの統計値を取得する。
     ///
-    void print(FILE* fp, const std::string hostname, const std::string comments, int seqSections=0);
+    void print(FILE* fp, const std::string hostname, const std::string comments, int op_sort=0);
 
 
     /// MPIランク別詳細レポート、HWPC詳細レポートを出力。
     ///
-    ///   @param[in] fp 出力ファイルポインタ
-    ///   @param[in] legend   int型 (省略可) HWPC 記号説明の表示 (0:なし、1:表示する)
-    ///   @param[in] seqSections (省略可)測定区間の表示順 (0:経過時間順、1:登録順で表示)
+    ///   @param[in] fp       出力ファイルポインタ
+    ///   @param[in] legend   HWPC 記号説明の表示 (0:なし、1:表示する)
+    ///   @param[in] op_sort    測定区間の表示順 (0:経過時間順、1:登録順)
     ///
-    ///   @note 本APIよりも先にPerfWatch::gather()を呼び出しておく必要が有る
-    ///         HWPC値は各プロセス毎に子スレッドの値を合算して表示する
     ///   @note 詳細レポートは排他測定区間のみを出力する
     ///
-    void printDetail(FILE* fp, int legend=0, int seqSections=0);
+    void printDetail(FILE* fp, int legend=0, int op_sort=0);
 
 
     /// 指定プロセスに対してスレッド別詳細レポートを出力。
     ///
-    ///   @param[in] fp			出力ファイルポインタ
-    ///   @param[in] rank_ID	出力対象プロセスのランク番号
-    ///   @param[in] seqSections 測定区間の表示順 (0:経過時間順、1:登録順で表示)
+    ///   @param[in] fp	       出力ファイルポインタ
+    ///   @param[in] rank_ID   出力対象プロセスのランク番号
+    ///   @param[in] op_sort     測定区間の表示順 (0:経過時間順、1:登録順)
     ///
-    void printThreads(FILE* fp, int rank_ID=0, int seqSections=0);
+    void printThreads(FILE* fp, int rank_ID=0, int op_sort=0);
 
 
     /// HWPC 記号の説明表示を出力。
@@ -257,7 +257,7 @@ namespace pm_lib {
     ///   @param[in] pp_ranks int*型 groupを構成するrank番号配列へのポインタ
     ///   @param[in] group  int型 (省略可)プロセスグループ番号
     ///   @param[in] legend int型 (省略可)HWPC記号説明の表示(0:なし、1:表示する)
-    ///   @param[in] seqSections int型 (省略可)測定区間の表示順 (0:経過時間順、1:登録順で表示)
+    ///   @param[in] op_sort int型 (省略可)測定区間の表示順 (0:経過時間順、1:登録順)
     ///
     ///   @note プロセスグループはp_group によって定義され、p_groupの値は
     ///   MPIライブラリが内部で定める大きな整数値を基準に決定されるため、
@@ -265,7 +265,7 @@ namespace pm_lib {
     ///   別に1,2,3,..等の昇順でプロセスグループ番号 groupをつけておくと
     ///   レポートが識別しやすくなる。
     ///
-    void printGroup(FILE* fp, MPI_Group p_group, MPI_Comm p_comm, int* pp_ranks, int group=0, int legend=0, int seqSections=0);
+    void printGroup(FILE* fp, MPI_Group p_group, MPI_Comm p_comm, int* pp_ranks, int group=0, int legend=0, int op_sort=0);
 
 
     /// MPI communicatorから自動グループ化したMPIランク別詳細レポート、HWPC詳細レポートを出力
@@ -275,22 +275,22 @@ namespace pm_lib {
     ///   @param[in] icolor int型 MPI_Comm_split()のカラー変数
     ///   @param[in] key    int型 MPI_Comm_split()のkey変数
     ///   @param[in] legend int型 (省略可)HWPC記号説明の表示(0:なし、1:表示する)
-    ///   @param[in] seqSections int型 (省略可)測定区間の表示順 (0:経過時間順、1:登録順で表示)
+    ///   @param[in] op_sort int型 (省略可)測定区間の表示順 (0:経過時間順、1:登録順)
     ///
-    void printComm (FILE* fp, MPI_Comm p_comm, int icolor, int key, int legend=0, int seqSections=0);
+    void printComm (FILE* fp, MPI_Comm p_comm, int icolor, int key, int legend=0, int op_sort=0);
 
 
     /// 測定途中経過の状況レポートを出力（排他測定区間を対象とする）
     ///
     ///   @param[in] fp       出力ファイルポインタ
     ///   @param[in] comments 任意のコメント
-    ///   @param[in] seqSections 測定区間の表示順 (0:経過時間順、1:登録順)
+    ///   @param[in] op_sort 測定区間の表示順 (0:経過時間順、1:登録順)
     ///
     ///   @note 基本レポートと同様なフォーマットで途中経過を出力する。
     ///      多数回の反復計算を行う様なプログラムにおいて初期の経過状況を
     ///      モニターする場合などに有効に用いることができる。
     ///
-    void printProgress(FILE* fp, const std::string comments, int seqSections=0);
+    void printProgress(FILE* fp, const std::string comments, int op_sort=0);
 
 
     /// ポスト処理用traceファイルの出力
@@ -440,7 +440,7 @@ namespace pm_lib {
     ///   @param[in] sum_comm  通信量
     ///   @param[in] sum_other その他
     ///   @param[in] unit      計算量の単位
-    ///   @param[in] seqSections (省略可)測定区間の表示順 (0:経過時間順、1:登録順)
+    ///   @param[in] op_sort     測定区間の表示順 (0:経過時間順、1:登録順)
     ///
     ///   @note   計算量（演算数やデータ移動量）選択方法は PerfWatch::stop() の
     ///           コメントに詳しく説明されている。
@@ -448,7 +448,7 @@ namespace pm_lib {
     void printBasicSections(FILE* fp, int maxLabelLen, double& tot,
               double& sum_flop, double& sum_comm, double& sum_other,
               double& sum_time_flop, double& sum_time_comm, double& sum_time_other,
-              std::string unit, int seqSections=0);
+              std::string unit, int op_sort=0);
 
     /// 基本統計レポートのテイラー部分を出力。
     ///

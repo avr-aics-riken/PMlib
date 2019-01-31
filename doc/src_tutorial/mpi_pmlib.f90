@@ -49,7 +49,7 @@ program check
 	write(6,'(f10.5,a, f10.5,a)') dpt1-dpt0, " seconds", flops, " Gflops"
 
 	call f_pm_gather ()
-	call f_pm_print ("", 0)
+	call f_pm_print ("", "", "", 0)
 	call f_pm_printdetail ("", 0, 0)
 	do i=1,ncpus
 	call f_pm_printthreads ("", i-1, 0)

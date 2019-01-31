@@ -3,14 +3,25 @@
 ## REVISION HISTORY
 
 ---
-- 2018-10-06 Version 6.3.1
+- 2019-01-31 Version 6.4.0
+  - add WRITEBACK option to measure HWPC memory writeback and streaming store
+
+
+---
+- 2019-01-16 Version 6.3.2
+  - bugfix for a fortran example in example/test4
+
+
+---
+- 2018-10-07 Version 6.3.1
   - bugfix for sorting rank averaged list
+
 
 ---
 - 2018-10-02 Version 6.3.0
   - release package
 
-  
+
 ---
 - 2018-09-30 Version 6.2.4
   - bugfix for thread report option in printThreads( , , seqSections);
