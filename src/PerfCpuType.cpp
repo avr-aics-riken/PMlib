@@ -594,7 +594,8 @@ void PerfWatch::createPapiCounterList ()
 			papi.s_name[ip] = "STORE_INS"; papi.events[ip] = PAPI_SR_INS; ip++;
 
 			// memory write operation via writeback and streaming-store
-			if (hwpc_group.i_platform >= 2 && hwpc_group.i_platform <= 5 ) {
+			// The related  events (WB and STRMS) have been deleted for Skylake, for unknown reason.
+			if (hwpc_group.i_platform >= 2 && hwpc_group.i_platform <= 4 ) {
 				hwpc_group.number[I_writeback] += 2;
 				papi.s_name[ip] = "OFFCORE_RESPONSE_0:WB:ANY_RESPONSE";
 					my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "WBACK_MEM"; ip++;
@@ -985,7 +986,8 @@ void PerfWatch::sortPapiCounterList (void)
 
 	else
 // if (WRITEBACK)
-	// WRITEBACK is a special option for memory write bandwidth calculation on Xeon processor
+	// WRITEBACK is a special option for memory write bandwidth calculation on Intel Xeon Sandybridge and Ivybridge
+	// The related events (WB and STRMS) have been deleted on Skylake, for some reason.
 
 	if ( hwpc_group.number[I_writeback] > 0 ) {
 		double d_load_ins, d_store_ins;
@@ -1003,16 +1005,18 @@ void PerfWatch::sortPapiCounterList (void)
 				ip++;jp++;
 			}
 
-			if (hwpc_group.i_platform >= 2 && hwpc_group.i_platform <= 5 ) {
+			if (hwpc_group.i_platform >= 2 && hwpc_group.i_platform <= 4 ) {
 			ip = hwpc_group.index[I_writeback];
 			d_writeback_MEM = my_papi.accumu[ip+2] ;	//	OFFCORE_RESPONSE_0:WB:ANY_RESPONSE
 			d_streaming_MEM = my_papi.accumu[ip+3] ;	//	OFFCORE_RESPONSE_0:STRM_ST:L3_MISS:SNP_ANY
-
 			bandwidth = (d_writeback_MEM + d_streaming_MEM) * 64.0 * perf_rate;	// Memory write bandwidth
+			} else {
+			bandwidth = 0.0;
+			}
+
 			my_papi.s_sorted[jp] = "Mem [B/s]" ;
 			my_papi.v_sorted[jp] = bandwidth ;	//	* 1.0e-9;
 			jp++;
-			}
 		}
 	}
     	
@@ -1263,6 +1267,7 @@ void PerfWatch::outputPapiCounterLegend (FILE* fp)
 // WRITEBACK
 	if (hwpc_group.platform == "Xeon" ) {
 	fprintf(fp, "\tHWPC_CHOOSER=WRITEBACK:\n");
+	fprintf(fp, "\t\tThis option is only available for Sandybridge and Ivybridge\n");
 	fprintf(fp, "\t\tWBACK_MEM:   memory write via writeback store\n");
 	fprintf(fp, "\t\tSTRMS_MEM:   memory write via streaming store (nontemporal store)\n");
 	fprintf(fp, "\t\t[Mem B/s]: Memory write bandwidth responding to writeback and streaming-stores\n");

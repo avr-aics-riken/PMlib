@@ -4,7 +4,7 @@
 
 ---
 - 2019-01-31 Version 6.4.0
-  - add WRITEBACK option to measure HWPC memory writeback and streaming store
+  - add HWPC WRITEBACK option for Sandybridge and Ivybridge to measure memory writeback and streaming store
 
 
 ---

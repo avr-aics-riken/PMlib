@@ -725,8 +725,15 @@ namespace pm_lib {
 		fprintf(fp, "\tHWPC_CHOOSER is not set. User API values are reported.\n");
 	} else {
 		s = c_env;
-		if  (s == "FLOPS" || s == "BANDWIDTH" || s == "VECTOR" || s == "CACHE" || s == "CYCLE" || s == "WRITEBACK" ) { 
+		if  (s == "FLOPS" || s == "BANDWIDTH" || s == "VECTOR" || s == "CACHE" || s == "CYCLE" ) { 
 			fprintf(fp, "\tHWPC_CHOOSER=%s environment variable is provided.\n", s.c_str());
+		} else if  (s == "WRITEBACK" ) { 
+			fprintf(fp, "\tHWPC_CHOOSER=%s environment variable is provided.\n", s.c_str());
+			if ( ( hwpc_group.platform == "Xeon" ) && (hwpc_group.i_platform >= 2 && hwpc_group.i_platform <= 4 ) ) {
+				;
+			} else {
+				fprintf(fp, "\t\t*** Remark WRITEBACK option does not produce useful report on this system.\n");
+			}
 		} else {
 			fprintf(fp, "\tUnknown group HWPC_CHOOSER=%s is ignored. User API values are reported.\n", s.c_str());
 		}

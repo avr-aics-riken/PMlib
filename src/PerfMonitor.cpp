@@ -1217,7 +1217,7 @@ namespace pm_lib {
     if ( is_unit == 0 || is_unit == 1 ) {
       fprintf(fp, "|  operations   sdv    performance\n");
     } else if ( is_unit == 2 ) {
-      fprintf(fp, "|    Bytes      sdv   memory read\n");
+      fprintf(fp, "|    Bytes      sdv   memory access\n");
     } else if ( is_unit == 3 ) {
       fprintf(fp, "|  f.p.ops      sdv    f.p.perf.\n");
     } else if ( is_unit == 4 ) {
