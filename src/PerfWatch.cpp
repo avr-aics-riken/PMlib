@@ -49,19 +49,19 @@ namespace pm_lib {
 
   //	bool PerfWatch::ExclusiveStarted = false;
 
-
   /// 単位変換.
   ///
-  ///   @param[in] fops 浮動小数演算数/通信量(バイト)
+  ///   @param[in] fops 浮動小数点演算量又はデータ移動量
   ///   @param[out] unit 単位の文字列
   ///   @param[in] is_unit ユーザー申告値かHWPC自動測定値かの指定
-  ///              = 0: ユーザが引数で指定した通信量"Bytes/sec"
-  ///              = 1: ユーザが引数で指定した計算量"Flops"
-  ///              = 2: HWPC が自動測定する通信量"Bytes/sec (HWPC)"
-  ///              = 3: HWPC が自動測定する計算量"Flops (HWPC)"
+  ///              = 0: ユーザが引数で指定したデータ移動量(バイト)
+  ///              = 1: ユーザが引数で指定した演算量(浮動小数点演算量)
+  ///              = 2: HWPC が自動測定する memory read event
+  ///              = 3: HWPC が自動測定する flops event
   ///              = 4: HWPC が自動測定する vectorization (SSE, AVX, etc)
   ///              = 5: HWPC が自動測定する cache hit, miss,
   ///              = 6: HWPC が自動測定する cycles, instructions
+  ///              = 7: HWPC が自動測定する memory write event
   ///   @return  単位変換後の数値
   ///
   ///   @note is_unitは通常PerfWatch::statsSwitch()で事前に決定されている
@@ -77,7 +77,7 @@ namespace pm_lib {
     T = 1000.0*G;
     P = 1000.0*T;
 
-    if ((is_unit == 0) || (is_unit == 2))  {
+    if ((is_unit == 0) || (is_unit == 2) || (is_unit == 7))  {
       if      ( fops > P ) {
         ret = fops / P;
         unit = "PB/sec";
@@ -176,6 +176,9 @@ namespace pm_lib {
 	} else
 	if ( is_unit == 6 ) {
 		m_flop = my_papi.v_sorted[my_papi.num_sorted-2] ;
+	} else
+    if ( is_unit == 7 ) {
+		m_flop = m_time * my_papi.v_sorted[my_papi.num_sorted-1] ;
 	}
 
 	// The space is reserved only once as a fixed size array
@@ -312,29 +315,30 @@ namespace pm_lib {
   /// 計算量の選択を行う
   ///
   /// @return
-  ///   0: ユーザが引数で指定した通信量を採用する "Bytes/sec"
+  ///   0: ユーザが引数で指定したデータ移動量(バイト)を採用する
   ///   1: ユーザが引数で指定した計算量を採用する "Flops"
-  ///   2: HWPC が自動的に測定する通信量を採用する	"Bytes/sec (HWPC)"
-  ///   3: HWPC が自動的に測定する計算量を用いる	"Flops (HWPC)"
-  ///   4: HWPC が自動的に測定する vectorization (SSE, AVX, etc)
-  ///   5: HWPC が自動的に測定する cache hit/miss
+  ///   2: HWPC が自動的に測定する memory read event
+  ///   3: HWPC が自動的に測定する flops event
+  ///   4: HWPC が自動的に測定する vectorization (SSE, AVX, etc) event
+  ///   5: HWPC が自動的に測定する cache hit, miss
   ///   6: HWPC が自動的に測定する cycles, instructions
+  ///   7: HWPC が自動的に測定する memory write (writeback, streaming store)
   ///
   /// @note
   /// 計算量としてユーザー申告値を用いるかHWPC計測値を用いるかの決定を行う
-  /// もし環境変数HWPC_CHOOSERの値がFLOPSかBANDWIDTHの場合はそれが優先される
-  /// 必要であればHWPC計測値を m_flopArray[i]にコピー(上書き)する
+  /// 環境変数HWPC_CHOOSERの値が優先される
   ///
   int PerfWatch::statsSwitch()
   {
     int is_unit;
     // 0: user set bandwidth
     // 1: user set flop counts
-    // 2: HWPC measured bandwidth
+    // 2: HWPC measured memory read bandwidth
     // 3: HWPC measured flop counts
     // 4: HWPC measured vectorization
     // 5: HWPC measured cache hit/miss
     // 6: HWPC measured cycles, instructions
+    // 7: HWPC measured memory write bandwidth (writeback and streaming store)
 
     if (hwpc_group.number[I_bandwidth] > 0) {
       is_unit=2;
@@ -346,6 +350,8 @@ namespace pm_lib {
       is_unit=5;
     } else if (hwpc_group.number[I_cycle] > 0) {
       is_unit=6;
+    } else if (hwpc_group.number[I_writeback] > 0) {
+      is_unit=7;
     } else if (m_typeCalc == 0) {
 		is_unit=0;
     } else if (m_typeCalc == 1) {
@@ -520,6 +526,7 @@ namespace pm_lib {
     if (is_unit == 4) unit = "vector%(HWPC)";	// 4: HWPC measured vector %
     if (is_unit == 5) unit = "L1L2hit%(HWPC)";	// 5: HWPC measured cache hit%
     if (is_unit == 6) unit = "Ins/sec(HWPC)";	// 6: HWPC measured instructions
+    if (is_unit == 7) unit = "B/sec(HWPC)";		// 7: HWPC memory writeback BW
 
     long total_count = 0;
     for (int i = 0; i < m_np; i++) total_count += m_countArray[i];
@@ -607,6 +614,7 @@ namespace pm_lib {
     if (is_unit == 4) unit = "vector%(HWPC)";	// 4: HWPC measured vector %
     if (is_unit == 5) unit = "L1L2hit%(HWPC)";	// 5: HWPC measured cache hit%
     if (is_unit == 6) unit = "Ins/sec(HWPC)";	// 6: HWPC measured instructions
+    if (is_unit == 7) unit = "B/sec(HWPC)";		// 7: HWPC memory writeback BW
 
 
 
@@ -719,6 +727,13 @@ namespace pm_lib {
 		s = c_env;
 		if  (s == "FLOPS" || s == "BANDWIDTH" || s == "VECTOR" || s == "CACHE" || s == "CYCLE" ) { 
 			fprintf(fp, "\tHWPC_CHOOSER=%s environment variable is provided.\n", s.c_str());
+		} else if  (s == "WRITEBACK" ) { 
+			fprintf(fp, "\tHWPC_CHOOSER=%s environment variable is provided.\n", s.c_str());
+			if ( ( hwpc_group.platform == "Xeon" ) && (hwpc_group.i_platform >= 2 && hwpc_group.i_platform <= 4 ) ) {
+				;
+			} else {
+				fprintf(fp, "\t\t*** Remark WRITEBACK option does not produce useful report on this system.\n");
+			}
 		} else {
 			fprintf(fp, "\tUnknown group HWPC_CHOOSER=%s is ignored. User API values are reported.\n", s.c_str());
 		}
@@ -925,6 +940,7 @@ namespace pm_lib {
     if (is_unit == 4) unit = "vector%(HWPC)";	// 4: HWPC measured vector %
     if (is_unit == 5) unit = "L1L2hit%(HWPC)";	// 5: HWPC measured cache hit%
     if (is_unit == 6) unit = "Ins/sec(HWPC)";	// 6: HWPC measured instructions
+    if (is_unit == 7) unit = "B/sec(HWPC)";		// 7: HWPC memory writeback BW
 
 	if (my_rank == 0 && is_unit < 2) {
 	    fprintf(fp, "Label  %s%s\n", m_exclusive ? "" : "*", m_label.c_str());
@@ -1208,7 +1224,9 @@ namespace pm_lib {
 	if ( is_unit == 0 || is_unit == 1 ) {
 		s_counter =  "User Defined COMM/CALC values" ;
 		s_unit =  "unit: B/sec or Flops";
-	} else if ( 2 <= is_unit && is_unit <= 6 ) {
+// DEBUG from here
+	//	} else if ( 2 <= is_unit && is_unit <= 6 ) {
+	} else if ( 2 <= is_unit && is_unit <= Max_hwpc_output_group ) {
 		s_counter =  "HWPC measured values" ;
 		s_unit =  my_papi.s_sorted[my_papi.num_sorted-1] ;
 	}
@@ -1270,7 +1288,6 @@ namespace pm_lib {
 #ifdef USE_OTF
     if (m_is_OTF != 0) {
       int is_unit = statsSwitch();
-      //	if (is_unit != 1) is_unit = 0;
       my_otf_event_start(my_rank, m_startTime, m_id, is_unit);
 	}
 #endif
@@ -1431,14 +1448,13 @@ namespace pm_lib {
 	} else if (m_is_OTF == 2) {
 		if ( (is_unit == 0) || (is_unit == 1) ) {
 			// ユーザが引数で指定した計算量/time(計算speed)
-    		//	w = (flopPerTask * (double)iterationCount) / m_time;
     		w = (flopPerTask * (double)iterationCount) / (m_stopTime-m_startTime);
-		} else if ( (2 <= is_unit) && (is_unit <= 5) ) {
+		} else if ( (2 <= is_unit) && (is_unit <= Max_hwpc_output_group) ) {
 			// 自動計測されたHWPCイベントを分析した計算speed
-
 			sortPapiCounterList ();
 
-			// is_unitが2,3の時、v_sorted[]配列の最後の要素は速度の次元を持つ // is_unitが4,5の時は...
+			// is_unitが2,3の時、v_sorted[]配列の最後の要素は速度の次元を持つ
+			// is_unitが4,5の時は...
 			w = my_papi.v_sorted[my_papi.num_sorted-1] ;
 		}
 		my_otf_event_stop(my_rank, m_stopTime, m_id, is_unit, w);
@@ -1579,8 +1595,19 @@ namespace pm_lib {
 	if (my_papi.num_events > 0) {
 		for (int i=0; i<my_papi.num_events; i++) {
 			my_papi.accumu[i] = 0.0;
+			my_papi.v_sorted[i] = 0.0;
 		}
 	}
+	#ifdef _OPENMP
+			#pragma omp barrier
+			#pragma omp master
+			for (int j=0; j<num_threads; j++) {
+			for (int i=0; i<my_papi.num_events; i++) {
+				my_papi.th_accumu[j][i] = 0.0 ;
+				my_papi.th_v_sorted[j][i] = 0.0 ;
+			}
+			}
+	#endif
 #endif
 
   }

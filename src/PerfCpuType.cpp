@@ -254,11 +254,16 @@ void PerfWatch::createPapiCounterList ()
 
 // 2. Parse the Environment Variable HWPC_CHOOSER
 	string s_chooser;
-	string s_default = "user";
+	string s_default = "USER";
 	char* c_env = std::getenv("HWPC_CHOOSER");
 	if (c_env != NULL) {
 		s_chooser = c_env;
-		if  (s_chooser == "FLOPS" || s_chooser == "BANDWIDTH" || s_chooser == "VECTOR" || s_chooser == "CACHE" || s_chooser == "CYCLE") {
+		if (s_chooser == "FLOPS" ||
+			s_chooser == "BANDWIDTH" ||
+			s_chooser == "VECTOR" ||
+			s_chooser == "CACHE" ||
+			s_chooser == "CYCLE" ||
+			s_chooser == "WRITEBACK" ) {
 			;
 		} else {
 			s_chooser = s_default;
@@ -574,6 +579,32 @@ void PerfWatch::createPapiCounterList ()
 		}
 	}
 
+	else
+// if (WRITEBACK)
+	if ( s_chooser.find( "WRITEBACK" ) != string::npos ) {
+		hwpc_group.index[I_writeback] = ip;
+		hwpc_group.number[I_writeback] = 0;
+
+		if (hwpc_group.platform == "Xeon" ) {
+			// WRITEBACK is a special option for memory writeback counting on Xeon processor
+			// WRITEBACK option is not available for SPARC since writeback is included in BANDWIDTH option
+
+			hwpc_group.number[I_writeback] = 2;
+			papi.s_name[ip] = "LOAD_INS"; papi.events[ip] = PAPI_LD_INS; ip++;
+			papi.s_name[ip] = "STORE_INS"; papi.events[ip] = PAPI_SR_INS; ip++;
+
+			// memory write operation via writeback and streaming-store
+			// The related  events (WB and STRMS) have been deleted for Skylake, for unknown reason.
+			if (hwpc_group.i_platform >= 2 && hwpc_group.i_platform <= 4 ) {
+				hwpc_group.number[I_writeback] += 2;
+				papi.s_name[ip] = "OFFCORE_RESPONSE_0:WB:ANY_RESPONSE";
+					my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "WBACK_MEM"; ip++;
+				papi.s_name[ip] = "OFFCORE_RESPONSE_0:STRM_ST:L3_MISS:SNP_ANY";
+					my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "STRMS_MEM"; ip++;
+			}
+		}
+
+	}
 
 
 // total number of traced events by PMlib
@@ -953,6 +984,42 @@ void PerfWatch::sortPapiCounterList (void)
 		jp++;
 	}
 
+	else
+// if (WRITEBACK)
+	// WRITEBACK is a special option for memory write bandwidth calculation on Intel Xeon Sandybridge and Ivybridge
+	// The related events (WB and STRMS) have been deleted on Skylake, for some reason.
+
+	if ( hwpc_group.number[I_writeback] > 0 ) {
+		double d_load_ins, d_store_ins;
+		double d_writeback_MEM, d_streaming_MEM;
+		double bandwidth;
+
+    	if (hwpc_group.platform == "Xeon" ) {
+			counts = 0.0;
+			ip = hwpc_group.index[I_writeback];
+			jp=0;
+			for(int i=0; i<hwpc_group.number[I_writeback]; i++)
+			{
+				my_papi.s_sorted[jp] = my_papi.s_name[ip] ;
+				counts += my_papi.v_sorted[jp] = my_papi.accumu[ip] ;
+				ip++;jp++;
+			}
+
+			if (hwpc_group.i_platform >= 2 && hwpc_group.i_platform <= 4 ) {
+			ip = hwpc_group.index[I_writeback];
+			d_writeback_MEM = my_papi.accumu[ip+2] ;	//	OFFCORE_RESPONSE_0:WB:ANY_RESPONSE
+			d_streaming_MEM = my_papi.accumu[ip+3] ;	//	OFFCORE_RESPONSE_0:STRM_ST:L3_MISS:SNP_ANY
+			bandwidth = (d_writeback_MEM + d_streaming_MEM) * 64.0 * perf_rate;	// Memory write bandwidth
+			} else {
+			bandwidth = 0.0;
+			}
+
+			my_papi.s_sorted[jp] = "Mem [B/s]" ;
+			my_papi.v_sorted[jp] = bandwidth ;	//	* 1.0e-9;
+			jp++;
+		}
+	}
+    	
 // count the number of reported events and derived matrices
 	my_papi.num_sorted = jp;
 
@@ -1122,8 +1189,9 @@ void PerfWatch::outputPapiCounterLegend (FILE* fp)
 	fprintf(fp, "\t\tL3_HIT:    Last Level Cache data read hit \n");
 	fprintf(fp, "\t\tL3_MISS:   Last Level Cache data read miss \n");
 	fprintf(fp, "\t\t[L2$ B/s]: L2 cache working bandwidth responding to demand read and prefetch\n");
-	fprintf(fp, "\t\t[L3$ B/s]:  Last Level Cache bandwidth responding to demand read and prefetch\n");
-	fprintf(fp, "\t\t[Mem B/s]: Memory bandwidth responding to demand read and prefetch requests reaching memory\n");
+	fprintf(fp, "\t\t[L3$ B/s]: Last Level Cache bandwidth responding to demand read and prefetch\n");
+	fprintf(fp, "\t\t[Mem B/s]: Memory read bandwidth responding to demand read and prefetch\n");
+	fprintf(fp, "\t\t         : The write bandwidth must be measured separately. See Remarks.\n");
 	}
 
 	if (hwpc_group.platform == "SPARC64" ) {
@@ -1196,6 +1264,15 @@ void PerfWatch::outputPapiCounterLegend (FILE* fp)
 	fprintf(fp, "\t\t[L2$ hit%]: data access hit(%) in L2 cache\n");
 	fprintf(fp, "\t\t[L1L2hit%]: sum of hit(%) in L1 and L2 cache\n");
 
+// WRITEBACK
+	if (hwpc_group.platform == "Xeon" ) {
+	fprintf(fp, "\tHWPC_CHOOSER=WRITEBACK:\n");
+	fprintf(fp, "\t\tThis option is only available for Sandybridge and Ivybridge\n");
+	fprintf(fp, "\t\tWBACK_MEM:   memory write via writeback store\n");
+	fprintf(fp, "\t\tSTRMS_MEM:   memory write via streaming store (nontemporal store)\n");
+	fprintf(fp, "\t\t[Mem B/s]: Memory write bandwidth responding to writeback and streaming-stores\n");
+	}
+
 // remarks
 	fprintf(fp, "\n");
 	fprintf(fp, "\tRemarks.\n");
@@ -1203,12 +1280,16 @@ void PerfWatch::outputPapiCounterLegend (FILE* fp)
 	fprintf(fp, "\t\t Symbols in [] such as [Ins/cyc] are calculated statistics in shown unit.\n");
 
 	if (hwpc_group.platform == "Xeon" ) {
-	fprintf(fp, "\t\t The memory bandwidth is based on uncore events, not on memory controller information, \n");
-	fprintf(fp, "\t\t and is calculated as the sum of demand read and prefetch requests reaching to memory.\n");
+	fprintf(fp, "\tSpecial remark for Intel Xeon memory bandwidth.\n");
+	fprintf(fp, "\t\t The memory bandwidth (BW) is based on uncore events, not on memory controller information.\n");
+	fprintf(fp, "\t\t The read BW and the write BW must be obtained separately, unfortunately.\n");
+	fprintf(fp, "\t\t Use HWPC_CHOOSER=BANDWIDTH to report the read BW responding to demand read and prefetch,\n");
+	fprintf(fp, "\t\t and HWPC_CHOOSER=WRITEBACK for the write BW responding to writeback and streaming-stores.\n");
 	fprintf(fp, "\t\t The symbols L3 cache and LLC both refer to the same Last Level Cache.\n");
 	}
 
 	if (hwpc_group.platform == "SPARC64" ) {
+	fprintf(fp, "\tSpecial remarks for SPARC64*fx memory bandwidth.\n");
 	fprintf(fp, "\t\t The memory bandwidth is based on L2 cache events, not on memory controller information, \n");
 	fprintf(fp, "\t\t and is calculated as the sum of demand read miss, prefetch miss and writeback reaching memory.\n");
 	}

@@ -3,6 +3,16 @@
 ## REVISION HISTORY
 
 ---
+- 2019-01-31 Version 6.4.0
+  - add HWPC WRITEBACK option for Sandybridge and Ivybridge to measure memory writeback and streaming store
+
+
+---
+- 2019-01-16 Version 6.3.2
+  - bugfix for a fortran example in example/test4
+
+
+---
 - 2018-10-07 Version 6.3.1
   - bugfix for sorting rank averaged list
 

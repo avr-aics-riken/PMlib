@@ -48,15 +48,24 @@ enum hwpc_output_group {
 	I_bandwidth,
 	I_cache,
 	I_cycle,
+	I_writeback,
 	Max_hwpc_output_group,
 };
 
 struct hwpc_group_chooser {
 	int number[Max_hwpc_output_group];
 	int index[Max_hwpc_output_group];
-	int i_platform;		// 1:Intel, 2:SPARC64
+	int i_platform;
+		// 1:Intel Xeon general (minimum report)
+		// 2:Intel Xeon Sandybridge/Ivybridge
+		// 3:Intel Xeon Haswell
+		// 4:Intel Xeon Broadwell
+		// 5:Intel Xeon Skylake
+		// 8:SPARC64 K computer and fx10
+		// 11:SPARC64 FX100
 	std::string platform;	// "Intel", "SPARC64"
-	std::string env_str_hwpc;	// "FLOPS", "BANDWIDTH", "VECTOR", "CACHE", "CYCLE", "user"
+	std::string env_str_hwpc;
+		// USER or one of FLOPS, BANDWIDTH, VECTOR, CACHE, CYCLE, WRITEBACK
 };
 
 const int Max_chooser_events=12;
