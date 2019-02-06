@@ -602,8 +602,23 @@ void PerfWatch::createPapiCounterList ()
 				papi.s_name[ip] = "OFFCORE_RESPONSE_0:STRM_ST:L3_MISS:SNP_ANY";
 					my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "STRMS_MEM"; ip++;
 			}
+		} else
+		if (hwpc_group.platform == "SPARC64" ) {
+			if (hwpc_group.i_platform == 8 || hwpc_group.i_platform == 9 ) {
+				hwpc_group.number[I_writeback] += 2;
+				papi.s_name[ip] = "LOAD_STORE_INSTRUCTIONS";
+					my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "LD+ST"; ip++;
+				papi.s_name[ip] = "SIMD_LOAD_STORE_INSTRUCTIONS";
+					my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "SIMDLD+ST"; ip++;
+			}
+			else if (hwpc_group.i_platform == 11 ) {
+				hwpc_group.number[I_writeback] += 2;
+				papi.s_name[ip] = "LOAD_STORE_INSTRUCTIONS";
+					my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "LD+ST"; ip++;
+				papi.s_name[ip] = "XSIMD_LOAD_STORE_INSTRUCTIONS";
+					my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "XSIMDLD+ST"; ip++;
+			}
 		}
-
 	}
 
 
@@ -993,28 +1008,36 @@ void PerfWatch::sortPapiCounterList (void)
 		double d_load_ins, d_store_ins;
 		double d_writeback_MEM, d_streaming_MEM;
 		double bandwidth;
+		counts = 0.0;
+		ip = hwpc_group.index[I_writeback];
+		jp=0;
+		for(int i=0; i<hwpc_group.number[I_writeback]; i++)
+		{
+			my_papi.s_sorted[jp] = my_papi.s_name[ip] ;
+			counts += my_papi.v_sorted[jp] = my_papi.accumu[ip] ;
+			ip++;jp++;
+		}
 
     	if (hwpc_group.platform == "Xeon" ) {
-			counts = 0.0;
-			ip = hwpc_group.index[I_writeback];
-			jp=0;
-			for(int i=0; i<hwpc_group.number[I_writeback]; i++)
-			{
-				my_papi.s_sorted[jp] = my_papi.s_name[ip] ;
-				counts += my_papi.v_sorted[jp] = my_papi.accumu[ip] ;
-				ip++;jp++;
-			}
-
 			if (hwpc_group.i_platform >= 2 && hwpc_group.i_platform <= 4 ) {
-			ip = hwpc_group.index[I_writeback];
-			d_writeback_MEM = my_papi.accumu[ip+2] ;	//	OFFCORE_RESPONSE_0:WB:ANY_RESPONSE
-			d_streaming_MEM = my_papi.accumu[ip+3] ;	//	OFFCORE_RESPONSE_0:STRM_ST:L3_MISS:SNP_ANY
-			bandwidth = (d_writeback_MEM + d_streaming_MEM) * 64.0 * perf_rate;	// Memory write bandwidth
+				ip = hwpc_group.index[I_writeback];
+				d_writeback_MEM = my_papi.accumu[ip+2] ;	//	OFFCORE_RESPONSE_0:WB:ANY_RESPONSE
+				d_streaming_MEM = my_papi.accumu[ip+3] ;	//	OFFCORE_RESPONSE_0:STRM_ST:L3_MISS:SNP_ANY
+				bandwidth = (d_writeback_MEM + d_streaming_MEM) * 64.0 * perf_rate;	// Memory write bandwidth
+				my_papi.s_sorted[jp] = "Mem [B/s]" ;
+				my_papi.v_sorted[jp] = bandwidth ;	//	* 1.0e-9;
+				jp++;
 			} else {
-			bandwidth = 0.0;
+				bandwidth = 0.0;
+				my_papi.s_sorted[jp] = "not.avail" ;
+				my_papi.v_sorted[jp] = bandwidth ;	//	* 1.0e-9;
+				jp++;
 			}
 
-			my_papi.s_sorted[jp] = "Mem [B/s]" ;
+		} else
+		if (hwpc_group.platform == "SPARC64" ) {
+			bandwidth = 0.0;
+			my_papi.s_sorted[jp] = "not.avail" ;
 			my_papi.v_sorted[jp] = bandwidth ;	//	* 1.0e-9;
 			jp++;
 		}
