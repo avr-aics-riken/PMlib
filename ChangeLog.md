@@ -4,6 +4,13 @@
 
 
 ---
+- 2019-06-09 Version 6.4.2
+  - add doc/*
+  - change support year 2018 -> 2019
+  - bug fix : enable_PRECISE_TIMER => enable_PreciseTimer
+
+  
+---
 - 2019-01-31 Version 6.4.0
   - add HWPC WRITEBACK option for Sandybridge and Ivybridge to measure memory writeback and streaming store
 

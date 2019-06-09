@@ -1,8 +1,8 @@
 # PMlib - Performance Monitor library
 
 * Copyright (c) 2010-2011 VCAD System Research Program, RIKEN. All rights reserved.
-* Copyright (c) 2012-2018 RIKEN Center for Computational Science (R-CCS). All rights reserved.
-* Copyright (c) 2016-2018 Research Institute for Information Technology (RIIT), Kyushu University. All rights reserved.
+* Copyright (c) 2012-2019 RIKEN Center for Computational Science (R-CCS). All rights reserved.
+* Copyright (c) 2016-2019 Research Institute for Information Technology (RIIT), Kyushu University. All rights reserved.
 
 ## OUTLINE
 
@@ -94,6 +94,16 @@ $ sudo make install
 -DUSE_PRECISE_TIMER -Nfjcex    # for K computer and FX100 and TCS env.?
 ~~~
 
+### Default options
+~~~
+with_example = OFF
+enable_Fortran = OFF
+with_MPI = OFF
+enable_OPENMP = OFF
+with_PAPI = OFF
+with_OTF = OFF
+enable_PreciseTimer = ON
+~~~
 
 The default compiler options are described in `cmake/CompilerOptionSelector.cmake` file. See BUILD OPTION section in CMakeLists.txt in detail.
 

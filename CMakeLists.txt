@@ -5,10 +5,10 @@
 # Copyright (c) 2010-2011 VCAD System Research Program, RIKEN.
 # All rights reserved.
 #
-# Copyright (c) 2012-2018 Advanced Institute for Computational Science(AICS), RIKEN.
+# Copyright (c) 2012-2019 Advanced Institute for Computational Science(AICS), RIKEN.
 # All rights reserved.
 #
-# Copyright (c) 2016-2018 Research Institute for Information Technology(RIIT), Kyushu University.
+# Copyright (c) 2016-2019 Research Institute for Information Technology(RIIT), Kyushu University.
 # All rights reserved.
 #
 ###################################################################################
@@ -50,7 +50,7 @@ option (with_MPI "Enable MPI" "OFF")
 option (enable_OPENMP "Enable OpenMP" "OFF")
 option (with_PAPI "Enable PAPI" "OFF")
 option (with_OTF "Enable tracing" "OFF")
-option (enable_PRECISE_TIMER "Enable PRECISE TIMER" "ON")
+option (enable_PreciseTimer "Enable PRECISE TIMER" "ON")
 
 #######
 # Project setting
@@ -80,8 +80,8 @@ cmake_policy(SET CMP0012 NEW)
 
 
 #######
-set(PROJECT_VERSION "6.4.0")
-set(LIB_REVISION "20190131_1700")
+set(PROJECT_VERSION "6.4.2")
+set(LIB_REVISION "20190609_1500")
 
 message(" ")
 message("${PROJECT_NAME} Version : ${PROJECT_VERSION}")
