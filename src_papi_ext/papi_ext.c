@@ -15,7 +15,7 @@
  */
 
 //@file   papi_ext.c
-//@brief  Interface for papi
+//@brief  PMlib C functions to link with PAPI library
 
 #include "stdio.h"
 #include "papi.h"
@@ -36,12 +36,8 @@ typedef struct _HighLevelInfo
 	long long total_ins;			    /**< Total instructions */
 } HighLevelInfo;
 
-extern void _internal_cleanup_hl_info( HighLevelInfo * state );
-extern int _internal_check_state( HighLevelInfo ** state );
-extern int _internal_start_hl_counters( HighLevelInfo * state );
-extern int _internal_hl_read_cnts( long long *values, int array_len, int flag );
-
-// Additional C function to link with C++ pmlib class
+void my_internal_cleanup_hl_info( HighLevelInfo * state );
+int my_internal_check_state( HighLevelInfo ** state );
 
 
 void print_state_HighLevelInfo(HighLevelInfo *state)
@@ -75,14 +71,14 @@ int my_papi_add_events ( int *events, int num_events)
 	}
 	#endif
 
-	if ( ( retval = _internal_check_state( &state ) ) != PAPI_OK ) {
+	if ( ( retval = my_internal_check_state( &state ) ) != PAPI_OK ) {
 		fprintf(stderr,"*** error. <my_papi_add_events> :: <_state>\n");
 		return retval;
 	}
 
 	if (( retval = PAPI_add_events( state->EventSet, events, num_events )) != PAPI_OK ) {
 		fprintf(stderr,"*** error. <my_papi_add_events> :: <PAPI_add_events> state->EventSet=%d, num_events=%d\n", state->EventSet, num_events);
-		_internal_cleanup_hl_info( state );
+		my_internal_cleanup_hl_info( state );
 		PAPI_cleanup_eventset( state->EventSet );
 		return retval;
 	}
@@ -104,7 +100,7 @@ int my_papi_bind_start ( long long *values, int num_events)
 	fprintf(stderr,"\t <my_papi_bind_start> num_events=%d\n", num_events);
 	#endif
 
-	if ( ( retval = _internal_check_state( &state ) ) != PAPI_OK ) {
+	if ( ( retval = my_internal_check_state( &state ) ) != PAPI_OK ) {
 		fprintf(stderr,"*** error. <my_papi_bind_start> :: <_state>\n");
 		return retval;
 	}
@@ -137,7 +133,7 @@ int my_papi_bind_stop ( long long *values, int num_events)
 	fprintf(stderr,"\t <my_papi_bind_stop> num_events=%d\n", num_events);
 	#endif
 
-	if ( ( retval = _internal_check_state( &state ) ) != PAPI_OK ) {
+	if ( ( retval = my_internal_check_state( &state ) ) != PAPI_OK ) {
 		fprintf(stderr,"*** error. <my_papi_bind_stop> :: <_state>\n");
 		return retval;
 	}
@@ -167,7 +163,7 @@ int my_papi_bind_read ( long long *values, int num_events)
 	fprintf(stderr,"\t <my_papi_bind_read> \n");
 	#endif
 
-	if ( ( retval = _internal_check_state( &state ) ) != PAPI_OK ) {
+	if ( ( retval = my_internal_check_state( &state ) ) != PAPI_OK ) {
 		fprintf(stderr,"*** error. <my_papi_bind_read> :: <_state> \n");
 		return retval;
 	}
@@ -194,6 +190,50 @@ void my_papi_name_to_code ( char* c_event, int* i_event)
 		c_event, *i_event);
 	#endif
 
+	return;
+}
+
+///////////////////////////////////////////////////////////
+//
+// DEBUG from here
+//
+
+//
+// The following routines should not be necessary if all the papi routines
+// are exposed to user space.
+// Unfortunately, Fugaku RHEL strips _internal* routines and hide from
+// user space.
+// So they are partially extracted and modified from papi_hl.c
+//
+int my_internal_check_state( HighLevelInfo ** hlstate )
+{
+	int retval;
+	int p_get;
+	HighLevelInfo *state = NULL;
+
+	p_get = PAPI_get_thr_specific(PAPI_HIGH_LEVEL_TLS, (void **) &state );
+	if ( p_get != PAPI_OK || state == NULL ) {
+		state = (HighLevelInfo *) malloc(sizeof(HighLevelInfo));
+		if ( state == NULL ) return ( PAPI_ENOMEM );
+
+		memset(state, 0, sizeof(HighLevelInfo));
+		state->EventSet = PAPI_NULL;
+		if ( (retval = PAPI_create_eventset(&state->EventSet)) != PAPI_OK )
+			return (retval);
+		if ( (retval = PAPI_set_thr_specific(PAPI_HIGH_LEVEL_TLS, state)) != PAPI_OK )
+			return (retval);
+	}
+	*hlstate = state;
+	return PAPI_OK;
+}
+
+void my_internal_cleanup_hl_info( HighLevelInfo * state )
+{
+	state->num_evts = 0;
+	state->running = HL_STOP;
+	state->initial_real_time = -1;
+   	state->initial_proc_time = -1;
+	state->total_ins = 0;
 	return;
 }
 
