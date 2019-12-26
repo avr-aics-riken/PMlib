@@ -44,6 +44,12 @@ Typical installation will be composed of three steps.
 2. Obtain the the package tar ball and unpack it under the temporary directory.
 3. Configure and Make the related files.
 
+
+### max_nthreads
+
+`~/include/pmlib_papi.h`の`const int Max_nthreads=36`をシステムに応じて変更
+
+
 ### Build
 
 ~~~
@@ -208,6 +214,20 @@ $ cmake -DINSTALL_DIR=${PM_HOME}/PMlib \
             -Dwith_PAPI=no \
             -Dwith_OTF=no \
             -Denable_PreciseTimer=yes ..
+~~~
+            
+#### F_TCS environment serial
+
+~~~
+$ cmake -DINSTALL_DIR=${PM_HOME}/PMlib \
+-DCMAKE_TOOLCHAIN_FILE=../cmake/Toolchain_F_TCS.cmake \
+-Denable_OPENMP=no \
+-Dwith_MPI=no \
+-Denable_Fortran=no \
+-Dwith_example=no \
+-Dwith_PAPI=no \
+-Dwith_OTF=no \
+-Denable_PreciseTimer=yes ..
 ~~~
 
 
