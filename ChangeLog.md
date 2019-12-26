@@ -3,11 +3,14 @@
 ## REVISION HISTORY
 
 ---
+- 2019-12-22 Version 6.4.4
+  - pmlib_papi.h : const int Max_nthreads=20 >> 36
+
+
+---
 - 2019-12-11 Version 6.4.3
   - replace Toolchain_K.cmake to Toolchain_F_TCS.cmake
   - remove options for K-computer and add F_TCS
-  - pmlib_papi.h : const int Max_nthreads=20 >> 36
-
   
 ---
 - 2019-06-09 Version 6.4.2
