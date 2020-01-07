@@ -8,7 +8,7 @@
  * Copyright (c) 2012-2015 Advanced Institute for Computational Science, RIKEN.
  * All rights reserved.
  *
- * Copyright (c) 2016-2019 Research Institute for Information Technology(RIIT), Kyushu University.
+ * Copyright (c) 2016-2020 Research Institute for Information Technology(RIIT), Kyushu University.
  * All rights reserved.
  *
  * ###################################################################

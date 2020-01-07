@@ -3,6 +3,12 @@
 ## REVISION HISTORY
 
 ---
+- 2020-01-07 Version 6.4.5
+  - copyright 2020
+  - Toolchain_intel_F_TCS.cmake >> Toolchain_ITO_TCS.cmake
+  - The combination of Xeon and Fujitsu TCS environment has a problem, until fix it use -Denable_PreciseTimer=OFF
+  
+---
 - 2019-12-22 Version 6.4.4
   - pmlib_papi.h : const int Max_nthreads=20 >> 36
 
@@ -46,7 +52,7 @@
 
 ---
 - 2018-09-25 Version 6.2.3
-  - checkOpenMPマクロを明示的に変更
+  - checkOpenMP„Éû„ÇØ„É≠„ÇíÊòéÁ§∫ÁöÑ„Å´Â§âÊõ¥
 
 
 ---

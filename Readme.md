@@ -1,8 +1,8 @@
 # PMlib - Performance Monitor library
 
 * Copyright (c) 2010-2011 VCAD System Research Program, RIKEN. All rights reserved.
-* Copyright (c) 2012-2019 RIKEN Center for Computational Science (R-CCS). All rights reserved.
-* Copyright (c) 2016-2019 Research Institute for Information Technology (RIIT), Kyushu University. All rights reserved.
+* Copyright (c) 2012-2020 RIKEN Center for Computational Science (R-CCS). All rights reserved.
+* Copyright (c) 2016-2020 Research Institute for Information Technology (RIIT), Kyushu University. All rights reserved.
 
 ## OUTLINE
 
@@ -206,14 +206,13 @@ $ cmake -DINSTALL_DIR=${PM_HOME}/PMlib \
             -Denable_PreciseTimer=yes ..
 
 $ cmake -DINSTALL_DIR=${PM_HOME}/PMlib \
-            -DCMAKE_TOOLCHAIN_FILE=../cmake/Toolchain_intel_F_TCS.cmake \
+            -DCMAKE_TOOLCHAIN_FILE=../cmake/Toolchain_ITO_TCS.cmake \
             -Denable_OPENMP=no \
             -Dwith_MPI=yes \
             -Denable_Fortran=no \
             -Dwith_example=no \
             -Dwith_PAPI=no \
-            -Dwith_OTF=no \
-            -Denable_PreciseTimer=yes ..
+            -Dwith_OTF=no ..
 ~~~
             
 #### F_TCS environment serial

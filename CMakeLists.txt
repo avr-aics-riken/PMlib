@@ -5,10 +5,10 @@
 # Copyright (c) 2010-2011 VCAD System Research Program, RIKEN.
 # All rights reserved.
 #
-# Copyright (c) 2012-2019 Advanced Institute for Computational Science(AICS), RIKEN.
+# Copyright (c) 2012-2020 Advanced Institute for Computational Science(AICS), RIKEN.
 # All rights reserved.
 #
-# Copyright (c) 2016-2019 Research Institute for Information Technology(RIIT), Kyushu University.
+# Copyright (c) 2016-2020 Research Institute for Information Technology(RIIT), Kyushu University.
 # All rights reserved.
 #
 ###################################################################################
@@ -80,8 +80,8 @@ cmake_policy(SET CMP0012 NEW)
 
 
 #######
-set(PROJECT_VERSION "6.4.4")
-set(LIB_REVISION "20191225_1500")
+set(PROJECT_VERSION "6.4.5")
+set(LIB_REVISION "20200107_1200")
 
 message(" ")
 message("${PROJECT_NAME} Version : ${PROJECT_VERSION}")
