@@ -38,21 +38,18 @@ typedef struct _HighLevelInfo
 
 void my_internal_cleanup_hl_info( HighLevelInfo * state );
 int my_internal_check_state( HighLevelInfo ** state );
+PAPI_hw_info_t *hwinfo my_papi_get_hardware_info();
 
 
 void print_state_HighLevelInfo(HighLevelInfo *state)
 {
 	if ( state == NULL ) {
-	// internally, the program should not reach this statement
 		fprintf(stderr,"*** error. <print_state_HighLevelInfo> state==NULL\n");
 		return;
 	}
-
-	#ifdef DEBUG_PRINT_PAPI_EXT
 	fprintf(stderr,"\t <print_state_HighLevelInfo> starts\n");
 	fprintf(stderr,"\t struct state:  EventSet=%d, num_evts=%d, running=%d\n",
 						state->EventSet, state->num_evts, state->running);
-	#endif
 }
 
 
@@ -78,11 +75,14 @@ int my_papi_add_events ( int *events, int num_events)
 
 	if (( retval = PAPI_add_events( state->EventSet, events, num_events )) != PAPI_OK ) {
 		fprintf(stderr,"*** error. <my_papi_add_events> :: <PAPI_add_events> state->EventSet=%d, num_events=%d\n", state->EventSet, num_events);
+
 		my_internal_cleanup_hl_info( state );
 		PAPI_cleanup_eventset( state->EventSet );
 		return retval;
 	}
-	//	print_state_HighLevelInfo(state);
+	#ifdef DEBUG_PRINT_PAPI_EXT
+	print_state_HighLevelInfo(state);
+	#endif
 
 	return PAPI_OK;
 }
@@ -237,3 +237,35 @@ void my_internal_cleanup_hl_info( HighLevelInfo * state )
 	return;
 }
 
+//	Debug from here...
+PAPI_hw_info_t *my_papi_get_hardware_info()
+{
+	PAPI_hw_info_t *hwinfo;
+
+	hwinfo = PAPI_get_hardware_info();
+	if (hwinfo == NULL) {
+		fprintf (stderr, "*** error. <PAPI_get_hardware_info> failed.\n" );
+	}
+
+	FILE *fp;
+	int value;
+	char buffer[1024];
+	if (hwinfo->vendor_string.find( "ARM" ) != string::npos ) || (hwinfo->vendor == 7 ) {
+		fp = fopen("/proc/cpuinfo","r");
+		if (fp == NULL) {
+		printError("<my_papi_get_hardware_info>",  "Can not open /proc/cpuinfo \n");
+		return;
+		}
+		while (fgets(buffer, 1024, fp) != NULL) {
+			if (!strncmp(buffer, "CPU implementer",15)) {
+				sscanf(buffer, "CPU implementer\t: %x", &value);
+				// sscanf handles regexp such as: sscanf (buffer, "%[^\t:]", value);
+			#ifdef DEBUG_PRINT_PAPI
+				fprintf(stderr, "<my_papi_get_hardware_info> CPU implementer = %x\n", value);
+			#endif
+				break;
+			}
+		}
+		fclose(fp);
+	}
+}

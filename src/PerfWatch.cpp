@@ -369,7 +369,7 @@ namespace pm_lib {
 		#include <unistd.h>
 		#include <mach/mach.h>
 		#include <mach/mach_time.h>
-	#elif defined (__sparcv9)			// K computer and FX100
+	#elif defined (__FUJITSU)			// Fugaku A64FX, FX100, K computer
 		#include <fjcex.h>
 	#endif
 #endif
@@ -387,8 +387,8 @@ namespace pm_lib {
 		// mach_absolute_time() appears to return nano-second unit value
 		return ((double)mach_absolute_time() * 1.0e-9);
 
-	#elif defined (__sparcv9)			// K computer and FX100
-		//	printf("[__sparcv9] is defined.\n");
+	#elif defined (__FUJITSU)			// Fugaku A64FX, FX100, K computer and Fujitsu compiler/library
+		//	printf("[__FUJITSU] is defined.\n");
 		register double tval;
 		tval = __gettod()*1.0e-6;
 		return (tval);
@@ -401,13 +401,18 @@ namespace pm_lib {
 		__asm __volatile__ ( "rdtsc" : "=a"(lo), "=d"(hi) );
 		tsc = ( (unsigned long long)lo)|( ((unsigned long long)hi)<<32 );
 		return ((double)tsc * second_per_cycle);
+
+		#else	// precise timer is not available. use gettimeofday() instead.
+		struct timeval tv;
+		gettimeofday(&tv, 0);
+		return (double)tv.tv_sec + (double)tv.tv_usec * 1.0e-6;
 		#endif
 	#else		// precise timer is not available. use gettimeofday() instead.
 		struct timeval tv;
 		gettimeofday(&tv, 0);
 		return (double)tv.tv_sec + (double)tv.tv_usec * 1.0e-6;
 	#endif
-#else // Portable timer on Linux, Unix, Macos
+#else // Portable timer gettimeofday() on Linux, Unix, Macos
 	struct timeval tv;
 	gettimeofday(&tv, 0);
 	return (double)tv.tv_sec + (double)tv.tv_usec * 1.0e-6;
@@ -454,8 +459,8 @@ namespace pm_lib {
 		pclose(fp);
 		return;
 
-	#elif defined (__sparcv9)
-		//	__gettod() on K computer and FX100 doesn't require cpu_clock_freq
+	#elif defined (__FUJITSU)			// Fugaku A64FX, FX100, K computer and Fujitsu compiler/library
+		//	__gettod() on Fujitsu compiler/library doesn't require cpu_clock_freq
 		return;
 
 	#elif defined(__x86_64__)					// Intel Xeon
@@ -491,6 +496,9 @@ namespace pm_lib {
 								cpu_clock_freq, second_per_cycle);
 	   	 }
 		#endif
+
+		#else
+		return;
 	    #endif
 	#endif
 #endif	// (USE_PRECISE_TIMER)

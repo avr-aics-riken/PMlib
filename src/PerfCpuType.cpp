@@ -6,7 +6,7 @@
 # Copyright (c) 2010-2011 VCAD System Research Program, RIKEN.
 # All rights reserved.
 #
-# Copyright (c) 2012-2019 Advanced Institute for Computational Science(AICS), RIKEN.
+# Copyright (c) 2012-2020 RIKEN Center for Computational Science(R-CCS), RIKEN.
 # All rights reserved.
 #
 # Copyright (c) 2016-2019 Research Institute for Information Technology(RIIT), Kyushu University.
@@ -180,6 +180,19 @@ void PerfWatch::createPapiCounterList ()
 	}
 
 
+	#ifdef DEBUG_PRINT_PAPI
+	//	if (my_rank == 0 && root_thread == 0) {
+	if (my_rank == 0) {
+		fprintf(stderr, "<createPapiCounterList> called PAPI_get_hardware_info()\n");
+		fprintf(stderr, "vendor=%d, vendor_string=%s, model_string=%s, ncpu=%d, threads=%d, cores=%d, sockets=%d \n", 
+			hwinfo->vendor,
+			hwinfo->vendor_string,
+			hwinfo->model_string,
+			hwinfo->ncpu, hwinfo->threads,
+			hwinfo->cores, hwinfo->sockets );
+	}
+	#endif
+
 // ToDo: Create more robust API than PAPI_get_hardware_info(), and replace it.
 
 //	star:	: Intel(R) Core(TM)2 Duo CPU     E7500  @ 2.93GHz, has sse4
@@ -190,6 +203,7 @@ void PerfWatch::createPapiCounterList ()
 // chicago:	: Intel(R) Xeon(R) CPU E3-1220 v5 @ 3.00GHz (94)# Skylake
 // ito-fep:	: Intel(R) Xeon(R) CPU E7-8880 v4 @ 2.20GHz	# Broadwell
 // water:	: Intel(R) Xeon(R) Gold 6148 CPU @ 2.40GHz	# Skylake
+// fugaku:	: Fujitsu A64FX based on ARM SVE edition @ 2.0 GHz base frequency
 
 
 //	with Linux, s_model_string is taken from "model name" in /proc/cpuinfo
@@ -231,14 +245,14 @@ void PerfWatch::createPapiCounterList ()
 	}
 
 	// Intel Core 2 CPU.
-    if (s_model_string.find( "Intel" ) != string::npos &&
+    else if (s_model_string.find( "Intel" ) != string::npos &&
 		s_model_string.find( "Core(TM)2" ) != string::npos ) {
 		hwpc_group.platform = "Xeon" ;
 		hwpc_group.i_platform = 1;	// Minimal support. only two FLOPS types
 	}
 
 	// SPARC based processors
-    if (s_model_string.find( "SPARC64" ) != string::npos ) {
+    else if (s_model_string.find( "SPARC64" ) != string::npos ) {
 		hwpc_group.platform = "SPARC64" ;
     	if ( s_model_string.find( "VIIIfx" ) != string::npos ) {
 			hwpc_group.i_platform = 8;	// K computer
@@ -249,6 +263,52 @@ void PerfWatch::createPapiCounterList ()
     	else if ( s_model_string.find( "XIfx" ) != string::npos ) {
 			hwpc_group.i_platform = 11;	// Fujitsu FX100
 		}
+	}
+
+	// ARM based processors
+    else if (hwinfo->vendor_string.find( "ARM" ) != string::npos ) ||
+       (hwinfo->vendor == 7 ) {
+
+	// Fugaku A64FX processors
+		// /proc/cpuinfo contains
+		//	CPU implementer : 0x46		// Fujitsu
+		//	CPU architecture : 8
+		//	CPU variant : 0x0
+		//	CPU part : 0x001
+		//	CPU revision    : 0
+
+		// The output from PAPI_get_hardware_info() is not very useful on ARM.
+		//	hwinfo->vendor			// 7
+		//	hwinfo->vendor_string	// "ARM"
+		//	hwinfo->model			// 0
+		//	hwinfo->model_string	// ""
+		//	hwinfo->cpuid_family	// 0
+		//	hwinfo->cpuid_model		// 1
+		//	hwinfo->cpuid_stepping	// 0
+
+
+	s_model_string = hwinfo->model_string;
+
+
+		hwpc_group.platform = "A64FX" ;
+		s_model_string = "A64FX" ;
+    	if ( s_model_string.find( "VIIIfx" ) != string::npos ) {
+			hwpc_group.i_platform = 21;	// Fugaku A64FX
+			//	hwinfo->model_string,
+		}
+
+	// Cavium ThunderX2 is not supported
+		//	CPU implementer : 0x43	// Cavium
+		//	CPU architecture: 8
+		//	CPU variant : 0x1
+		//	CPU part    : 0x0af		// 175 (0x0af)
+		//	CPU revision    : 1
+	}
+
+	// unknown processor. not supported by PMlib
+    else {
+			hwpc_group.i_platform = 99;
+			hwpc_group.platform = "unsupported_hardware";
 	}
 
 

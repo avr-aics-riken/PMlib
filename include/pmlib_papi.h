@@ -9,7 +9,7 @@
 # Copyright (c) 2010-2011 VCAD System Research Program, RIKEN.
 # All rights reserved.
 #
-# Copyright (c) 2012-2019 Advanced Institute for Computational Science(AICS), RIKEN.
+# Copyright (c) 2012-2020 RIKEN Center for Computational Science(R-CCS), RIKEN.
 # All rights reserved.
 #
 # Copyright (c) 2016-2019 Research Institute for Information Technology(RIIT), Kyushu University.
@@ -27,6 +27,7 @@
 /// @file pmlib_papi.h
 /// @brief Header block for PMlib - PAPI interface class
 ///
+/// PMlib supports PAPI 5.3 and upper
 
 #ifdef USE_PAPI
 #include "papi.h"
@@ -63,13 +64,15 @@ struct hwpc_group_chooser {
 		// 5:Intel Xeon Skylake
 		// 8:SPARC64 K computer and fx10
 		// 11:SPARC64 FX100
-	std::string platform;	// "Intel", "SPARC64"
+		// 21:Fugaku A64FX
+		// 99:processor is not supported
+	std::string platform;	// "Xeon", "SPARC64", "ARM", "unsupported_hardware"
 	std::string env_str_hwpc;
 		// USER or one of FLOPS, BANDWIDTH, VECTOR, CACHE, CYCLE, WRITEBACK
 };
 
 const int Max_chooser_events=12;
-const int Max_nthreads=20;
+const int Max_nthreads=65;
 
 struct pmlib_papi_chooser {
 	int num_events;				// number of PAPI events
@@ -95,13 +98,5 @@ struct pmlib_papi_chooser {
 	// Note 1. Exchanged dimension [Max_chooser_events] <-> [Max_nthreads]
 	// Note 2. Shall we change the name from th_v_sorted[][] to th_user[][] ? To be checked.
 };
-
-// Macro patches for K computer and FX10 which has fairly old PAPI 3.6
-#if defined(K_COMPUTER) || defined(FX10)
-#define PAPI_SP_OPS 0	// Needed for compatibility
-#define PAPI_DP_OPS 0	// Needed for compatibility
-#define PAPI_VEC_SP 0	// Needed for compatibility
-#define PAPI_VEC_DP 0	// Needed for compatibility
-#endif
 
 #endif // _PM_PAPI_H_
