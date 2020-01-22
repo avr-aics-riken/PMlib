@@ -262,6 +262,7 @@ void PerfWatch::createPapiCounterList ()
 	}
 
 	// ARM based processors
+    else if (s_model_string.empty() && s_vendor_string.find( "ARM" ) != string::npos ) {
 		// on ARM, PAPI_get_hardware_info() does not provide so useful information.
 		// PAPI_get_hardware_info() output on Fugaku A64FX is as follows
 		//	hwinfo->vendor			// 7
@@ -271,26 +272,27 @@ void PerfWatch::createPapiCounterList ()
 		//	hwinfo->cpuid_family	// 0
 		//	hwinfo->cpuid_model		// 1
 		//	hwinfo->cpuid_stepping	// 0
-    else if (s_model_string.empty() && s_vendor_string.find( "ARM" ) != string::npos ) {
-
-	// so we check /proc/cpuinfo for further information
+		//
+		// so we check /proc/cpuinfo for further information
+		//
 		identifyARMplatform ();
 
     	if ( hwpc_group.i_platform == 21 ) {
 			hwpc_group.platform = "A64FX" ;
 		} else {
-			hwpc_group.platform = "unknown" ;
+			//	hwpc_group.platform = "unknown" ;
+			hwpc_group.platform = "unsupported_hardware";
 		}
 		s_model_string = hwpc_group.platform ;
 
 	#ifdef DEBUG_PRINT_PAPI
-		fprintf(stderr, "<PerfWatch::createPapiCounterList> ARM branch called identifyARMplatform()\n");
+		fprintf(stderr, "<createPapiCounterList> called identifyARMplatform()\n");
 		fprintf(stderr, " s_model_string=%s\n", s_model_string.c_str());
 		fprintf(stderr, " platform: %s\n", hwpc_group.platform.c_str());
 	#endif
 	}
 
-	// unknown processor. not supported by PMlib
+	// other processors are not supported by PMlib
     else {
 			hwpc_group.i_platform = 99;
 			hwpc_group.platform = "unsupported_hardware";
@@ -323,6 +325,7 @@ void PerfWatch::createPapiCounterList ()
 // 3. Select the corresponding PAPI hardware counter events
 	int ip=0;
 
+
 // if (FLOPS)
 	if ( s_chooser.find( "FLOPS" ) != string::npos ) {
 		hwpc_group.index[I_flops] = ip;
@@ -347,6 +350,24 @@ void PerfWatch::createPapiCounterList ()
 				hwpc_group.number[I_flops] += 1;
 				papi.s_name[ip] = "FP_OPS"; papi.events[ip] = PAPI_FP_OPS; ip++;
 				//	single precision count is not supported on FX100
+			}
+		} else
+///////////////////////////////////////////////////////////
+// DEBUG from here
+///////////////////////////////////////////////////////////
+
+		if (hwpc_group.platform == "A64FX" ) {
+			if (hwpc_group.i_platform == 21 ) {
+	//	PAPI_FP_OPS 0x80000066  2   |FP operations|
+ 	//	|DERIVED_POSTFIX|
+ 	//	|N0|512|128|/|*|N1|+||
+ 	//	Native Code[0]: 0x40000022 |FP_SCALE_OPS_SPEC|
+ 	//	Native Code[1]: 0x40000023 |FP_FIXED_OPS_SPEC|
+				//	hwpc_group.number[I_flops] += 1;
+				//	papi.s_name[ip] = "FP_OPS"; papi.events[ip] = PAPI_FP_OPS; ip++;
+				hwpc_group.number[I_flops] += 2;
+				papi.s_name[ip] = "SP_OPS"; papi.events[ip] = PAPI_SP_OPS; ip++;
+				papi.s_name[ip] = "DP_OPS"; papi.events[ip] = PAPI_DP_OPS; ip++;
 			}
 		}
 	}
@@ -433,6 +454,16 @@ void PerfWatch::createPapiCounterList ()
 				my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); ip++;
 			papi.s_name[ip] = "L2_WB_PF";
 				my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); ip++;
+		} else
+///////////////////////////////////////////////////////////
+// DEBUG from here
+///////////////////////////////////////////////////////////
+		if (hwpc_group.platform == "A64FX" ) {
+			if (hwpc_group.i_platform == 21 ) {
+			hwpc_group.number[I_bandwidth] = 2;
+			papi.s_name[ip] = "LOAD_INS"; papi.events[ip] = PAPI_LD_INS; ip++;
+			papi.s_name[ip] = "STORE_INS"; papi.events[ip] = PAPI_SR_INS; ip++;
+			}
 		}
 
 	}
@@ -1366,13 +1397,6 @@ void PerfWatch::outputPapiCounterLegend (FILE* fp)
 }
 
 
-///////////////////////////////////////////////////////////
-//
-// DEBUG from here
-//
-///////////////////////////////////////////////////////////
-
-
 // Special code block for Fugaku A64FX follows.
 
 int PerfWatch::identifyARMplatform (void)
@@ -1447,6 +1471,8 @@ int PerfWatch::identifyARMplatform (void)
 	#endif
 	if ((cpu_implementer == 0x46) && (cpu_part == 1) ) {
 		hwpc_group.i_platform = 21;	// A64FX
+	} else {
+		hwpc_group.i_platform = 99;	// A64FX
 	}
 	return;
 #endif // USE_PAPI
@@ -1455,6 +1481,4 @@ int PerfWatch::identifyARMplatform (void)
 
 
 } /* namespace pm_lib */
-
-
 
