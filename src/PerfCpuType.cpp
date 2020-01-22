@@ -9,7 +9,7 @@
 # Copyright (c) 2012-2020 RIKEN Center for Computational Science(R-CCS), RIKEN.
 # All rights reserved.
 #
-# Copyright (c) 2016-2019 Research Institute for Information Technology(RIIT), Kyushu University.
+# Copyright (c) 2016-2020 Research Institute for Information Technology(RIIT), Kyushu University.
 # All rights reserved.
 #
 ###################################################################################
@@ -168,46 +168,42 @@ void PerfWatch::createPapiCounterList ()
 // Set PAPI counter events. The events are CPU hardware dependent
 
 	const PAPI_hw_info_t *hwinfo = NULL;
-	std::string s_model_string;
 	using namespace std;
+	std::string s_model_string;
+	std::string s_vendor_string;
 	int i_papi;
 
 // 1. Identify the CPU architecture
+
+	// Verified on the following platform
+	//	star:	: Intel(R) Core(TM)2 Duo CPU     E7500  @ 2.93GHz, has sse4
+	// vsh-vsp	: Intel(R) Xeon(R) CPU E5-2670 0 @ 2.60GHz	# Sandybridge
+	//	eagles:	: Intel(R) Xeon(R) CPU E5-2650 v2 @ 2.60GHz	# SandyBridge
+	//	uv01:	: Intel(R) Xeon(R) CPU E5-4620 v2 @ 2.60GHz	# Ivybridge
+	//	c01:	: Intel(R) Xeon(R) CPU E5-2640 v3 @ 2.60GHz	# Haswell
+	// chicago:	: Intel(R) Xeon(R) CPU E3-1220 v5 @ 3.00GHz (94)# Skylake
+	// ito-fep:	: Intel(R) Xeon(R) CPU E7-8880 v4 @ 2.20GHz	# Broadwell
+	// water:	: Intel(R) Xeon(R) Gold 6148 CPU @ 2.40GHz	# Skylake
+	// fugaku:	: Fujitsu A64FX based on ARM SVE edition @ 2.0 GHz base frequency
 
 	hwinfo = PAPI_get_hardware_info();
 	if (hwinfo == NULL) {
 		fprintf (stderr, "*** error. <PAPI_get_hardware_info> failed.\n" );
 	}
 
-
 	#ifdef DEBUG_PRINT_PAPI
 	//	if (my_rank == 0 && root_thread == 0) {
 	if (my_rank == 0) {
-		fprintf(stderr, "<createPapiCounterList> called PAPI_get_hardware_info()\n");
-		fprintf(stderr, "vendor=%d, vendor_string=%s, model_string=%s, ncpu=%d, threads=%d, cores=%d, sockets=%d \n", 
-			hwinfo->vendor,
-			hwinfo->vendor_string,
-			hwinfo->model_string,
-			hwinfo->ncpu, hwinfo->threads,
-			hwinfo->cores, hwinfo->sockets );
+		fprintf(stderr, "<PerfWatch::createPapiCounterList> called PAPI_get_hardware_info()\n");
+		fprintf(stderr, "vendor=%d, vendor_string=%s, model=%d, model_string=%s \n",
+				hwinfo->vendor, hwinfo->vendor_string, hwinfo->model, hwinfo->model_string );
 	}
 	#endif
 
-// ToDo: Create more robust API than PAPI_get_hardware_info(), and replace it.
-
-//	star:	: Intel(R) Core(TM)2 Duo CPU     E7500  @ 2.93GHz, has sse4
-// vsh-vsp	: Intel(R) Xeon(R) CPU E5-2670 0 @ 2.60GHz	# Sandybridge
-//	eagles:	: Intel(R) Xeon(R) CPU E5-2650 v2 @ 2.60GHz	# SandyBridge
-//	uv01:	: Intel(R) Xeon(R) CPU E5-4620 v2 @ 2.60GHz	# Ivybridge
-//	c01:	: Intel(R) Xeon(R) CPU E5-2640 v3 @ 2.60GHz	# Haswell
-// chicago:	: Intel(R) Xeon(R) CPU E3-1220 v5 @ 3.00GHz (94)# Skylake
-// ito-fep:	: Intel(R) Xeon(R) CPU E7-8880 v4 @ 2.20GHz	# Broadwell
-// water:	: Intel(R) Xeon(R) Gold 6148 CPU @ 2.40GHz	# Skylake
-// fugaku:	: Fujitsu A64FX based on ARM SVE edition @ 2.0 GHz base frequency
-
-
-//	with Linux, s_model_string is taken from "model name" in /proc/cpuinfo
+//	with Linux, s_model_string is usually taken from "model name" in /proc/cpuinfo
 	s_model_string = hwinfo->model_string;
+	s_vendor_string = hwinfo->vendor_string;
+
 
 	// Intel Xeon processors
     if (s_model_string.find( "Intel" ) != string::npos &&
@@ -266,18 +262,8 @@ void PerfWatch::createPapiCounterList ()
 	}
 
 	// ARM based processors
-    else if (hwinfo->vendor_string.find( "ARM" ) != string::npos ) ||
-       (hwinfo->vendor == 7 ) {
-
-	// Fugaku A64FX processors
-		// /proc/cpuinfo contains
-		//	CPU implementer : 0x46		// Fujitsu
-		//	CPU architecture : 8
-		//	CPU variant : 0x0
-		//	CPU part : 0x001
-		//	CPU revision    : 0
-
-		// The output from PAPI_get_hardware_info() is not very useful on ARM.
+		// on ARM, PAPI_get_hardware_info() does not provide so useful information.
+		// PAPI_get_hardware_info() output on Fugaku A64FX is as follows
 		//	hwinfo->vendor			// 7
 		//	hwinfo->vendor_string	// "ARM"
 		//	hwinfo->model			// 0
@@ -285,24 +271,23 @@ void PerfWatch::createPapiCounterList ()
 		//	hwinfo->cpuid_family	// 0
 		//	hwinfo->cpuid_model		// 1
 		//	hwinfo->cpuid_stepping	// 0
+    else if (s_model_string.empty() && s_vendor_string.find( "ARM" ) != string::npos ) {
 
+	// so we check /proc/cpuinfo for further information
+		identifyARMplatform ();
 
-	s_model_string = hwinfo->model_string;
-
-
-		hwpc_group.platform = "A64FX" ;
-		s_model_string = "A64FX" ;
-    	if ( s_model_string.find( "VIIIfx" ) != string::npos ) {
-			hwpc_group.i_platform = 21;	// Fugaku A64FX
-			//	hwinfo->model_string,
+    	if ( hwpc_group.i_platform == 21 ) {
+			hwpc_group.platform = "A64FX" ;
+		} else {
+			hwpc_group.platform = "unknown" ;
 		}
+		s_model_string = hwpc_group.platform ;
 
-	// Cavium ThunderX2 is not supported
-		//	CPU implementer : 0x43	// Cavium
-		//	CPU architecture: 8
-		//	CPU variant : 0x1
-		//	CPU part    : 0x0af		// 175 (0x0af)
-		//	CPU revision    : 1
+	#ifdef DEBUG_PRINT_PAPI
+		fprintf(stderr, "<PerfWatch::createPapiCounterList> ARM branch called identifyARMplatform()\n");
+		fprintf(stderr, " s_model_string=%s\n", s_model_string.c_str());
+		fprintf(stderr, " platform: %s\n", hwpc_group.platform.c_str());
+	#endif
 	}
 
 	// unknown processor. not supported by PMlib
@@ -1381,5 +1366,95 @@ void PerfWatch::outputPapiCounterLegend (FILE* fp)
 }
 
 
+///////////////////////////////////////////////////////////
+//
+// DEBUG from here
+//
+///////////////////////////////////////////////////////////
+
+
+// Special code block for Fugaku A64FX follows.
+
+int PerfWatch::identifyARMplatform (void)
+{
+#ifdef USE_PAPI
+	// on ARM, PAPI_get_hardware_info() does not provide so useful information.
+	// so we use /proc/cpuinfo information instead
+
+	// PAPI_get_hardware_info() output on Fugaku A64FX is as follows
+		//	hwinfo->vendor			// 7
+		//	hwinfo->vendor_string	// "ARM"
+		//	hwinfo->model			// 0
+		//	hwinfo->model_string	// ""
+		//	hwinfo->cpuid_family	// 0
+		//	hwinfo->cpuid_model		// 1
+		//	hwinfo->cpuid_stepping	// 0
+
+	// Fugaku /proc/cpuinfo contains
+		//	CPU implementer : 0x46
+		//	CPU architecture : 8
+		//	CPU variant : 0x0
+		//	CPU part : 0x001
+		//	CPU revision    : 0
+		// Fujitsu says implementer(0x46) and part(0x001) identifies A64FX
+
+	FILE *fp;
+	int cpu_implementer = 0;
+	int cpu_architecture = 0;
+	int cpu_variant = 0;
+	int cpu_part = 0;
+	int cpu_revision = 0;
+	char buffer[1024];
+
+	fp = fopen("/proc/cpuinfo","r");
+	if (fp == NULL) {
+		fprintf(stderr, "*** Error <identifyARMplatform> can not open /proc/cpuinfo \n");
+		return;
+	}
+
+	// sscanf handles regexp such as: sscanf (buffer, "%[^\t:]", value);
+	while (fgets(buffer, 1024, fp) != NULL) {
+		if (!strncmp(buffer, "CPU implementer",15)) {
+			sscanf(buffer, "CPU implementer\t: %x", &cpu_implementer);
+			continue;
+		}
+		if (!strncmp(buffer, "CPU architecture",16)) {
+			sscanf(buffer, "CPU architecture\t: %d", &cpu_architecture);
+			continue;
+		}
+		if (!strncmp(buffer, "CPU variant",11)) {
+			sscanf(buffer, "CPU variant\t: %x", &cpu_variant);
+			continue;
+		}
+		if (!strncmp(buffer, "CPU part",8)) {
+			sscanf(buffer, "CPU part\t: %x", &cpu_part);
+			continue;
+		}
+		if (!strncmp(buffer, "CPU revision",12)) {
+			sscanf(buffer, "CPU revision\t: %d", &cpu_revision);
+			//	continue;
+		break;
+		}
+	}
+	fclose(fp);
+	#ifdef DEBUG_PRINT_PAPI
+		fprintf(stderr, "<identifyARMplatform> reads /proc/cpuinfo\n");
+		fprintf(stderr, "cpu_implementer=0x%x\n", cpu_implementer);
+		fprintf(stderr, "cpu_architecture=%d\n", cpu_architecture);
+		fprintf(stderr, "cpu_variant=0x%x\n", cpu_variant);
+		fprintf(stderr, "cpu_part=0x%x\n", cpu_part);
+		fprintf(stderr, "cpu_revision=%x\n", cpu_revision);
+	#endif
+	if ((cpu_implementer == 0x46) && (cpu_part == 1) ) {
+		hwpc_group.i_platform = 21;	// A64FX
+	}
+	return;
+#endif // USE_PAPI
+}
+
+
 
 } /* namespace pm_lib */
+
+
+

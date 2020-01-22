@@ -12,7 +12,7 @@
 # Copyright (c) 2012-2020 RIKEN Center for Computational Science(R-CCS), RIKEN.
 # All rights reserved.
 #
-# Copyright (c) 2016-2019 Research Institute for Information Technology(RIIT), Kyushu University.
+# Copyright (c) 2016-2020 Research Institute for Information Technology(RIIT), Kyushu University.
 # All rights reserved.
 #
 ###################################################################################
@@ -35,6 +35,7 @@ extern "C" int my_papi_bind_start ( long long *, int );
 extern "C" int my_papi_bind_stop  ( long long *, int );
 extern "C" int my_papi_bind_read  ( long long *, int );
 extern "C" int my_papi_add_events ( int *, int);
+
 extern "C" void my_papi_name_to_code ( const char *, int *);
 #endif
 

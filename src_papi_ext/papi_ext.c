@@ -8,7 +8,7 @@
  * Copyright (c) 2012-2015 Advanced Institute for Computational Science, RIKEN.
  * All rights reserved.
  *
- * Copyright (c) 2016-2019 Research Institute for Information Technology(RIIT), Kyushu University.
+ * Copyright (c) 2016-2020 Research Institute for Information Technology(RIIT), Kyushu University.
  * All rights reserved.
  *
  * ###################################################################
@@ -38,7 +38,6 @@ typedef struct _HighLevelInfo
 
 void my_internal_cleanup_hl_info( HighLevelInfo * state );
 int my_internal_check_state( HighLevelInfo ** state );
-PAPI_hw_info_t *hwinfo my_papi_get_hardware_info();
 
 
 void print_state_HighLevelInfo(HighLevelInfo *state)
@@ -193,11 +192,6 @@ void my_papi_name_to_code ( char* c_event, int* i_event)
 	return;
 }
 
-///////////////////////////////////////////////////////////
-//
-// DEBUG from here
-//
-
 //
 // The following routines should not be necessary if all the papi routines
 // are exposed to user space.
@@ -237,35 +231,3 @@ void my_internal_cleanup_hl_info( HighLevelInfo * state )
 	return;
 }
 
-//	Debug from here...
-PAPI_hw_info_t *my_papi_get_hardware_info()
-{
-	PAPI_hw_info_t *hwinfo;
-
-	hwinfo = PAPI_get_hardware_info();
-	if (hwinfo == NULL) {
-		fprintf (stderr, "*** error. <PAPI_get_hardware_info> failed.\n" );
-	}
-
-	FILE *fp;
-	int value;
-	char buffer[1024];
-	if (hwinfo->vendor_string.find( "ARM" ) != string::npos ) || (hwinfo->vendor == 7 ) {
-		fp = fopen("/proc/cpuinfo","r");
-		if (fp == NULL) {
-		printError("<my_papi_get_hardware_info>",  "Can not open /proc/cpuinfo \n");
-		return;
-		}
-		while (fgets(buffer, 1024, fp) != NULL) {
-			if (!strncmp(buffer, "CPU implementer",15)) {
-				sscanf(buffer, "CPU implementer\t: %x", &value);
-				// sscanf handles regexp such as: sscanf (buffer, "%[^\t:]", value);
-			#ifdef DEBUG_PRINT_PAPI
-				fprintf(stderr, "<my_papi_get_hardware_info> CPU implementer = %x\n", value);
-			#endif
-				break;
-			}
-		}
-		fclose(fp);
-	}
-}
