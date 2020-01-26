@@ -269,8 +269,6 @@ void PerfWatch::createPapiCounterList ()
 		//	hwinfo->vendor_string	// "ARM"
 		//	hwinfo->model			// 0
 		//	hwinfo->model_string	// ""
-		//	hwinfo->cpuid_family	// 0
-		//	hwinfo->cpuid_model		// 1
 		//	hwinfo->cpuid_stepping	// 0
 		//
 		// so we check /proc/cpuinfo for further information
@@ -280,16 +278,11 @@ void PerfWatch::createPapiCounterList ()
     	if ( hwpc_group.i_platform == 21 ) {
 			hwpc_group.platform = "A64FX" ;
 		} else {
-			//	hwpc_group.platform = "unknown" ;
+			//	hwpc_group.i_platform = 99;
 			hwpc_group.platform = "unsupported_hardware";
 		}
 		s_model_string = hwpc_group.platform ;
 
-	#ifdef DEBUG_PRINT_PAPI
-		fprintf(stderr, "<createPapiCounterList> called identifyARMplatform()\n");
-		fprintf(stderr, " s_model_string=%s\n", s_model_string.c_str());
-		fprintf(stderr, " platform: %s\n", hwpc_group.platform.c_str());
-	#endif
 	}
 
 	// other processors are not supported by PMlib
@@ -352,22 +345,18 @@ void PerfWatch::createPapiCounterList ()
 				//	single precision count is not supported on FX100
 			}
 		} else
-///////////////////////////////////////////////////////////
-// DEBUG from here
-///////////////////////////////////////////////////////////
 
 		if (hwpc_group.platform == "A64FX" ) {
 			if (hwpc_group.i_platform == 21 ) {
-	//	PAPI_FP_OPS 0x80000066  2   |FP operations|
- 	//	|DERIVED_POSTFIX|
- 	//	|N0|512|128|/|*|N1|+||
- 	//	Native Code[0]: 0x40000022 |FP_SCALE_OPS_SPEC|
- 	//	Native Code[1]: 0x40000023 |FP_FIXED_OPS_SPEC|
-				//	hwpc_group.number[I_flops] += 1;
-				//	papi.s_name[ip] = "FP_OPS"; papi.events[ip] = PAPI_FP_OPS; ip++;
 				hwpc_group.number[I_flops] += 2;
 				papi.s_name[ip] = "SP_OPS"; papi.events[ip] = PAPI_SP_OPS; ip++;
 				papi.s_name[ip] = "DP_OPS"; papi.events[ip] = PAPI_DP_OPS; ip++;
+				//	PAPI_FP_OPS == FP_SCALE_OPS_SPEC*4 + FP_FIXED_OPS_SPEC //	|N0|512|128|/|*|N1|+||
+				//	hwpc_group.number[I_flops] += 2;
+				//	papi.s_name[ip] = "FP_SCALE_OPS_SPEC";
+				//		my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); ip++;
+				//	papi.s_name[ip] = "FP_FIXED_OPS_SPEC";
+				//		my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); ip++;
 			}
 		}
 	}
@@ -458,11 +447,39 @@ void PerfWatch::createPapiCounterList ()
 ///////////////////////////////////////////////////////////
 // DEBUG from here
 ///////////////////////////////////////////////////////////
+//
+// There are only limited number of memory related events that can be accessed by users...
+//
 		if (hwpc_group.platform == "A64FX" ) {
 			if (hwpc_group.i_platform == 21 ) {
-			hwpc_group.number[I_bandwidth] = 2;
+			hwpc_group.number[I_bandwidth] += 2;
 			papi.s_name[ip] = "LOAD_INS"; papi.events[ip] = PAPI_LD_INS; ip++;
 			papi.s_name[ip] = "STORE_INS"; papi.events[ip] = PAPI_SR_INS; ip++;
+			hwpc_group.number[I_bandwidth] += 2;
+			papi.s_name[ip] = "L2_MISS_COUNT";
+				my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); ip++;
+			papi.s_name[ip] = "L2D_CACHE_WB";
+				my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); ip++;
+			hwpc_group.number[I_bandwidth] += 2;
+			papi.s_name[ip] = "LD_SPEC";
+				my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); ip++;
+			papi.s_name[ip] = "ST_SPEC";
+				my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); ip++;
+			//	hwpc_group.number[I_bandwidth] = 2;
+			//	papi.s_name[ip] = "ASE_SVE_LD_SPEC";
+			//		my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); ip++;
+			//	papi.s_name[ip] = "ASE_SVE_ST_SPEC";
+			//		my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); ip++;
+			//	hwpc_group.number[I_bandwidth] = 2;
+			//	papi.s_name[ip] = "ASE_SVE_LD_MULTI_SPEC";
+			//		my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); ip++;
+			//	papi.s_name[ip] = "ASE_SVE_ST_MULTI_SPEC";
+			//		my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); ip++;
+			//	hwpc_group.number[I_bandwidth] = 2;
+			//	papi.s_name[ip] = "SVE_LD_GATHER_SPEC";
+			//		my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); ip++;
+			//	papi.s_name[ip] = "SVE_ST_SCATTER_SPEC";
+			//		my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); ip++;
 			}
 		}
 
@@ -584,7 +601,23 @@ void PerfWatch::createPapiCounterList ()
 			So we dont use this combination.
 			*/
 			}
+		} else
+///////////////////////////////////////////////////////////
+// DEBUG from here
+///////////////////////////////////////////////////////////
+//
+// There are only limited number of memory related events that can be accessed by users...
+//
+		if (hwpc_group.platform == "A64FX" ) {
+			if (hwpc_group.i_platform == 21 ) {
+			#ifdef DEBUG_PRINT_PAPI
+				if (my_rank == 0) {
+				fprintf (stderr, " *** DEBUG <createPapiCounterList> BANDWIDTH A64FX\n" );
+				}
+			#endif
+			}
 		}
+
 	}
 
 	else
@@ -1241,6 +1274,7 @@ void PerfWatch::outputPapiCounterLegend (FILE* fp)
 
 	const PAPI_hw_info_t *hwinfo = NULL;
 	std::string s_model_string;
+	std::string s_vendor_string;
 	using namespace std;
 
 	hwinfo = PAPI_get_hardware_info();
@@ -1248,17 +1282,18 @@ void PerfWatch::outputPapiCounterLegend (FILE* fp)
 		fprintf (fp, "\n\tHWPC legend is not available. <PAPI_get_hardware_info> failed. \n" );
 		return;
 	}
+    if (s_model_string.empty() && s_vendor_string.find( "ARM" ) != string::npos ) {
+		identifyARMplatform ();
+	}
+    if ( hwpc_group.i_platform == 21 ) {
+		s_model_string = "Fugaku A64FX" ;
+	} else {
+		s_model_string = hwinfo->model_string;
+	}
 	fprintf(fp, "\n\tDetected CPU architecture:\n" );
-	fprintf(fp, "\t\t%s\n", hwinfo->vendor_string);
-	fprintf(fp, "\t\t%s\n", hwinfo->model_string);
+	fprintf(fp, "\t\t%s\n", s_model_string.c_str());
 	fprintf(fp, "\t\tThe available HWPC_CHOOSER values and their HWPC events for this CPU are shown below.\n");
 	fprintf(fp, "\n");
-
-// CYCLES
-	fprintf(fp, "\tHWPC_CHOOSER=CYCLE:\n");
-	fprintf(fp, "\t\tTOT_CYC:   total cycles\n");
-	fprintf(fp, "\t\tTOT_INS:   total instructions\n");
-	fprintf(fp, "\t\t[Ins/cyc]: performed instructions per machine clock cycle\n");
 
 // FLOPS
 	fprintf(fp, "\tHWPC_CHOOSER=FLOPS:\n");
@@ -1266,17 +1301,23 @@ void PerfWatch::outputPapiCounterLegend (FILE* fp)
 		if (hwpc_group.i_platform != 3 ) {
 	fprintf(fp, "\t\tSP_OPS:    single precision floating point operations\n");
 	fprintf(fp, "\t\tDP_OPS:    double precision floating point operations\n");
-	fprintf(fp, "\t\t[Flops]:   floating point operations per second \n");
+	fprintf(fp, "\t\t[Flops]:   combined floating point operations per second \n");
 		} else {
 	fprintf(fp, "\t\t* Haswell processor does not have floating point operation counters,\n");
 	fprintf(fp, "\t\t* so PMlib does not produce HWPC report for FLOPS and VECTOR groups.\n");
 		}
-	}
+	} else
+
 	if (hwpc_group.platform == "SPARC64" ) {
 	fprintf(fp, "\t\tFP_OPS:    floating point operations\n");
 	fprintf(fp, "\t\t[Flops]:   floating point operations per second \n");
-	}
+	} else
 
+	if (hwpc_group.platform == "A64FX" ) {
+	fprintf(fp, "\t\tSP_OPS:    single precision floating point operations\n");
+	fprintf(fp, "\t\tDP_OPS:    double precision floating point operations\n");
+	fprintf(fp, "\t\t[Flops]:   combined floating point operations per second \n");
+	}
 
 // BANDWIDTH
 	fprintf(fp, "\tHWPC_CHOOSER=BANDWIDTH:\n");
@@ -1291,7 +1332,7 @@ void PerfWatch::outputPapiCounterLegend (FILE* fp)
 	fprintf(fp, "\t\t[L3$ B/s]: Last Level Cache bandwidth responding to demand read and prefetch\n");
 	fprintf(fp, "\t\t[Mem B/s]: Memory read bandwidth responding to demand read and prefetch\n");
 	fprintf(fp, "\t\t         : The write bandwidth must be measured separately. See Remarks.\n");
-	}
+	} else
 
 	if (hwpc_group.platform == "SPARC64" ) {
 	fprintf(fp, "\t\tLD+ST:     memory load/store instructions\n");
@@ -1301,6 +1342,11 @@ void PerfWatch::outputPapiCounterLegend (FILE* fp)
 	fprintf(fp, "\t\tL2_WB_DM:  writeback by demand L2 cache misses \n");
 	fprintf(fp, "\t\tL2_WB_PF:  writeback by prefetch L2 cache misses \n");
 	fprintf(fp, "\t\t[Mem B/s]: Memory bandwidth responding to demand read, prefetch and writeback reaching memory\n");
+	} else
+
+	if (hwpc_group.platform == "A64FX" ) {
+	fprintf(fp, "\t\tLOAD_INS:  memory load instructions\n");
+	fprintf(fp, "\t\tSTORE_INS: memory store instructions\n");
 	}
 
 // VECTOR
@@ -1322,7 +1368,8 @@ void PerfWatch::outputPapiCounterLegend (FILE* fp)
 	fprintf(fp, "\t\t Haswell processor does not have floating point operation counters,\n");
 	fprintf(fp, "\t\t so PMlib does not produce full HWPC report for FLOPS and VECTOR groups.\n");
 		}
-	}
+	} else
+
 	if (hwpc_group.platform == "SPARC64" ) {
 		if (hwpc_group.i_platform == 8 || hwpc_group.i_platform == 9 ) {
 	fprintf(fp, "\t\tFP_INS:    f.p. instructions\n");
@@ -1340,6 +1387,11 @@ void PerfWatch::outputPapiCounterLegend (FILE* fp)
 	fprintf(fp, "\t\t[Total_FPs]: floating point operations as the sum of instructions*width \n");
 	fprintf(fp, "\t\t[Flops]:    floating point operations per second \n");
 	fprintf(fp, "\t\t[Vector %]: percentage of vectorized f.p. operations\n");
+	} else
+
+	if (hwpc_group.platform == "A64FX" ) {
+	fprintf(fp, "\t\tLOAD_INS:  memory load instructions\n");
+	fprintf(fp, "\t\tSTORE_INS: memory store instructions\n");
 	}
 
 // CACHE
@@ -1371,6 +1423,12 @@ void PerfWatch::outputPapiCounterLegend (FILE* fp)
 	fprintf(fp, "\t\tSTRMS_MEM:   memory write via streaming store (nontemporal store)\n");
 	fprintf(fp, "\t\t[Mem B/s]: Memory write bandwidth responding to writeback and streaming-stores\n");
 	}
+
+// CYCLES
+	fprintf(fp, "\tHWPC_CHOOSER=CYCLE:\n");
+	fprintf(fp, "\t\tTOT_CYC:   total cycles\n");
+	fprintf(fp, "\t\tTOT_INS:   total instructions\n");
+	fprintf(fp, "\t\t[Ins/cyc]: performed instructions per machine clock cycle\n");
 
 // remarks
 	fprintf(fp, "\n");
@@ -1461,6 +1519,11 @@ int PerfWatch::identifyARMplatform (void)
 		}
 	}
 	fclose(fp);
+	if ((cpu_implementer == 0x46) && (cpu_part == 1) ) {
+		hwpc_group.i_platform = 21;	// A64FX
+	} else {
+		hwpc_group.i_platform = 99;	// unsupported ARM hardware
+	}
 	#ifdef DEBUG_PRINT_PAPI
 		fprintf(stderr, "<identifyARMplatform> reads /proc/cpuinfo\n");
 		fprintf(stderr, "cpu_implementer=0x%x\n", cpu_implementer);
@@ -1469,11 +1532,6 @@ int PerfWatch::identifyARMplatform (void)
 		fprintf(stderr, "cpu_part=0x%x\n", cpu_part);
 		fprintf(stderr, "cpu_revision=%x\n", cpu_revision);
 	#endif
-	if ((cpu_implementer == 0x46) && (cpu_part == 1) ) {
-		hwpc_group.i_platform = 21;	// A64FX
-	} else {
-		hwpc_group.i_platform = 99;	// A64FX
-	}
 	return;
 #endif // USE_PAPI
 }
