@@ -444,42 +444,25 @@ void PerfWatch::createPapiCounterList ()
 			papi.s_name[ip] = "L2_WB_PF";
 				my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); ip++;
 		} else
-///////////////////////////////////////////////////////////
-// DEBUG from here
-///////////////////////////////////////////////////////////
-//
-// There are only limited number of memory related events that can be accessed by users...
-//
+
 		if (hwpc_group.platform == "A64FX" ) {
 			if (hwpc_group.i_platform == 21 ) {
 			hwpc_group.number[I_bandwidth] += 2;
-			papi.s_name[ip] = "LOAD_INS"; papi.events[ip] = PAPI_LD_INS; ip++;
-			papi.s_name[ip] = "STORE_INS"; papi.events[ip] = PAPI_SR_INS; ip++;
-			hwpc_group.number[I_bandwidth] += 2;
-			papi.s_name[ip] = "L2_MISS_COUNT";
-				my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); ip++;
-			papi.s_name[ip] = "L2D_CACHE_WB";
-				my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); ip++;
-			hwpc_group.number[I_bandwidth] += 2;
-			papi.s_name[ip] = "LD_SPEC";
-				my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); ip++;
-			papi.s_name[ip] = "ST_SPEC";
-				my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); ip++;
-			//	hwpc_group.number[I_bandwidth] = 2;
-			//	papi.s_name[ip] = "ASE_SVE_LD_SPEC";
-			//		my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); ip++;
-			//	papi.s_name[ip] = "ASE_SVE_ST_SPEC";
-			//		my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); ip++;
-			//	hwpc_group.number[I_bandwidth] = 2;
-			//	papi.s_name[ip] = "ASE_SVE_LD_MULTI_SPEC";
-			//		my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); ip++;
-			//	papi.s_name[ip] = "ASE_SVE_ST_MULTI_SPEC";
-			//		my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); ip++;
-			//	hwpc_group.number[I_bandwidth] = 2;
-			//	papi.s_name[ip] = "SVE_LD_GATHER_SPEC";
-			//		my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); ip++;
-			//	papi.s_name[ip] = "SVE_ST_SCATTER_SPEC";
-			//		my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); ip++;
+			papi.s_name[ip] = "LOAD_INS"; papi.events[ip] = PAPI_LD_INS; ip++;	// == "LD_SPEC";
+			papi.s_name[ip] = "STORE_INS"; papi.events[ip] = PAPI_SR_INS; ip++;	// == "ST_SPEC";
+			hwpc_group.number[I_bandwidth] += 6;
+			papi.s_name[ip] = "ASE_SVE_LD_SPEC";
+				my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "SVE_LOAD"; ip++;
+			papi.s_name[ip] = "ASE_SVE_ST_SPEC";
+				my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "SVE_STORE"; ip++;
+			papi.s_name[ip] = "ASE_SVE_LD_MULTI_SPEC";
+				my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "SVE_SMV_LD"; ip++;
+			papi.s_name[ip] = "ASE_SVE_ST_MULTI_SPEC";
+				my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "SVE_SMV_ST"; ip++;
+			papi.s_name[ip] = "SVE_LD_GATHER_SPEC";
+				my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "GATHER_LD"; ip++;
+			papi.s_name[ip] = "SVE_ST_SCATTER_SPEC";
+				my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "SCATTER_ST"; ip++;
 			}
 		}
 
@@ -606,7 +589,7 @@ void PerfWatch::createPapiCounterList ()
 // DEBUG from here
 ///////////////////////////////////////////////////////////
 //
-// There are only limited number of memory related events that can be accessed by users...
+// So, which event to output...
 //
 		if (hwpc_group.platform == "A64FX" ) {
 			if (hwpc_group.i_platform == 21 ) {
@@ -646,6 +629,7 @@ void PerfWatch::createPapiCounterList ()
 			papi.s_name[ip] = "L2_TCM"; papi.events[ip] = PAPI_L2_TCM; ip++;
 			//	papi.s_name[ip] = "L3_TCM"; papi.events[ip] = PAPI_L3_TCM; ip++;
 		} else
+
 		if (hwpc_group.platform == "SPARC64" ) {
 			// normal load and store counters can not be used together with cache counters
 			if (hwpc_group.i_platform == 8 || hwpc_group.i_platform == 9 ) {
@@ -667,6 +651,19 @@ void PerfWatch::createPapiCounterList ()
 			hwpc_group.number[I_cache] += 2;
 			papi.s_name[ip] = "L1_TCM"; papi.events[ip] = PAPI_L1_TCM; ip++;
 			papi.s_name[ip] = "L2_TCM"; papi.events[ip] = PAPI_L2_TCM; ip++;
+		} else
+
+		if (hwpc_group.platform == "A64FX" ) {
+			if (hwpc_group.i_platform == 21 ) {
+			hwpc_group.number[I_cache] += 2;
+			papi.s_name[ip] = "LOAD_INS"; papi.events[ip] = PAPI_LD_INS; ip++;	// == "LD_SPEC";
+			papi.s_name[ip] = "STORE_INS"; papi.events[ip] = PAPI_SR_INS; ip++;	// == "ST_SPEC";
+			hwpc_group.number[I_cache] += 2;
+			papi.s_name[ip] = "L2_MISS_COUNT";
+				my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "L2_MISS"; ip++;
+			papi.s_name[ip] = "L2D_CACHE_WB";
+				my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "L2D_WB"; ip++;
+			}
 		}
 	}
 
