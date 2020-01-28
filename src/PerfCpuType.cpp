@@ -593,6 +593,78 @@ void PerfWatch::createPapiCounterList ()
 //
 		if (hwpc_group.platform == "A64FX" ) {
 			if (hwpc_group.i_platform == 21 ) {
+				hwpc_group.number[I_flops] += 2;
+
+/*
+                         -O1                -O2                  -Kfast
+The counted events are:
+            PAPI_FP_OPS  2000000000         2000000000           2000001000
+      FP_SCALE_OPS_SPEC  0                  500000000            500000000
+      FP_FIXED_OPS_SPEC  2000000000         0                    1000
+               VFP_SPEC  2001001002         1002                 1003
+            PAPI_FP_INS  2000000000         250000000            125001000
+           PAPI_VEC_INS  0                  750751053            625751054
+           PAPI_FMA_INS  0                  0                    125000000
+
+PAPI_FP_OPS  = 4*(FP_DP_SCALE_OPS_SPEC + FP_SP_SCALE_OPS_SPEC)
+			+ (FP_DP_FIXED_OPS_SPEC+FP_SP_FIXED_OPS_SPEC)
+
+for scalar, PAPI_FP_OPS=PAPI_FP_INS
+for vector, 
+
+PAPI_FMA_INS * S.P.factor
+
+PAPI_VEC_INS  - PAPI_FP_INS = FP_DP_SCALE_OPS_SPEC
+PAPI_VEC_INS  - PAPI_FP_INS = FP_SP_SCALE_OPS_SPEC / 2
+
+Double Precision:
+
+#0, 80000066                              PAPI_FP_OPS  2000000000
+#1, 40000026                     FP_DP_SCALE_OPS_SPEC  500000000
+#2, 40000027                     FP_DP_FIXED_OPS_SPEC  0
+#3, 40000024                     FP_SP_SCALE_OPS_SPEC  0
+#4, 40000025                     FP_SP_FIXED_OPS_SPEC  0
+#5, 80000034                              PAPI_FP_INS  250000000
+#6, 80000038                             PAPI_VEC_INS  750751053
+
+The counted events are:
+#0, 80000066                              PAPI_FP_OPS  2000001000
+#1, 40000026                     FP_DP_SCALE_OPS_SPEC  500000000
+#2, 40000027                     FP_DP_FIXED_OPS_SPEC  1000
+#3, 40000024                     FP_SP_SCALE_OPS_SPEC  0
+#4, 40000025                     FP_SP_FIXED_OPS_SPEC  0
+#5, 80000034                              PAPI_FP_INS  125001000
+#6, 80000038                             PAPI_VEC_INS  625751054
+
+
+Single Precision:
+
+#0, 80000066                              PAPI_FP_OPS  2016000000
+#1, 40000026                     FP_DP_SCALE_OPS_SPEC  0
+#2, 40000027                     FP_DP_FIXED_OPS_SPEC  0
+#3, 40000024                     FP_SP_SCALE_OPS_SPEC  504000000
+#4, 40000025                     FP_SP_FIXED_OPS_SPEC  0
+#5, 80000034                              PAPI_FP_INS  126000000
+#6, 80000038                             PAPI_VEC_INS  377377058
+
+#0, 80000066                              PAPI_FP_OPS  2016000000
+#1, 40000026                     FP_DP_SCALE_OPS_SPEC  0
+#2, 40000027                     FP_DP_FIXED_OPS_SPEC  0
+#3, 40000024                     FP_SP_SCALE_OPS_SPEC  504000000
+#4, 40000025                     FP_SP_FIXED_OPS_SPEC  0
+#5, 80000034                              PAPI_FP_INS  63000000
+#6, 80000038                             PAPI_VEC_INS  314377058
+*/
+
+
+				papi.s_name[ip] = "SP_OPS"; papi.events[ip] = PAPI_SP_OPS; ip++;
+				papi.s_name[ip] = "DP_OPS"; papi.events[ip] = PAPI_DP_OPS; ip++;
+				//	PAPI_FP_OPS == FP_SCALE_OPS_SPEC*4 + FP_FIXED_OPS_SPEC //	|N0|512|128|/|*|N1|+||
+				//	hwpc_group.number[I_flops] += 2;
+				//	papi.s_name[ip] = "FP_SCALE_OPS_SPEC";
+				//		my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); ip++;
+				//	papi.s_name[ip] = "FP_FIXED_OPS_SPEC";
+				//		my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); ip++;
 			#ifdef DEBUG_PRINT_PAPI
 				if (my_rank == 0) {
 				fprintf (stderr, " *** DEBUG <createPapiCounterList> BANDWIDTH A64FX\n" );
@@ -1344,7 +1416,14 @@ void PerfWatch::outputPapiCounterLegend (FILE* fp)
 	if (hwpc_group.platform == "A64FX" ) {
 	fprintf(fp, "\t\tLOAD_INS:  memory load instructions\n");
 	fprintf(fp, "\t\tSTORE_INS: memory store instructions\n");
+	fprintf(fp, "\t\tSVE_LOAD:  memory read by SVE and Advanced SIMD load instructions.\n");
+	fprintf(fp, "\t\tSVE_STORE: memory write by SVE and Advanced SIMD store instructions.\n");
+	fprintf(fp, "\t\tSVE_SMV_LD:memory read by SVE and Advanced SIMD multiple vector contiguous structure load instructions.\n");
+	fprintf(fp, "\t\tSVE_SMV_ST:memory write by SVE and Advanced SIMD multiple vector contiguous structure store instructions.\n");
+	fprintf(fp, "\t\tGATHER_LD: memory read by SVE non-contiguous gather-load instructions.\n");
+	fprintf(fp, "\t\tSCATTER_ST:memory write by SVE non-contiguous scatter-store instructions.\n");
 	}
+
 
 // VECTOR
 	fprintf(fp, "\tHWPC_CHOOSER=VECTOR:\n");
