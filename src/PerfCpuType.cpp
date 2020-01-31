@@ -596,64 +596,54 @@ void PerfWatch::createPapiCounterList ()
 				hwpc_group.number[I_flops] += 2;
 
 /*
-                         -O1                -O2                  -Kfast
-The counted events are:
+	// _SCALE_OPS_ shows floating point operations measured in some strange unit "512/128"
+	// and the summation can be as follows.
+	//	PAPI_FP_OPS =  vector OPS + scalar OPS
+	//		vector OPS = 4*FP_SCALE_OPS_SPEC = 4*(FP_DP_SCALE_OPS_SPEC + FP_SP_SCALE_OPS_SPEC)
+	//					the number should match (PAPI_FP_OPS - FP_FIXED_OPS_SPEC)
+	//		FMA OPS
+	//		non-FMA vector OPS = vector OPS - FMA OPS
+	//		scalar OPS = FP_FIXED_OPS_SPEC = FP_DP_FIXED_OPS_SPEC + FP_SP_FIXED_OPS_SPEC
+
+	//	x : #of_inst_vector_FMA_DP
+	//	y : #of_inst_vector_FMA_SP
+
+	fops_vector_DP = 4*FP_DP_SCALE_OPS_SPEC	// formula-(1) D.P. floating point operations
+	fops_vector_SP = 4*FP_SP_SCALE_OPS_SPEC	// formula-(2) S.P. floating point operations:
+	ratio_DP_SP = fops_vector_DP / fops_vector_SP	// formula-(3)
+	x + y = FMA_INS							// formula-(4)
+	16x/32y = ratio_DP_SP					// formula-(5) quite compromised approximation
+
+	//	16x : FMA f.p. ops in DP
+	//	32y : FMA f.p. ops in SP
+
+	// handle zero divide...
+
+
+Double Precision:         -O1                -O2                  -Kfast
             PAPI_FP_OPS  2000000000         2000000000           2000001000
-      FP_SCALE_OPS_SPEC  0                  500000000            500000000
-      FP_FIXED_OPS_SPEC  2000000000         0                    1000
-               VFP_SPEC  2001001002         1002                 1003
             PAPI_FP_INS  2000000000         250000000            125001000
-           PAPI_VEC_INS  0                  750751053            625751054
            PAPI_FMA_INS  0                  0                    125000000
 
-PAPI_FP_OPS  = 4*(FP_DP_SCALE_OPS_SPEC + FP_SP_SCALE_OPS_SPEC)
-			+ (FP_DP_FIXED_OPS_SPEC+FP_SP_FIXED_OPS_SPEC)
+      FP_SCALE_OPS_SPEC  0                  500000000            500000000
+      FP_FIXED_OPS_SPEC  2000000000         0                    1000
+   FP_DP_SCALE_OPS_SPEC  0                  500000000            500000000
+   FP_DP_FIXED_OPS_SPEC  2000000000         0                    1000
+   FP_SP_SCALE_OPS_SPEC  0                  0                    0
+   FP_SP_FIXED_OPS_SPEC  0                  0                    0
 
-for scalar, PAPI_FP_OPS=PAPI_FP_INS
-for vector, 
+Single Precision:         -O1                -O2                  -Kfast
+            PAPI_FP_OPS  2000000000         2016000000           2016000000
+            PAPI_FP_INS  2000000000         126000000            63000000
+           PAPI_FMA_INS  0                  0                    63000000
 
-PAPI_FMA_INS * S.P.factor
+      FP_SCALE_OPS_SPEC  0                  504000000            504000000
+      FP_FIXED_OPS_SPEC  2000000000         0                    0
+   FP_DP_SCALE_OPS_SPEC  0                  0                    0
+   FP_DP_FIXED_OPS_SPEC  0                  0                    0
+   FP_SP_SCALE_OPS_SPEC  0                  504000000            504000000
+   FP_SP_FIXED_OPS_SPEC  2000000000         0                    0
 
-PAPI_VEC_INS  - PAPI_FP_INS = FP_DP_SCALE_OPS_SPEC
-PAPI_VEC_INS  - PAPI_FP_INS = FP_SP_SCALE_OPS_SPEC / 2
-
-Double Precision:
-
-#0, 80000066                              PAPI_FP_OPS  2000000000
-#1, 40000026                     FP_DP_SCALE_OPS_SPEC  500000000
-#2, 40000027                     FP_DP_FIXED_OPS_SPEC  0
-#3, 40000024                     FP_SP_SCALE_OPS_SPEC  0
-#4, 40000025                     FP_SP_FIXED_OPS_SPEC  0
-#5, 80000034                              PAPI_FP_INS  250000000
-#6, 80000038                             PAPI_VEC_INS  750751053
-
-The counted events are:
-#0, 80000066                              PAPI_FP_OPS  2000001000
-#1, 40000026                     FP_DP_SCALE_OPS_SPEC  500000000
-#2, 40000027                     FP_DP_FIXED_OPS_SPEC  1000
-#3, 40000024                     FP_SP_SCALE_OPS_SPEC  0
-#4, 40000025                     FP_SP_FIXED_OPS_SPEC  0
-#5, 80000034                              PAPI_FP_INS  125001000
-#6, 80000038                             PAPI_VEC_INS  625751054
-
-
-Single Precision:
-
-#0, 80000066                              PAPI_FP_OPS  2016000000
-#1, 40000026                     FP_DP_SCALE_OPS_SPEC  0
-#2, 40000027                     FP_DP_FIXED_OPS_SPEC  0
-#3, 40000024                     FP_SP_SCALE_OPS_SPEC  504000000
-#4, 40000025                     FP_SP_FIXED_OPS_SPEC  0
-#5, 80000034                              PAPI_FP_INS  126000000
-#6, 80000038                             PAPI_VEC_INS  377377058
-
-#0, 80000066                              PAPI_FP_OPS  2016000000
-#1, 40000026                     FP_DP_SCALE_OPS_SPEC  0
-#2, 40000027                     FP_DP_FIXED_OPS_SPEC  0
-#3, 40000024                     FP_SP_SCALE_OPS_SPEC  504000000
-#4, 40000025                     FP_SP_FIXED_OPS_SPEC  0
-#5, 80000034                              PAPI_FP_INS  63000000
-#6, 80000038                             PAPI_VEC_INS  314377058
 */
 
 
