@@ -447,22 +447,21 @@ void PerfWatch::createPapiCounterList ()
 
 		if (hwpc_group.platform == "A64FX" ) {
 			if (hwpc_group.i_platform == 21 ) {
-			hwpc_group.number[I_bandwidth] += 2;
+			hwpc_group.number[I_bandwidth] += 8;
 			papi.s_name[ip] = "LOAD_INS"; papi.events[ip] = PAPI_LD_INS; ip++;	// == "LD_SPEC";
 			papi.s_name[ip] = "STORE_INS"; papi.events[ip] = PAPI_SR_INS; ip++;	// == "ST_SPEC";
-			hwpc_group.number[I_bandwidth] += 6;
 			papi.s_name[ip] = "ASE_SVE_LD_SPEC";
-				my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "SVE_LOAD"; ip++;
+			my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "SVE_LOAD"; ip++;
 			papi.s_name[ip] = "ASE_SVE_ST_SPEC";
-				my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "SVE_STORE"; ip++;
+			my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "SVE_STORE"; ip++;
 			papi.s_name[ip] = "ASE_SVE_LD_MULTI_SPEC";
-				my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "SVE_SMV_LD"; ip++;
+			my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "SVE_SMV_LD"; ip++;
 			papi.s_name[ip] = "ASE_SVE_ST_MULTI_SPEC";
-				my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "SVE_SMV_ST"; ip++;
+			my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "SVE_SMV_ST"; ip++;
 			papi.s_name[ip] = "SVE_LD_GATHER_SPEC";
-				my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "GATHER_LD"; ip++;
+			my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "GATHER_LD"; ip++;
 			papi.s_name[ip] = "SVE_ST_SCATTER_SPEC";
-				my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "SCATTER_ST"; ip++;
+			my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "SCATTER_ST"; ip++;
 			}
 		}
 
@@ -585,76 +584,66 @@ void PerfWatch::createPapiCounterList ()
 			*/
 			}
 		} else
+
 ///////////////////////////////////////////////////////////
 // DEBUG from here
 ///////////////////////////////////////////////////////////
-//
-// So, which event to output...
-//
 		if (hwpc_group.platform == "A64FX" ) {
 			if (hwpc_group.i_platform == 21 ) {
 				hwpc_group.number[I_flops] += 2;
 
-/*
-	// _SCALE_OPS_ shows floating point operations measured in some strange unit "512/128"
-	// and the summation can be as follows.
 	//	PAPI_FP_OPS =  vector OPS + scalar OPS
-	//		vector OPS = 4*FP_SCALE_OPS_SPEC = 4*(FP_DP_SCALE_OPS_SPEC + FP_SP_SCALE_OPS_SPEC)
-	//					the number should match (PAPI_FP_OPS - FP_FIXED_OPS_SPEC)
+	//		vector OPS = 4*FP_SCALE_OPS_SPEC
+	//		scalar OPS = FP_FIXED_OPS_SPEC
+	//		_SCALE_OPS_ shows floating point operations measured in some strange unit "4 (512/128)"
+	// 
+	//	vector OPS = 4*FP_SCALE_OPS_SPEC = 4*FP_DP_SCALE_OPS_SPEC + 4*FP_SP_SCALE_OPS_SPEC
 	//		FMA OPS
 	//		non-FMA vector OPS = vector OPS - FMA OPS
-	//		scalar OPS = FP_FIXED_OPS_SPEC = FP_DP_FIXED_OPS_SPEC + FP_SP_FIXED_OPS_SPEC
+	//	scalar OPS = FP_FIXED_OPS_SPEC = FP_DP_FIXED_OPS_SPEC + FP_SP_FIXED_OPS_SPEC
+	//	x : #of_inst_vector_FMA_DP	//	16x : FMA f.p. ops in DP
+	//	y : #of_inst_vector_FMA_SP	//	32y : FMA f.p. ops in SP
+	//	vDP : Double Precision vector floating point operations
+	//	vSP : Single Precision vector floating point operations
+	//
+			// vDP = fops_vector_DP = 4*FP_DP_SCALE_OPS_SPEC	// formula-(1)
+			// vSP = fops_vector_SP = 4*FP_SP_SCALE_OPS_SPEC	// formula-(2)
+			// x + y = FMA_INS							// formula-(3)
+			// 16x/(16x+32y) = vDP /(vDP+vSP)			// formula-(4)
+			// x = 2vDP/(vSP+2vDP) * FMA_INS			// formula-(5)
+			// y = FMA_INS - x							// formula-(6)
+			// Formula-(4) is a quite rough approximation which has the same meaning as below:
+			// 16x/32y = fops_vector_DP/fops_vector_SP	// formula-(7)
+			// Formula-(4) is preferred since it avoids the zero divide condition caused by formula-(7)
 
-	//	x : #of_inst_vector_FMA_DP
-	//	y : #of_inst_vector_FMA_SP
+/*
+example1 on Fugaku.      Double Precision:                     Single Precision:
+Optimization level:      -O1         -O2         -Kfast        -O1         -O2         -Kfast
+            PAPI_FP_OPS  2000000000  2000000000  2000001000    2000000000  2016000000  2016000000
+            PAPI_FP_INS  2000000000  250000000   125001000     2000000000  126000000   63000000
+           PAPI_FMA_INS  0           0           125000000     0           0           63000000
 
-	fops_vector_DP = 4*FP_DP_SCALE_OPS_SPEC	// formula-(1) D.P. floating point operations
-	fops_vector_SP = 4*FP_SP_SCALE_OPS_SPEC	// formula-(2) S.P. floating point operations:
-	ratio_DP_SP = fops_vector_DP / fops_vector_SP	// formula-(3)
-	x + y = FMA_INS							// formula-(4)
-	16x/32y = ratio_DP_SP					// formula-(5) quite compromised approximation
-
-	//	16x : FMA f.p. ops in DP
-	//	32y : FMA f.p. ops in SP
-
-	// handle zero divide...
-
-
-Double Precision:         -O1                -O2                  -Kfast
-            PAPI_FP_OPS  2000000000         2000000000           2000001000
-            PAPI_FP_INS  2000000000         250000000            125001000
-           PAPI_FMA_INS  0                  0                    125000000
-
-      FP_SCALE_OPS_SPEC  0                  500000000            500000000
-      FP_FIXED_OPS_SPEC  2000000000         0                    1000
-   FP_DP_SCALE_OPS_SPEC  0                  500000000            500000000
-   FP_DP_FIXED_OPS_SPEC  2000000000         0                    1000
-   FP_SP_SCALE_OPS_SPEC  0                  0                    0
-   FP_SP_FIXED_OPS_SPEC  0                  0                    0
-
-Single Precision:         -O1                -O2                  -Kfast
-            PAPI_FP_OPS  2000000000         2016000000           2016000000
-            PAPI_FP_INS  2000000000         126000000            63000000
-           PAPI_FMA_INS  0                  0                    63000000
-
-      FP_SCALE_OPS_SPEC  0                  504000000            504000000
-      FP_FIXED_OPS_SPEC  2000000000         0                    0
-   FP_DP_SCALE_OPS_SPEC  0                  0                    0
-   FP_DP_FIXED_OPS_SPEC  0                  0                    0
-   FP_SP_SCALE_OPS_SPEC  0                  504000000            504000000
-   FP_SP_FIXED_OPS_SPEC  2000000000         0                    0
-
+      FP_SCALE_OPS_SPEC  0           500000000   500000000     0           504000000   504000000
+      FP_FIXED_OPS_SPEC  2000000000  0           1000          2000000000  0           0
+   FP_DP_SCALE_OPS_SPEC  0           500000000   500000000     0           0           0
+   FP_DP_FIXED_OPS_SPEC  2000000000  0           1000          0           0           0
+   FP_SP_SCALE_OPS_SPEC  0           0           0             0           504000000   504000000
+   FP_SP_FIXED_OPS_SPEC  0           0           0             2000000000  0           0
 */
 
 
-				papi.s_name[ip] = "SP_OPS"; papi.events[ip] = PAPI_SP_OPS; ip++;
-				papi.s_name[ip] = "DP_OPS"; papi.events[ip] = PAPI_DP_OPS; ip++;
-				//	PAPI_FP_OPS == FP_SCALE_OPS_SPEC*4 + FP_FIXED_OPS_SPEC //	|N0|512|128|/|*|N1|+||
-				//	hwpc_group.number[I_flops] += 2;
-				//	papi.s_name[ip] = "FP_SCALE_OPS_SPEC";
-				//		my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); ip++;
-				//	papi.s_name[ip] = "FP_FIXED_OPS_SPEC";
-				//		my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); ip++;
+				hwpc_group.number[I_flops] += 5;
+				papi.s_name[ip] = "FP_DP_SCALE_OPS_SPEC";
+				my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "fp_vec_DP"; ip++;
+				papi.s_name[ip] = "FP_SP_SCALE_OPS_SPEC";
+				my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "fp_vec_SP"; ip++;
+				papi.s_name[ip] = "FP_DP_FIXED_OPS_SPEC";
+				my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "scalar_DP"; ip++;
+				papi.s_name[ip] = "FP_SP_FIXED_OPS_SPEC";
+				my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "scalar_SP"; ip++;
+				papi.s_name[ip] = "PAPI_FMA_INS";
+				my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "FMA_inst"; ip++;
+
 			#ifdef DEBUG_PRINT_PAPI
 				if (my_rank == 0) {
 				fprintf (stderr, " *** DEBUG <createPapiCounterList> BANDWIDTH A64FX\n" );
@@ -941,6 +930,12 @@ void PerfWatch::sortPapiCounterList (void)
 			my_papi.s_sorted[jp] = "Mem [B/s]" ;
 			my_papi.v_sorted[jp] = bandwidth ; //* 1.0e-9;
 			jp++;
+
+		} else
+    	if (hwpc_group.platform == "A64FX" ) {
+			if (hwpc_group.i_platform == 21 ) {
+			;	// nothing fancy as of now... 2022/2/1
+			}
 		}
 
 	}
@@ -952,6 +947,7 @@ void PerfWatch::sortPapiCounterList (void)
 		double fp_dp1, fp_dp2, fp_dp4, fp_dp8, fp_dp16;
 		double fp_total, fp_vector;
 		double vector_percent;
+		double fma_ins, fma_ins_DP, fma_ins_SP;
 
 		vector_percent = 0.0;
 		fp_vector = 0.0;
@@ -1039,7 +1035,39 @@ void PerfWatch::sortPapiCounterList (void)
 				vector_percent = 0.0;
 				}
 			}
+
+		} else
+    	if (hwpc_group.platform == "A64FX" ) {
+			ip = hwpc_group.index[I_vector];
+			if (hwpc_group.i_platform == 21 ) {
+				fp_dp4  = my_papi.accumu[ip] ;
+				fp_sp4  = my_papi.accumu[ip+1] ;
+				fp_dp1  = my_papi.accumu[ip+2] ;
+				fp_sp1  = my_papi.accumu[ip+3] ;
+				fma_ins  = my_papi.accumu[ip+4] ;
+				fp_vector = (                  4.0*fp_dp4 + 4.0*fp_sp4 );
+				fp_total  = (fp_dp1 + fp_sp1 + 4.0*fp_dp4 + 4.0*fp_sp4 );
+				;
+				// x = 2vDP/(vSP+2vDP) * FMA_INS // formula-(5) #of_inst_vector_FMA_DP. 16x == FMA f.p. ops in DP
+				// y = FMA_INS - x               // formula-(6) #of_inst_vector_FMA_SP. 32y == FMA f.p. ops in SP
+				fma_ins_DP = 2.0*4.0*fp_dp4 / (4.0*fp_sp4 + 2.0*4.0*fp_dp4) * fma_ins;
+				fma_ins_SP = fma_ins - fma_ins_DP;
+				my_papi.s_sorted[jp] = "fp_FMA_DP" ;
+				my_papi.v_sorted[jp] = fma_ins_DP * 16;
+				jp++;
+				my_papi.s_sorted[jp] = "fp_FMA_SP" ;
+				my_papi.v_sorted[jp] = fma_ins_SP * 32;
+				jp++;
+			}
+			if (m_exclusive) {
+				if ( fp_total > 0.0 ) {
+				vector_percent = fp_vector/fp_total;
+				} else {
+				vector_percent = 0.0;
+				}
+			}
 		}
+
 		my_papi.s_sorted[jp] = "Total_FPs" ;
 		my_papi.v_sorted[jp] = fp_total;
 		jp++;
