@@ -351,12 +351,6 @@ void PerfWatch::createPapiCounterList ()
 				hwpc_group.number[I_flops] += 2;
 				papi.s_name[ip] = "SP_OPS"; papi.events[ip] = PAPI_SP_OPS; ip++;
 				papi.s_name[ip] = "DP_OPS"; papi.events[ip] = PAPI_DP_OPS; ip++;
-				//	PAPI_FP_OPS == FP_SCALE_OPS_SPEC*4 + FP_FIXED_OPS_SPEC //	|N0|512|128|/|*|N1|+||
-				//	hwpc_group.number[I_flops] += 2;
-				//	papi.s_name[ip] = "FP_SCALE_OPS_SPEC";
-				//		my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); ip++;
-				//	papi.s_name[ip] = "FP_FIXED_OPS_SPEC";
-				//		my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); ip++;
 			}
 		}
 	}
@@ -657,13 +651,6 @@ Optimization level:      -O1         -O2         -Kfast        -O1         -O2  
 	else
 // if (CACHE)
 
-//
-// DEBUG from here
-//	For calculating cache hit/miss rate,
-//	"L2_RQSTS:DEMAND_DATA_RD_HIT" and "L2_RQSTS:PF_HIT" maybe more precise than using PAPI_L2_TCM ...?
-//
-
-
 	if ( s_chooser.find( "CACHE" ) != string::npos ) {
 		hwpc_group.index[I_cache] = ip;
 		hwpc_group.number[I_cache] = 0;
@@ -678,6 +665,8 @@ Optimization level:      -O1         -O2         -Kfast        -O1         -O2  
 				my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "LFB_HIT"; ip++;
 			papi.s_name[ip] = "L1_TCM"; papi.events[ip] = PAPI_L1_TCM; ip++;
 			papi.s_name[ip] = "L2_TCM"; papi.events[ip] = PAPI_L2_TCM; ip++;
+			//	"L2_RQSTS:DEMAND_DATA_RD_HIT" and "L2_RQSTS:PF_HIT" maybe more precise for cache hit/miss rate???
+			//	We skip showing L3 here
 			//	papi.s_name[ip] = "L3_TCM"; papi.events[ip] = PAPI_L3_TCM; ip++;
 		} else
 
@@ -706,14 +695,13 @@ Optimization level:      -O1         -O2         -Kfast        -O1         -O2  
 
 		if (hwpc_group.platform == "A64FX" ) {
 			if (hwpc_group.i_platform == 21 ) {
-			hwpc_group.number[I_cache] += 2;
+			hwpc_group.number[I_cache] += 5;
 			papi.s_name[ip] = "LOAD_INS"; papi.events[ip] = PAPI_LD_INS; ip++;	// == "LD_SPEC";
 			papi.s_name[ip] = "STORE_INS"; papi.events[ip] = PAPI_SR_INS; ip++;	// == "ST_SPEC";
-			hwpc_group.number[I_cache] += 2;
-			papi.s_name[ip] = "L2_MISS_COUNT";
-				my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "L2_MISS"; ip++;
-			papi.s_name[ip] = "L2D_CACHE_WB";
-				my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "L2D_WB"; ip++;
+			papi.s_name[ip] = "PAPI_L1_DCH";
+				my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "L1_HIT"; ip++;
+			papi.s_name[ip] = "L1_TCM"; papi.events[ip] = PAPI_L1_TCM; ip++;
+			papi.s_name[ip] = "L2_TCM"; papi.events[ip] = PAPI_L2_TCM; ip++;
 			}
 		}
 	}
@@ -760,6 +748,7 @@ Optimization level:      -O1         -O2         -Kfast        -O1         -O2  
 					my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "STRMS_MEM"; ip++;
 			}
 		} else
+
 		if (hwpc_group.platform == "SPARC64" ) {
 			if (hwpc_group.i_platform == 8 || hwpc_group.i_platform == 9 ) {
 				hwpc_group.number[I_writeback] += 2;
@@ -774,6 +763,16 @@ Optimization level:      -O1         -O2         -Kfast        -O1         -O2  
 					my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "LD+ST"; ip++;
 				papi.s_name[ip] = "XSIMD_LOAD_STORE_INSTRUCTIONS";
 					my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "XSIMDLD+ST"; ip++;
+			}
+		} else
+
+		if (hwpc_group.platform == "A64FX" ) {
+			if (hwpc_group.i_platform == 21 ) {
+			hwpc_group.number[I_cache] += 2;
+			papi.s_name[ip] = "L2_MISS_COUNT";
+				my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "L2_MISS"; ip++;
+			papi.s_name[ip] = "L2D_CACHE_WB";
+				my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "L2_W_Back"; ip++;
 			}
 		}
 	}
@@ -1098,7 +1097,6 @@ void PerfWatch::sortPapiCounterList (void)
 			ip++;jp++;
 		}
 		if (hwpc_group.platform == "Xeon" ) {
-			//	We saved 7 events for Xeon
 			ip = hwpc_group.index[I_cache];
 
 			d_load_ins  = my_papi.accumu[ip] ;	//	PAPI_LD_INS
@@ -1107,8 +1105,7 @@ void PerfWatch::sortPapiCounterList (void)
 			d_hit_LFB = my_papi.accumu[ip+3] ;	//	MEM_LOAD_UOPS_RETIRED:HIT_LFB
 			d_miss_L1 = my_papi.accumu[ip+4] ;	//	PAPI_L1_TCM
 			d_miss_L2 = my_papi.accumu[ip+5] ;	//	PAPI_L2_TCM
-			//	d_miss_L3 = my_papi.accumu[ip+6] ;	//	PAPI_L3_TCM
-			//	We do not display L3_TCM since it is no use and likely to cause confusion
+			//	d_miss_L3 = my_papi.accumu[ip+6] ;	//	PAPI_L3_TCM // we skip showing L3 here
 
 			d_cache_transaction = d_hit_L1 + d_hit_LFB + d_miss_L1 ;
 			if ( d_cache_transaction > 0.0 ) {
@@ -1126,6 +1123,7 @@ void PerfWatch::sortPapiCounterList (void)
 			my_papi.v_sorted[jp] = d_L2_ratio * 100.0;
 			jp++;
 		} else
+
 		if (hwpc_group.platform == "SPARC64" ) {
 			ip = hwpc_group.index[I_cache];
 			if (hwpc_group.i_platform == 8 || hwpc_group.i_platform == 9 ) {
@@ -1148,14 +1146,38 @@ void PerfWatch::sortPapiCounterList (void)
 			} else {
 				d_L1_ratio = d_L2_ratio = 0.0;
 			}
-
 			my_papi.s_sorted[jp] = "[L1$ hit%]";
 			my_papi.v_sorted[jp] = d_L1_ratio * 100.0;
 			jp++;
 			my_papi.s_sorted[jp] = "[L2$ hit%]";
 			my_papi.v_sorted[jp] = d_L2_ratio * 100.0;
 			jp++;
+		} else
+
+		if (hwpc_group.platform == "A64FX" ) {
+			if (hwpc_group.i_platform == 21 ) {
+			hwpc_group.number[I_cache] += 5;
+			d_load_ins  = my_papi.accumu[ip] ;	//	PAPI_LD_INS
+			d_store_ins = my_papi.accumu[ip+1] ;	//	PAPI_SR_INS
+			d_hit_L1  = my_papi.accumu[ip+2] ;	//	PAPI_L1_DCH
+			d_miss_L1 = my_papi.accumu[ip+3] ;	//	PAPI_L1_TCM
+			d_miss_L2 = my_papi.accumu[ip+4] ;	//	PAPI_L2_TCM
+			d_load_store = d_load_ins + d_store_ins;
+			if ( d_load_store > 0.0 ) {
+				d_L1_ratio = (d_load_store - d_miss_L1) / d_load_store;
+				d_L2_ratio = (d_miss_L1 - d_miss_L2) / d_load_store;
+			} else {
+				d_L1_ratio = d_L2_ratio = 0.0;
+			}
+			my_papi.s_sorted[jp] = "[L1$ hit%]";
+			my_papi.v_sorted[jp] = d_L1_ratio * 100.0;
+			jp++;
+			my_papi.s_sorted[jp] = "[L2$ hit%]";
+			my_papi.v_sorted[jp] = d_L2_ratio * 100.0;
+			jp++;
+			}
 		}
+
 		my_papi.s_sorted[jp] = "[L1L2hit%]";
 		my_papi.v_sorted[jp] = (d_L1_ratio + d_L2_ratio) * 100.0;
 		jp++;
@@ -1197,8 +1219,6 @@ void PerfWatch::sortPapiCounterList (void)
 
 	else
 // if (WRITEBACK)
-	// WRITEBACK is a special option for memory write bandwidth calculation on Intel Xeon Sandybridge and Ivybridge
-	// The related events (WB and STRMS) have been deleted on Skylake, for some reason.
 
 	if ( hwpc_group.number[I_writeback] > 0 ) {
 		double d_load_ins, d_store_ins;
@@ -1214,6 +1234,8 @@ void PerfWatch::sortPapiCounterList (void)
 			ip++;jp++;
 		}
 
+		// WRITEBACK and STREAMING STORE event options are supported on Intel Xeon Sandybridge and Ivybridge
+		// These event counters (WB and STRMS) have been deleted on Skylake, for some reason.
     	if (hwpc_group.platform == "Xeon" ) {
 			if (hwpc_group.i_platform >= 2 && hwpc_group.i_platform <= 4 ) {
 				ip = hwpc_group.index[I_writeback];
@@ -1223,20 +1245,15 @@ void PerfWatch::sortPapiCounterList (void)
 				my_papi.s_sorted[jp] = "Mem [B/s]" ;
 				my_papi.v_sorted[jp] = bandwidth ;	//	* 1.0e-9;
 				jp++;
-			} else {
-				bandwidth = 0.0;
-				my_papi.s_sorted[jp] = "not.avail" ;
-				my_papi.v_sorted[jp] = bandwidth ;	//	* 1.0e-9;
-				jp++;
 			}
-
-		} else
-		if (hwpc_group.platform == "SPARC64" ) {
-			bandwidth = 0.0;
-			my_papi.s_sorted[jp] = "not.avail" ;
-			my_papi.v_sorted[jp] = bandwidth ;	//	* 1.0e-9;
-			jp++;
 		}
+
+		//	else {
+		//		bandwidth = 0.0;
+		//		my_papi.s_sorted[jp] = "not.avail" ;
+		//		my_papi.v_sorted[jp] = bandwidth ;	//	* 1.0e-9;
+		//		jp++;
+		//	}
 	}
     	
 // count the number of reported events and derived matrices
@@ -1484,20 +1501,29 @@ void PerfWatch::outputPapiCounterLegend (FILE* fp)
 	} else
 
 	if (hwpc_group.platform == "A64FX" ) {
-	fprintf(fp, "\t\tLOAD_INS:  memory load instructions\n");
-	fprintf(fp, "\t\tSTORE_INS: memory store instructions\n");
+	fprintf(fp, "\t\t fp_vec_DP: double precision f.p. ops by SVE/SIMD instructions\n");
+	fprintf(fp, "\t\t fp_vec_SP: single precision f.p. ops by SVE/SIMD instructions\n");
+	fprintf(fp, "\t\t scalar_DP: double precision f.p. ops by scalar instructions\n");
+	fprintf(fp, "\t\t scalar_SP: single precision f.p. ops by scalar instructions\n");
+	fprintf(fp, "\t\t FMA_inst: fused multiply+add instructions\n");
+	fprintf(fp, "\t\t fp_FMA_DP: double precision f.p. ops by FMA instructions\n");
+	fprintf(fp, "\t\t fp_FMA_SP: single precision f.p. ops by FMA instructions\n");
+	fprintf(fp, "\t\t note that FMA DP/SP ratio is approximated using fp_vec_DP/fp_vec_SP \n");
 	}
 
 // CACHE
 	fprintf(fp, "\tHWPC_CHOOSER=CACHE:\n");
 	if (hwpc_group.platform == "Xeon" ) {
+	fprintf(fp, "\t\tLOAD_INS:  memory load instructions\n");
+	fprintf(fp, "\t\tSTORE_INS: memory store instructions\n");
 	fprintf(fp, "\t\tL1_HIT:    L1 data cache hits\n");
 	fprintf(fp, "\t\tLFB_HIT:   Cache Line Fill Buffer hits\n");
 	fprintf(fp, "\t\tL1_TCM:    L1 data cache activities leading to line replacements\n");
 	fprintf(fp, "\t\tL2_TCM:    L2 cache demand access misses\n");
 	//	fprintf(fp, "\t\tL3_TCM: level 3 total cache misses by demand\n");
 	fprintf(fp, "\t\t[L1$ hit%]: data access hit(%) in L1 data cache and Line Fill Buffer\n");
-	}
+	} else
+
 	if (hwpc_group.platform == "SPARC64" ) {
 	fprintf(fp, "\t\tLD+ST:     memory load/store instructions\n");
 	fprintf(fp, "\t\t2SIMD:LDST: memory load/store SIMD instructions(2SIMD)\n");
@@ -1505,7 +1531,17 @@ void PerfWatch::outputPapiCounterLegend (FILE* fp)
 	fprintf(fp, "\t\tL1_TCM:    L1 cache misses (by demand and by prefetch)\n");
 	fprintf(fp, "\t\tL2_TCM:    L2 cache misses (by demand and by prefetch)\n");
 	fprintf(fp, "\t\t[L1$ hit%]: data access hit(%) in L1 cache \n");
+	} else
+
+	if (hwpc_group.platform == "A64FX" ) {
+	fprintf(fp, "\t\tLOAD_INS:  memory load instructions\n");
+	fprintf(fp, "\t\tSTORE_INS: memory store instructions\n");
+	fprintf(fp, "\t\tL1_HIT:    L1 data cache hits\n");
+	fprintf(fp, "\t\tL1_TCM:    L1 data cache misses\n");
+	fprintf(fp, "\t\tL2_TCM:    L2 cache misses\n");
+	fprintf(fp, "\t\t[L1$ hit%]: data access hit(%) in L1 cache \n");
 	}
+
 	fprintf(fp, "\t\t[L2$ hit%]: data access hit(%) in L2 cache\n");
 	fprintf(fp, "\t\t[L1L2hit%]: sum of hit(%) in L1 and L2 cache\n");
 
@@ -1551,7 +1587,7 @@ void PerfWatch::outputPapiCounterLegend (FILE* fp)
 
 // Special code block for Fugaku A64FX follows.
 
-int PerfWatch::identifyARMplatform (void)
+void PerfWatch::identifyARMplatform (void)
 {
 #ifdef USE_PAPI
 	// on ARM, PAPI_get_hardware_info() does not provide so useful information.
