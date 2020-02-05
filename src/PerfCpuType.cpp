@@ -441,21 +441,18 @@ void PerfWatch::createPapiCounterList ()
 
 		if (hwpc_group.platform == "A64FX" ) {
 			if (hwpc_group.i_platform == 21 ) {
-			hwpc_group.number[I_bandwidth] += 8;
+			hwpc_group.number[I_bandwidth] += 6;
 			papi.s_name[ip] = "LOAD_INS"; papi.events[ip] = PAPI_LD_INS; ip++;	// == "LD_SPEC";
 			papi.s_name[ip] = "STORE_INS"; papi.events[ip] = PAPI_SR_INS; ip++;	// == "ST_SPEC";
-			papi.s_name[ip] = "ASE_SVE_LD_SPEC";
-			my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "SVE_LOAD"; ip++;
-			papi.s_name[ip] = "ASE_SVE_ST_SPEC";
-			my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "SVE_STORE"; ip++;
-			papi.s_name[ip] = "ASE_SVE_LD_MULTI_SPEC";
-			my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "SVE_SMV_LD"; ip++;
-			papi.s_name[ip] = "ASE_SVE_ST_MULTI_SPEC";
-			my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "SVE_SMV_ST"; ip++;
-			papi.s_name[ip] = "SVE_LD_GATHER_SPEC";
-			my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "GATHER_LD"; ip++;
-			papi.s_name[ip] = "SVE_ST_SCATTER_SPEC";
-			my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "SCATTER_ST"; ip++;
+			//	"PAPI_L2_DCM" = "L2D_CACHE_REFILL" - "L2D_SWAP_DM" - "L2D_CACHE_MIBMCH_PRF"
+			papi.s_name[ip] = "L2D_CACHE_REFILL";
+			my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "L2D_refill"; ip++;
+			papi.s_name[ip] = "L2D_SWAP_DM";
+			my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "L2D_hrf1"; ip++;
+			papi.s_name[ip] = "L2D_CACHE_MIBMCH_PRF";
+			my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "L2D_hrf2"; ip++;
+			papi.s_name[ip] = "L2D_CACHE_WB";
+			my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "L2D_WB"; ip++;
 			}
 		}
 
@@ -584,16 +581,14 @@ void PerfWatch::createPapiCounterList ()
 ///////////////////////////////////////////////////////////
 		if (hwpc_group.platform == "A64FX" ) {
 			if (hwpc_group.i_platform == 21 ) {
-				hwpc_group.number[I_flops] += 2;
 
 	//	PAPI_FP_OPS =  vector OPS + scalar OPS
 	//		vector OPS = 4*FP_SCALE_OPS_SPEC
 	//		scalar OPS = FP_FIXED_OPS_SPEC
 	//		_SCALE_OPS_ shows floating point operations measured in some strange unit "4 (512/128)"
-	// 
 	//	vector OPS = 4*FP_SCALE_OPS_SPEC = 4*FP_DP_SCALE_OPS_SPEC + 4*FP_SP_SCALE_OPS_SPEC
-	//		FMA OPS
-	//		non-FMA vector OPS = vector OPS - FMA OPS
+	//		vector OPS = FMA vector OPS + non-FMA vector OPS
+	//		ratio of FMA vector v.s. non-FMA vector is not explicitly counted. so set some approximation.
 	//	scalar OPS = FP_FIXED_OPS_SPEC = FP_DP_FIXED_OPS_SPEC + FP_SP_FIXED_OPS_SPEC
 	//	x : #of_inst_vector_FMA_DP	//	16x : FMA f.p. ops in DP
 	//	y : #of_inst_vector_FMA_SP	//	32y : FMA f.p. ops in SP
@@ -625,8 +620,7 @@ Optimization level:      -O1         -O2         -Kfast        -O1         -O2  
    FP_SP_FIXED_OPS_SPEC  0           0           0             2000000000  0           0
 */
 
-
-				hwpc_group.number[I_flops] += 5;
+				hwpc_group.number[I_vector] += 5;
 				papi.s_name[ip] = "FP_DP_SCALE_OPS_SPEC";
 				my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "fp_vec_DP"; ip++;
 				papi.s_name[ip] = "FP_SP_SCALE_OPS_SPEC";
@@ -638,11 +632,6 @@ Optimization level:      -O1         -O2         -Kfast        -O1         -O2  
 				papi.s_name[ip] = "PAPI_FMA_INS";
 				my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "FMA_inst"; ip++;
 
-			#ifdef DEBUG_PRINT_PAPI
-				if (my_rank == 0) {
-				fprintf (stderr, " *** DEBUG <createPapiCounterList> BANDWIDTH A64FX\n" );
-				}
-			#endif
 			}
 		}
 
@@ -766,13 +755,24 @@ Optimization level:      -O1         -O2         -Kfast        -O1         -O2  
 			}
 		} else
 
+
 		if (hwpc_group.platform == "A64FX" ) {
 			if (hwpc_group.i_platform == 21 ) {
-			hwpc_group.number[I_cache] += 2;
-			papi.s_name[ip] = "L2_MISS_COUNT";
-				my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "L2_MISS"; ip++;
-			papi.s_name[ip] = "L2D_CACHE_WB";
-				my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "L2_W_Back"; ip++;
+			hwpc_group.number[I_writeback] += 8;
+			papi.s_name[ip] = "LOAD_INS"; papi.events[ip] = PAPI_LD_INS; ip++;
+			papi.s_name[ip] = "STORE_INS"; papi.events[ip] = PAPI_SR_INS; ip++;
+			papi.s_name[ip] = "ASE_SVE_LD_SPEC";
+			my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "SVE_LOAD"; ip++;
+			papi.s_name[ip] = "ASE_SVE_ST_SPEC";
+			my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "SVE_STORE"; ip++;
+			papi.s_name[ip] = "ASE_SVE_LD_MULTI_SPEC";
+			my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "SVE_SMV_LD"; ip++;
+			papi.s_name[ip] = "ASE_SVE_ST_MULTI_SPEC";
+			my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "SVE_SMV_ST"; ip++;
+			papi.s_name[ip] = "SVE_LD_GATHER_SPEC";
+			my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "GATHER_LD"; ip++;
+			papi.s_name[ip] = "SVE_ST_SCATTER_SPEC";
+			my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "SCATTER_ST"; ip++;
 			}
 		}
 	}
@@ -931,9 +931,24 @@ void PerfWatch::sortPapiCounterList (void)
 			jp++;
 
 		} else
+
+		double d_load_ins, d_store_ins;
+		double d_load_store, d_simd_load_store, d_xsimd_load_store;
+		double d_hit_LLC, d_miss_LLC;
+		double bandwidth;
     	if (hwpc_group.platform == "A64FX" ) {
+			ip = hwpc_group.index[I_bandwidth];
 			if (hwpc_group.i_platform == 21 ) {
-			;	// nothing fancy as of now... 2022/2/1
+				d_load_store = my_papi.accumu[ip] + my_papi.accumu[ip+1] ;	//	"LOAD_STORE_INSTRUCTIONS";
+				// total L2D miss counts = L2D_refill - L2D_hrf1 - L2D_hrf2
+				d_miss_L2 = my_papi.accumu[ip+2] - my_papi.accumu[ip+3] - my_papi.accumu[ip+4] ;
+				// total write back from L2 to memory = L2D_WB
+				d_wb_L2 = my_papi.accumu[ip+5];
+
+//
+// DEBUG from here .... 2020/02/05
+//
+
 			}
 		}
 
@@ -1248,11 +1263,11 @@ void PerfWatch::sortPapiCounterList (void)
 			}
 		}
 
+	//	DEBUG from here
 		//	else {
-		//		bandwidth = 0.0;
-		//		my_papi.s_sorted[jp] = "not.avail" ;
-		//		my_papi.v_sorted[jp] = bandwidth ;	//	* 1.0e-9;
-		//		jp++;
+		//		for SPARC64 and A64FX
+		//		Just output the raw HWPC data for now.
+		//		We will improve the output quality sometime future.
 		//	}
 	}
     	
