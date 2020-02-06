@@ -50,7 +50,7 @@ enum hwpc_output_group {
 	I_bandwidth,
 	I_cache,
 	I_cycle,
-	I_writeback,
+	I_loadstore,
 	Max_hwpc_output_group,
 };
 

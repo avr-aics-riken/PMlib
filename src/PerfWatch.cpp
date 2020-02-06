@@ -350,7 +350,7 @@ namespace pm_lib {
       is_unit=5;
     } else if (hwpc_group.number[I_cycle] > 0) {
       is_unit=6;
-    } else if (hwpc_group.number[I_writeback] > 0) {
+    } else if (hwpc_group.number[I_loadstore] > 0) {
       is_unit=7;
     } else if (m_typeCalc == 0) {
 		is_unit=0;

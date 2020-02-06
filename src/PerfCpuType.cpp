@@ -303,7 +303,7 @@ void PerfWatch::createPapiCounterList ()
 			s_chooser == "VECTOR" ||
 			s_chooser == "CACHE" ||
 			s_chooser == "CYCLE" ||
-			s_chooser == "WRITEBACK" ) {
+			s_chooser == "LOADSTORE" ) {
 			;
 		} else {
 			s_chooser = s_default;
@@ -576,62 +576,44 @@ void PerfWatch::createPapiCounterList ()
 			}
 		} else
 
-///////////////////////////////////////////////////////////
-// DEBUG from here
-///////////////////////////////////////////////////////////
 		if (hwpc_group.platform == "A64FX" ) {
 			if (hwpc_group.i_platform == 21 ) {
 
-	//	PAPI_FP_OPS =  vector OPS + scalar OPS
-	//		vector OPS = 4*FP_SCALE_OPS_SPEC
-	//		scalar OPS = FP_FIXED_OPS_SPEC
-	//		_SCALE_OPS_ shows floating point operations measured in some strange unit "4 (512/128)"
-	//	vector OPS = 4*FP_SCALE_OPS_SPEC = 4*FP_DP_SCALE_OPS_SPEC + 4*FP_SP_SCALE_OPS_SPEC
-	//		vector OPS = FMA vector OPS + non-FMA vector OPS
-	//		ratio of FMA vector v.s. non-FMA vector is not explicitly counted. so set some approximation.
-	//	scalar OPS = FP_FIXED_OPS_SPEC = FP_DP_FIXED_OPS_SPEC + FP_SP_FIXED_OPS_SPEC
-	//	x : #of_inst_vector_FMA_DP	//	16x : FMA f.p. ops in DP
-	//	y : #of_inst_vector_FMA_SP	//	32y : FMA f.p. ops in SP
-	//	vDP : Double Precision vector floating point operations
-	//	vSP : Single Precision vector floating point operations
-	//
-			// vDP = fops_vector_DP = 4*FP_DP_SCALE_OPS_SPEC	// formula-(1)
-			// vSP = fops_vector_SP = 4*FP_SP_SCALE_OPS_SPEC	// formula-(2)
-			// x + y = FMA_INS							// formula-(3)
-			// 16x/(16x+32y) = vDP /(vDP+vSP)			// formula-(4)
-			// x = 2vDP/(vSP+2vDP) * FMA_INS			// formula-(5)
-			// y = FMA_INS - x							// formula-(6)
-			// Formula-(4) is a quite rough approximation which has the same meaning as below:
-			// 16x/32y = fops_vector_DP/fops_vector_SP	// formula-(7)
-			// Formula-(4) is preferred since it avoids the zero divide condition caused by formula-(7)
-
-/*
-example1 on Fugaku.      Double Precision:                     Single Precision:
-Optimization level:      -O1         -O2         -Kfast        -O1         -O2         -Kfast
-            PAPI_FP_OPS  2000000000  2000000000  2000001000    2000000000  2016000000  2016000000
-            PAPI_FP_INS  2000000000  250000000   125001000     2000000000  126000000   63000000
-           PAPI_FMA_INS  0           0           125000000     0           0           63000000
-
-      FP_SCALE_OPS_SPEC  0           500000000   500000000     0           504000000   504000000
-      FP_FIXED_OPS_SPEC  2000000000  0           1000          2000000000  0           0
-   FP_DP_SCALE_OPS_SPEC  0           500000000   500000000     0           0           0
-   FP_DP_FIXED_OPS_SPEC  2000000000  0           1000          0           0           0
-   FP_SP_SCALE_OPS_SPEC  0           0           0             0           504000000   504000000
-   FP_SP_FIXED_OPS_SPEC  0           0           0             2000000000  0           0
-*/
-
 				hwpc_group.number[I_vector] += 5;
 				papi.s_name[ip] = "FP_DP_SCALE_OPS_SPEC";
-				my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "fp_vec_DP"; ip++;
-				papi.s_name[ip] = "FP_SP_SCALE_OPS_SPEC";
-				my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "fp_vec_SP"; ip++;
+				my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "DP_vec_fp"; ip++;
 				papi.s_name[ip] = "FP_DP_FIXED_OPS_SPEC";
-				my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "scalar_DP"; ip++;
+				my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "DP_scalar"; ip++;
+				papi.s_name[ip] = "FP_SP_SCALE_OPS_SPEC";
+				my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "SP_vec_fp"; ip++;
 				papi.s_name[ip] = "FP_SP_FIXED_OPS_SPEC";
-				my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "scalar_SP"; ip++;
+				my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "SP_scalar"; ip++;
 				papi.s_name[ip] = "PAPI_FMA_INS";
 				my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "FMA_inst"; ip++;
 
+			//	PAPI_FP_OPS =  vector OPS + scalar OPS
+			//		vector OPS = 4*FP_SCALE_OPS_SPEC
+			//		scalar OPS = FP_FIXED_OPS_SPEC
+			//		_SCALE_OPS_ shows floating point operations measured in some strange unit "4 (512/128)"
+			//	vector OPS = 4*FP_SCALE_OPS_SPEC = 4*FP_DP_SCALE_OPS_SPEC + 4*FP_SP_SCALE_OPS_SPEC
+			//		vector OPS = FMA vector OPS + non-FMA vector OPS
+			//		ratio of FMA vector v.s. non-FMA vector is not explicitly counted. so set some approximation.
+			//	scalar OPS = FP_FIXED_OPS_SPEC = FP_DP_FIXED_OPS_SPEC + FP_SP_FIXED_OPS_SPEC
+			//	x : #of_inst_vector_FMA_DP	//	16x : FMA f.p. ops in DP
+			//	y : #of_inst_vector_FMA_SP	//	32y : FMA f.p. ops in SP
+			//	vDP : Double Precision vector floating point operations
+			//	vSP : Single Precision vector floating point operations
+			//
+				// vDP = fops_vector_DP = 4*FP_DP_SCALE_OPS_SPEC	// formula-(1)
+				// vSP = fops_vector_SP = 4*FP_SP_SCALE_OPS_SPEC	// formula-(2)
+				// x + y = FMA_INS							// formula-(3)
+				// 16x/(16x+32y) = vDP /(vDP+vSP)			// formula-(4)
+				// x = 2vDP/(vSP+2vDP) * FMA_INS			// formula-(5)
+				// y = FMA_INS - x							// formula-(6)
+				// Formula-(4) is a quite rough approximation which has the same meaning as below:
+				// 16x/32y = fops_vector_DP/fops_vector_SP	// formula-(7)
+				// Formula-(4) is preferred since it avoids the zero divide condition caused by formula-(7)
+		
 			}
 		}
 
@@ -714,40 +696,38 @@ Optimization level:      -O1         -O2         -Kfast        -O1         -O2  
 	}
 
 	else
-// if (WRITEBACK)
-	if ( s_chooser.find( "WRITEBACK" ) != string::npos ) {
-		hwpc_group.index[I_writeback] = ip;
-		hwpc_group.number[I_writeback] = 0;
+// if (LOADSTORE)
+	if ( s_chooser.find( "LOADSTORE" ) != string::npos ) {
+		hwpc_group.index[I_loadstore] = ip;
+		hwpc_group.number[I_loadstore] = 0;
 
 		if (hwpc_group.platform == "Xeon" ) {
-			// WRITEBACK is a special option for memory writeback counting on Xeon processor
-			// WRITEBACK option is not available for SPARC since writeback is included in BANDWIDTH option
-
-			hwpc_group.number[I_writeback] = 2;
+			hwpc_group.number[I_loadstore] = +2;
 			papi.s_name[ip] = "LOAD_INS"; papi.events[ip] = PAPI_LD_INS; ip++;
 			papi.s_name[ip] = "STORE_INS"; papi.events[ip] = PAPI_SR_INS; ip++;
 
-			// memory write operation via writeback and streaming-store
-			// The related  events (WB and STRMS) have been deleted for Skylake, for unknown reason.
 			if (hwpc_group.i_platform >= 2 && hwpc_group.i_platform <= 4 ) {
-				hwpc_group.number[I_writeback] += 2;
+				// memory write operation via writeback and streaming-store for Sandybridge and Ivybridge
+				hwpc_group.number[I_loadstore] += 2;
 				papi.s_name[ip] = "OFFCORE_RESPONSE_0:WB:ANY_RESPONSE";
 					my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "WBACK_MEM"; ip++;
 				papi.s_name[ip] = "OFFCORE_RESPONSE_0:STRM_ST:L3_MISS:SNP_ANY";
 					my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "STRMS_MEM"; ip++;
+			} else {
+				// The writeback and streaming-store events (WB and STRMS) are deleted on Skylake, somehow...
 			}
 		} else
 
 		if (hwpc_group.platform == "SPARC64" ) {
 			if (hwpc_group.i_platform == 8 || hwpc_group.i_platform == 9 ) {
-				hwpc_group.number[I_writeback] += 2;
+				hwpc_group.number[I_loadstore] += 2;
 				papi.s_name[ip] = "LOAD_STORE_INSTRUCTIONS";
 					my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "LD+ST"; ip++;
 				papi.s_name[ip] = "SIMD_LOAD_STORE_INSTRUCTIONS";
 					my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "SIMDLD+ST"; ip++;
 			}
 			else if (hwpc_group.i_platform == 11 ) {
-				hwpc_group.number[I_writeback] += 2;
+				hwpc_group.number[I_loadstore] += 2;
 				papi.s_name[ip] = "LOAD_STORE_INSTRUCTIONS";
 					my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "LD+ST"; ip++;
 				papi.s_name[ip] = "XSIMD_LOAD_STORE_INSTRUCTIONS";
@@ -758,7 +738,7 @@ Optimization level:      -O1         -O2         -Kfast        -O1         -O2  
 
 		if (hwpc_group.platform == "A64FX" ) {
 			if (hwpc_group.i_platform == 21 ) {
-			hwpc_group.number[I_writeback] += 8;
+			hwpc_group.number[I_loadstore] += 8;
 			papi.s_name[ip] = "LOAD_INS"; papi.events[ip] = PAPI_LD_INS; ip++;
 			papi.s_name[ip] = "STORE_INS"; papi.events[ip] = PAPI_SR_INS; ip++;
 			papi.s_name[ip] = "ASE_SVE_LD_SPEC";
@@ -865,6 +845,7 @@ void PerfWatch::sortPapiCounterList (void)
 		double d_hit_L2, d_miss_L2;
 		double d_hit_LLC, d_miss_LLC;
 		double bandwidth;
+		double d_wb_L2;
 
 		counts = 0.0;
 		ip = hwpc_group.index[I_bandwidth];
@@ -932,10 +913,9 @@ void PerfWatch::sortPapiCounterList (void)
 
 		} else
 
-		double d_load_ins, d_store_ins;
-		double d_load_store, d_simd_load_store, d_xsimd_load_store;
-		double d_hit_LLC, d_miss_LLC;
-		double bandwidth;
+//
+// DEBUG from here .... 2020/02/05
+//
     	if (hwpc_group.platform == "A64FX" ) {
 			ip = hwpc_group.index[I_bandwidth];
 			if (hwpc_group.i_platform == 21 ) {
@@ -945,10 +925,12 @@ void PerfWatch::sortPapiCounterList (void)
 				// total write back from L2 to memory = L2D_WB
 				d_wb_L2 = my_papi.accumu[ip+5];
 
-//
-// DEBUG from here .... 2020/02/05
-//
-
+				// Fugaku has 256 Byte $ line
+				counts  = d_miss_L2 + d_wb_L2;
+				bandwidth = counts * 256.0 * perf_rate;
+				my_papi.s_sorted[jp] = "Mem [B/s]" ;
+				my_papi.v_sorted[jp] = bandwidth ; //* 1.0e-9;
+				jp++;
 			}
 		}
 
@@ -962,6 +944,9 @@ void PerfWatch::sortPapiCounterList (void)
 		double fp_total, fp_vector;
 		double vector_percent;
 		double fma_ins, fma_ins_DP, fma_ins_SP;
+		double fp_spv;
+		double fp_dpv;
+		double scale_ops=4.0;	// a magic number (512/128) for A64FX
 
 		vector_percent = 0.0;
 		fp_vector = 0.0;
@@ -1051,25 +1036,37 @@ void PerfWatch::sortPapiCounterList (void)
 			}
 
 		} else
+
     	if (hwpc_group.platform == "A64FX" ) {
 			ip = hwpc_group.index[I_vector];
 			if (hwpc_group.i_platform == 21 ) {
-				fp_dp4  = my_papi.accumu[ip] ;
-				fp_sp4  = my_papi.accumu[ip+1] ;
-				fp_dp1  = my_papi.accumu[ip+2] ;
+				fp_dpv  = my_papi.accumu[ip] ;
+				fp_dp1  = my_papi.accumu[ip+1] ;
+				fp_spv  = my_papi.accumu[ip+2] ;
 				fp_sp1  = my_papi.accumu[ip+3] ;
 				fma_ins  = my_papi.accumu[ip+4] ;
-				fp_vector = (                  4.0*fp_dp4 + 4.0*fp_sp4 );
-				fp_total  = (fp_dp1 + fp_sp1 + 4.0*fp_dp4 + 4.0*fp_sp4 );
+				fp_vector = (                  scale_ops*fp_dpv + scale_ops*fp_spv );
+				fp_total  = (fp_dp1 + fp_sp1 + scale_ops*fp_dpv + scale_ops*fp_spv );
+				vector_percent = fp_vector/fp_total;
 				;
 				// x = 2vDP/(vSP+2vDP) * FMA_INS // formula-(5) #of_inst_vector_FMA_DP. 16x == FMA f.p. ops in DP
 				// y = FMA_INS - x               // formula-(6) #of_inst_vector_FMA_SP. 32y == FMA f.p. ops in SP
-				fma_ins_DP = 2.0*4.0*fp_dp4 / (4.0*fp_sp4 + 2.0*4.0*fp_dp4) * fma_ins;
+
+//
+// DEBUG from here .... 2020/02/06
+//
+				if ( fp_vector > 0.0 ) {
+				fma_ins_DP = 2.0*scale_ops*fp_dp4 / (scale_ops*fp_sp4 + 2.0*scale_ops*fp_dp4) * fma_ins;
 				fma_ins_SP = fma_ins - fma_ins_DP;
-				my_papi.s_sorted[jp] = "fp_FMA_DP" ;
+				} else {
+				fma_ins_DP = 2.0*fp_dp1 / (fp_sp1 + 2.0*fp_dp1) * fma_ins;
+				fma_ins_SP = fma_ins - fma_ins_DP;
+				}
+
+				my_papi.s_sorted[jp] = "DP_FMA_fp" ;
 				my_papi.v_sorted[jp] = fma_ins_DP * 16;
 				jp++;
-				my_papi.s_sorted[jp] = "fp_FMA_SP" ;
+				my_papi.s_sorted[jp] = "SP_FMA_fp" ;
 				my_papi.v_sorted[jp] = fma_ins_SP * 32;
 				jp++;
 			}
@@ -1233,40 +1230,39 @@ void PerfWatch::sortPapiCounterList (void)
 	}
 
 	else
-// if (WRITEBACK)
+// if (LOADSTORE)
 
-	if ( hwpc_group.number[I_writeback] > 0 ) {
+	if ( hwpc_group.number[I_loadstore] > 0 ) {
 		double d_load_ins, d_store_ins;
 		double d_writeback_MEM, d_streaming_MEM;
 		double bandwidth;
 		counts = 0.0;
-		ip = hwpc_group.index[I_writeback];
+		ip = hwpc_group.index[I_loadstore];
 		jp=0;
-		for(int i=0; i<hwpc_group.number[I_writeback]; i++)
+		for(int i=0; i<hwpc_group.number[I_loadstore]; i++)
 		{
 			my_papi.s_sorted[jp] = my_papi.s_name[ip] ;
 			counts += my_papi.v_sorted[jp] = my_papi.accumu[ip] ;
 			ip++;jp++;
 		}
 
-		// WRITEBACK and STREAMING STORE event options are supported on Intel Xeon Sandybridge and Ivybridge
-		// These event counters (WB and STRMS) have been deleted on Skylake, for some reason.
     	if (hwpc_group.platform == "Xeon" ) {
 			if (hwpc_group.i_platform >= 2 && hwpc_group.i_platform <= 4 ) {
-				ip = hwpc_group.index[I_writeback];
+				// memory write operation via writeback and streaming-store for Sandybridge and Ivybridge
+				ip = hwpc_group.index[I_loadstore];
 				d_writeback_MEM = my_papi.accumu[ip+2] ;	//	OFFCORE_RESPONSE_0:WB:ANY_RESPONSE
 				d_streaming_MEM = my_papi.accumu[ip+3] ;	//	OFFCORE_RESPONSE_0:STRM_ST:L3_MISS:SNP_ANY
 				bandwidth = (d_writeback_MEM + d_streaming_MEM) * 64.0 * perf_rate;	// Memory write bandwidth
 				my_papi.s_sorted[jp] = "Mem [B/s]" ;
 				my_papi.v_sorted[jp] = bandwidth ;	//	* 1.0e-9;
 				jp++;
+			} else {
+				// The writeback and streaming-store events (WB and STRMS) are deleted on Skylake, somehow...
 			}
 		}
 
-	//	DEBUG from here
 		//	else {
-		//		for SPARC64 and A64FX
-		//		Just output the raw HWPC data for now.
+		//		For SPARC64 and A64FX, just output the raw HWPC data for now.
 		//		We will improve the output quality sometime future.
 		//	}
 	}
@@ -1415,81 +1411,79 @@ void PerfWatch::outputPapiCounterLegend (FILE* fp)
 	fprintf(fp, "\n");
 
 // FLOPS
-	fprintf(fp, "\tHWPC_CHOOSER=FLOPS:\n");
+	fprintf(fp, "\t HWPC_CHOOSER=FLOPS:\n");
 	if (hwpc_group.platform == "Xeon" ) {
 		if (hwpc_group.i_platform != 3 ) {
-	fprintf(fp, "\t\tSP_OPS:    single precision floating point operations\n");
-	fprintf(fp, "\t\tDP_OPS:    double precision floating point operations\n");
-	fprintf(fp, "\t\t[Flops]:   combined floating point operations per second \n");
+	fprintf(fp, "\t\t SP_OPS:    single precision floating point operations\n");
+	fprintf(fp, "\t\t DP_OPS:    double precision floating point operations\n");
+	fprintf(fp, "\t\t [Flops]:   combined floating point operations per second \n");
 		} else {
-	fprintf(fp, "\t\t* Haswell processor does not have floating point operation counters,\n");
-	fprintf(fp, "\t\t* so PMlib does not produce HWPC report for FLOPS and VECTOR groups.\n");
+	fprintf(fp, "\t\t * Haswell processor does not have floating point operation counters,\n");
+	fprintf(fp, "\t\t * so PMlib does not produce HWPC report for FLOPS and VECTOR groups.\n");
 		}
 	} else
 
 	if (hwpc_group.platform == "SPARC64" ) {
-	fprintf(fp, "\t\tFP_OPS:    floating point operations\n");
-	fprintf(fp, "\t\t[Flops]:   floating point operations per second \n");
+	fprintf(fp, "\t\t FP_OPS:    floating point operations\n");
+	fprintf(fp, "\t\t [Flops]:   floating point operations per second \n");
 	} else
 
 	if (hwpc_group.platform == "A64FX" ) {
-	fprintf(fp, "\t\tSP_OPS:    single precision floating point operations\n");
-	fprintf(fp, "\t\tDP_OPS:    double precision floating point operations\n");
-	fprintf(fp, "\t\t[Flops]:   combined floating point operations per second \n");
+	fprintf(fp, "\t\t SP_OPS:    single precision floating point operations\n");
+	fprintf(fp, "\t\t DP_OPS:    double precision floating point operations\n");
+	fprintf(fp, "\t\t [Flops]:   combined floating point operations per second \n");
 	}
 
 // BANDWIDTH
-	fprintf(fp, "\tHWPC_CHOOSER=BANDWIDTH:\n");
+	fprintf(fp, "\t HWPC_CHOOSER=BANDWIDTH:\n");
 	if (hwpc_group.platform == "Xeon" ) {
-	fprintf(fp, "\t\tLOAD_INS:  memory load instructions\n");
-	fprintf(fp, "\t\tSTORE_INS: memory store instructions\n");
-	fprintf(fp, "\t\tL2_RD_HIT: L2 cache data read hit \n");
-	fprintf(fp, "\t\tL2_PF_HIT: L2 cache data prefetch hit \n");
-	fprintf(fp, "\t\tL3_HIT:    Last Level Cache data read hit \n");
-	fprintf(fp, "\t\tL3_MISS:   Last Level Cache data read miss \n");
-	fprintf(fp, "\t\t[L2$ B/s]: L2 cache working bandwidth responding to demand read and prefetch\n");
-	fprintf(fp, "\t\t[L3$ B/s]: Last Level Cache bandwidth responding to demand read and prefetch\n");
-	fprintf(fp, "\t\t[Mem B/s]: Memory read bandwidth responding to demand read and prefetch\n");
+	fprintf(fp, "\t\t LOAD_INS:  memory load instructions\n");
+	fprintf(fp, "\t\t STORE_INS: memory store instructions\n");
+	fprintf(fp, "\t\t L2_RD_HIT: L2 cache data read hit \n");
+	fprintf(fp, "\t\t L2_PF_HIT: L2 cache data prefetch hit \n");
+	fprintf(fp, "\t\t L3_HIT:    Last Level Cache data read hit \n");
+	fprintf(fp, "\t\t L3_MISS:   Last Level Cache data read miss \n");
+	fprintf(fp, "\t\t [L2$ B/s]: L2 cache working bandwidth responding to demand read and prefetch\n");
+	fprintf(fp, "\t\t [L3$ B/s]: Last Level Cache bandwidth responding to demand read and prefetch\n");
+	fprintf(fp, "\t\t [Mem B/s]: Memory read bandwidth responding to demand read and prefetch\n");
 	fprintf(fp, "\t\t         : The write bandwidth must be measured separately. See Remarks.\n");
 	} else
 
 	if (hwpc_group.platform == "SPARC64" ) {
-	fprintf(fp, "\t\tLD+ST:     memory load/store instructions\n");
-	fprintf(fp, "\t\tXSIMDLD+ST: memory load/store extended SIMD instructions\n");
-	fprintf(fp, "\t\tL2_MISS_DM: L2 cache misses by demand request\n");
-	fprintf(fp, "\t\tL2_MISS_PF: L2 cache misses by prefetch request\n");
-	fprintf(fp, "\t\tL2_WB_DM:  writeback by demand L2 cache misses \n");
-	fprintf(fp, "\t\tL2_WB_PF:  writeback by prefetch L2 cache misses \n");
-	fprintf(fp, "\t\t[Mem B/s]: Memory bandwidth responding to demand read, prefetch and writeback reaching memory\n");
+	fprintf(fp, "\t\t LD+ST:     memory load/store instructions\n");
+	fprintf(fp, "\t\t XSIMDLD+ST: memory load/store extended SIMD instructions\n");
+	fprintf(fp, "\t\t L2_MISS_DM: L2 cache misses by demand request\n");
+	fprintf(fp, "\t\t L2_MISS_PF: L2 cache misses by prefetch request\n");
+	fprintf(fp, "\t\t L2_WB_DM:  writeback by demand L2 cache misses \n");
+	fprintf(fp, "\t\t L2_WB_PF:  writeback by prefetch L2 cache misses \n");
+	fprintf(fp, "\t\t [Mem B/s]: Memory bandwidth responding to demand read, prefetch and writeback reaching memory\n");
 	} else
 
 	if (hwpc_group.platform == "A64FX" ) {
-	fprintf(fp, "\t\tLOAD_INS:  memory load instructions\n");
-	fprintf(fp, "\t\tSTORE_INS: memory store instructions\n");
-	fprintf(fp, "\t\tSVE_LOAD:  memory read by SVE and Advanced SIMD load instructions.\n");
-	fprintf(fp, "\t\tSVE_STORE: memory write by SVE and Advanced SIMD store instructions.\n");
-	fprintf(fp, "\t\tSVE_SMV_LD:memory read by SVE and Advanced SIMD multiple vector contiguous structure load instructions.\n");
-	fprintf(fp, "\t\tSVE_SMV_ST:memory write by SVE and Advanced SIMD multiple vector contiguous structure store instructions.\n");
-	fprintf(fp, "\t\tGATHER_LD: memory read by SVE non-contiguous gather-load instructions.\n");
-	fprintf(fp, "\t\tSCATTER_ST:memory write by SVE non-contiguous scatter-store instructions.\n");
+	fprintf(fp, "\t\t LOAD_INS:  memory load instructions\n");
+	fprintf(fp, "\t\t STORE_INS: memory store instructions\n");
+	fprintf(fp, "\t\t L2D_refill:	L2 cache refill events\n");
+	fprintf(fp, "\t\t L2D_hrf1:	L2 demand access counts hitting refill buffer (allocated by prefetch)\n");
+	fprintf(fp, "\t\t L2D_hrf2:	L2 prefetch counts hitting refill buffer (allocated by demand access)\n");
+	fprintf(fp, "\t\t L2D_WB:	L2 writeback counts reaching memory\n");
+	fprintf(fp, "\t\t [Mem B/s]:	Memory bandwidth responding to demand read, prefetch and writeback\n");
 	}
 
-
 // VECTOR
-	fprintf(fp, "\tHWPC_CHOOSER=VECTOR:\n");
+	fprintf(fp, "\t HWPC_CHOOSER=VECTOR:\n");
 	if (hwpc_group.platform == "Xeon" ) {
 		if (hwpc_group.i_platform != 3 ) {
-	fprintf(fp, "\t\tSP_SINGLE: single precision f.p. scalar instructions\n");
-	fprintf(fp, "\t\tSP_SSE:    single precision f.p. SSE instructions\n");
-	fprintf(fp, "\t\tSP_AVX:    single precision f.p. 256-bit AVX instructions\n");
-	fprintf(fp, "\t\tSP_AVXW:   single precision f.p. 512-bit AVX instructions\n");
-	fprintf(fp, "\t\tDP_SINGLE: double precision f.p. scalar instructions\n");
-	fprintf(fp, "\t\tDP_SSE:    double precision f.p. SSE instructions\n");
-	fprintf(fp, "\t\tDP_AVX:    double precision f.p. 256-bit AVX instructions\n");
-	fprintf(fp, "\t\tDP_AVXW:   double precision f.p. 512-bit AVX instructions\n");
-	fprintf(fp, "\t\t[Total_FPs]: floating point operations as the sum of instructions*width \n");
-	fprintf(fp, "\t\t[Flops]:    floating point operations per second \n");
-	fprintf(fp, "\t\t[Vector %]: percentage of vectorized f.p. operations\n");
+	fprintf(fp, "\t\t SP_SINGLE: single precision f.p. scalar instructions\n");
+	fprintf(fp, "\t\t SP_SSE:    single precision f.p. SSE instructions\n");
+	fprintf(fp, "\t\t SP_AVX:    single precision f.p. 256-bit AVX instructions\n");
+	fprintf(fp, "\t\t SP_AVXW:   single precision f.p. 512-bit AVX instructions\n");
+	fprintf(fp, "\t\t DP_SINGLE: double precision f.p. scalar instructions\n");
+	fprintf(fp, "\t\t DP_SSE:    double precision f.p. SSE instructions\n");
+	fprintf(fp, "\t\t DP_AVX:    double precision f.p. 256-bit AVX instructions\n");
+	fprintf(fp, "\t\t DP_AVXW:   double precision f.p. 512-bit AVX instructions\n");
+	fprintf(fp, "\t\t [Total_FPs]: floating point operations as the sum of instructions*width \n");
+	fprintf(fp, "\t\t [Flops]:    floating point operations per second \n");
+	fprintf(fp, "\t\t [Vector %]: percentage of vectorized f.p. operations\n");
 		} else {
 	fprintf(fp, "\t\t Haswell processor does not have floating point operation counters,\n");
 	fprintf(fp, "\t\t so PMlib does not produce full HWPC report for FLOPS and VECTOR groups.\n");
@@ -1498,100 +1492,124 @@ void PerfWatch::outputPapiCounterLegend (FILE* fp)
 
 	if (hwpc_group.platform == "SPARC64" ) {
 		if (hwpc_group.i_platform == 8 || hwpc_group.i_platform == 9 ) {
-	fprintf(fp, "\t\tFP_INS:    f.p. instructions\n");
-	fprintf(fp, "\t\tFMA_INS:   FMA instructions\n");
-	fprintf(fp, "\t\tSIMD_FP:   SIMD f.p. instructions\n");
-	fprintf(fp, "\t\tSIMD_FMA:  SIMD FMA instructions\n");
+	fprintf(fp, "\t\t FP_INS:    f.p. instructions\n");
+	fprintf(fp, "\t\t FMA_INS:   FMA instructions\n");
+	fprintf(fp, "\t\t SIMD_FP:   SIMD f.p. instructions\n");
+	fprintf(fp, "\t\t SIMD_FMA:  SIMD FMA instructions\n");
 		}
 		if (hwpc_group.i_platform == 11 ) {
-	fprintf(fp, "\t\t1FP_INS:   1 f.p. op instructions\n");
-	fprintf(fp, "\t\t2FP_INS:   2 f.p. ops instructions\n");
-	fprintf(fp, "\t\t4FP_INS:   4 f.p. ops instructions\n");
-	fprintf(fp, "\t\t8FP_INS:   8 f.p. ops instructions\n");
-	fprintf(fp, "\t\t16FP_INS: 16 f.p. ops instructions\n");
+	fprintf(fp, "\t\t 1FP_INS:   1 f.p. op instructions\n");
+	fprintf(fp, "\t\t 2FP_INS:   2 f.p. ops instructions\n");
+	fprintf(fp, "\t\t 4FP_INS:   4 f.p. ops instructions\n");
+	fprintf(fp, "\t\t 8FP_INS:   8 f.p. ops instructions\n");
+	fprintf(fp, "\t\t 16FP_INS: 16 f.p. ops instructions\n");
 		}
-	fprintf(fp, "\t\t[Total_FPs]: floating point operations as the sum of instructions*width \n");
-	fprintf(fp, "\t\t[Flops]:    floating point operations per second \n");
-	fprintf(fp, "\t\t[Vector %]: percentage of vectorized f.p. operations\n");
+	fprintf(fp, "\t\t [Total_FPs]: floating point operations as the sum of instructions*width \n");
+	fprintf(fp, "\t\t [Flops]:    floating point operations per second \n");
+	fprintf(fp, "\t\t [Vector %]: percentage of vectorized f.p. operations\n");
 	} else
 
 	if (hwpc_group.platform == "A64FX" ) {
-	fprintf(fp, "\t\t fp_vec_DP: double precision f.p. ops by SVE/SIMD instructions\n");
-	fprintf(fp, "\t\t fp_vec_SP: single precision f.p. ops by SVE/SIMD instructions\n");
-	fprintf(fp, "\t\t scalar_DP: double precision f.p. ops by scalar instructions\n");
-	fprintf(fp, "\t\t scalar_SP: single precision f.p. ops by scalar instructions\n");
+	fprintf(fp, "\t\t DP_vec_fp: double precision f.p. ops by SVE/SIMD instructions\n");
+	fprintf(fp, "\t\t DP_scalar: double precision f.p. ops by scalar instructions\n");
+	fprintf(fp, "\t\t SP_vec_fp: single precision f.p. ops by SVE/SIMD instructions\n");
+	fprintf(fp, "\t\t SP_scalar: single precision f.p. ops by scalar instructions\n");
 	fprintf(fp, "\t\t FMA_inst: fused multiply+add instructions\n");
-	fprintf(fp, "\t\t fp_FMA_DP: double precision f.p. ops by FMA instructions\n");
-	fprintf(fp, "\t\t fp_FMA_SP: single precision f.p. ops by FMA instructions\n");
-	fprintf(fp, "\t\t note that FMA DP/SP ratio is approximated using fp_vec_DP/fp_vec_SP \n");
+	fprintf(fp, "\t\t DP_FMA_fp: double precision f.p. ops by FMA instructions\n");
+	fprintf(fp, "\t\t SP_FMA_fp: single precision f.p. ops by FMA instructions\n");
+	fprintf(fp, "\t\t note that FMA DP/SP ratio is approximated using DP_vec_fp/SP_vec_fp \n");
 	}
 
 // CACHE
-	fprintf(fp, "\tHWPC_CHOOSER=CACHE:\n");
+	fprintf(fp, "\t HWPC_CHOOSER=CACHE:\n");
 	if (hwpc_group.platform == "Xeon" ) {
-	fprintf(fp, "\t\tLOAD_INS:  memory load instructions\n");
-	fprintf(fp, "\t\tSTORE_INS: memory store instructions\n");
-	fprintf(fp, "\t\tL1_HIT:    L1 data cache hits\n");
-	fprintf(fp, "\t\tLFB_HIT:   Cache Line Fill Buffer hits\n");
-	fprintf(fp, "\t\tL1_TCM:    L1 data cache activities leading to line replacements\n");
-	fprintf(fp, "\t\tL2_TCM:    L2 cache demand access misses\n");
-	//	fprintf(fp, "\t\tL3_TCM: level 3 total cache misses by demand\n");
-	fprintf(fp, "\t\t[L1$ hit%]: data access hit(%) in L1 data cache and Line Fill Buffer\n");
+	fprintf(fp, "\t\t LOAD_INS:  memory load instructions\n");
+	fprintf(fp, "\t\t STORE_INS: memory store instructions\n");
+	fprintf(fp, "\t\t L1_HIT:    L1 data cache hits\n");
+	fprintf(fp, "\t\t LFB_HIT:   Cache Line Fill Buffer hits\n");
+	fprintf(fp, "\t\t L1_TCM:    L1 data cache activities leading to line replacements\n");
+	fprintf(fp, "\t\t L2_TCM:    L2 cache demand access misses\n");
+	//	fprintf(fp, "\t\t L3_TCM: level 3 total cache misses by demand\n");
+	fprintf(fp, "\t\t [L1$ hit%]: data access hit(%) in L1 data cache and Line Fill Buffer\n");
 	} else
 
 	if (hwpc_group.platform == "SPARC64" ) {
-	fprintf(fp, "\t\tLD+ST:     memory load/store instructions\n");
-	fprintf(fp, "\t\t2SIMD:LDST: memory load/store SIMD instructions(2SIMD)\n");
-	fprintf(fp, "\t\t4SIMD:LDST: memory load/store extended SIMD instructions(4SIMD)\n");
-	fprintf(fp, "\t\tL1_TCM:    L1 cache misses (by demand and by prefetch)\n");
-	fprintf(fp, "\t\tL2_TCM:    L2 cache misses (by demand and by prefetch)\n");
-	fprintf(fp, "\t\t[L1$ hit%]: data access hit(%) in L1 cache \n");
+	fprintf(fp, "\t\t LD+ST:     memory load/store instructions\n");
+	fprintf(fp, "\t\t 2SIMD:LDST: memory load/store SIMD instructions(2SIMD)\n");
+	fprintf(fp, "\t\t 4SIMD:LDST: memory load/store extended SIMD instructions(4SIMD)\n");
+	fprintf(fp, "\t\t L1_TCM:    L1 cache misses (by demand and by prefetch)\n");
+	fprintf(fp, "\t\t L2_TCM:    L2 cache misses (by demand and by prefetch)\n");
+	fprintf(fp, "\t\t [L1$ hit%]: data access hit(%) in L1 cache \n");
 	} else
 
 	if (hwpc_group.platform == "A64FX" ) {
-	fprintf(fp, "\t\tLOAD_INS:  memory load instructions\n");
-	fprintf(fp, "\t\tSTORE_INS: memory store instructions\n");
-	fprintf(fp, "\t\tL1_HIT:    L1 data cache hits\n");
-	fprintf(fp, "\t\tL1_TCM:    L1 data cache misses\n");
-	fprintf(fp, "\t\tL2_TCM:    L2 cache misses\n");
-	fprintf(fp, "\t\t[L1$ hit%]: data access hit(%) in L1 cache \n");
+	fprintf(fp, "\t\t LOAD_INS:  memory load instructions\n");
+	fprintf(fp, "\t\t STORE_INS: memory store instructions\n");
+	fprintf(fp, "\t\t L1_HIT:    L1 data cache hits\n");
+	fprintf(fp, "\t\t L1_TCM:    L1 data cache misses\n");
+	fprintf(fp, "\t\t L2_TCM:    L2 cache misses\n");
+	fprintf(fp, "\t\t [L1$ hit%]: data access hit(%) in L1 cache \n");
 	}
 
-	fprintf(fp, "\t\t[L2$ hit%]: data access hit(%) in L2 cache\n");
-	fprintf(fp, "\t\t[L1L2hit%]: sum of hit(%) in L1 and L2 cache\n");
+	fprintf(fp, "\t\t [L2$ hit%]: data access hit(%) in L2 cache\n");
+	fprintf(fp, "\t\t [L1L2hit%]: sum of hit(%) in L1 and L2 cache\n");
 
-// WRITEBACK
+// LOADSTORE
+	fprintf(fp, "\t HWPC_CHOOSER=LOADSTORE:\n");
 	if (hwpc_group.platform == "Xeon" ) {
-	fprintf(fp, "\tHWPC_CHOOSER=WRITEBACK:\n");
-	fprintf(fp, "\t\tThis option is only available for Sandybridge and Ivybridge\n");
-	fprintf(fp, "\t\tWBACK_MEM:   memory write via writeback store\n");
-	fprintf(fp, "\t\tSTRMS_MEM:   memory write via streaming store (nontemporal store)\n");
-	fprintf(fp, "\t\t[Mem B/s]: Memory write bandwidth responding to writeback and streaming-stores\n");
+	fprintf(fp, "\t\t LOAD_INS:  memory load instructions\n");
+	fprintf(fp, "\t\t STORE_INS: memory store instructions\n");
+	fprintf(fp, "\t\t following data is only available for Sandybridge and Ivybridge\n");
+	fprintf(fp, "\t\t WBACK_MEM:   memory write via writeback store\n");
+	fprintf(fp, "\t\t STRMS_MEM:   memory write via streaming store (nontemporal store)\n");
+	fprintf(fp, "\t\t [Mem B/s]: Memory write bandwidth responding to writeback and streaming-stores\n");
+	} else
+
+	if (hwpc_group.platform == "SPARC64" ) {
+		if (hwpc_group.i_platform == 8 || hwpc_group.i_platform == 9 ) {
+	fprintf(fp, "\t\t LD+ST:     memory load/store instructions\n");
+	fprintf(fp, "\t\t SIMD:LDST: memory load/store SIMD instructions(2SIMD)\n");
+		}
+		if (hwpc_group.i_platform == 11 ) {
+	fprintf(fp, "\t\t LD+ST:     memory load/store instructions\n");
+	fprintf(fp, "\t\t XSIMD:LDST: memory load/store extended SIMD instructions(4SIMD)\n");
+		}
+	} else
+
+	if (hwpc_group.platform == "A64FX" ) {
+	fprintf(fp, "\t\t LOAD_INS:  memory load instructions\n");
+	fprintf(fp, "\t\t STORE_INS: memory store instructions\n");
+	fprintf(fp, "\t\t SVE_LOAD:  memory read by SVE and Advanced SIMD load instructions.\n");
+	fprintf(fp, "\t\t SVE_STORE: memory write by SVE and Advanced SIMD store instructions.\n");
+	fprintf(fp, "\t\t SVE_SMV_LD:memory read by SVE and Advanced SIMD multiple vector contiguous structure load instructions.\n");
+	fprintf(fp, "\t\t SVE_SMV_ST:memory write by SVE and Advanced SIMD multiple vector contiguous structure store instructions.\n");
+	fprintf(fp, "\t\t GATHER_LD: memory read by SVE non-contiguous gather-load instructions.\n");
+	fprintf(fp, "\t\t SCATTER_ST:memory write by SVE non-contiguous scatter-store instructions.\n");
 	}
 
 // CYCLES
-	fprintf(fp, "\tHWPC_CHOOSER=CYCLE:\n");
-	fprintf(fp, "\t\tTOT_CYC:   total cycles\n");
-	fprintf(fp, "\t\tTOT_INS:   total instructions\n");
-	fprintf(fp, "\t\t[Ins/cyc]: performed instructions per machine clock cycle\n");
+	fprintf(fp, "\t HWPC_CHOOSER=CYCLE:\n");
+	fprintf(fp, "\t\t TOT_CYC:   total cycles\n");
+	fprintf(fp, "\t\t TOT_INS:   total instructions\n");
+	fprintf(fp, "\t\t [Ins/cyc]: performed instructions per machine clock cycle\n");
 
 // remarks
 	fprintf(fp, "\n");
-	fprintf(fp, "\tRemarks.\n");
+	fprintf(fp, "\t Remarks.\n");
 	fprintf(fp, "\t\t Symbols represent HWPC (hardware performance counter) native and derived events\n");
 	fprintf(fp, "\t\t Symbols in [] such as [Ins/cyc] are calculated statistics in shown unit.\n");
 
 	if (hwpc_group.platform == "Xeon" ) {
-	fprintf(fp, "\tSpecial remark for Intel Xeon memory bandwidth.\n");
+	fprintf(fp, "\t Special remark for Intel Xeon memory bandwidth.\n");
 	fprintf(fp, "\t\t The memory bandwidth (BW) is based on uncore events, not on memory controller information.\n");
 	fprintf(fp, "\t\t The read BW and the write BW must be obtained separately, unfortunately.\n");
 	fprintf(fp, "\t\t Use HWPC_CHOOSER=BANDWIDTH to report the read BW responding to demand read and prefetch,\n");
-	fprintf(fp, "\t\t and HWPC_CHOOSER=WRITEBACK for the write BW responding to writeback and streaming-stores.\n");
+	fprintf(fp, "\t\t and HWPC_CHOOSER=LOADSTORE for the write BW responding to writeback and streaming-stores.\n");
 	fprintf(fp, "\t\t The symbols L3 cache and LLC both refer to the same Last Level Cache.\n");
 	}
 
 	if (hwpc_group.platform == "SPARC64" ) {
-	fprintf(fp, "\tSpecial remarks for SPARC64*fx memory bandwidth.\n");
+	fprintf(fp, "\t Special remarks for SPARC64*fx memory bandwidth.\n");
 	fprintf(fp, "\t\t The memory bandwidth is based on L2 cache events, not on memory controller information, \n");
 	fprintf(fp, "\t\t and is calculated as the sum of demand read miss, prefetch miss and writeback reaching memory.\n");
 	}
