@@ -108,7 +108,7 @@ namespace pm_lib {
 			env_str_hwpc = "USER";
     } else {
 		s = cp_env;
-    	if	(s == "FLOPS" || s == "BANDWIDTH" || s == "VECTOR" || s == "CACHE" || s == "CYCLE" || s == "WRITEBACK" ) {
+    	if	(s == "FLOPS" || s == "BANDWIDTH" || s == "VECTOR" || s == "CACHE" || s == "CYCLE" || s == "LOADSTORE" ) {
 			env_str_hwpc = s;
     	} else {
 			printDiag("initialize()",  "HWPC_CHOOSER value [%s] is not valid. User API values will be reported.\n", cp_env);

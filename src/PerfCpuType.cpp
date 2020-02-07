@@ -581,43 +581,21 @@ void PerfWatch::createPapiCounterList ()
 
 				hwpc_group.number[I_vector] += 5;
 				papi.s_name[ip] = "FP_DP_SCALE_OPS_SPEC";
-				my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "DP_vec_fp"; ip++;
+				my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "DP_SVE_ops"; ip++;
 				papi.s_name[ip] = "FP_DP_FIXED_OPS_SPEC";
-				my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "DP_scalar"; ip++;
+				my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "DP_FIX_ops"; ip++;
 				papi.s_name[ip] = "FP_SP_SCALE_OPS_SPEC";
-				my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "SP_vec_fp"; ip++;
+				my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "SP_SVE_ops"; ip++;
 				papi.s_name[ip] = "FP_SP_FIXED_OPS_SPEC";
-				my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "SP_scalar"; ip++;
+				my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "SP_FIX_ops"; ip++;
 				papi.s_name[ip] = "PAPI_FMA_INS";
 				my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "FMA_inst"; ip++;
-
-			//	PAPI_FP_OPS =  vector OPS + scalar OPS
-			//		vector OPS = 4*FP_SCALE_OPS_SPEC
-			//		scalar OPS = FP_FIXED_OPS_SPEC
-			//		_SCALE_OPS_ shows floating point operations measured in some strange unit "4 (512/128)"
-			//	vector OPS = 4*FP_SCALE_OPS_SPEC = 4*FP_DP_SCALE_OPS_SPEC + 4*FP_SP_SCALE_OPS_SPEC
-			//		vector OPS = FMA vector OPS + non-FMA vector OPS
-			//		ratio of FMA vector v.s. non-FMA vector is not explicitly counted. so set some approximation.
-			//	scalar OPS = FP_FIXED_OPS_SPEC = FP_DP_FIXED_OPS_SPEC + FP_SP_FIXED_OPS_SPEC
-			//	x : #of_inst_vector_FMA_DP	//	16x : FMA f.p. ops in DP
-			//	y : #of_inst_vector_FMA_SP	//	32y : FMA f.p. ops in SP
-			//	vDP : Double Precision vector floating point operations
-			//	vSP : Single Precision vector floating point operations
-			//
-				// vDP = fops_vector_DP = 4*FP_DP_SCALE_OPS_SPEC	// formula-(1)
-				// vSP = fops_vector_SP = 4*FP_SP_SCALE_OPS_SPEC	// formula-(2)
-				// x + y = FMA_INS							// formula-(3)
-				// 16x/(16x+32y) = vDP /(vDP+vSP)			// formula-(4)
-				// x = 2vDP/(vSP+2vDP) * FMA_INS			// formula-(5)
-				// y = FMA_INS - x							// formula-(6)
-				// Formula-(4) is a quite rough approximation which has the same meaning as below:
-				// 16x/32y = fops_vector_DP/fops_vector_SP	// formula-(7)
-				// Formula-(4) is preferred since it avoids the zero divide condition caused by formula-(7)
 		
 			}
 		}
 
 	}
+
 
 	else
 // if (CACHE)
@@ -913,9 +891,6 @@ void PerfWatch::sortPapiCounterList (void)
 
 		} else
 
-//
-// DEBUG from here .... 2020/02/05
-//
     	if (hwpc_group.platform == "A64FX" ) {
 			ip = hwpc_group.index[I_bandwidth];
 			if (hwpc_group.i_platform == 21 ) {
@@ -943,10 +918,9 @@ void PerfWatch::sortPapiCounterList (void)
 		double fp_dp1, fp_dp2, fp_dp4, fp_dp8, fp_dp16;
 		double fp_total, fp_vector;
 		double vector_percent;
-		double fma_ins, fma_ins_DP, fma_ins_SP;
-		double fp_spv;
-		double fp_dpv;
 		double scale_ops=4.0;	// a magic number (512/128) for A64FX
+		double fma_ins, fp_spv, fp_dpv;
+
 
 		vector_percent = 0.0;
 		fp_vector = 0.0;
@@ -1040,34 +1014,55 @@ void PerfWatch::sortPapiCounterList (void)
     	if (hwpc_group.platform == "A64FX" ) {
 			ip = hwpc_group.index[I_vector];
 			if (hwpc_group.i_platform == 21 ) {
+
+			//	total OPS =  vector OPS + scalar OPS = PAPI_FP_OPS
+			//		vector OPS = operations by SVE instructions = vector DP ops + vector SP ops
+			//		scalar OPS = operations by scalar and armv8simd instructions = scalar DP ops + scalar SP ops
+			//
+			//	vector OPS = 4*FP_SCALE_OPS_SPEC = 4*FP_DP_SCALE_OPS_SPEC + 4*FP_SP_SCALE_OPS_SPEC
+			//	scalar OPS = FP_FIXED_OPS_SPEC = FP_DP_FIXED_OPS_SPEC + FP_SP_FIXED_OPS_SPEC
+			//	The number "4" in the above formula has the special meaning in arm SVE context.
+			//
+			//	The OPS can also be grouped into FMA and non-FMA ops.
+			//		vector OPS = FMA vector OPS + non-FMA vector OPS
+			//		scalar OPS = FMA scalar OPS + non-FMA scalar OPS
+			//	The total number of FMA instructions is available, but the ratio of FMA v.s. non-FMA is not available.
+			//	So roughly averaged approximation is applied for both DP and SP
+			//		(FMA vector OPS)/(vector OPS) = (FMA scalar OPS)/(scalar OPS) = RF
+			//		x1 : #of_inst_vector_FMA_DP	//	vector FMA f.p. ops in DP = 16*x1
+			//		y1 : #of_inst_vector_FMA_SP	//	vector FMA f.p. ops in SP = 32*y1
+			//		x2 : #of_inst_scalar_FMA_DP	//	scalar FMA f.p. ops in DP = x2
+			//		y2 : #of_inst_scalar_FMA_SP	//	scalar FMA f.p. ops in SP = y2
+
+				//	vDP : fops_vector_DP = vector Double Precision floating point operations
+				//	vSP : fops_vector_SP = vector Single Precision floating point operations
+				//	sDP : fops_scalar_DP = scalar Double Precision floating point operations
+				//	sSP : fops_scalar_SP = scalar Single Precision floating point operations
+
+				// vDP = 4*FP_DP_SCALE_OPS_SPEC				// formula-(1)
+				// vSP = 4*FP_SP_SCALE_OPS_SPEC				// formula-(2)
+				// sDP = FP_DP_FIXED_OPS_SPEC				// formula-(3)
+				// sSP = FP_SP_FIXED_OPS_SPEC				// formula-(4)
+				// x1 + y1 + x2 + y2 = FMA_INS						// formula-(5)
+				// 16*x1 + 32*y1 + x2 + y2 = total FMA ops			// formula-(6)
+				// 16*x1/vDP =  32*y1/vSP = x2/sDP = y2/sSP = RF 	// formula-(7)	// roughly averaged approximation
+				// RF  = FMA_INS / (vDP/16 + sDP + vSP/32 + sSP )	// formula-(8)
 				fp_dpv  = my_papi.accumu[ip] ;
 				fp_dp1  = my_papi.accumu[ip+1] ;
 				fp_spv  = my_papi.accumu[ip+2] ;
 				fp_sp1  = my_papi.accumu[ip+3] ;
 				fma_ins  = my_papi.accumu[ip+4] ;
-				fp_vector = (                  scale_ops*fp_dpv + scale_ops*fp_spv );
-				fp_total  = (fp_dp1 + fp_sp1 + scale_ops*fp_dpv + scale_ops*fp_spv );
-				vector_percent = fp_vector/fp_total;
-				;
-				// x = 2vDP/(vSP+2vDP) * FMA_INS // formula-(5) #of_inst_vector_FMA_DP. 16x == FMA f.p. ops in DP
-				// y = FMA_INS - x               // formula-(6) #of_inst_vector_FMA_SP. 32y == FMA f.p. ops in SP
+				fp_vector =                   scale_ops*fp_dpv + scale_ops*fp_spv ;
+				fp_total  = fp_dp1 + fp_sp1 + scale_ops*fp_dpv + scale_ops*fp_spv ;
 
-//
-// DEBUG from here .... 2020/02/06
-//
-				if ( fp_vector > 0.0 ) {
-				fma_ins_DP = 2.0*scale_ops*fp_dp4 / (scale_ops*fp_sp4 + 2.0*scale_ops*fp_dp4) * fma_ins;
-				fma_ins_SP = fma_ins - fma_ins_DP;
-				} else {
-				fma_ins_DP = 2.0*fp_dp1 / (fp_sp1 + 2.0*fp_dp1) * fma_ins;
-				fma_ins_SP = fma_ins - fma_ins_DP;
-				}
+			// SVE f.p. operations are counted uniquely, and needs to scale 4x (512/128) to obtain actual ops
+			//	i.e. _SCALE_OPS_ values should be multiplied by 4
+				my_papi.v_sorted[0] = 4*fp_dpv;
+				my_papi.v_sorted[2] = 4*fp_spv;
 
-				my_papi.s_sorted[jp] = "DP_FMA_fp" ;
-				my_papi.v_sorted[jp] = fma_ins_DP * 16;
-				jp++;
-				my_papi.s_sorted[jp] = "SP_FMA_fp" ;
-				my_papi.v_sorted[jp] = fma_ins_SP * 32;
+			//	Ratio of FMA instructions over total f.p. instructions = fma_ins / (vDP/16 + sDP + vSP/32 + sSP )
+				my_papi.s_sorted[jp] = "FMA_ratio" ;
+				my_papi.v_sorted[jp] = fma_ins / (fp_dpv/16 + fp_dp1 + fp_spv/32 + fp_sp1 );
 				jp++;
 			}
 			if (m_exclusive) {
@@ -1134,6 +1129,15 @@ void PerfWatch::sortPapiCounterList (void)
 			my_papi.s_sorted[jp] = "[L2$ hit%]";
 			my_papi.v_sorted[jp] = d_L2_ratio * 100.0;
 			jp++;
+
+			#ifdef DEBUG_PRINT_PAPI
+			#pragma omp barrier
+			#pragma omp critical
+			if (my_rank == 0) {
+			fprintf(stderr, "debug <sortPapiCounterList> d_load_ins=%e, d_store_ins=%e, d_hit_L1=%e, d_hit_LFB=%e, d_miss_L1=%e, d_miss_L2=%e, d_cache_transaction=%e, d_L1_ratio=%e, d_L2_ratio=%e\n",
+			d_load_ins, d_store_ins, d_hit_L1, d_hit_LFB, d_miss_L1, d_miss_L2, d_cache_transaction, d_L1_ratio, d_L2_ratio);
+			}
+			#endif
 		} else
 
 		if (hwpc_group.platform == "SPARC64" ) {
@@ -1167,8 +1171,8 @@ void PerfWatch::sortPapiCounterList (void)
 		} else
 
 		if (hwpc_group.platform == "A64FX" ) {
+			ip = hwpc_group.index[I_cache];
 			if (hwpc_group.i_platform == 21 ) {
-			hwpc_group.number[I_cache] += 5;
 			d_load_ins  = my_papi.accumu[ip] ;	//	PAPI_LD_INS
 			d_store_ins = my_papi.accumu[ip+1] ;	//	PAPI_SR_INS
 			d_hit_L1  = my_papi.accumu[ip+2] ;	//	PAPI_L1_DCH
@@ -1188,20 +1192,20 @@ void PerfWatch::sortPapiCounterList (void)
 			my_papi.v_sorted[jp] = d_L2_ratio * 100.0;
 			jp++;
 			}
+			#ifdef DEBUG_PRINT_PAPI
+			#pragma omp barrier
+			#pragma omp critical
+			if (my_rank == 0) {
+			fprintf(stderr, "debug <sortPapiCounterList> d_load_ins=%e, d_store_ins=%e, d_hit_L1=%e, d_miss_L1=%e, d_miss_L2=%e, d_L1_ratio=%e, d_L2_ratio=%e\n",
+			d_load_ins, d_store_ins, d_hit_L1, d_miss_L1, d_miss_L2, d_L1_ratio, d_L2_ratio);
+			}
+			#endif
 		}
 
 		my_papi.s_sorted[jp] = "[L1L2hit%]";
 		my_papi.v_sorted[jp] = (d_L1_ratio + d_L2_ratio) * 100.0;
 		jp++;
 
-		#ifdef DEBUG_PRINT_PAPI
-		#pragma omp barrier
-		#pragma omp critical
-		if (my_rank == 0) {
-		fprintf(stderr, "<debug> d_load_ins=%e, d_store_ins=%e, d_hit_L1=%e, d_hit_LFB=%e, d_miss_L1=%e, d_miss_L2=%e, d_cache_transaction=%e, d_L1_ratio=%e, d_L2_ratio=%e\n",
-			d_load_ins, d_store_ins, d_hit_L1, d_hit_LFB, d_miss_L1, d_miss_L2, d_cache_transaction, d_L1_ratio, d_L2_ratio);
-		}
-		#endif
 	}
 
 	else
@@ -1236,6 +1240,8 @@ void PerfWatch::sortPapiCounterList (void)
 		double d_load_ins, d_store_ins;
 		double d_writeback_MEM, d_streaming_MEM;
 		double bandwidth;
+		double d_sve_load_ins, d_sve_store_ins;
+		double vector_percent;
 		counts = 0.0;
 		ip = hwpc_group.index[I_loadstore];
 		jp=0;
@@ -1259,12 +1265,22 @@ void PerfWatch::sortPapiCounterList (void)
 			} else {
 				// The writeback and streaming-store events (WB and STRMS) are deleted on Skylake, somehow...
 			}
-		}
+		} else
 
-		//	else {
-		//		For SPARC64 and A64FX, just output the raw HWPC data for now.
-		//		We will improve the output quality sometime future.
-		//	}
+		if (hwpc_group.platform == "A64FX" ) {
+			ip = hwpc_group.index[I_loadstore];
+			if (hwpc_group.i_platform == 21 ) {
+			d_load_ins  = my_papi.accumu[ip] ;	//	PAPI_LD_INS
+			d_store_ins = my_papi.accumu[ip+1] ;	//	PAPI_SR_INS
+			d_sve_load_ins = my_papi.accumu[ip+2] + my_papi.accumu[ip+4] + my_papi.accumu[ip+6];	// SVE load
+			d_sve_store_ins = my_papi.accumu[ip+3] + my_papi.accumu[ip+5] + my_papi.accumu[ip+7];	// SVE store
+			vector_percent = (d_sve_load_ins+d_sve_store_ins)/(d_load_ins+d_store_ins) ;
+
+			my_papi.s_sorted[jp] = "VECTOR(%)" ;
+			my_papi.v_sorted[jp] = vector_percent * 100.0;
+			jp++;
+			}
+		}
 	}
     	
 // count the number of reported events and derived matrices
@@ -1510,14 +1526,17 @@ void PerfWatch::outputPapiCounterLegend (FILE* fp)
 	} else
 
 	if (hwpc_group.platform == "A64FX" ) {
-	fprintf(fp, "\t\t DP_vec_fp: double precision f.p. ops by SVE/SIMD instructions\n");
-	fprintf(fp, "\t\t DP_scalar: double precision f.p. ops by scalar instructions\n");
-	fprintf(fp, "\t\t SP_vec_fp: single precision f.p. ops by SVE/SIMD instructions\n");
-	fprintf(fp, "\t\t SP_scalar: single precision f.p. ops by scalar instructions\n");
-	fprintf(fp, "\t\t FMA_inst: fused multiply+add instructions\n");
-	fprintf(fp, "\t\t DP_FMA_fp: double precision f.p. ops by FMA instructions\n");
-	fprintf(fp, "\t\t SP_FMA_fp: single precision f.p. ops by FMA instructions\n");
-	fprintf(fp, "\t\t note that FMA DP/SP ratio is approximated using DP_vec_fp/SP_vec_fp \n");
+	fprintf(fp, "\t\t DP_SVE_ops: double precision f.p. ops by SVE instructions\n");
+	fprintf(fp, "\t\t DP_FIX_ops: double precision f.p. ops by scalar/armv8 instructions\n");
+	fprintf(fp, "\t\t SP_SVE_ops: single precision f.p. ops by SVE instructions\n");
+	fprintf(fp, "\t\t SP_FIX_ops: single precision f.p. ops by scalar/armv8 instructions\n");
+	fprintf(fp, "\t\t FMA_inst:   fused multiply+add instructions\n");
+	fprintf(fp, "\t\t FMA_ratio:  The ratio of FMA v.s. non-FMA f.p. ops\n");
+	fprintf(fp, "\t\t [Total_FPs]: floating point operations as the sum of instructions*width \n");
+	fprintf(fp, "\t\t [Flops]:    floating point operations per second \n");
+	fprintf(fp, "\t\t [Vector %]: percentage of vectorized f.p. operations\n");
+	fprintf(fp, "\t\t note that FMA_ratio is the roughly approximated number using the following assumption. \n");
+	fprintf(fp, "\t\t\t (FMA vector OPS)/(vector OPS) = (FMA scalar OPS)/(scalar OPS) = RF for both DP and SP \n");
 	}
 
 // CACHE
