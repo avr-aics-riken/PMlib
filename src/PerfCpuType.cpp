@@ -799,6 +799,7 @@ void PerfWatch::sortPapiCounterList (void)
 
 // if (FLOPS)
 	if ( hwpc_group.number[I_flops] > 0 ) {
+		double d_flops, d_peak_normal, d_peak_ratio;
 		counts=0.0;
 		ip = hwpc_group.index[I_flops];
 		jp=0;
@@ -809,10 +810,21 @@ void PerfWatch::sortPapiCounterList (void)
 			counts += my_papi.v_sorted[jp] = my_papi.accumu[ip] ;
 			ip++;jp++;
 		}
-		my_papi.s_sorted[jp] = "[Flops]" ;
-		//	my_papi.v_sorted[jp] = counts / m_time ; // * 1.0e-9;
-		my_papi.v_sorted[jp] = counts * perf_rate;
+		d_flops = counts * perf_rate;		//	= counts / m_time ;
+		my_papi.s_sorted[jp] = "[Flops] ";
+		my_papi.v_sorted[jp] = d_flops;
 		jp++;
+
+    	if (hwpc_group.platform == "A64FX" ) {
+			if (hwpc_group.i_platform == 21 ) {
+				//	d_peak_normal = 2.0 * 1.0e9 * 2.0 * 8.0 * 2.0 * num_threads ;	// peak flops at normal mode
+				d_peak_normal = 2.0 * 1.0e9 * 2.0 * 8.0 * 2.0 ;	// peak flops per core at normal mode
+				d_peak_ratio = d_flops / d_peak_normal;
+				my_papi.s_sorted[jp] = "[%Peak] ";
+				my_papi.v_sorted[jp] = d_peak_ratio * 100.0; 					//	percentage
+				jp++;
+			}
+		}
 	}
 
 	else
@@ -1471,41 +1483,41 @@ void PerfWatch::outputPapiCounterLegend (FILE* fp)
 	fprintf(fp, "\t\t [L2$ B/s]: L2 cache working bandwidth responding to demand read and prefetch\n");
 	fprintf(fp, "\t\t [L3$ B/s]: Last Level Cache bandwidth responding to demand read and prefetch\n");
 	fprintf(fp, "\t\t [Mem B/s]: Memory read bandwidth responding to demand read and prefetch\n");
-	fprintf(fp, "\t\t         : The write bandwidth must be measured separately. See Remarks.\n");
+	fprintf(fp, "\t\t          : The write bandwidth must be measured separately. See Remarks.\n");
 	} else
 
 	if (hwpc_group.platform == "SPARC64" ) {
-	fprintf(fp, "\t\t LD+ST:     memory load/store instructions\n");
+	fprintf(fp, "\t\t LD+ST:      memory load/store instructions\n");
 	fprintf(fp, "\t\t XSIMDLD+ST: memory load/store extended SIMD instructions\n");
 	fprintf(fp, "\t\t L2_MISS_DM: L2 cache misses by demand request\n");
 	fprintf(fp, "\t\t L2_MISS_PF: L2 cache misses by prefetch request\n");
-	fprintf(fp, "\t\t L2_WB_DM:  writeback by demand L2 cache misses \n");
-	fprintf(fp, "\t\t L2_WB_PF:  writeback by prefetch L2 cache misses \n");
-	fprintf(fp, "\t\t [Mem B/s]: Memory bandwidth responding to demand read, prefetch and writeback reaching memory\n");
+	fprintf(fp, "\t\t L2_WB_DM:   writeback by demand L2 cache misses \n");
+	fprintf(fp, "\t\t L2_WB_PF:   writeback by prefetch L2 cache misses \n");
+	fprintf(fp, "\t\t [Mem B/s]:  Memory bandwidth responding to demand read, prefetch and writeback reaching memory\n");
 	} else
 
 	if (hwpc_group.platform == "A64FX" ) {
-	fprintf(fp, "\t\t LOAD_INS:  memory load instructions\n");
-	fprintf(fp, "\t\t STORE_INS: memory store instructions\n");
-	fprintf(fp, "\t\t L2D_refill:	L2 cache refill events\n");
-	fprintf(fp, "\t\t L2D_hrf1:	L2 demand access counts hitting refill buffer (allocated by prefetch)\n");
-	fprintf(fp, "\t\t L2D_hrf2:	L2 prefetch counts hitting refill buffer (allocated by demand access)\n");
-	fprintf(fp, "\t\t L2D_WB:	L2 writeback counts reaching memory\n");
-	fprintf(fp, "\t\t [Mem B/s]:	Memory bandwidth responding to demand, prefetch and writeback\n");
+	fprintf(fp, "\t\t LOAD_INS:   memory load instructions\n");
+	fprintf(fp, "\t\t STORE_INS:  memory store instructions\n");
+	fprintf(fp, "\t\t L2D_refill: L2 cache refill events\n");
+	fprintf(fp, "\t\t L2D_hrf1:   L2 demand access counts hitting refill buffer (allocated by prefetch)\n");
+	fprintf(fp, "\t\t L2D_hrf2:   L2 prefetch counts hitting refill buffer (allocated by demand access)\n");
+	fprintf(fp, "\t\t L2D_WB:     L2 writeback counts reaching memory\n");
+	fprintf(fp, "\t\t [Mem B/s]:  Memory bandwidth responding to demand, prefetch and writeback\n");
 	}
 
 // VECTOR
 	fprintf(fp, "\t HWPC_CHOOSER=VECTOR:\n");
 	if (hwpc_group.platform == "Xeon" ) {
 		if (hwpc_group.i_platform != 3 ) {
-	fprintf(fp, "\t\t SP_SINGLE: single precision f.p. scalar instructions\n");
-	fprintf(fp, "\t\t SP_SSE:    single precision f.p. SSE instructions\n");
-	fprintf(fp, "\t\t SP_AVX:    single precision f.p. 256-bit AVX instructions\n");
-	fprintf(fp, "\t\t SP_AVXW:   single precision f.p. 512-bit AVX instructions\n");
-	fprintf(fp, "\t\t DP_SINGLE: double precision f.p. scalar instructions\n");
-	fprintf(fp, "\t\t DP_SSE:    double precision f.p. SSE instructions\n");
-	fprintf(fp, "\t\t DP_AVX:    double precision f.p. 256-bit AVX instructions\n");
-	fprintf(fp, "\t\t DP_AVXW:   double precision f.p. 512-bit AVX instructions\n");
+	fprintf(fp, "\t\t SP_SINGLE:  single precision f.p. scalar instructions\n");
+	fprintf(fp, "\t\t SP_SSE:     single precision f.p. SSE instructions\n");
+	fprintf(fp, "\t\t SP_AVX:     single precision f.p. 256-bit AVX instructions\n");
+	fprintf(fp, "\t\t SP_AVXW:    single precision f.p. 512-bit AVX instructions\n");
+	fprintf(fp, "\t\t DP_SINGLE:  double precision f.p. scalar instructions\n");
+	fprintf(fp, "\t\t DP_SSE:     double precision f.p. SSE instructions\n");
+	fprintf(fp, "\t\t DP_AVX:     double precision f.p. 256-bit AVX instructions\n");
+	fprintf(fp, "\t\t DP_AVXW:    double precision f.p. 512-bit AVX instructions\n");
 	fprintf(fp, "\t\t [Total_FPs]: floating point operations as the sum of instructions*width \n");
 	fprintf(fp, "\t\t [Flops]:    floating point operations per second \n");
 	fprintf(fp, "\t\t [Vector %]: percentage of vectorized f.p. operations\n");
@@ -1517,17 +1529,17 @@ void PerfWatch::outputPapiCounterLegend (FILE* fp)
 
 	if (hwpc_group.platform == "SPARC64" ) {
 		if (hwpc_group.i_platform == 8 || hwpc_group.i_platform == 9 ) {
-	fprintf(fp, "\t\t FP_INS:    f.p. instructions\n");
-	fprintf(fp, "\t\t FMA_INS:   FMA instructions\n");
-	fprintf(fp, "\t\t SIMD_FP:   SIMD f.p. instructions\n");
-	fprintf(fp, "\t\t SIMD_FMA:  SIMD FMA instructions\n");
+	fprintf(fp, "\t\t FP_INS:     f.p. instructions\n");
+	fprintf(fp, "\t\t FMA_INS:    FMA instructions\n");
+	fprintf(fp, "\t\t SIMD_FP:    SIMD f.p. instructions\n");
+	fprintf(fp, "\t\t SIMD_FMA:   SIMD FMA instructions\n");
 		}
 		if (hwpc_group.i_platform == 11 ) {
-	fprintf(fp, "\t\t 1FP_INS:   1 f.p. op instructions\n");
-	fprintf(fp, "\t\t 2FP_INS:   2 f.p. ops instructions\n");
-	fprintf(fp, "\t\t 4FP_INS:   4 f.p. ops instructions\n");
-	fprintf(fp, "\t\t 8FP_INS:   8 f.p. ops instructions\n");
-	fprintf(fp, "\t\t 16FP_INS: 16 f.p. ops instructions\n");
+	fprintf(fp, "\t\t 1FP_INS:    1 f.p. op instructions\n");
+	fprintf(fp, "\t\t 2FP_INS:    2 f.p. ops instructions\n");
+	fprintf(fp, "\t\t 4FP_INS:    4 f.p. ops instructions\n");
+	fprintf(fp, "\t\t 8FP_INS:    8 f.p. ops instructions\n");
+	fprintf(fp, "\t\t 16FP_INS : 16 f.p. ops instructions\n");
 		}
 	fprintf(fp, "\t\t [Total_FPs]: floating point operations as the sum of instructions*width \n");
 	fprintf(fp, "\t\t [Flops]:    floating point operations per second \n");
@@ -1549,31 +1561,31 @@ void PerfWatch::outputPapiCounterLegend (FILE* fp)
 // CACHE
 	fprintf(fp, "\t HWPC_CHOOSER=CACHE:\n");
 	if (hwpc_group.platform == "Xeon" ) {
-	fprintf(fp, "\t\t LOAD_INS:  memory load instructions\n");
-	fprintf(fp, "\t\t STORE_INS: memory store instructions\n");
-	fprintf(fp, "\t\t L1_HIT:    L1 data cache hits\n");
-	fprintf(fp, "\t\t LFB_HIT:   Cache Line Fill Buffer hits\n");
-	fprintf(fp, "\t\t L1_TCM:    L1 data cache activities leading to line replacements\n");
-	fprintf(fp, "\t\t L2_TCM:    L2 cache demand access misses\n");
+	fprintf(fp, "\t\t LOAD_INS:   memory load instructions\n");
+	fprintf(fp, "\t\t STORE_INS:  memory store instructions\n");
+	fprintf(fp, "\t\t L1_HIT:     L1 data cache hits\n");
+	fprintf(fp, "\t\t LFB_HIT:    Cache Line Fill Buffer hits\n");
+	fprintf(fp, "\t\t L1_TCM:     L1 data cache activities leading to line replacements\n");
+	fprintf(fp, "\t\t L2_TCM:     L2 cache demand access misses\n");
 	//	fprintf(fp, "\t\t L3_TCM: level 3 total cache misses by demand\n");
 	fprintf(fp, "\t\t [L1$ hit%]: data access hit(%) in L1 data cache and Line Fill Buffer\n");
 	} else
 
 	if (hwpc_group.platform == "SPARC64" ) {
-	fprintf(fp, "\t\t LD+ST:     memory load/store instructions\n");
+	fprintf(fp, "\t\t LD+ST:      memory load/store instructions\n");
 	fprintf(fp, "\t\t 2SIMD:LDST: memory load/store SIMD instructions(2SIMD)\n");
 	fprintf(fp, "\t\t 4SIMD:LDST: memory load/store extended SIMD instructions(4SIMD)\n");
-	fprintf(fp, "\t\t L1_TCM:    L1 cache misses (by demand and by prefetch)\n");
-	fprintf(fp, "\t\t L2_TCM:    L2 cache misses (by demand and by prefetch)\n");
+	fprintf(fp, "\t\t L1_TCM:     L1 cache misses (by demand and by prefetch)\n");
+	fprintf(fp, "\t\t L2_TCM:     L2 cache misses (by demand and by prefetch)\n");
 	fprintf(fp, "\t\t [L1$ hit%]: data access hit(%) in L1 cache \n");
 	} else
 
 	if (hwpc_group.platform == "A64FX" ) {
-	fprintf(fp, "\t\t LOAD_INS:  memory load instructions\n");
-	fprintf(fp, "\t\t STORE_INS: memory store instructions\n");
-	fprintf(fp, "\t\t L1_HIT:    L1 data cache hits\n");
-	fprintf(fp, "\t\t L1_TCM:    L1 data cache misses\n");
-	fprintf(fp, "\t\t L2_TCM:    L2 cache misses\n");
+	fprintf(fp, "\t\t LOAD_INS:   memory load instructions\n");
+	fprintf(fp, "\t\t STORE_INS:  memory store instructions\n");
+	fprintf(fp, "\t\t L1_HIT:     L1 data cache hits\n");
+	fprintf(fp, "\t\t L1_TCM:     L1 data cache misses\n");
+	fprintf(fp, "\t\t L2_TCM:     L2 cache misses\n");
 	fprintf(fp, "\t\t [L1$ hit%]: data access hit(%) in L1 cache \n");
 	}
 
@@ -1583,20 +1595,20 @@ void PerfWatch::outputPapiCounterLegend (FILE* fp)
 // LOADSTORE
 	fprintf(fp, "\t HWPC_CHOOSER=LOADSTORE:\n");
 	if (hwpc_group.platform == "Xeon" ) {
-	fprintf(fp, "\t\t LOAD_INS:  memory load instructions\n");
-	fprintf(fp, "\t\t STORE_INS: memory store instructions\n");
-	fprintf(fp, "\t\t WBACK_MEM: memory write via writeback store (see Remarks below)\n");
-	fprintf(fp, "\t\t STRMS_MEM: memory write via streaming store, i.e. nontemporal store (see Remarks below)\n");
-	fprintf(fp, "\t\t [Mem B/s]: Memory write bandwidth responding to writeback and streaming-stores\n");
+	fprintf(fp, "\t\t LOAD_INS:   memory load instructions\n");
+	fprintf(fp, "\t\t STORE_INS:  memory store instructions\n");
+	fprintf(fp, "\t\t WBACK_MEM:  memory write via writeback store (see Remarks below)\n");
+	fprintf(fp, "\t\t STRMS_MEM:  memory write via streaming store, i.e. nontemporal store (see Remarks below)\n");
+	fprintf(fp, "\t\t [Mem B/s]:  Memory write bandwidth responding to writeback and streaming-stores\n");
 	} else
 
 	if (hwpc_group.platform == "SPARC64" ) {
 		if (hwpc_group.i_platform == 8 || hwpc_group.i_platform == 9 ) {
-	fprintf(fp, "\t\t LD+ST:     memory load/store instructions\n");
-	fprintf(fp, "\t\t SIMD:LDST: memory load/store SIMD instructions(2SIMD)\n");
+	fprintf(fp, "\t\t LD+ST:      memory load/store instructions\n");
+	fprintf(fp, "\t\t SIMD:LDST:  memory load/store SIMD instructions(2SIMD)\n");
 		}
 		if (hwpc_group.i_platform == 11 ) {
-	fprintf(fp, "\t\t LD+ST:     memory load/store instructions\n");
+	fprintf(fp, "\t\t LD+ST:      memory load/store instructions\n");
 	fprintf(fp, "\t\t XSIMD:LDST: memory load/store extended SIMD instructions(4SIMD)\n");
 		}
 	} else
@@ -1610,7 +1622,7 @@ void PerfWatch::outputPapiCounterLegend (FILE* fp)
 	fprintf(fp, "\t\t SVE_SMV_ST: memory write by SVE and Advanced SIMD multiple vector contiguous structure store instructions.\n");
 	fprintf(fp, "\t\t GATHER_LD:  memory read by SVE non-contiguous gather-load instructions.\n");
 	fprintf(fp, "\t\t SCATTER_ST: memory write by SVE non-contiguous scatter-store instructions.\n");
-	fprintf(fp, "\t\t [Vector %]:  percentage of SVE load/store instructions over all load/store instructions.\n");
+	fprintf(fp, "\t\t [Vector %]: percentage of SVE load/store instructions over all load/store instructions.\n");
 	}
 
 // CYCLES
@@ -1644,7 +1656,7 @@ void PerfWatch::outputPapiCounterLegend (FILE* fp)
 	}
 
 	if (hwpc_group.platform == "A64FX" ) {
-	fprintf(fp, "\t\t Note that [FMA_ops %] is the roughly approximated number using the following assumption. \n");
+	fprintf(fp, "\t\t Note that [FMA_ops %] is a roughly approximated number using the following assumption. \n");
 	fprintf(fp, "\t\t\t (FMA vector OPS)/(vector OPS) = (FMA scalar OPS)/(scalar OPS) for both DP and SP \n");
 	}
 

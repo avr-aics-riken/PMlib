@@ -56,12 +56,12 @@ namespace pm_lib {
   ///   @param[in] is_unit ユーザー申告値かHWPC自動測定値かの指定
   ///              = 0: ユーザが引数で指定したデータ移動量(バイト)
   ///              = 1: ユーザが引数で指定した演算量(浮動小数点演算量)
-  ///              = 2: HWPC が自動測定する memory read event
+  ///              = 2: HWPC が自動測定する memory bandwidth event
   ///              = 3: HWPC が自動測定する flops event
   ///              = 4: HWPC が自動測定する vectorization (SSE, AVX, etc)
   ///              = 5: HWPC が自動測定する cache hit, miss,
   ///              = 6: HWPC が自動測定する cycles, instructions
-  ///              = 7: HWPC が自動測定する memory write event
+  ///              = 7: HWPC が自動測定する memory load/store instructions
   ///   @return  単位変換後の数値
   ///
   ///   @note is_unitは通常PerfWatch::statsSwitch()で事前に決定されている
@@ -161,10 +161,21 @@ namespace pm_lib {
 
 	sortPapiCounterList ();
 
+    // 0: user set bandwidth
+    // 1: user set flop counts
+    // 2: BANDWIDTH : HWPC measured memory read bandwidth
+    // 3: FLOPS     : HWPC measured flop counts
+    // 4: VECTOR    : HWPC measured vectorization
+    // 5: CACHE     : HWPC measured cache hit/miss
+    // 6: CYCLE     : HWPC measured cycles, instructions
+    // 7: LOADSTORE : HWPC measured memory load/store (demand access, prefetch, writeback, streaming store)
 	m_flop = 0.0;
 	m_percentage = 0.0;
-	if ( is_unit >= 0 && is_unit <= 3 ) {
+	if ( is_unit >= 0 && is_unit <= 2 ) {
 		m_flop = m_time * my_papi.v_sorted[my_papi.num_sorted-1] ;
+	} else 
+	if ( is_unit == 3 ) {
+		m_flop = m_time * my_papi.v_sorted[my_papi.num_sorted-2] ;
 	} else 
 	if ( is_unit == 4 ) {
 		m_flop = my_papi.v_sorted[my_papi.num_sorted-3] ;
@@ -322,7 +333,7 @@ namespace pm_lib {
   ///   4: HWPC が自動的に測定する vectorization (SSE, AVX, etc) event
   ///   5: HWPC が自動的に測定する cache hit, miss
   ///   6: HWPC が自動的に測定する cycles, instructions
-  ///   7: HWPC が自動的に測定する memory write (writeback, streaming store)
+  ///   7: HWPC が自動的に測定する memory load/store (demand access, prefetch, writeback, streaming store)
   ///
   /// @note
   /// 計算量としてユーザー申告値を用いるかHWPC計測値を用いるかの決定を行う
@@ -338,7 +349,7 @@ namespace pm_lib {
     // 4: HWPC measured vectorization
     // 5: HWPC measured cache hit/miss
     // 6: HWPC measured cycles, instructions
-    // 7: HWPC measured memory write bandwidth (writeback and streaming store)
+    // 7: HWPC measured memory load/store (demand access, prefetch, writeback, streaming store)
 
     if (hwpc_group.number[I_bandwidth] > 0) {
       is_unit=2;
@@ -527,14 +538,15 @@ namespace pm_lib {
 
     std::string unit;
     int is_unit = statsSwitch();
-    if (is_unit == 0) unit = "B/sec";		// 0: user set bandwidth
-    if (is_unit == 1) unit = "Flops";		// 1: user set flop counts
-    if (is_unit == 2) unit = "B/sec(HWPC)";		// 2: HWPC measured bandwidth
-    if (is_unit == 3) unit = "Flops(HWPC)";		// 3: HWPC measured flop counts
-    if (is_unit == 4) unit = "vector%(HWPC)";	// 4: HWPC measured vector %
-    if (is_unit == 5) unit = "L1L2hit%(HWPC)";	// 5: HWPC measured cache hit%
-    if (is_unit == 6) unit = "Ins/sec(HWPC)";	// 6: HWPC measured instructions
-    if (is_unit == 7) unit = "B/sec(HWPC)";		// 7: HWPC memory writeback BW
+    if (is_unit == 0) unit = "B/sec";	// 0: user set bandwidth
+    if (is_unit == 1) unit = "Flops";	// 1: user set flop counts
+	//
+    if (is_unit == 2) unit = "";		// 2: HWPC measured bandwidth
+    if (is_unit == 3) unit = "";		// 3: HWPC measured flop counts
+    if (is_unit == 4) unit = "";		// 4: HWPC measured vector %
+    if (is_unit == 5) unit = "";		// 5: HWPC measured cache hit%
+    if (is_unit == 6) unit = "";		// 6: HWPC measured instructions
+    if (is_unit == 7) unit = "";		// 7: HWPC measured memory load/store (demand access, prefetch, writeback, streaming store)
 
     long total_count = 0;
     for (int i = 0; i < m_np; i++) total_count += m_countArray[i];
@@ -615,14 +627,14 @@ namespace pm_lib {
     std::string unit;
     int is_unit = statsSwitch();
     if (is_unit == 0) unit = "B/sec";	// 0: user set bandwidth
-    if (is_unit == 1) unit = "Flops";		// 1: user set flop counts
+    if (is_unit == 1) unit = "Flops";	// 1: user set flop counts
 	//
-    if (is_unit == 2) unit = "B/sec(HWPC)";	// 2: HWPC measured bandwidth
-    if (is_unit == 3) unit = "Flops(HWPC)";	// 3: HWPC measured flop counts
-    if (is_unit == 4) unit = "vector%(HWPC)";	// 4: HWPC measured vector %
-    if (is_unit == 5) unit = "L1L2hit%(HWPC)";	// 5: HWPC measured cache hit%
-    if (is_unit == 6) unit = "Ins/sec(HWPC)";	// 6: HWPC measured instructions
-    if (is_unit == 7) unit = "B/sec(HWPC)";		// 7: HWPC memory writeback BW
+    if (is_unit == 2) unit = "";		// 2: HWPC measured bandwidth
+    if (is_unit == 3) unit = "";		// 3: HWPC measured flop counts
+    if (is_unit == 4) unit = "";		// 4: HWPC measured vector %
+    if (is_unit == 5) unit = "";		// 5: HWPC measured cache hit%
+    if (is_unit == 6) unit = "";		// 6: HWPC measured instructions
+    if (is_unit == 7) unit = "";		// 7: HWPC measured memory load/store (demand access, prefetch, writeback, streaming store)
 
 
 
@@ -936,12 +948,13 @@ namespace pm_lib {
 
     if (is_unit == 0) unit = "B/sec";		// 0: user set bandwidth
     if (is_unit == 1) unit = "Flops";		// 1: user set flop counts
-    if (is_unit == 2) unit = "B/sec(HWPC)";		// 2: HWPC measured bandwidth
-    if (is_unit == 3) unit = "Flops(HWPC)";		// 3: HWPC measured flop counts
-    if (is_unit == 4) unit = "vector%(HWPC)";	// 4: HWPC measured vector %
-    if (is_unit == 5) unit = "L1L2hit%(HWPC)";	// 5: HWPC measured cache hit%
-    if (is_unit == 6) unit = "Ins/sec(HWPC)";	// 6: HWPC measured instructions
-    if (is_unit == 7) unit = "B/sec(HWPC)";		// 7: HWPC memory writeback BW
+	//
+    if (is_unit == 2) unit = "";		// 2: HWPC measured bandwidth
+    if (is_unit == 3) unit = "";		// 3: HWPC measured flop counts
+    if (is_unit == 4) unit = "";		// 4: HWPC measured vector %
+    if (is_unit == 5) unit = "";		// 5: HWPC measured cache hit%
+    if (is_unit == 6) unit = "";		// 6: HWPC measured instructions
+    if (is_unit == 7) unit = "";		// 7: HWPC measured memory load/store (demand access, prefetch, writeback, streaming store)
 
 	if (my_rank == 0 && is_unit < 2) {
 	    fprintf(fp, "Label  %s%s\n", m_exclusive ? "" : "*", m_label.c_str());
@@ -1009,7 +1022,7 @@ namespace pm_lib {
 		if (my_rank == 0) {
 			if (is_unit < 2) {
 			perf_rate = (m_countArray[i]==0) ? 0.0 : m_flopArray[i]/m_timeArray[i];
-			fprintf(fp, " %3d%8ld  %9.3e  %5.1f  %9.3e  %9.3e %s\n",
+			fprintf(fp, " %3d%8ld  %9.3e  %5.1f   %9.3e  %9.3e %s\n",
 				j,
 				m_countArray[i], // コール回数
 				m_timeArray[i],  // 時間
@@ -1022,7 +1035,7 @@ namespace pm_lib {
 			}
 			else 
 			if (is_unit >= 2) {
-			fprintf(fp, " %3d%8ld  %9.3e  %5.1f",
+			fprintf(fp, " %3d%8ld  %9.3e  %5.1f ",
 				j,
 				m_countArray[i], // コール回数
 				m_timeArray[i],  // 時間
