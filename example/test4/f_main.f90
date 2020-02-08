@@ -35,7 +35,7 @@ program main
 	iinclusive=0    !cx i.e. not exclusive
 	call f_pm_setproperties ("Initial-section", icalc, iexclusive)
 	call f_pm_setproperties ("Loop-section", icalc, iinclusive)
-	call f_pm_setproperties ("Kernel-Slow", icomm, iexclusive)
+	call f_pm_setproperties ("Kernel-Slow", icalc, iexclusive)
 	call f_pm_setproperties ("Kernel-Fast", icalc, iexclusive)
 
 	dinit=(n**2)*4.0
@@ -95,6 +95,7 @@ subroutine subinit (msize,n,a,b,c)
 	do i=1, n
 	a(i,j)=sin(real(i)/real(n))
 	b(i,j)=cos(real(i)/real(n))
+	c(i,j)=0.0
 	end do
 	end do
 	!$omp end do
@@ -113,9 +114,9 @@ subroutine submtxm (msize,n,dflop,a,b,c)
 	do i=1, n
 	x=0
 	do k=1, n
-	x=x+a(i,k)*b(k,j)
+	x = x + a(k,i)*a(k,j) + b(k,i)*b(k,j)
 	end do
-	c(i,j) = x
+	c(i,j) = c(i,j) + x/real(n)
 	end do
 	end do
 	!$omp end do
@@ -131,16 +132,22 @@ subroutine slowmtxm (msize,n,dflop,a,b,c)
 	!$omp parallel
 	!$omp do private(x)
 	do j=1, n
+!OCL NOSIMD
+!OCL NOUNROLL
+!OCL NOSWP
+!DIR$ NOVECTOR
+!DIR$ NOUNROLL
 	do i=1, n
 	x=0
 !OCL NOSIMD
 !OCL NOUNROLL
+!OCL NOSWP
 !DIR$ NOVECTOR
 !DIR$ NOUNROLL
 	do k=1, n
-	x=x+a(i,k)*b(k,j)
+	x = x + a(k,i)*a(k,j) + b(k,i)*b(k,j)
 	end do
-	c(i,j) = x
+	c(i,j) = c(i,j) + x/real(n)
 	end do
 	end do
 	!$omp end do
