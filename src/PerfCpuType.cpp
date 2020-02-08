@@ -581,13 +581,13 @@ void PerfWatch::createPapiCounterList ()
 
 				hwpc_group.number[I_vector] += 5;
 				papi.s_name[ip] = "FP_DP_SCALE_OPS_SPEC";
-				my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "DP_SVE_ops"; ip++;
+				my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "DP_SVE_op"; ip++;
 				papi.s_name[ip] = "FP_DP_FIXED_OPS_SPEC";
-				my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "DP_FIX_ops"; ip++;
+				my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "DP_FIX_op"; ip++;
 				papi.s_name[ip] = "FP_SP_SCALE_OPS_SPEC";
-				my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "SP_SVE_ops"; ip++;
+				my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "SP_SVE_op"; ip++;
 				papi.s_name[ip] = "FP_SP_FIXED_OPS_SPEC";
-				my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "SP_FIX_ops"; ip++;
+				my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "SP_FIX_op"; ip++;
 				papi.s_name[ip] = "PAPI_FMA_INS";
 				my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "FMA_inst"; ip++;
 		
@@ -918,11 +918,11 @@ void PerfWatch::sortPapiCounterList (void)
 		double fp_dp1, fp_dp2, fp_dp4, fp_dp8, fp_dp16;
 		double fp_total, fp_vector;
 		double vector_percent;
-		double scale_ops=4.0;	// a magic number (512/128) for A64FX
 		double fma_ins, fp_spv, fp_dpv;
-
+		double fma_percent;
 
 		vector_percent = 0.0;
+		fma_percent = 0.0;
 		fp_vector = 0.0;
 		fp_total = 1.0;
 		counts = 0.0;
@@ -972,8 +972,6 @@ void PerfWatch::sortPapiCounterList (void)
 			if (m_exclusive) {
 				if ( fp_total > 0.0 ) {
 				vector_percent = fp_vector/fp_total;
-				} else {
-				vector_percent = 0.0;
 				}
 			}
 
@@ -1004,8 +1002,6 @@ void PerfWatch::sortPapiCounterList (void)
 			if (m_exclusive) {
 				if ( fp_total > 0.0 ) {
 				vector_percent = fp_vector/fp_total;
-				} else {
-				vector_percent = 0.0;
 				}
 			}
 
@@ -1031,45 +1027,58 @@ void PerfWatch::sortPapiCounterList (void)
 			//		(FMA vector OPS)/(vector OPS) = (FMA scalar OPS)/(scalar OPS) = RF
 			//		x1 : #of_inst_vector_FMA_DP	//	vector FMA f.p. ops in DP = 16*x1
 			//		y1 : #of_inst_vector_FMA_SP	//	vector FMA f.p. ops in SP = 32*y1
-			//		x2 : #of_inst_scalar_FMA_DP	//	scalar FMA f.p. ops in DP = x2
-			//		y2 : #of_inst_scalar_FMA_SP	//	scalar FMA f.p. ops in SP = y2
+			//		x2 : #of_inst_scalar_FMA_DP	//	scalar FMA f.p. ops in DP = 2*x2
+			//		y2 : #of_inst_scalar_FMA_SP	//	scalar FMA f.p. ops in SP = 2*y2
 
 				//	vDP : fops_vector_DP = vector Double Precision floating point operations
 				//	vSP : fops_vector_SP = vector Single Precision floating point operations
 				//	sDP : fops_scalar_DP = scalar Double Precision floating point operations
 				//	sSP : fops_scalar_SP = scalar Single Precision floating point operations
 
-				// vDP = 4*FP_DP_SCALE_OPS_SPEC				// formula-(1)
-				// vSP = 4*FP_SP_SCALE_OPS_SPEC				// formula-(2)
-				// sDP = FP_DP_FIXED_OPS_SPEC				// formula-(3)
-				// sSP = FP_SP_FIXED_OPS_SPEC				// formula-(4)
-				// x1 + y1 + x2 + y2 = FMA_INS						// formula-(5)
-				// 16*x1 + 32*y1 + x2 + y2 = total FMA ops			// formula-(6)
-				// 16*x1/vDP =  32*y1/vSP = x2/sDP = y2/sSP = RF 	// formula-(7)	// roughly averaged approximation
-				// RF  = FMA_INS / (vDP/16 + sDP + vSP/32 + sSP )	// formula-(8)
-				fp_dpv  = my_papi.accumu[ip] ;
-				fp_dp1  = my_papi.accumu[ip+1] ;
-				fp_spv  = my_papi.accumu[ip+2] ;
-				fp_sp1  = my_papi.accumu[ip+3] ;
-				fma_ins  = my_papi.accumu[ip+4] ;
-				fp_vector =                   scale_ops*fp_dpv + scale_ops*fp_spv ;
-				fp_total  = fp_dp1 + fp_sp1 + scale_ops*fp_dpv + scale_ops*fp_spv ;
+				// vDP = 4*FP_DP_SCALE_OPS_SPEC				// formula-(1)	ops.
+				// vSP = 4*FP_SP_SCALE_OPS_SPEC				// formula-(2)	ops.
+				// sDP = FP_DP_FIXED_OPS_SPEC				// formula-(3)	ops.
+				// sSP = FP_SP_FIXED_OPS_SPEC				// formula-(4)	ops.
+				// FMA ops = 16*x1 + 32*y1 + 2*x2 + 2*y2			// formula-(5)	FMA ops.
+				// FMA instructions = FMA_INS = x1 + y1 + x2 + y2	// formula-(6)	FMA inst.
+				// 16*x1/vDP = 32*y1/vSP = 2*x2/sDP = 2*y2/sSP = RF	// formula-(7)	// approximation
+					// x1 = RF*vDP/16
+					// y1 = RF*vSP/32
+					// x2 = RF*sDP/2
+					// y2 = RF*sSP/2
+				// put into formula-(6)
+				// FMA_INS = RF*(vDP/16 + vSP/32 + sDP/2 + sSP/2)
+				// RF = FMA_INS / (vDP/16 + vSP/32 + sDP/2 + sSP/2)	// formula-(12)
+				// put into formula-(5)
+				// FMA ops = RF*(vDP+vSP+sDP+sSP) == RF*PAPI_FP_OPS
+
 
 			// SVE f.p. operations are counted uniquely, and needs to scale 4x (512/128) to obtain actual ops
 			//	i.e. _SCALE_OPS_ values should be multiplied by 4
-				my_papi.v_sorted[0] = 4*fp_dpv;
-				my_papi.v_sorted[2] = 4*fp_spv;
+				fp_dpv  = 4 * my_papi.accumu[ip] ;
+				fp_dp1  = my_papi.accumu[ip+1] ;
+				fp_spv  = 4 * my_papi.accumu[ip+2] ;
+				fp_sp1  = my_papi.accumu[ip+3] ;
+				fma_ins  = my_papi.accumu[ip+4] ;
+				fp_vector =                   fp_dpv + fp_spv ;
+				fp_total  = fp_dp1 + fp_sp1 + fp_dpv + fp_spv ;
 
-			//	Ratio of FMA instructions over total f.p. instructions = fma_ins / (vDP/16 + sDP + vSP/32 + sSP )
-				my_papi.s_sorted[jp] = "FMA_ratio" ;
-				my_papi.v_sorted[jp] = fma_ins / (fp_dpv/16 + fp_dp1 + fp_spv/32 + fp_sp1 );
+			// correction of v_sorted values
+				my_papi.v_sorted[0] = fp_dpv;
+				my_papi.v_sorted[2] = fp_spv;
+
+			//	Ratio of FMA instructions over total f.p. instructions = fma_ins / (vDP/16 + sDP/2 + vSP/32 + sSP/2 )
+				fma_percent = 0.0;
+				if ( fp_total > 0.0 ) {
+				fma_percent = 100.0* fma_ins / (fp_dpv/16 + fp_dp1/2 + fp_spv/32 + fp_sp1/2 );
+				}
+				my_papi.s_sorted[jp] = "[FMA_ops%]" ;
+				my_papi.v_sorted[jp] = fma_percent;
 				jp++;
 			}
 			if (m_exclusive) {
 				if ( fp_total > 0.0 ) {
 				vector_percent = fp_vector/fp_total;
-				} else {
-				vector_percent = 0.0;
 				}
 			}
 		}
@@ -1077,11 +1086,11 @@ void PerfWatch::sortPapiCounterList (void)
 		my_papi.s_sorted[jp] = "Total_FPs" ;
 		my_papi.v_sorted[jp] = fp_total;
 		jp++;
-		my_papi.s_sorted[jp] = "FLOPS" ;
+		my_papi.s_sorted[jp] = "[Flops]" ;
 		//	my_papi.v_sorted[jp] = fp_total / m_time;
 		my_papi.v_sorted[jp] = fp_total * perf_rate;
 		jp++;
-		my_papi.s_sorted[jp] = "VECTOR(%)" ;
+		my_papi.s_sorted[jp] = "[Vector %]" ;
 		my_papi.v_sorted[jp] = vector_percent * 100.0;
 		jp++;
 
@@ -1276,7 +1285,7 @@ void PerfWatch::sortPapiCounterList (void)
 			d_sve_store_ins = my_papi.accumu[ip+3] + my_papi.accumu[ip+5] + my_papi.accumu[ip+7];	// SVE store
 			vector_percent = (d_sve_load_ins+d_sve_store_ins)/(d_load_ins+d_store_ins) ;
 
-			my_papi.s_sorted[jp] = "VECTOR(%)" ;
+			my_papi.s_sorted[jp] = "[Vector %]" ;
 			my_papi.v_sorted[jp] = vector_percent * 100.0;
 			jp++;
 			}
@@ -1482,7 +1491,7 @@ void PerfWatch::outputPapiCounterLegend (FILE* fp)
 	fprintf(fp, "\t\t L2D_hrf1:	L2 demand access counts hitting refill buffer (allocated by prefetch)\n");
 	fprintf(fp, "\t\t L2D_hrf2:	L2 prefetch counts hitting refill buffer (allocated by demand access)\n");
 	fprintf(fp, "\t\t L2D_WB:	L2 writeback counts reaching memory\n");
-	fprintf(fp, "\t\t [Mem B/s]:	Memory bandwidth responding to demand read, prefetch and writeback\n");
+	fprintf(fp, "\t\t [Mem B/s]:	Memory bandwidth responding to demand, prefetch and writeback\n");
 	}
 
 // VECTOR
@@ -1526,17 +1535,15 @@ void PerfWatch::outputPapiCounterLegend (FILE* fp)
 	} else
 
 	if (hwpc_group.platform == "A64FX" ) {
-	fprintf(fp, "\t\t DP_SVE_ops: double precision f.p. ops by SVE instructions\n");
-	fprintf(fp, "\t\t DP_FIX_ops: double precision f.p. ops by scalar/armv8 instructions\n");
-	fprintf(fp, "\t\t SP_SVE_ops: single precision f.p. ops by SVE instructions\n");
-	fprintf(fp, "\t\t SP_FIX_ops: single precision f.p. ops by scalar/armv8 instructions\n");
+	fprintf(fp, "\t\t DP_SVE_op:  double precision f.p. ops by SVE instructions\n");
+	fprintf(fp, "\t\t DP_FIX_op:  double precision f.p. ops by scalar/armv8 instructions\n");
+	fprintf(fp, "\t\t SP_SVE_op:  single precision f.p. ops by SVE instructions\n");
+	fprintf(fp, "\t\t SP_FIX_op:  single precision f.p. ops by scalar/armv8 instructions\n");
 	fprintf(fp, "\t\t FMA_inst:   fused multiply+add instructions\n");
-	fprintf(fp, "\t\t FMA_ratio:  The ratio of FMA v.s. non-FMA f.p. ops\n");
-	fprintf(fp, "\t\t [Total_FPs]: floating point operations as the sum of instructions*width \n");
+	fprintf(fp, "\t\t FMA_ops %]: percentage of FMA operations over all f.p. operations\n");
+	fprintf(fp, "\t\t [Total_FPs]: total floating point operations\n");
 	fprintf(fp, "\t\t [Flops]:    floating point operations per second \n");
 	fprintf(fp, "\t\t [Vector %]: percentage of vectorized f.p. operations\n");
-	fprintf(fp, "\t\t note that FMA_ratio is the roughly approximated number using the following assumption. \n");
-	fprintf(fp, "\t\t\t (FMA vector OPS)/(vector OPS) = (FMA scalar OPS)/(scalar OPS) = RF for both DP and SP \n");
 	}
 
 // CACHE
@@ -1578,9 +1585,8 @@ void PerfWatch::outputPapiCounterLegend (FILE* fp)
 	if (hwpc_group.platform == "Xeon" ) {
 	fprintf(fp, "\t\t LOAD_INS:  memory load instructions\n");
 	fprintf(fp, "\t\t STORE_INS: memory store instructions\n");
-	fprintf(fp, "\t\t following data is only available for Sandybridge and Ivybridge\n");
-	fprintf(fp, "\t\t WBACK_MEM:   memory write via writeback store\n");
-	fprintf(fp, "\t\t STRMS_MEM:   memory write via streaming store (nontemporal store)\n");
+	fprintf(fp, "\t\t WBACK_MEM: memory write via writeback store (see Remarks below)\n");
+	fprintf(fp, "\t\t STRMS_MEM: memory write via streaming store, i.e. nontemporal store (see Remarks below)\n");
 	fprintf(fp, "\t\t [Mem B/s]: Memory write bandwidth responding to writeback and streaming-stores\n");
 	} else
 
@@ -1596,14 +1602,15 @@ void PerfWatch::outputPapiCounterLegend (FILE* fp)
 	} else
 
 	if (hwpc_group.platform == "A64FX" ) {
-	fprintf(fp, "\t\t LOAD_INS:  memory load instructions\n");
-	fprintf(fp, "\t\t STORE_INS: memory store instructions\n");
-	fprintf(fp, "\t\t SVE_LOAD:  memory read by SVE and Advanced SIMD load instructions.\n");
-	fprintf(fp, "\t\t SVE_STORE: memory write by SVE and Advanced SIMD store instructions.\n");
-	fprintf(fp, "\t\t SVE_SMV_LD:memory read by SVE and Advanced SIMD multiple vector contiguous structure load instructions.\n");
-	fprintf(fp, "\t\t SVE_SMV_ST:memory write by SVE and Advanced SIMD multiple vector contiguous structure store instructions.\n");
-	fprintf(fp, "\t\t GATHER_LD: memory read by SVE non-contiguous gather-load instructions.\n");
-	fprintf(fp, "\t\t SCATTER_ST:memory write by SVE non-contiguous scatter-store instructions.\n");
+	fprintf(fp, "\t\t LOAD_INS:   memory load instructions\n");
+	fprintf(fp, "\t\t STORE_INS:  memory store instructions\n");
+	fprintf(fp, "\t\t SVE_LOAD:   memory read by SVE and Advanced SIMD load instructions.\n");
+	fprintf(fp, "\t\t SVE_STORE:  memory write by SVE and Advanced SIMD store instructions.\n");
+	fprintf(fp, "\t\t SVE_SMV_LD: memory read by SVE and Advanced SIMD multiple vector contiguous structure load instructions.\n");
+	fprintf(fp, "\t\t SVE_SMV_ST: memory write by SVE and Advanced SIMD multiple vector contiguous structure store instructions.\n");
+	fprintf(fp, "\t\t GATHER_LD:  memory read by SVE non-contiguous gather-load instructions.\n");
+	fprintf(fp, "\t\t SCATTER_ST: memory write by SVE non-contiguous scatter-store instructions.\n");
+	fprintf(fp, "\t\t [Vector %]:  percentage of SVE load/store instructions over all load/store instructions.\n");
 	}
 
 // CYCLES
@@ -1616,7 +1623,7 @@ void PerfWatch::outputPapiCounterLegend (FILE* fp)
 	fprintf(fp, "\n");
 	fprintf(fp, "\t Remarks.\n");
 	fprintf(fp, "\t\t Symbols represent HWPC (hardware performance counter) native and derived events\n");
-	fprintf(fp, "\t\t Symbols in [] such as [Ins/cyc] are calculated statistics in shown unit.\n");
+	fprintf(fp, "\t\t Symbols in [] are frequently used performance metrics which are calculated from these events.\n");
 
 	if (hwpc_group.platform == "Xeon" ) {
 	fprintf(fp, "\t Special remark for Intel Xeon memory bandwidth.\n");
@@ -1625,12 +1632,20 @@ void PerfWatch::outputPapiCounterLegend (FILE* fp)
 	fprintf(fp, "\t\t Use HWPC_CHOOSER=BANDWIDTH to report the read BW responding to demand read and prefetch,\n");
 	fprintf(fp, "\t\t and HWPC_CHOOSER=LOADSTORE for the write BW responding to writeback and streaming-stores.\n");
 	fprintf(fp, "\t\t The symbols L3 cache and LLC both refer to the same Last Level Cache.\n");
+	fprintf(fp, "\t\t following data is only available for Sandybridge and Ivybridge\n");
+	fprintf(fp, "\t\t WBACK_MEM:   memory write via writeback store\n");
+	fprintf(fp, "\t\t STRMS_MEM:   memory write via streaming store (nontemporal store)\n");
 	}
 
 	if (hwpc_group.platform == "SPARC64" ) {
 	fprintf(fp, "\t Special remarks for SPARC64*fx memory bandwidth.\n");
 	fprintf(fp, "\t\t The memory bandwidth is based on L2 cache events, not on memory controller information, \n");
 	fprintf(fp, "\t\t and is calculated as the sum of demand read miss, prefetch miss and writeback reaching memory.\n");
+	}
+
+	if (hwpc_group.platform == "A64FX" ) {
+	fprintf(fp, "\t\t Note that [FMA_ops %] is the roughly approximated number using the following assumption. \n");
+	fprintf(fp, "\t\t\t (FMA vector OPS)/(vector OPS) = (FMA scalar OPS)/(scalar OPS) for both DP and SP \n");
 	}
 
 #endif // USE_PAPI

@@ -945,14 +945,14 @@ namespace pm_lib {
 
 	if (my_rank == 0 && is_unit < 2) {
 	    fprintf(fp, "Label  %s%s\n", m_exclusive ? "" : "*", m_label.c_str());
-    	fprintf(fp, "Thread  call  time[s]  ti/tav[%%]  operations  performance\n");
+    	fprintf(fp, "Thread  call  time[s]  t/tav[%%]  operations  performance\n");
 	} else 
 	if (my_rank == 0 && is_unit >= 2) {
 	    fprintf(fp, "Label  %s%s\n", m_exclusive ? "" : "*", m_label.c_str());
 
 		std::string s;
 		int ip, jp, kp;
-    	fprintf(fp, "Thread  call  time[s]  ti/tav[%%]");
+    	fprintf(fp, "Thread  call  time[s]  t/tav[%%]");
 		for(int i=0; i<my_papi.num_sorted; i++) {
 			kp = my_papi.s_sorted[i].find_last_of(':');
 			if ( kp < 0) {
