@@ -56,12 +56,12 @@ namespace pm_lib {
   ///   @param[in] is_unit ユーザー申告値かHWPC自動測定値かの指定
   ///              = 0: ユーザが引数で指定したデータ移動量(バイト)
   ///              = 1: ユーザが引数で指定した演算量(浮動小数点演算量)
-  ///              = 2: HWPC が自動測定する memory bandwidth event
+  ///              = 2: HWPC が自動測定する data access bandwidth event
   ///              = 3: HWPC が自動測定する flops event
-  ///              = 4: HWPC が自動測定する vectorization (SSE, AVX, etc)
+  ///              = 4: HWPC が自動測定する vectorization (SSE, AVX, SVE, etc)
   ///              = 5: HWPC が自動測定する cache hit, miss,
   ///              = 6: HWPC が自動測定する cycles, instructions
-  ///              = 7: HWPC が自動測定する memory load/store instructions
+  ///              = 7: HWPC が自動測定する load/store instruction type
   ///   @return  単位変換後の数値
   ///
   ///   @note is_unitは通常PerfWatch::statsSwitch()で事前に決定されている
@@ -163,12 +163,12 @@ namespace pm_lib {
 
     // 0: user set bandwidth
     // 1: user set flop counts
-    // 2: BANDWIDTH : HWPC measured memory read bandwidth
+    // 2: BANDWIDTH : HWPC measured data access bandwidth
     // 3: FLOPS     : HWPC measured flop counts
     // 4: VECTOR    : HWPC measured vectorization
     // 5: CACHE     : HWPC measured cache hit/miss
     // 6: CYCLE     : HWPC measured cycles, instructions
-    // 7: LOADSTORE : HWPC measured memory load/store (demand access, prefetch, writeback, streaming store)
+    // 7: LOADSTORE : HWPC measured load/store instruction type
 	m_flop = 0.0;
 	m_percentage = 0.0;
 	if ( is_unit >= 0 && is_unit <= 2 ) {
@@ -188,6 +188,11 @@ namespace pm_lib {
 	if ( is_unit == 6 ) {
 		m_flop = my_papi.v_sorted[my_papi.num_sorted-2] ;
 	} else
+
+//
+// DEBUG from here 2020/02/09
+//
+
     if ( is_unit == 7 ) {
 		m_flop = m_time * my_papi.v_sorted[my_papi.num_sorted-1] ;
 	}
@@ -328,12 +333,12 @@ namespace pm_lib {
   /// @return
   ///   0: ユーザが引数で指定したデータ移動量(バイト)を採用する
   ///   1: ユーザが引数で指定した計算量を採用する "Flops"
-  ///   2: HWPC が自動的に測定する memory read event
+  ///   2: HWPC が自動的に測定する data access bandwidth
   ///   3: HWPC が自動的に測定する flops event
-  ///   4: HWPC が自動的に測定する vectorization (SSE, AVX, etc) event
+  ///   4: HWPC が自動的に測定する vectorized f.p. (SSE, AVX, SVE, etc) event
   ///   5: HWPC が自動的に測定する cache hit, miss
   ///   6: HWPC が自動的に測定する cycles, instructions
-  ///   7: HWPC が自動的に測定する memory load/store (demand access, prefetch, writeback, streaming store)
+  ///   7: HWPC が自動的に測定する load/store instruction type
   ///
   /// @note
   /// 計算量としてユーザー申告値を用いるかHWPC計測値を用いるかの決定を行う
@@ -342,14 +347,15 @@ namespace pm_lib {
   int PerfWatch::statsSwitch()
   {
     int is_unit;
+
     // 0: user set bandwidth
     // 1: user set flop counts
-    // 2: HWPC measured memory read bandwidth
-    // 3: HWPC measured flop counts
-    // 4: HWPC measured vectorization
-    // 5: HWPC measured cache hit/miss
-    // 6: HWPC measured cycles, instructions
-    // 7: HWPC measured memory load/store (demand access, prefetch, writeback, streaming store)
+    // 2: BANDWIDTH : HWPC measured data access bandwidth
+    // 3: FLOPS     : HWPC measured flop counts
+    // 4: VECTOR    : HWPC measured vectorization
+    // 5: CACHE     : HWPC measured cache hit/miss
+    // 6: CYCLE     : HWPC measured cycles, instructions
+    // 7: LOADSTORE : HWPC measured load/store instruction type
 
     if (hwpc_group.number[I_bandwidth] > 0) {
       is_unit=2;

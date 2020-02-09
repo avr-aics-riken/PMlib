@@ -389,8 +389,7 @@ void PerfWatch::createPapiCounterList ()
 				papi.s_name[ip] = "OFFCORE_RESPONSE_0:ANY_DATA:L3_MISS";
 					my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "L3_MISS"; ip++;
 			} else
-			if (hwpc_group.i_platform == 3 ||
-				hwpc_group.i_platform == 5 ) {
+			if (hwpc_group.i_platform == 3 ) {
 				hwpc_group.number[I_bandwidth] += 2;
 				papi.s_name[ip] = "OFFCORE_RESPONSE_0:ANY_DATA:L3_HIT";
 					my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "L3_HIT"; ip++;
@@ -400,6 +399,13 @@ void PerfWatch::createPapiCounterList ()
 			if (hwpc_group.i_platform == 4 ) {
 				hwpc_group.number[I_bandwidth] += 2;
 				papi.s_name[ip] = "OFFCORE_RESPONSE_0:ANY_DATA:SPL_HIT";
+					my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "L3_HIT"; ip++;
+				papi.s_name[ip] = "OFFCORE_RESPONSE_0:ANY_DATA:L3_MISS";
+					my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "L3_MISS"; ip++;
+			} else
+			if (hwpc_group.i_platform == 5 ) {
+				hwpc_group.number[I_bandwidth] += 2;
+				papi.s_name[ip] = "OFFCORE_RESPONSE_0:ANY_DATA:L3_HIT";
 					my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "L3_HIT"; ip++;
 				papi.s_name[ip] = "OFFCORE_RESPONSE_0:ANY_DATA:L3_MISS";
 					my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "L3_MISS"; ip++;
@@ -1258,7 +1264,7 @@ void PerfWatch::sortPapiCounterList (void)
 // if (LOADSTORE)
 
 	if ( hwpc_group.number[I_loadstore] > 0 ) {
-		double d_load_ins, d_store_ins;
+		double d_load_ins, d_store_ins, d_load_store_ins, d_simd_load_store_ins;
 		double d_writeback_MEM, d_streaming_MEM;
 		double bandwidth;
 		double d_sve_load_ins, d_sve_store_ins;
@@ -1272,36 +1278,49 @@ void PerfWatch::sortPapiCounterList (void)
 			counts += my_papi.v_sorted[jp] = my_papi.accumu[ip] ;
 			ip++;jp++;
 		}
+		ip = hwpc_group.index[I_loadstore];
 
     	if (hwpc_group.platform == "Xeon" ) {
 			if (hwpc_group.i_platform >= 2 && hwpc_group.i_platform <= 4 ) {
 				// memory write operation via writeback and streaming-store for Sandybridge and Ivybridge
+				// this event is not counted on Skylake somehow...
 				ip = hwpc_group.index[I_loadstore];
 				d_writeback_MEM = my_papi.accumu[ip+2] ;	//	OFFCORE_RESPONSE_0:WB:ANY_RESPONSE
 				d_streaming_MEM = my_papi.accumu[ip+3] ;	//	OFFCORE_RESPONSE_0:STRM_ST:L3_MISS:SNP_ANY
-				bandwidth = (d_writeback_MEM + d_streaming_MEM) * 64.0 * perf_rate;	// Memory write bandwidth
-				my_papi.s_sorted[jp] = "Mem [B/s]" ;
-				my_papi.v_sorted[jp] = bandwidth ;	//	* 1.0e-9;
-				jp++;
-			} else {
-				// The writeback and streaming-store events (WB and STRMS) are deleted on Skylake, somehow...
+				bandwidth = (d_writeback_MEM + d_streaming_MEM) * 64.0 * perf_rate;
+				// We don't report this bandwidth by writeback and streaming store
+					//	my_papi.s_sorted[jp] = "wb+strm.st" ;
+					//	my_papi.v_sorted[jp] = bandwidth ;
+					//	jp++;
+			}
+			vector_percent = 0.0;	// vectorized load and store instructions are not defined on Xeon
+		} else
+
+		if (hwpc_group.platform == "SPARC64" ) {
+			if (hwpc_group.i_platform == 8 || hwpc_group.i_platform == 9 ) {
+				d_load_store_ins = my_papi.accumu[ip+2] ;
+				d_simd_load_store_ins = my_papi.accumu[ip+3] ;
+				vector_percent = d_simd_load_store_ins/d_load_store_ins;
+			}
+			else if (hwpc_group.i_platform == 11 ) {
+				d_load_store_ins = my_papi.accumu[ip+2] ;
+				d_simd_load_store_ins = my_papi.accumu[ip+3] ;
+				vector_percent = d_simd_load_store_ins/d_load_store_ins;
 			}
 		} else
 
 		if (hwpc_group.platform == "A64FX" ) {
-			ip = hwpc_group.index[I_loadstore];
 			if (hwpc_group.i_platform == 21 ) {
-			d_load_ins  = my_papi.accumu[ip] ;	//	PAPI_LD_INS
-			d_store_ins = my_papi.accumu[ip+1] ;	//	PAPI_SR_INS
-			d_sve_load_ins = my_papi.accumu[ip+2] + my_papi.accumu[ip+4] + my_papi.accumu[ip+6];	// SVE load
-			d_sve_store_ins = my_papi.accumu[ip+3] + my_papi.accumu[ip+5] + my_papi.accumu[ip+7];	// SVE store
-			vector_percent = (d_sve_load_ins+d_sve_store_ins)/(d_load_ins+d_store_ins) ;
-
-			my_papi.s_sorted[jp] = "[Vector %]" ;
-			my_papi.v_sorted[jp] = vector_percent * 100.0;
-			jp++;
+				d_load_ins  = my_papi.accumu[ip] ;		//	PAPI_LD_INS
+				d_store_ins = my_papi.accumu[ip+1] ;	//	PAPI_SR_INS
+				d_sve_load_ins = my_papi.accumu[ip+2] + my_papi.accumu[ip+4] + my_papi.accumu[ip+6];	// SVE load
+				d_sve_store_ins = my_papi.accumu[ip+3] + my_papi.accumu[ip+5] + my_papi.accumu[ip+7];	// SVE store
+				vector_percent = (d_sve_load_ins+d_sve_store_ins)/(d_load_ins+d_store_ins) ;
 			}
 		}
+		my_papi.s_sorted[jp] = "[Vector %]" ;
+		my_papi.v_sorted[jp] = vector_percent * 100.0;
+		jp++;
 	}
     	
 // count the number of reported events and derived matrices
@@ -1482,8 +1501,8 @@ void PerfWatch::outputPapiCounterLegend (FILE* fp)
 	fprintf(fp, "\t\t L3_MISS:   Last Level Cache data read miss \n");
 	fprintf(fp, "\t\t [L2$ B/s]: L2 cache working bandwidth responding to demand read and prefetch\n");
 	fprintf(fp, "\t\t [L3$ B/s]: Last Level Cache bandwidth responding to demand read and prefetch\n");
-	fprintf(fp, "\t\t [Mem B/s]: Memory read bandwidth responding to demand read and prefetch\n");
-	fprintf(fp, "\t\t          : The write bandwidth must be measured separately. See Remarks.\n");
+	fprintf(fp, "\t\t [Mem B/s]: Memory bandwidth responding to demand read and prefetch\n");
+	//	fprintf(fp, "\t\t          : The write bandwidth must be measured separately. See Remarks.\n");
 	} else
 
 	if (hwpc_group.platform == "SPARC64" ) {
@@ -1569,6 +1588,8 @@ void PerfWatch::outputPapiCounterLegend (FILE* fp)
 	fprintf(fp, "\t\t L2_TCM:     L2 cache demand access misses\n");
 	//	fprintf(fp, "\t\t L3_TCM: level 3 total cache misses by demand\n");
 	fprintf(fp, "\t\t [L1$ hit%]: data access hit(%) in L1 data cache and Line Fill Buffer\n");
+	fprintf(fp, "\t\t [L2$ hit%]: data access hit(%) in L2 cache\n");
+	fprintf(fp, "\t\t [L1L2hit%]: sum of hit(%) in L1 and L2 cache\n");
 	} else
 
 	if (hwpc_group.platform == "SPARC64" ) {
@@ -1578,6 +1599,8 @@ void PerfWatch::outputPapiCounterLegend (FILE* fp)
 	fprintf(fp, "\t\t L1_TCM:     L1 cache misses (by demand and by prefetch)\n");
 	fprintf(fp, "\t\t L2_TCM:     L2 cache misses (by demand and by prefetch)\n");
 	fprintf(fp, "\t\t [L1$ hit%]: data access hit(%) in L1 cache \n");
+	fprintf(fp, "\t\t [L2$ hit%]: data access hit(%) in L2 cache\n");
+	fprintf(fp, "\t\t [L1L2hit%]: sum of hit(%) in L1 and L2 cache\n");
 	} else
 
 	if (hwpc_group.platform == "A64FX" ) {
@@ -1587,30 +1610,33 @@ void PerfWatch::outputPapiCounterLegend (FILE* fp)
 	fprintf(fp, "\t\t L1_TCM:     L1 data cache misses\n");
 	fprintf(fp, "\t\t L2_TCM:     L2 cache misses\n");
 	fprintf(fp, "\t\t [L1$ hit%]: data access hit(%) in L1 cache \n");
-	}
-
 	fprintf(fp, "\t\t [L2$ hit%]: data access hit(%) in L2 cache\n");
 	fprintf(fp, "\t\t [L1L2hit%]: sum of hit(%) in L1 and L2 cache\n");
+	}
+
 
 // LOADSTORE
 	fprintf(fp, "\t HWPC_CHOOSER=LOADSTORE:\n");
 	if (hwpc_group.platform == "Xeon" ) {
 	fprintf(fp, "\t\t LOAD_INS:   memory load instructions\n");
 	fprintf(fp, "\t\t STORE_INS:  memory store instructions\n");
-	fprintf(fp, "\t\t WBACK_MEM:  memory write via writeback store (see Remarks below)\n");
-	fprintf(fp, "\t\t STRMS_MEM:  memory write via streaming store, i.e. nontemporal store (see Remarks below)\n");
-	fprintf(fp, "\t\t [Mem B/s]:  Memory write bandwidth responding to writeback and streaming-stores\n");
+		if (hwpc_group.i_platform == 11 ) {
+	fprintf(fp, "\t\t WBACK_MEM:  memory write via cache writeback store\n");
+	fprintf(fp, "\t\t STRMS_MEM:  memory write via streaming store, i.e. nontemporal store \n");
+		}
+	fprintf(fp, "\t\t [Vector %]: not available on Xeon processors.\n");
 	} else
 
 	if (hwpc_group.platform == "SPARC64" ) {
 		if (hwpc_group.i_platform == 8 || hwpc_group.i_platform == 9 ) {
 	fprintf(fp, "\t\t LD+ST:      memory load/store instructions\n");
-	fprintf(fp, "\t\t SIMD:LDST:  memory load/store SIMD instructions(2SIMD)\n");
+	fprintf(fp, "\t\t SIMD:LDST:  memory load/store SIMD instructions(128bits)\n");
 		}
 		if (hwpc_group.i_platform == 11 ) {
 	fprintf(fp, "\t\t LD+ST:      memory load/store instructions\n");
-	fprintf(fp, "\t\t XSIMD:LDST: memory load/store extended SIMD instructions(4SIMD)\n");
+	fprintf(fp, "\t\t XSIMD:LDST: memory load/store extended SIMD instructions(256bits)\n");
 		}
+	fprintf(fp, "\t\t [Vector %]: percentage of SIMD load/store instructions over all load/store instructions.\n");
 	} else
 
 	if (hwpc_group.platform == "A64FX" ) {
@@ -1639,12 +1665,12 @@ void PerfWatch::outputPapiCounterLegend (FILE* fp)
 
 	if (hwpc_group.platform == "Xeon" ) {
 	fprintf(fp, "\t Special remark for Intel Xeon memory bandwidth.\n");
-	fprintf(fp, "\t\t The memory bandwidth (BW) is based on uncore events, not on memory controller information.\n");
-	fprintf(fp, "\t\t The read BW and the write BW must be obtained separately, unfortunately.\n");
-	fprintf(fp, "\t\t Use HWPC_CHOOSER=BANDWIDTH to report the read BW responding to demand read and prefetch,\n");
-	fprintf(fp, "\t\t and HWPC_CHOOSER=LOADSTORE for the write BW responding to writeback and streaming-stores.\n");
+	fprintf(fp, "\t\t The memory bandwidth (BW) is based on core events, not on memory controller information.\n");
+	//	fprintf(fp, "\t\t The read BW and the write BW must be obtained separately, unfortunately.\n");
+	//	fprintf(fp, "\t\t Use HWPC_CHOOSER=BANDWIDTH to report the read BW responding to demand read and prefetch,\n");
+	//	fprintf(fp, "\t\t and HWPC_CHOOSER=LOADSTORE for the write BW responding to writeback and streaming-stores.\n");
 	fprintf(fp, "\t\t The symbols L3 cache and LLC both refer to the same Last Level Cache.\n");
-	fprintf(fp, "\t\t following data is only available for Sandybridge and Ivybridge\n");
+	fprintf(fp, "\t\t The following data is available for Sandybridge and Ivybridge only.\n");
 	fprintf(fp, "\t\t WBACK_MEM:   memory write via writeback store\n");
 	fprintf(fp, "\t\t STRMS_MEM:   memory write via streaming store (nontemporal store)\n");
 	}

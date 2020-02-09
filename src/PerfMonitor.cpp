@@ -1196,17 +1196,17 @@ namespace pm_lib {
     if ( is_unit == 0 || is_unit == 1 ) {
       fprintf(fp, "| user defined numerical performance\n");
     } else if ( is_unit == 2 ) {
-      fprintf(fp, "| hardware counted bandwidth events\n");
+      fprintf(fp, "| hardware counted memory access events\n");
     } else if ( is_unit == 3 ) {
-      fprintf(fp, "| hardware counted flop operations\n");
+      fprintf(fp, "| hardware counted floating point ops.\n");
     } else if ( is_unit == 4 ) {
-      fprintf(fp, "| hardware vectorized operations \n");
+      fprintf(fp, "| hardware vectorized floating point ops.\n");
     } else if ( is_unit == 5 ) {
       fprintf(fp, "| hardware counted cache utilization\n");
     } else if ( is_unit == 6 ) {
-      fprintf(fp, "| hardware counted instructions\n");
+      fprintf(fp, "| hardware counted total instructions\n");
     } else if ( is_unit == 7 ) {
-      fprintf(fp, "| hardware counted bandwidth events\n");
+      fprintf(fp, "| hwpc memory load and store instructions\n");
     } else {
       fprintf(fp, "| *** internal bug. <printBasicSections> ***\n");
 		;	// should not reach here
@@ -1217,17 +1217,17 @@ namespace pm_lib {
     if ( is_unit == 0 || is_unit == 1 ) {
       fprintf(fp, "|  operations   sdv    performance\n");
     } else if ( is_unit == 2 ) {
-      fprintf(fp, "|    Bytes      sdv   memory access\n");
+      fprintf(fp, "|    Bytes      sdv    bandwidth\n");
     } else if ( is_unit == 3 ) {
-      fprintf(fp, "|  f.p.ops      sdv    f.p.perf.\n");
+      fprintf(fp, "|  f.p.ops      sdv    performance\n");
     } else if ( is_unit == 4 ) {
       fprintf(fp, "|  f.p.ops      sdv    vectorized%%\n");
     } else if ( is_unit == 5 ) {
       fprintf(fp, "| load+store    sdv    L1+L2 hit%%\n");
     } else if ( is_unit == 6 ) {
-      fprintf(fp, "| instructions  sdv    perf.\n");
+      fprintf(fp, "| instructions  sdv    performance\n");
     } else if ( is_unit == 7 ) {
-      fprintf(fp, "|    Bytes      sdv   memory write\n");
+      fprintf(fp, "|    Bytes      sdv    vectorized%%\n");
     } else {
       fprintf(fp, "| *** internal bug. <printBasicSections> ***\n");
 		;	// should not reach here
@@ -1286,6 +1286,14 @@ namespace pm_lib {
               w.m_time_sd,          // 標準偏差
               tav);                 // コール1回あたりの時間
 
+		// 0: user set bandwidth
+		// 1: user set flop counts
+		// 2: BANDWIDTH : HWPC measured data access bandwidth
+		// 3: FLOPS     : HWPC measured flop counts
+		// 4: VECTOR    : HWPC measured vectorization (%)
+		// 5: CACHE     : HWPC measured cache hit/miss (%)
+		// 6: CYCLE     : HWPC measured cycles, instructions
+		// 7: LOADSTORE : HWPC measured load/store instructions type (%)
       if (w.m_time_av == 0.0) {
         fops = 0.0;
       } else {
@@ -1295,8 +1303,11 @@ namespace pm_lib {
         if ( is_unit == 4 || is_unit == 5 ) {
           fops = w.m_percentage;
         } else
-        if ( is_unit == 6 || is_unit == 7 ) {
+        if ( is_unit == 6 ) {
           fops = (w.m_count_av==0) ? 0.0 : w.m_flop_av/w.m_time_av;
+        } else
+        if ( is_unit == 7 ) {
+          fops = w.m_percentage;
         }
       }
 
@@ -1319,16 +1330,17 @@ namespace pm_lib {
           sum_time_flop += w.m_time_av;
           sum_flop += w.m_flop_av;
         } else
-        if ( (is_unit == 2) || (is_unit == 3) || (is_unit == 6) || (is_unit == 7) ) {
+        if ( (is_unit == 2) || (is_unit == 3) || (is_unit == 6) ) {
           sum_time_flop += w.m_time_av;
           sum_flop += w.m_flop_av;
 
         } else
-        if ( (is_unit == 4) || (is_unit == 5) ) {
+        if ( (is_unit == 4) || (is_unit == 5) || (is_unit == 7) ) {
           sum_time_flop += w.m_time_av;
           sum_flop += w.m_flop_av;
           sum_other += w.m_flop_av * uF;
         }
+
       }
 
     }	// for
