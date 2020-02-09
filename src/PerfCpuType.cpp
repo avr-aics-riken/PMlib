@@ -532,7 +532,7 @@ void PerfWatch::createPapiCounterList ()
 				papi.s_name[ip] = "FP_ARITH:512B_PACKED_DOUBLE";	//	8 SIMD
 					my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "DP_AVXW"; ip++;
 			} else {
-				;	// no FLOPS support
+				;	// no VECTOR support
 				// hwpc_group.i_platform = 3;	// Haswell does not support VECTOR events
 			}
 
@@ -816,10 +816,30 @@ void PerfWatch::sortPapiCounterList (void)
 			counts += my_papi.v_sorted[jp] = my_papi.accumu[ip] ;
 			ip++;jp++;
 		}
+		my_papi.s_sorted[jp] = "Total_FP ";
+		my_papi.v_sorted[jp] = counts;
+		jp++;
+
 		d_flops = counts * perf_rate;		//	= counts / m_time ;
 		my_papi.s_sorted[jp] = "[Flops] ";
 		my_papi.v_sorted[jp] = d_flops;
 		jp++;
+
+//
+// DEBUG from here 2020/02/09
+//
+
+    	if (hwpc_group.platform == "Xeon" ) {
+				my_papi.s_sorted[jp] = "[%Peak] ";
+				my_papi.v_sorted[jp] = 0.0;	// TODO // DEBUG from here 2020/02/09
+				jp++;
+    	} else
+
+    	if (hwpc_group.platform == "SPARC64" ) {
+				my_papi.s_sorted[jp] = "[%Peak] ";
+				my_papi.v_sorted[jp] = 0.0;	// TODO // DEBUG from here 2020/02/09
+				jp++;
+		} else
 
     	if (hwpc_group.platform == "A64FX" ) {
 			if (hwpc_group.i_platform == 21 ) {
@@ -840,7 +860,7 @@ void PerfWatch::sortPapiCounterList (void)
 		double d_load_store, d_simd_load_store, d_xsimd_load_store;
 		double d_hit_L2, d_miss_L2;
 		double d_hit_LLC, d_miss_LLC;
-		double bandwidth;
+		double d_Bytes, bandwidth;
 		double d_wb_L2;
 
 		counts = 0.0;
@@ -875,6 +895,12 @@ void PerfWatch::sortPapiCounterList (void)
 			my_papi.v_sorted[jp] = bandwidth ;	//	* 1.0e-9;
 			jp++;
 
+			// transferred data bytes out of memory
+			d_Bytes = d_miss_LLC *64.0;
+			my_papi.s_sorted[jp] = "BYTES " ;
+			my_papi.v_sorted[jp] = d_Bytes ;
+			jp++;
+
 			//	bandwidth = d_miss_LLC *64.0/m_time;	// Memory bandwidth
 			bandwidth = d_miss_LLC * 64.0 * perf_rate;
 			my_papi.s_sorted[jp] = "Mem [B/s]" ;
@@ -892,6 +918,7 @@ void PerfWatch::sortPapiCounterList (void)
 				//	counts  = my_papi.accumu[ip+2] + my_papi.accumu[ip+3] + my_papi.accumu[ip+4] ;
 				counts  = my_papi.accumu[ip+2] + my_papi.accumu[ip+3] + my_papi.accumu[ip+4] + my_papi.accumu[ip+5] ;
 				//	bandwidth = counts * 128 / m_time; // K (and FX10) has 128 Byte $ line
+				d_Bytes = counts * 128.0;
 				bandwidth = counts * 128.0 * perf_rate;
 			}
 			else if (hwpc_group.i_platform == 11 ) {
@@ -901,8 +928,12 @@ void PerfWatch::sortPapiCounterList (void)
 				//	counts  = my_papi.accumu[ip+2] + my_papi.accumu[ip+3] + my_papi.accumu[ip+4] ;
 				counts  = my_papi.accumu[ip+2] + my_papi.accumu[ip+3] + my_papi.accumu[ip+4] + my_papi.accumu[ip+5] ;
 				//	bandwidth = counts * 256 / m_time;
+				d_Bytes = counts * 256.0;
 				bandwidth = counts * 256.0 * perf_rate;
 			}
+			my_papi.s_sorted[jp] = "BYTES " ;
+			my_papi.v_sorted[jp] = d_Bytes ;
+			jp++;
 			my_papi.s_sorted[jp] = "Mem [B/s]" ;
 			my_papi.v_sorted[jp] = bandwidth ; //* 1.0e-9;
 			jp++;
@@ -920,9 +951,13 @@ void PerfWatch::sortPapiCounterList (void)
 
 				// Fugaku has 256 Byte $ line
 				counts  = d_miss_L2 + d_wb_L2;
-				bandwidth = counts * 256.0 * perf_rate;
+				d_Bytes = counts * 256.0;
+				my_papi.s_sorted[jp] = "BYTES " ;
+				my_papi.v_sorted[jp] = d_Bytes ;
+				jp++;
+				bandwidth = d_Bytes * perf_rate;
 				my_papi.s_sorted[jp] = "Mem [B/s]" ;
-				my_papi.v_sorted[jp] = bandwidth ; //* 1.0e-9;
+				my_papi.v_sorted[jp] = bandwidth ;
 				jp++;
 			}
 		}
@@ -1101,10 +1136,10 @@ void PerfWatch::sortPapiCounterList (void)
 			}
 		}
 
-		my_papi.s_sorted[jp] = "Total_FPs" ;
+		my_papi.s_sorted[jp] = "Total_FP " ;
 		my_papi.v_sorted[jp] = fp_total;
 		jp++;
-		my_papi.s_sorted[jp] = "[Flops]" ;
+		my_papi.s_sorted[jp] = "[Flops] " ;
 		//	my_papi.v_sorted[jp] = fp_total / m_time;
 		my_papi.v_sorted[jp] = fp_total * perf_rate;
 		jp++;
@@ -1121,6 +1156,10 @@ void PerfWatch::sortPapiCounterList (void)
 		double d_load_store, d_simd_load_store, d_xsimd_load_store;
 		double d_hit_LFB, d_hit_L1, d_miss_L1, d_miss_L2, d_miss_L3;
 		double d_L1_ratio, d_L2_ratio, d_cache_transaction;
+
+//
+// DEBUG from here - insert additional zero column of LOAD/STORE for K/FX100
+//
 
 		ip = hwpc_group.index[I_cache];
 		jp=0;
@@ -1272,6 +1311,9 @@ void PerfWatch::sortPapiCounterList (void)
 		counts = 0.0;
 		ip = hwpc_group.index[I_loadstore];
 		jp=0;
+//
+// DEBUG from here - insert additional zero column of LOAD/STORE for K/FX100
+//
 		for(int i=0; i<hwpc_group.number[I_loadstore]; i++)
 		{
 			my_papi.s_sorted[jp] = my_papi.s_name[ip] ;
@@ -1472,7 +1514,6 @@ void PerfWatch::outputPapiCounterLegend (FILE* fp)
 		if (hwpc_group.i_platform != 3 ) {
 	fprintf(fp, "\t\t SP_OPS:    single precision floating point operations\n");
 	fprintf(fp, "\t\t DP_OPS:    double precision floating point operations\n");
-	fprintf(fp, "\t\t [Flops]:   combined floating point operations per second \n");
 		} else {
 	fprintf(fp, "\t\t * Haswell processor does not have floating point operation counters,\n");
 	fprintf(fp, "\t\t * so PMlib does not produce HWPC report for FLOPS and VECTOR groups.\n");
@@ -1481,14 +1522,15 @@ void PerfWatch::outputPapiCounterLegend (FILE* fp)
 
 	if (hwpc_group.platform == "SPARC64" ) {
 	fprintf(fp, "\t\t FP_OPS:    floating point operations\n");
-	fprintf(fp, "\t\t [Flops]:   floating point operations per second \n");
 	} else
 
 	if (hwpc_group.platform == "A64FX" ) {
 	fprintf(fp, "\t\t SP_OPS:    single precision floating point operations\n");
 	fprintf(fp, "\t\t DP_OPS:    double precision floating point operations\n");
-	fprintf(fp, "\t\t [Flops]:   combined floating point operations per second \n");
 	}
+	fprintf(fp, "\t\t Total_FP:  total floating point operations\n");
+	fprintf(fp, "\t\t [Flops]:   floating point operations per second \n");
+	fprintf(fp, "\t\t [%Peak]:   sustained performance over peak performance\n");
 
 // BANDWIDTH
 	fprintf(fp, "\t HWPC_CHOOSER=BANDWIDTH:\n");
@@ -1501,6 +1543,7 @@ void PerfWatch::outputPapiCounterLegend (FILE* fp)
 	fprintf(fp, "\t\t L3_MISS:   Last Level Cache data read miss \n");
 	fprintf(fp, "\t\t [L2$ B/s]: L2 cache working bandwidth responding to demand read and prefetch\n");
 	fprintf(fp, "\t\t [L3$ B/s]: Last Level Cache bandwidth responding to demand read and prefetch\n");
+	fprintf(fp, "\t\t BYTES :   transferred data bytes from/to memory\n");
 	fprintf(fp, "\t\t [Mem B/s]: Memory bandwidth responding to demand read and prefetch\n");
 	//	fprintf(fp, "\t\t          : The write bandwidth must be measured separately. See Remarks.\n");
 	} else
@@ -1512,6 +1555,7 @@ void PerfWatch::outputPapiCounterLegend (FILE* fp)
 	fprintf(fp, "\t\t L2_MISS_PF: L2 cache misses by prefetch request\n");
 	fprintf(fp, "\t\t L2_WB_DM:   writeback by demand L2 cache misses \n");
 	fprintf(fp, "\t\t L2_WB_PF:   writeback by prefetch L2 cache misses \n");
+	fprintf(fp, "\t\t BYTES :    transferred data bytes from/to memory\n");
 	fprintf(fp, "\t\t [Mem B/s]:  Memory bandwidth responding to demand read, prefetch and writeback reaching memory\n");
 	} else
 
@@ -1522,6 +1566,7 @@ void PerfWatch::outputPapiCounterLegend (FILE* fp)
 	fprintf(fp, "\t\t L2D_hrf1:   L2 demand access counts hitting refill buffer (allocated by prefetch)\n");
 	fprintf(fp, "\t\t L2D_hrf2:   L2 prefetch counts hitting refill buffer (allocated by demand access)\n");
 	fprintf(fp, "\t\t L2D_WB:     L2 writeback counts reaching memory\n");
+	fprintf(fp, "\t\t BYTES :    transferred data bytes from/to memory\n");
 	fprintf(fp, "\t\t [Mem B/s]:  Memory bandwidth responding to demand, prefetch and writeback\n");
 	}
 
@@ -1537,7 +1582,7 @@ void PerfWatch::outputPapiCounterLegend (FILE* fp)
 	fprintf(fp, "\t\t DP_SSE:     double precision f.p. SSE instructions\n");
 	fprintf(fp, "\t\t DP_AVX:     double precision f.p. 256-bit AVX instructions\n");
 	fprintf(fp, "\t\t DP_AVXW:    double precision f.p. 512-bit AVX instructions\n");
-	fprintf(fp, "\t\t [Total_FPs]: floating point operations as the sum of instructions*width \n");
+	fprintf(fp, "\t\t Total_FP:  floating point operations as the sum of instructions*width \n");
 	fprintf(fp, "\t\t [Flops]:    floating point operations per second \n");
 	fprintf(fp, "\t\t [Vector %]: percentage of vectorized f.p. operations\n");
 		} else {
@@ -1560,7 +1605,7 @@ void PerfWatch::outputPapiCounterLegend (FILE* fp)
 	fprintf(fp, "\t\t 8FP_INS:    8 f.p. ops instructions\n");
 	fprintf(fp, "\t\t 16FP_INS : 16 f.p. ops instructions\n");
 		}
-	fprintf(fp, "\t\t [Total_FPs]: floating point operations as the sum of instructions*width \n");
+	fprintf(fp, "\t\t Total_FP:   floating point operations as the sum of instructions*width \n");
 	fprintf(fp, "\t\t [Flops]:    floating point operations per second \n");
 	fprintf(fp, "\t\t [Vector %]: percentage of vectorized f.p. operations\n");
 	} else
@@ -1571,8 +1616,8 @@ void PerfWatch::outputPapiCounterLegend (FILE* fp)
 	fprintf(fp, "\t\t SP_SVE_op:  single precision f.p. ops by SVE instructions\n");
 	fprintf(fp, "\t\t SP_FIX_op:  single precision f.p. ops by scalar/armv8 instructions\n");
 	fprintf(fp, "\t\t FMA_inst:   fused multiply+add instructions\n");
-	fprintf(fp, "\t\t FMA_ops %]: percentage of FMA operations over all f.p. operations\n");
-	fprintf(fp, "\t\t [Total_FPs]: total floating point operations\n");
+	fprintf(fp, "\t\t [FMA_ops %]: percentage of FMA operations over all f.p. operations\n");
+	fprintf(fp, "\t\t Total_FP:  total floating point operations\n");
 	fprintf(fp, "\t\t [Flops]:    floating point operations per second \n");
 	fprintf(fp, "\t\t [Vector %]: percentage of vectorized f.p. operations\n");
 	}
@@ -1662,6 +1707,9 @@ void PerfWatch::outputPapiCounterLegend (FILE* fp)
 	fprintf(fp, "\t Remarks.\n");
 	fprintf(fp, "\t\t Symbols represent HWPC (hardware performance counter) native and derived events\n");
 	fprintf(fp, "\t\t Symbols in [] are frequently used performance metrics which are calculated from these events.\n");
+	fprintf(fp, "\t\t The values in the Basic Report section shows the arithmetic mean value of the processes. \n");
+	fprintf(fp, "\t\t The values in the Process Report section shows the sum of threads generated by the process. \n");
+	fprintf(fp, "\t\t The values in the Thread Report section shows the precise thread level statistics. \n");
 
 	if (hwpc_group.platform == "Xeon" ) {
 	fprintf(fp, "\t Special remark for Intel Xeon memory bandwidth.\n");

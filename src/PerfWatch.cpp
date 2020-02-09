@@ -77,7 +77,7 @@ namespace pm_lib {
     T = 1000.0*G;
     P = 1000.0*T;
 
-    if ((is_unit == 0) || (is_unit == 2) || (is_unit == 7))  {
+    if ( (is_unit == 0) || (is_unit == 2) )  {
       if      ( fops > P ) {
         ret = fops / P;
         unit = "PB/sec";
@@ -94,9 +94,9 @@ namespace pm_lib {
         ret = fops / M;
         unit = "MB/sec";
       }
-    }
+    } else
 
-    if ((is_unit == 1) || (is_unit == 3))  {
+    if ( (is_unit == 1) || (is_unit == 3) )  {
       if      ( fops > P ) {
         ret = fops / P;
         unit = "Pflops";
@@ -113,16 +113,13 @@ namespace pm_lib {
         ret = fops / M;
         unit = "Mflops";
       }
-    }
+    } else
 
-    if ( is_unit == 4 )  {
+    if ( (is_unit == 4) || (is_unit == 5) || (is_unit == 7) )  {
         ret = fops;
         unit = "(%)";
     } else
-    if ( is_unit == 5 )  {
-        ret = fops;
-        unit = "(%)";
-    } else
+
     if ( is_unit == 6 )  {
       if      ( fops > P ) {
         ret = fops / P;
@@ -171,30 +168,31 @@ namespace pm_lib {
     // 7: LOADSTORE : HWPC measured load/store instruction type
 	m_flop = 0.0;
 	m_percentage = 0.0;
-	if ( is_unit >= 0 && is_unit <= 2 ) {
+	if ( is_unit >= 0 && is_unit <= 1 ) {
 		m_flop = m_time * my_papi.v_sorted[my_papi.num_sorted-1] ;
+	} else 
+	if ( is_unit == 2 ) {
+		m_flop = my_papi.v_sorted[my_papi.num_sorted-2] ;		// BYTES
 	} else 
 	if ( is_unit == 3 ) {
-		m_flop = m_time * my_papi.v_sorted[my_papi.num_sorted-2] ;
+		m_flop = my_papi.v_sorted[my_papi.num_sorted-3] ;		// Total_FP
 	} else 
 	if ( is_unit == 4 ) {
-		m_flop = my_papi.v_sorted[my_papi.num_sorted-3] ;
-		m_percentage = my_papi.v_sorted[my_papi.num_sorted-1] ;
+		m_flop = my_papi.v_sorted[my_papi.num_sorted-3] ;		// Total_FP
+		m_percentage = my_papi.v_sorted[my_papi.num_sorted-1] ;	// [Vector %]
 	} else 
 	if ( is_unit == 5 ) {
-		m_flop = my_papi.v_sorted[0] + my_papi.v_sorted[1] ;
-		m_percentage = my_papi.v_sorted[my_papi.num_sorted-1] ;
+		//	m_flop = my_papi.v_sorted[0] ;							// load+store K/FX100
+		m_flop = my_papi.v_sorted[0] + my_papi.v_sorted[1] ;	// load+store
+		m_percentage = my_papi.v_sorted[my_papi.num_sorted-1] ;	// [L1L2hit%]
 	} else
 	if ( is_unit == 6 ) {
-		m_flop = my_papi.v_sorted[my_papi.num_sorted-2] ;
+		m_flop = my_papi.v_sorted[my_papi.num_sorted-2] ;		// TOT_INS
 	} else
-
-//
-// DEBUG from here 2020/02/09
-//
-
-    if ( is_unit == 7 ) {
-		m_flop = m_time * my_papi.v_sorted[my_papi.num_sorted-1] ;
+	if ( is_unit == 7 ) {
+		//	m_flop = my_papi.v_sorted[0] ;							// load+store K/FX100
+		m_flop = my_papi.v_sorted[0] + my_papi.v_sorted[1] ;	// load+store
+		m_percentage = my_papi.v_sorted[my_papi.num_sorted-1] ;	// [Vector %]
 	}
 
 	// The space is reserved only once as a fixed size array
@@ -1244,8 +1242,6 @@ namespace pm_lib {
 	if ( is_unit == 0 || is_unit == 1 ) {
 		s_counter =  "User Defined COMM/CALC values" ;
 		s_unit =  "unit: B/sec or Flops";
-// DEBUG from here
-	//	} else if ( 2 <= is_unit && is_unit <= 6 ) {
 	} else if ( 2 <= is_unit && is_unit <= Max_hwpc_output_group ) {
 		s_counter =  "HWPC measured values" ;
 		s_unit =  my_papi.s_sorted[my_papi.num_sorted-1] ;

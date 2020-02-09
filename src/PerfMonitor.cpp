@@ -1206,7 +1206,7 @@ namespace pm_lib {
     } else if ( is_unit == 6 ) {
       fprintf(fp, "| hardware counted total instructions\n");
     } else if ( is_unit == 7 ) {
-      fprintf(fp, "| hwpc memory load and store instructions\n");
+      fprintf(fp, "| memory load and store instruction type\n");
     } else {
       fprintf(fp, "| *** internal bug. <printBasicSections> ***\n");
 		;	// should not reach here
@@ -1227,7 +1227,7 @@ namespace pm_lib {
     } else if ( is_unit == 6 ) {
       fprintf(fp, "| instructions  sdv    performance\n");
     } else if ( is_unit == 7 ) {
-      fprintf(fp, "|    Bytes      sdv    vectorized%%\n");
+      fprintf(fp, "| load+store    sdv    vectorized%%\n");
     } else {
       fprintf(fp, "| *** internal bug. <printBasicSections> ***\n");
 		;	// should not reach here
@@ -1300,14 +1300,11 @@ namespace pm_lib {
         if ( is_unit >= 0 && is_unit <= 3 ) {
           fops = (w.m_count_av==0) ? 0.0 : w.m_flop_av/w.m_time_av;
         } else
-        if ( is_unit == 4 || is_unit == 5 ) {
+        if ( (is_unit == 4) || (is_unit == 5) || (is_unit == 7) ) {
           fops = w.m_percentage;
         } else
         if ( is_unit == 6 ) {
           fops = (w.m_count_av==0) ? 0.0 : w.m_flop_av/w.m_time_av;
-        } else
-        if ( is_unit == 7 ) {
-          fops = w.m_percentage;
         }
       }
 
