@@ -204,10 +204,8 @@ void PerfWatch::createPapiCounterList ()
 	s_model_string = hwinfo->model_string;
 	s_vendor_string = hwinfo->vendor_string;
 
-
 	// Intel Xeon processors
-    if (s_model_string.find( "Intel" ) != string::npos &&
-		s_model_string.find( "Xeon" ) != string::npos ) {
+    if (s_model_string.find( "Intel" ) != string::npos) {
 		// hwpc_group.i_platform = 0;	// un-supported platform
 		// hwpc_group.i_platform = 1;	// Minimal support for only two types
 		// hwpc_group.i_platform = 2;	// Sandybridge and alike platform
@@ -215,11 +213,13 @@ void PerfWatch::createPapiCounterList ()
 		// hwpc_group.i_platform = 4;	// Broadwell. No access to Broadwell yet.
 		// hwpc_group.i_platform = 5;	// Skylake and alike platform
 
-		hwpc_group.platform = "Xeon" ;
+    	if (s_model_string.find( "Xeon" ) != string::npos) {
+			hwpc_group.platform = "Xeon" ;
+
+		// parse s_model_string
     	if (s_model_string.find( "E3" ) != string::npos ||
 			s_model_string.find( "E5" ) != string::npos ||
 			s_model_string.find( "E7" ) != string::npos ) {
-
 			hwpc_group.i_platform = 2;	// Xeon default model : Sandybridge and Ivybridge
 
 			if (s_model_string.find( "v3" ) != string::npos ) {
@@ -233,31 +233,59 @@ void PerfWatch::createPapiCounterList ()
     	else if (s_model_string.find( "Platinum" ) != string::npos ||
 			s_model_string.find( "Gold" ) != string::npos ||
 			s_model_string.find( "Silver" ) != string::npos ) {
-				hwpc_group.i_platform = 5;	// Skylake
+			hwpc_group.i_platform = 5;	// Skylake
+		}
+
+		} else
+		if (s_model_string.find( "Core(TM)2" ) != string::npos ) {
+			hwpc_group.platform = "Xeon" ;
+			hwpc_group.i_platform = 1;	// Minimal support. only two FLOPS types
 		}
     	else {
 			hwpc_group.i_platform = 0;	// un-supported Xeon type
 		}
+
+		// further parse s_model_string to find out coreGHz
+		std::string s_separator = "@", s_terminator = "GHz";
+		int loc_ATmark, loc_GHz, nchars;
+		loc_ATmark = s_model_string.find_first_of(s_separator);
+		loc_GHz    = s_model_string.find(s_terminator, loc_ATmark);
+		hwpc_group.coreGHz = stod ( s_model_string.substr(loc_ATmark+1, loc_GHz-loc_ATmark-1) );
+		if ( hwpc_group.coreGHz <= 1.0 ||  hwpc_group.coreGHz >= 10.0 ) {
+			hwpc_group.coreGHz = 1.000;
+		}
+
+		if (hwpc_group.i_platform == 1) {
+			hwpc_group.corePERF = hwpc_group.coreGHz * 1.0e9 * 2;
+		} else if (hwpc_group.i_platform == 2) {
+			hwpc_group.corePERF = hwpc_group.coreGHz * 1.0e9 * 8;
+		} else if (hwpc_group.i_platform == 3) {
+			hwpc_group.corePERF = hwpc_group.coreGHz * 1.0e9 * 8;
+		} else if (hwpc_group.i_platform == 4) {
+			hwpc_group.corePERF = hwpc_group.coreGHz * (2.7/3.0) * 1.0e9 * 16;
+		} else if (hwpc_group.i_platform == 5) {
+			hwpc_group.corePERF = hwpc_group.coreGHz * (2.7/3.0) * 1.0e9 * 32;
+		}
 	}
 
-	// Intel Core 2 CPU.
-    else if (s_model_string.find( "Intel" ) != string::npos &&
-		s_model_string.find( "Core(TM)2" ) != string::npos ) {
-		hwpc_group.platform = "Xeon" ;
-		hwpc_group.i_platform = 1;	// Minimal support. only two FLOPS types
-	}
 
 	// SPARC based processors
     else if (s_model_string.find( "SPARC64" ) != string::npos ) {
 		hwpc_group.platform = "SPARC64" ;
     	if ( s_model_string.find( "VIIIfx" ) != string::npos ) {
 			hwpc_group.i_platform = 8;	// K computer
+			hwpc_group.coreGHz = 2.0;
+			hwpc_group.corePERF = hwpc_group.coreGHz * 1.0e9 * 8;
 		}
     	else if ( s_model_string.find( "IXfx" ) != string::npos ) {
 			hwpc_group.i_platform = 9;	// Fujitsu FX10
+			hwpc_group.coreGHz = 1.848;
+			hwpc_group.corePERF = hwpc_group.coreGHz * 1.0e9 * 8;
 		}
     	else if ( s_model_string.find( "XIfx" ) != string::npos ) {
 			hwpc_group.i_platform = 11;	// Fujitsu FX100
+			hwpc_group.coreGHz = 1.975;
+			hwpc_group.corePERF = hwpc_group.coreGHz * 1.0e9 * 16;
 		}
 	}
 
@@ -277,11 +305,14 @@ void PerfWatch::createPapiCounterList ()
 
     	if ( hwpc_group.i_platform == 21 ) {
 			hwpc_group.platform = "A64FX" ;
+			s_model_string = hwpc_group.platform ;
+			hwpc_group.coreGHz = 2.0;
+			hwpc_group.corePERF = hwpc_group.coreGHz * 1.0e9 * 32;
 		} else {
 			//	hwpc_group.i_platform = 99;
 			hwpc_group.platform = "unsupported_hardware";
+			s_model_string = hwpc_group.platform ;
 		}
-		s_model_string = hwpc_group.platform ;
 
 	}
 
@@ -759,6 +790,11 @@ void PerfWatch::createPapiCounterList ()
 		fprintf(stderr, "  i:%d hwpc_group.number[i]=%d, hwpc_group.index[i]=%d\n",
 						i, hwpc_group.number[i], hwpc_group.index[i]);
 		}
+
+		fprintf(stderr, "s_model_string=%s\n", s_model_string.c_str() );
+		fprintf(stderr, "coreGHz=%f\n", hwpc_group.coreGHz);
+		fprintf(stderr, "corePERF=%f\n", hwpc_group.corePERF);
+
 		fprintf(stderr, " papi.num_events=%d, &papi=%p \n", papi.num_events, &papi.num_events);
 		for (int i=0; i<papi.num_events; i++) {
 		fprintf(stderr, "\t i=%d [%s] events[i]=%u, values[i]=%llu \n",
@@ -824,32 +860,10 @@ void PerfWatch::sortPapiCounterList (void)
 		my_papi.v_sorted[jp] = d_flops;
 		jp++;
 
-//
-// DEBUG from here 2020/02/09
-//
-
-    	if (hwpc_group.platform == "Xeon" ) {
-				my_papi.s_sorted[jp] = "[%Peak] ";
-				my_papi.v_sorted[jp] = 0.0;	// TODO // DEBUG from here 2020/02/09
-				jp++;
-    	} else
-
-    	if (hwpc_group.platform == "SPARC64" ) {
-				my_papi.s_sorted[jp] = "[%Peak] ";
-				my_papi.v_sorted[jp] = 0.0;	// TODO // DEBUG from here 2020/02/09
-				jp++;
-		} else
-
-    	if (hwpc_group.platform == "A64FX" ) {
-			if (hwpc_group.i_platform == 21 ) {
-				//	d_peak_normal = 2.0 * 1.0e9 * 2.0 * 8.0 * 2.0 * num_threads ;	// peak flops at normal mode
-				d_peak_normal = 2.0 * 1.0e9 * 2.0 * 8.0 * 2.0 ;	// peak flops per core at normal mode
-				d_peak_ratio = d_flops / d_peak_normal;
-				my_papi.s_sorted[jp] = "[%Peak] ";
-				my_papi.v_sorted[jp] = d_peak_ratio * 100.0; 					//	percentage
-				jp++;
-			}
-		}
+		d_peak_ratio = d_flops / hwpc_group.corePERF;
+		my_papi.s_sorted[jp] = "[%Peak] ";
+		my_papi.v_sorted[jp] = d_peak_ratio * 100.0; 	//	percentage
+		jp++;
 	}
 
 	else

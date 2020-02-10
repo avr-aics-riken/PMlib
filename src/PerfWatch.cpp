@@ -182,18 +182,8 @@ namespace pm_lib {
 		m_percentage = my_papi.v_sorted[my_papi.num_sorted-1] ;	// [Vector %]
 	} else 
 	if ( is_unit == 5 || is_unit == 7 ) {
-    	if (hwpc_group.i_platform >= 1 && hwpc_group.i_platform <= 5 ) {
-		m_flop = my_papi.v_sorted[0] + my_papi.v_sorted[1] ;	// Xeon load+store
+		m_flop = my_papi.v_sorted[0] + my_papi.v_sorted[1] ;	// load+store
 		m_percentage = my_papi.v_sorted[my_papi.num_sorted-1] ;	// 5:[L1L2hit%] or 7:[Vector %]
-    	} else
-    	if (hwpc_group.i_platform >= 8 && hwpc_group.i_platform <= 11 ) {
-		m_flop = my_papi.v_sorted[0] + my_papi.v_sorted[1] ;	// K/FX100 scalar load+store and SIMD load+store
-		m_percentage = my_papi.v_sorted[my_papi.num_sorted-1] ;	// 5:[L1L2hit%] or 7:[Vector %]
-    	} else
-    	if (hwpc_group.i_platform == 21 ) {
-		m_flop = my_papi.v_sorted[0] + my_papi.v_sorted[1] ;	// A64FX scalar load+store and SVE load+store
-		m_percentage = my_papi.v_sorted[my_papi.num_sorted-1] ;	// 5:[L1L2hit%] or 7:[Vector %]
-    	}
 	} else
 	if ( is_unit == 6 ) {
 		m_flop = my_papi.v_sorted[my_papi.num_sorted-2] ;		// TOT_INS

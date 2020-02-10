@@ -70,6 +70,8 @@ struct hwpc_group_chooser {
 	std::string platform;	// "Xeon", "SPARC64", "ARM", "unsupported_hardware"
 	std::string env_str_hwpc;
 		// USER or one of FLOPS, BANDWIDTH, VECTOR, CACHE, CYCLE, WRITEBACK
+	double coreGHz;
+	double corePERF;
 };
 
 const int Max_chooser_events=12;
