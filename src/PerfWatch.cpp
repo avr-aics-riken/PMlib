@@ -145,6 +145,7 @@ namespace pm_lib {
 
 
   /// HWPCによるイベントカウンターの測定値を Allgather する
+  /// Calibrate some numbers to represent the process value as the sum of thread values
   ///
   ///
   void PerfWatch::gatherHWPC()
@@ -158,6 +159,9 @@ namespace pm_lib {
 
 	sortPapiCounterList ();
 
+// DEBUG from here 2020/02/11
+	double perf_rate=0.0;
+	if ( m_time > 0.0 ) { perf_rate = 1.0/m_time; }
     // 0: user set bandwidth
     // 1: user set flop counts
     // 2: BANDWIDTH : HWPC measured data access bandwidth
@@ -172,10 +176,13 @@ namespace pm_lib {
 		m_flop = m_time * my_papi.v_sorted[my_papi.num_sorted-1] ;
 	} else 
 	if ( is_unit == 2 ) {
-		m_flop = my_papi.v_sorted[my_papi.num_sorted-2] ;		// BYTES
+		m_flop = my_papi.v_sorted[my_papi.num_sorted-1] ;		// BYTES
 	} else 
 	if ( is_unit == 3 ) {
 		m_flop = my_papi.v_sorted[my_papi.num_sorted-3] ;		// Total_FP
+		// re-calculate the process values
+		my_papi.v_sorted[my_papi.num_sorted-2] = m_flop*perf_rate;	// Flops
+		my_papi.v_sorted[my_papi.num_sorted-1] = m_flop*perf_rate / (hwpc_group.corePERF*num_threads);	// peak %
 	} else 
 	if ( is_unit == 4 ) {
 		m_flop = my_papi.v_sorted[my_papi.num_sorted-3] ;		// Total_FP
@@ -183,7 +190,10 @@ namespace pm_lib {
 	} else 
 	if ( is_unit == 5 || is_unit == 7 ) {
 		m_flop = my_papi.v_sorted[0] + my_papi.v_sorted[1] ;	// load+store
-		m_percentage = my_papi.v_sorted[my_papi.num_sorted-1] ;	// 5:[L1L2hit%] or 7:[Vector %]
+		if (hwpc_group.i_platform == 11 ) {
+			m_flop = my_papi.v_sorted[0] + my_papi.v_sorted[1] + my_papi.v_sorted[2] ;
+		}
+		m_percentage = my_papi.v_sorted[my_papi.num_sorted-1] ;	// [L*$ hit%]
 	} else
 	if ( is_unit == 6 ) {
 		m_flop = my_papi.v_sorted[my_papi.num_sorted-2] ;		// TOT_INS
@@ -213,10 +223,18 @@ namespace pm_lib {
 		}
 	}
 
-	//	#ifdef DEBUG_PRINT_PAPI_THREADS
-	//	fprintf(stderr, "\t<PerfWatch::gatherHWPC> finishing [%15s]  my_rank=%d, m_count=%d\n", m_label.c_str(), my_rank, m_count);
-	//	#endif
+#endif
+  }
 
+  /// HWPCによるイベントカウンターの測定値を Allgather する
+  /// Does not calibrate numbers, so they represent the actual thread values
+  ///
+  void PerfWatch::gatherThreadHWPC()
+  {
+#ifdef USE_PAPI
+	//
+	// DEBUG from here 2020/02/11
+	//
 #endif
   }
 
@@ -944,15 +962,14 @@ namespace pm_lib {
     std::string unit;
     int is_unit = statsSwitch();
 
-    if (is_unit == 0) unit = "B/sec";		// 0: user set bandwidth
-    if (is_unit == 1) unit = "Flops";		// 1: user set flop counts
-	//
-    if (is_unit == 2) unit = "";		// 2: HWPC measured bandwidth
-    if (is_unit == 3) unit = "";		// 3: HWPC measured flop counts
-    if (is_unit == 4) unit = "";		// 4: HWPC measured vector %
-    if (is_unit == 5) unit = "";		// 5: HWPC measured cache hit%
-    if (is_unit == 6) unit = "";		// 6: HWPC measured instructions
-    if (is_unit == 7) unit = "";		// 7: HWPC measured memory load/store (demand access, prefetch, writeback, streaming store)
+    if (is_unit == 0) unit = "B/sec";	// 0: user set bandwidth
+    if (is_unit == 1) unit = "Flops";	// 1: user set flop counts
+    if (is_unit == 2) unit = "";		// 2: BANDWIDTH : HWPC measured data access bandwidth
+    if (is_unit == 3) unit = "";		// 3: FLOPS     : HWPC measured flop counts
+    if (is_unit == 4) unit = "";		// 4: VECTOR    : HWPC measured vectorization
+    if (is_unit == 5) unit = "";		// 5: CACHE     : HWPC measured cache hit/miss
+    if (is_unit == 6) unit = "";		// 6: CYCLE     : HWPC measured cycles, instructions
+    if (is_unit == 7) unit = "";		// 7: LOADSTORE : HWPC measured load/store instruction type
 
 	if (my_rank == 0 && is_unit < 2) {
 	    fprintf(fp, "Label  %s%s\n", m_exclusive ? "" : "*", m_label.c_str());
@@ -974,10 +991,6 @@ namespace pm_lib {
 			fprintf (fp, " %10.10s", s.c_str() );
 		} fprintf (fp, "\n");
 	}
-
-	//	The following health check does not work well with MPI...
-	//	if (my_rank == rank_ID && !m_threads_merged)  
-	//		fprintf(fp, "\t thread performance statistics is not available.\n");
 
 	int i=rank_ID;
 
