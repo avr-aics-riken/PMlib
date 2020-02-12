@@ -3,8 +3,31 @@
 ## REVISION HISTORY
 
 ---
+- 2020-01-07 Version 6.4.5
+  - copyright 2020
+  - Toolchain_intel_F_TCS.cmake >> Toolchain_ITO_TCS.cmake
+  - The combination of Xeon and Fujitsu TCS environment has a problem, until fix it use -Denable_PreciseTimer=OFF
+  
+---
+- 2019-12-22 Version 6.4.4
+  - pmlib_papi.h : const int Max_nthreads=20 >> 36
+
+
+---
+- 2019-12-11 Version 6.4.3
+  - replace Toolchain_K.cmake to Toolchain_F_TCS.cmake
+  - remove options for K-computer and add F_TCS
+  
+---
+- 2019-06-09 Version 6.4.2
+  - add doc/*
+  - change support year 2018 -> 2019
+  - bug fix : enable_PRECISE_TIMER => enable_PreciseTimer
+
+  
+---
 - 2019-01-31 Version 6.4.0
-  - add WRITEBACK option to measure HWPC memory writeback and streaming store
+  - add HWPC WRITEBACK option for Sandybridge and Ivybridge to measure memory writeback and streaming store
 
 
 ---
@@ -29,7 +52,7 @@
 
 ---
 - 2018-09-25 Version 6.2.3
-  - checkOpenMPマクロを明示的に変更
+  - checkOpenMP„Éû„ÇØ„É≠„ÇíÊòéÁ§∫ÁöÑ„Å´Â§âÊõ¥
 
 
 ---

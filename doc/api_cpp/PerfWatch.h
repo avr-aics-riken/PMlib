@@ -9,10 +9,10 @@
 # Copyright (c) 2010-2011 VCAD System Research Program, RIKEN.
 # All rights reserved.
 #
-# Copyright (c) 2012-2018 Advanced Institute for Computational Science(AICS), RIKEN.
+# Copyright (c) 2012-2020 Advanced Institute for Computational Science(AICS), RIKEN.
 # All rights reserved.
 #
-# Copyright (c) 2016-2018 Research Institute for Information Technology(RIIT), Kyushu University.
+# Copyright (c) 2016-2020 Research Institute for Information Technology(RIIT), Kyushu University.
 # All rights reserved.
 #
 ###################################################################################
@@ -196,19 +196,21 @@ namespace pm_lib {
     ///
     void statsAverage(void);
 
-    /// 計算量としてユーザー申告値を用いるかHWPC計測値を用いるかの決定を行う
+    /// 計算量の選択を行う
     ///
     /// @return  戻り値とその意味合い \n
-    ///   0: ユーザが引数で指定した通信量を採用する "Bytes/sec" \n
-    ///   1: ユーザが引数で指定した計算量を採用する "Flops" \n
-    ///   2: HWPC が自動的に測定する通信量を採用する	"Bytes/s (HWPC)" \n
-    ///   3: HWPC が自動的に測定する計算量を用いる	"Flops (HWPC)" \n
-    ///   4: HWPC が自動的に測定する他の測定量を用いる "events (HWPC)" \n
+    ///   0: ユーザが引数で指定したデータ移動量(バイト)を採用する \n
+    ///   1: ユーザが引数で指定した演算量(浮動小数点演算量)を採用する \n
+    ///   2: HWPC が自動的に測定する memory read event \n
+    ///   3: HWPC が自動的に測定する flops event \n
+    ///   4: HWPC が自動的に測定する vectorization (SSE, AVX, etc) event \n
+    ///   5: HWPC が自動的に測定する cache hit, miss \n
+    ///   6: HWPC が自動的に測定する cycles, instructions \n
+    ///   7: HWPC が自動的に測定する memory write (writeback, streaming store)\n
     ///
     /// @note
     ///   計算量としてユーザー申告値を用いるかHWPC計測値を用いるかの決定を行う
-    ///   もし環境変数HWPC_CHOOSERの値がFLOPSやBANDWIDTHに
-    ///   指定されている場合はそれが優先される
+    ///   もし環境変数HWPC_CHOOSERの値が指定されている場合はそれが優先される
     ///
     int statsSwitch(void);
 
@@ -217,15 +219,9 @@ namespace pm_lib {
     ///   @param[in] fops 浮動小数演算数/通信量(バイト)
     ///   @param[out] unit 単位の文字列
     ///   @param[in] is_unit ユーザー申告値かHWPC自動測定値かの指定 \n
-    ///              = 0: ユーザが引数で指定した通信量"Bytes/sec" \n
-    ///              = 1: ユーザが引数で指定した計算量"Flops" \n
-    ///              = 2: HWPC が自動測定する通信量"Bytes/s (HWPC)" \n
-    ///              = 3: HWPC が自動測定する計算量"Flops (HWPC)" \n
-    ///              = 4: HWPC が自動測定するvectorization (SSE, AVX, etc)
-    ///              = 5: HWPC が自動測定するcache miss, cycles, instructions
-    ///   @return  単位変換後の数値
+    ///   	\t\t is_unitは通常PerfWatch::statsSwitch()で事前に決定する\n
     ///
-    ///   @note is_unitは通常PerfWatch::statsSwitch()で事前に決定されている
+    ///   @return  単位変換後の数値
     ///
     static double unitFlop(double fops, std::string &unit, int is_unit);
 

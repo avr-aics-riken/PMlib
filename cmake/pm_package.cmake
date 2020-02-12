@@ -5,10 +5,10 @@
 # Copyright (c) 2010-2011 VCAD System Research Program, RIKEN.
 # All rights reserved.
 #
-# Copyright (c) 2012-2018 Advanced Institute for Computational Science(AICS), RIKEN.
+# Copyright (c) 2012-2020 RIKEN Center for Computational Science(R-CCS), RIKEN.
 # All rights reserved.
 #
-# Copyright (c) 2016-2018 Research Institute for Information Technology(RIIT), Kyushu University.
+# Copyright (c) 2016-2020 Research Institute for Information Technology(RIIT), Kyushu University.
 # All rights reserved.
 #
 ###################################################################################
@@ -22,7 +22,7 @@ set (CMAKE_INSTALL_SYSTEM_RUNTIME_LIBS_NO_WARNINGS TRUE)
 include (InstallRequiredSystemLibraries)
 
 set (CPACK_PACKAGE_NAME "${PROJECT}")
-set (CPACK_PACKAGE_VENDOR "AICS")
+set (CPACK_PACKAGE_VENDOR "R-CCS")
 
 set (CPACK_PACKAGE_VERSION "${PROJECT_VERSION}")
 set (CPACK_PACKAGE_VERSION_MAJOR "${PROJECT_VERSION_MAJOR}")

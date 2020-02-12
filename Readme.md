@@ -1,8 +1,8 @@
 # PMlib - Performance Monitor library
 
 * Copyright (c) 2010-2011 VCAD System Research Program, RIKEN. All rights reserved.
-* Copyright (c) 2012-2018 RIKEN Center for Computational Science (R-CCS). All rights reserved.
-* Copyright (c) 2016-2018 Research Institute for Information Technology (RIIT), Kyushu University. All rights reserved.
+* Copyright (c) 2012-2020 RIKEN Center for Computational Science (R-CCS). All rights reserved.
+* Copyright (c) 2016-2020 Research Institute for Information Technology (RIIT), Kyushu University. All rights reserved.
 
 ## OUTLINE
 
@@ -43,6 +43,12 @@ Typical installation will be composed of three steps.
 1. Confirm that the software requirement is met.
 2. Obtain the the package tar ball and unpack it under the temporary directory.
 3. Configure and Make the related files.
+
+
+### max_nthreads
+
+`~/include/pmlib_papi.h`の`const int Max_nthreads=36`をシステムに応じて変更
+
 
 ### Build
 
@@ -94,6 +100,16 @@ $ sudo make install
 -DUSE_PRECISE_TIMER -Nfjcex    # for K computer and FX100 and TCS env.?
 ~~~
 
+### Default options
+~~~
+with_example = OFF
+enable_Fortran = OFF
+with_MPI = OFF
+enable_OPENMP = OFF
+with_PAPI = OFF
+with_OTF = OFF
+enable_PreciseTimer = ON
+~~~
 
 The default compiler options are described in `cmake/CompilerOptionSelector.cmake` file. See BUILD OPTION section in CMakeLists.txt in detail.
 
@@ -190,14 +206,27 @@ $ cmake -DINSTALL_DIR=${PM_HOME}/PMlib \
             -Denable_PreciseTimer=yes ..
 
 $ cmake -DINSTALL_DIR=${PM_HOME}/PMlib \
-            -DCMAKE_TOOLCHAIN_FILE=../cmake/Toolchain_intel_F_TCS.cmake \
+            -DCMAKE_TOOLCHAIN_FILE=../cmake/Toolchain_ITO_TCS.cmake \
             -Denable_OPENMP=no \
             -Dwith_MPI=yes \
             -Denable_Fortran=no \
             -Dwith_example=no \
             -Dwith_PAPI=no \
-            -Dwith_OTF=no \
-            -Denable_PreciseTimer=yes ..
+            -Dwith_OTF=no ..
+~~~
+            
+#### F_TCS environment serial
+
+~~~
+$ cmake -DINSTALL_DIR=${PM_HOME}/PMlib \
+-DCMAKE_TOOLCHAIN_FILE=../cmake/Toolchain_F_TCS.cmake \
+-Denable_OPENMP=no \
+-Dwith_MPI=no \
+-Denable_Fortran=no \
+-Dwith_example=no \
+-Dwith_PAPI=no \
+-Dwith_OTF=no \
+-Denable_PreciseTimer=yes ..
 ~~~
 
 

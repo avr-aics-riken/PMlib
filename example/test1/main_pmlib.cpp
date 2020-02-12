@@ -104,7 +104,9 @@ int main (int argc, char *argv[])
 	spacer();
 
 	PM.print(stdout, "", "Mrs. Kobe", 0);
-	PM.printDetail(stdout, 1);
+	PM.printDetail(stdout, 0);
+	PM.printThreads(stdout, 0);
+	PM.printLegend(stdout);
 
 	MPI_Finalize();
 	return 0;
@@ -138,9 +140,10 @@ nsize = matrix.nsize;
 	for (j=0; j<nsize; j++){
 		c1=0.0;
 		for (k=0; k<nsize; k++){
-		c2=matrix.a2[i][k] * matrix.a2[j][k];
-		c3=matrix.b2[i][k] * matrix.b2[j][k];
-		c1=c1 + c2+c3;
+		//	cx	c2=matrix.a2[i][k] * matrix.a2[j][k];
+		//	cx	c3=matrix.b2[i][k] * matrix.b2[j][k];
+		//	cx	c1=c1 + c2+c3;
+		c1 += matrix.a2[i][k]*matrix.a2[j][k] + matrix.b2[i][k]*matrix.b2[j][k];
 		}
 		matrix.c2[i][j] = matrix.c2[i][j] + c1/(float)nsize;
 	}
@@ -148,14 +151,13 @@ nsize = matrix.nsize;
 }
 
 // slow computing kernel
+// on K,FX,Fugaku, -Nocl must be given in order to enable these directives
 void slowkernel()
 {
 int i, j, k, nsize;
 double c1,c2,c3;
 nsize = matrix.nsize;
-//	#pragma omp parallel
-//	#pragma omp for
-#pragma omp single
+
 #pragma loop serial
 	for (i=0; i<nsize; i++){
 #pragma novector
@@ -173,9 +175,10 @@ nsize = matrix.nsize;
 #pragma loop noswp
 #pragma loop nounroll
 		for (k=0; k<nsize; k++){
-		c2=matrix.a2[i][k] * matrix.a2[j][k];
-		c3=matrix.b2[i][k] * matrix.b2[j][k];
-		c1=c1 + c2+c3;
+		//	cx	c2=matrix.a2[i][k] * matrix.a2[j][k];
+		//	cx	c3=matrix.b2[i][k] * matrix.b2[j][k];
+		//	cx	c1=c1 + c2+c3;
+		c1 += matrix.a2[i][k]*matrix.a2[j][k] + matrix.b2[i][k]*matrix.b2[j][k];
 		}
 		matrix.c2[i][j] = matrix.c2[i][j] + c1/(float)nsize;
 	}
