@@ -1691,7 +1691,7 @@ void PerfWatch::outputPapiCounterLegend (FILE* fp)
 	fprintf(fp, "\t\t WBACK_MEM:  memory write via cache writeback store\n");
 	fprintf(fp, "\t\t STRMS_MEM:  memory write via streaming store, i.e. nontemporal store \n");
 		}
-	fprintf(fp, "\t\t [Vector %]: not available on Xeon processors.\n");
+	fprintf(fp, "\t\t [Vector %]: the measurement of this column is not available on Xeon processors.\n"); 
 	} else
 
 	if (hwpc_group.platform == "SPARC64" ) {
