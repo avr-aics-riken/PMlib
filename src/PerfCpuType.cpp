@@ -602,7 +602,7 @@ void PerfWatch::createPapiCounterList ()
 		if (hwpc_group.platform == "A64FX" ) {
 			if (hwpc_group.i_platform == 21 ) {
 
-				hwpc_group.number[I_vector] += 5;
+				hwpc_group.number[I_vector] += 4;
 				papi.s_name[ip] = "FP_DP_SCALE_OPS_SPEC";
 				my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "DP_SVE_op"; ip++;
 				papi.s_name[ip] = "FP_DP_FIXED_OPS_SPEC";
@@ -611,8 +611,6 @@ void PerfWatch::createPapiCounterList ()
 				my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "SP_SVE_op"; ip++;
 				papi.s_name[ip] = "FP_SP_FIXED_OPS_SPEC";
 				my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "SP_FIX_op"; ip++;
-				papi.s_name[ip] = "PAPI_FMA_INS";
-				my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "FMA_inst"; ip++;
 		
 			}
 		}
@@ -693,6 +691,15 @@ void PerfWatch::createPapiCounterList ()
 		} else
 		if (hwpc_group.platform == "SPARC64" ) {
 			;
+		}
+		if (hwpc_group.platform == "A64FX" ) {
+			if (hwpc_group.i_platform == 21 ) {
+				hwpc_group.number[I_cycle] += 2;
+				papi.s_name[ip] = "PAPI_FP_INS";
+				my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "FP_inst"; ip++;
+				papi.s_name[ip] = "PAPI_FMA_INS";
+				my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "FMA_inst"; ip++;
+			}
 		}
 	}
 
@@ -797,10 +804,16 @@ void PerfWatch::createPapiCounterList ()
 
   /// Sort out the list of counters linked with the user input parameter
   ///
-  /// @note this routine is called from 2 classes.
-  /// PerfMonitor::gather() -> gatherHWPC() -> sortPapiCounterList()
-  ///   PerfWatch::gather() -> gatherHWPC() -> sortPapiCounterList()
+  /// @note this routine is called from both PerfMonitor and PerfWatch classes.
   /// each of the labeled measuring sections call this API
+
+  /// PerfMonitor::gather() -> gather_and_stats() -> gatherHWPC() -> sortPapiCounterList()
+  /// PerfMonitor::printThreads() -> ditto
+  /// PerfMonitor::printProgress() -> ditto
+  /// PerfMonitor::postTrace() -> ditto
+
+  ///   PerfWatch::printDetailThreads() -> gatherHWPC() -> sortPapiCounterList()
+  ///   PerfWatch::stop() -> sortPapiCounterList()	// special case when using OTF (#ifdef USE_OTF)
   ///
 
 void PerfWatch::sortPapiCounterList (void)
@@ -983,11 +996,9 @@ void PerfWatch::sortPapiCounterList (void)
 		double fp_dp1, fp_dp2, fp_dp4, fp_dp8, fp_dp16;
 		double fp_total, fp_vector;
 		double vector_percent;
-		double fma_ins, fp_spv, fp_dpv;
-		double fma_percent;
+		double fp_spv, fp_dpv;
 
 		vector_percent = 0.0;
-		fma_percent = 0.0;
 		fp_vector = 0.0;
 		fp_total = 1.0;
 		counts = 0.0;
@@ -1123,22 +1134,13 @@ void PerfWatch::sortPapiCounterList (void)
 				fp_dp1  = my_papi.accumu[ip+1] ;
 				fp_spv  = 4 * my_papi.accumu[ip+2] ;
 				fp_sp1  = my_papi.accumu[ip+3] ;
-				fma_ins  = my_papi.accumu[ip+4] ;
 				fp_vector =                   fp_dpv + fp_spv ;
 				fp_total  = fp_dp1 + fp_sp1 + fp_dpv + fp_spv ;
 
 			// correction of v_sorted values
-				my_papi.v_sorted[0] = fp_dpv;
-				my_papi.v_sorted[2] = fp_spv;
+				my_papi.v_sorted[ip] = fp_dpv;
+				my_papi.v_sorted[ip+2] = fp_spv;
 
-			//	Ratio of FMA instructions over total f.p. instructions = fma_ins / (vDP/16 + sDP/2 + vSP/32 + sSP/2 )
-				fma_percent = 0.0;
-				if ( fp_total > 0.0 ) {
-				fma_percent = 100.0* fma_ins / (fp_dpv/16 + fp_dp1/2 + fp_spv/32 + fp_sp1/2 );
-				}
-				my_papi.s_sorted[jp] = "[FMA_ops%]" ;
-				my_papi.v_sorted[jp] = fma_percent;
-				jp++;
 			}
 			if (m_exclusive) {
 				if ( fp_total > 0.0 ) {
@@ -1150,9 +1152,8 @@ void PerfWatch::sortPapiCounterList (void)
 		my_papi.s_sorted[jp] = "Total_FP " ;
 		my_papi.v_sorted[jp] = fp_total;
 		jp++;
-		my_papi.s_sorted[jp] = "[Flops] " ;
-		//	my_papi.v_sorted[jp] = fp_total / m_time;
-		my_papi.v_sorted[jp] = fp_total * perf_rate;
+		my_papi.s_sorted[jp] = "Vector_FP " ;
+		my_papi.v_sorted[jp] = fp_vector;
 		jp++;
 		my_papi.s_sorted[jp] = "[Vector %]" ;
 		my_papi.v_sorted[jp] = vector_percent * 100.0;
@@ -1282,6 +1283,8 @@ void PerfWatch::sortPapiCounterList (void)
 	else
 // if (CYCLE)
 	if ( hwpc_group.number[I_cycle] > 0 ) {
+		double d_fp_ins, d_fma_ins, fma_percent;
+
 		ip = hwpc_group.index[I_cycle];
 		jp=0;
 		for(int i=0; i<hwpc_group.number[I_cycle] ; i++)
@@ -1292,15 +1295,29 @@ void PerfWatch::sortPapiCounterList (void)
 		}
 		ip = hwpc_group.index[I_cycle];
 
+		if (hwpc_group.platform == "A64FX" ) {
+			if (hwpc_group.i_platform == 21 ) {
+			//	Ratio of FMA instructions over total f.p. instructions = d_fma_ins / d_fp_ins
+				d_fp_ins  = my_papi.accumu[ip+2] ;
+				d_fma_ins = my_papi.accumu[ip+3] ;
+				fma_percent = 0.0;
+				if ( d_fp_ins > 0.0 ) {
+					fma_percent = 100.0* d_fma_ins / d_fp_ins;
+				} else {
+					fma_percent = 0.0;
+				}
+				my_papi.s_sorted[jp] = "[FMA_ins%]" ;
+				my_papi.v_sorted[jp] = fma_percent;
+				jp++;
+
 		//	events[0] = PAPI_TOT_CYC;
 		//	events[1] = PAPI_TOT_INS;
 		my_papi.s_sorted[jp] = "[Ins/cyc]" ;
-		if ( my_papi.v_sorted[jp-2] > 0.0 ) {
-			my_papi.v_sorted[jp] = my_papi.v_sorted[jp-1] / my_papi.v_sorted[jp-2];
+		if ( my_papi.v_sorted[ip] > 0.0 ) {
+			my_papi.v_sorted[jp] = my_papi.v_sorted[ip+1] / my_papi.v_sorted[ip];
 		} else {
 			my_papi.v_sorted[jp] = 0.0;
 		}
-
 		jp++;
 	}
 
@@ -1586,8 +1603,8 @@ void PerfWatch::outputPapiCounterLegend (FILE* fp)
 	fprintf(fp, "\t\t DP_SSE:     double precision f.p. SSE instructions\n");
 	fprintf(fp, "\t\t DP_AVX:     double precision f.p. 256-bit AVX instructions\n");
 	fprintf(fp, "\t\t DP_AVXW:    double precision f.p. 512-bit AVX instructions\n");
-	fprintf(fp, "\t\t Total_FP:  floating point operations as the sum of instructions*width \n");
-	fprintf(fp, "\t\t [Flops]:    floating point operations per second \n");
+	fprintf(fp, "\t\t Total_FP:   total floating point operations \n");
+	fprintf(fp, "\t\t Vector_FP:  floating point operations by vector instructions\n");
 	fprintf(fp, "\t\t [Vector %]: percentage of vectorized f.p. operations\n");
 		} else {
 	fprintf(fp, "\t\t Haswell processor does not have floating point operation counters,\n");
@@ -1609,8 +1626,8 @@ void PerfWatch::outputPapiCounterLegend (FILE* fp)
 	fprintf(fp, "\t\t 8FP_INS:    8 f.p. ops instructions\n");
 	fprintf(fp, "\t\t 16FP_INS : 16 f.p. ops instructions\n");
 		}
-	fprintf(fp, "\t\t Total_FP:   floating point operations as the sum of instructions*width \n");
-	fprintf(fp, "\t\t [Flops]:    floating point operations per second \n");
+	fprintf(fp, "\t\t Total_FP:   total floating point operations \n");
+	fprintf(fp, "\t\t Vector_FP:  floating point operations by vector instructions\n");
 	fprintf(fp, "\t\t [Vector %]: percentage of vectorized f.p. operations\n");
 	} else
 
@@ -1619,10 +1636,8 @@ void PerfWatch::outputPapiCounterLegend (FILE* fp)
 	fprintf(fp, "\t\t DP_FIX_op:  double precision f.p. ops by scalar/armv8 instructions\n");
 	fprintf(fp, "\t\t SP_SVE_op:  single precision f.p. ops by SVE instructions\n");
 	fprintf(fp, "\t\t SP_FIX_op:  single precision f.p. ops by scalar/armv8 instructions\n");
-	fprintf(fp, "\t\t FMA_inst:   fused multiply+add instructions\n");
-	fprintf(fp, "\t\t [FMA_ops %]: percentage of FMA operations over all f.p. operations\n");
-	fprintf(fp, "\t\t Total_FP:  total floating point operations\n");
-	fprintf(fp, "\t\t [Flops]:    floating point operations per second \n");
+	fprintf(fp, "\t\t Total_FP:   total floating point operations \n");
+	fprintf(fp, "\t\t Vector_FP:  floating point operations by vector instructions\n");
 	fprintf(fp, "\t\t [Vector %]: percentage of vectorized f.p. operations\n");
 	}
 
@@ -1705,6 +1720,11 @@ void PerfWatch::outputPapiCounterLegend (FILE* fp)
 	fprintf(fp, "\t HWPC_CHOOSER=CYCLE:\n");
 	fprintf(fp, "\t\t TOT_CYC:   total cycles\n");
 	fprintf(fp, "\t\t TOT_INS:   total instructions\n");
+	if (hwpc_group.platform == "A64FX" ) {
+	fprintf(fp, "\t\t FP_inst:   floating point instructions\n");
+	fprintf(fp, "\t\t FMA_inst:  fused multiply+add instructions\n");
+	fprintf(fp, "\t\t [FMA_ins%]: percentage of FMA instructions over all f.p. instructions\n");
+	}
 	fprintf(fp, "\t\t [Ins/cyc]: performed instructions per machine clock cycle\n");
 
 // remarks

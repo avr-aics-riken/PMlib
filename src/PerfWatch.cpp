@@ -160,6 +160,7 @@ namespace pm_lib {
 	sortPapiCounterList ();
 
 // DEBUG from here 2020/02/11
+	double x;
 	double perf_rate=0.0;
 	if ( m_time > 0.0 ) { perf_rate = 1.0/m_time; }
     // 0: user set bandwidth
@@ -180,23 +181,54 @@ namespace pm_lib {
 	} else 
 	if ( is_unit == 3 ) {
 		m_flop = my_papi.v_sorted[my_papi.num_sorted-3] ;		// Total_FP
-		// re-calculate the process values
-		my_papi.v_sorted[my_papi.num_sorted-2] = m_flop*perf_rate;	// Flops
-		my_papi.v_sorted[my_papi.num_sorted-1] = m_flop*perf_rate / (hwpc_group.corePERF*num_threads);	// peak %
+		// re-calculate Flops and peak % of the process values
+		x = m_flop*perf_rate;
+/*
+		my_papi.v_sorted[my_papi.num_sorted-2] = x;				// Flops
+*/
+		my_papi.v_sorted[my_papi.num_sorted-1] = x / (hwpc_group.corePERF*num_threads) * 100.0;	// peak %
 	} else 
 	if ( is_unit == 4 ) {
 		m_flop = my_papi.v_sorted[my_papi.num_sorted-3] ;		// Total_FP
-		m_percentage = my_papi.v_sorted[my_papi.num_sorted-1] ;	// [Vector %]
+		x      = my_papi.v_sorted[my_papi.num_sorted-2] ;		// Vector_FP
+		if (m_flop > 0.0 ) {
+			m_percentage = x/m_flop * 100.0 ;	// [Vector %]
+		} else {
+			m_percentage = 0.0 ;				// [Vector %]
+		}
+/*
+		my_papi.v_sorted[my_papi.num_sorted-1] = m_percentage ;	// [Vector %]
+*/
 	} else 
-	if ( is_unit == 5 || is_unit == 7 ) {
+	if ( is_unit == 5 ) {
 		m_flop = my_papi.v_sorted[0] + my_papi.v_sorted[1] ;	// load+store
 		if (hwpc_group.i_platform == 11 ) {
 			m_flop = my_papi.v_sorted[0] + my_papi.v_sorted[1] + my_papi.v_sorted[2] ;
 		}
 		m_percentage = my_papi.v_sorted[my_papi.num_sorted-1] ;	// [L*$ hit%]
+
 	} else
 	if ( is_unit == 6 ) {
-		m_flop = my_papi.v_sorted[my_papi.num_sorted-2] ;		// TOT_INS
+		my_papi.v_sorted[0] = my_papi.v_sorted[0] / num_threads;	// average cycles
+		m_flop = my_papi.v_sorted[1] ;								// TOT_INS
+		if (hwpc_group.i_platform == 21 ) {
+			x = my_papi.v_sorted[2] ;								//	FP_INS
+			if (x > 0.0 ) {
+			my_papi.v_sorted[4] = my_papi.v_sorted[3]/x *100.0 ;	// "[FMA_ins%]"
+			} else {
+			my_papi.v_sorted[4] = 0.0 ;								// "[FMA_ins%]"
+			}
+		}
+/*
+		my_papi.v_sorted[my_papi.num_sorted-1] = my_papi.v_sorted[1] / my_papi.v_sorted[0];	// [Ins/cyc]
+*/
+	} else
+	if ( is_unit == 7 ) {
+		m_flop = my_papi.v_sorted[0] + my_papi.v_sorted[1] ;	// load+store
+		if (hwpc_group.i_platform == 11 ) {
+			m_flop = my_papi.v_sorted[0] + my_papi.v_sorted[1] + my_papi.v_sorted[2] ;
+		}
+		m_percentage = my_papi.v_sorted[my_papi.num_sorted-1] ;	// [Vector %]
 	}
 
 	// The space is reserved only once as a fixed size array
