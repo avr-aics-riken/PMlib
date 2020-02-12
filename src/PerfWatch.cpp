@@ -159,7 +159,8 @@ namespace pm_lib {
 
 	sortPapiCounterList ();
 
-// DEBUG from here 2020/02/11
+// DEBUG from here 2020/02/12
+
 	double x;
 	double perf_rate=0.0;
 	if ( m_time > 0.0 ) { perf_rate = 1.0/m_time; }
@@ -258,6 +259,8 @@ namespace pm_lib {
 #endif
   }
 
+
+/*
   /// HWPCによるイベントカウンターの測定値を Allgather する
   /// Does not calibrate numbers, so they represent the actual thread values
   ///
@@ -269,6 +272,7 @@ namespace pm_lib {
 	//
 #endif
   }
+ */
 
 
   /// 測定結果情報をノード０に集約.

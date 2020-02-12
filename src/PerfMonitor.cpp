@@ -1196,7 +1196,7 @@ namespace pm_lib {
     if ( is_unit == 0 || is_unit == 1 ) {
       fprintf(fp, "| user defined numerical performance\n");
     } else if ( is_unit == 2 ) {
-      fprintf(fp, "| hardware counted memory access events\n");
+      fprintf(fp, "| hardware counted data access events\n");
     } else if ( is_unit == 3 ) {
       fprintf(fp, "| hardware counted floating point ops.\n");
     } else if ( is_unit == 4 ) {
@@ -1217,7 +1217,7 @@ namespace pm_lib {
     if ( is_unit == 0 || is_unit == 1 ) {
       fprintf(fp, "|  operations   sdv    performance\n");
     } else if ( is_unit == 2 ) {
-      fprintf(fp, "|    Bytes      sdv    bandwidth\n");
+      fprintf(fp, "|    Bytes      sdv    bandwidth(Mem&LLC)\n");
     } else if ( is_unit == 3 ) {
       fprintf(fp, "|  f.p.ops      sdv    performance\n");
     } else if ( is_unit == 4 ) {

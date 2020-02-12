@@ -1309,6 +1309,8 @@ void PerfWatch::sortPapiCounterList (void)
 				my_papi.s_sorted[jp] = "[FMA_ins%]" ;
 				my_papi.v_sorted[jp] = fma_percent;
 				jp++;
+			}
+		}
 
 		//	events[0] = PAPI_TOT_CYC;
 		//	events[1] = PAPI_TOT_INS;
@@ -1564,9 +1566,8 @@ void PerfWatch::outputPapiCounterLegend (FILE* fp)
 	fprintf(fp, "\t\t L3_MISS:   Last Level Cache data read miss \n");
 	fprintf(fp, "\t\t [L2$ B/s]: L2 cache working bandwidth responding to demand read and prefetch\n");
 	fprintf(fp, "\t\t [L3$ B/s]: Last Level Cache bandwidth responding to demand read and prefetch\n");
-	fprintf(fp, "\t\t BYTES :    data bytes that missed in Last Level Cache and transferred from memory\n");
 	fprintf(fp, "\t\t [Mem B/s]: Memory bandwidth responding to demand read and prefetch\n");
-	//	fprintf(fp, "\t\t          : The write bandwidth must be measured separately. See Remarks.\n");
+	fprintf(fp, "\t\t [Bytes]  : aggregated data bytes transferred out of L2, L3 cache and memory\n");
 	} else
 
 	if (hwpc_group.platform == "SPARC64" ) {
@@ -1576,19 +1577,19 @@ void PerfWatch::outputPapiCounterLegend (FILE* fp)
 	fprintf(fp, "\t\t L2_MISS_PF: L2 cache misses by prefetch request\n");
 	fprintf(fp, "\t\t L2_WB_DM:   writeback by demand L2 cache misses \n");
 	fprintf(fp, "\t\t L2_WB_PF:   writeback by prefetch L2 cache misses \n");
-	fprintf(fp, "\t\t BYTES :    transferred data bytes from/to memory\n");
 	fprintf(fp, "\t\t [Mem B/s]:  Memory bandwidth responding to demand read, prefetch and writeback reaching memory\n");
+	fprintf(fp, "\t\t [Bytes]  :  aggregated data bytes transferred out of L2 cache and memory\n");
 	} else
 
 	if (hwpc_group.platform == "A64FX" ) {
 	fprintf(fp, "\t\t LOAD_INS:   memory load instructions\n");
 	fprintf(fp, "\t\t STORE_INS:  memory store instructions\n");
 	fprintf(fp, "\t\t L2D_REFILL: L2 cache refill events\n");
-	fprintf(fp, "\t\t L2D_HRFB1:   L2 demand access counts hitting refill buffer (allocated by prefetch)\n");
-	fprintf(fp, "\t\t L2D_HRFB2:   L2 prefetch counts hitting refill buffer (allocated by demand access)\n");
-	fprintf(fp, "\t\t L2D_WB:     L2 writeback counts reaching memory\n");
-	fprintf(fp, "\t\t BYTES :    transferred data bytes from/to memory\n");
+	fprintf(fp, "\t\t L2D_HRFB1:  L2 demand access counts hitting refill buffer (allocated by prefetch)\n");
+	fprintf(fp, "\t\t L2D_HRFB2:  L2 prefetch counts hitting refill buffer (allocated by demand access)\n");
+	fprintf(fp, "\t\t L2D_WB   :  L2 writeback counts reaching memory\n");
 	fprintf(fp, "\t\t [Mem B/s]:  Memory bandwidth responding to demand, prefetch and writeback\n");
+	fprintf(fp, "\t\t [Bytes]  :  aggregated data bytes transferred out of L2 cache and memory\n");
 	}
 
 // VECTOR
