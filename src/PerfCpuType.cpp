@@ -931,9 +931,9 @@ void PerfWatch::sortPapiCounterList (void)
 			else if (hwpc_group.i_platform == 11 ) {
 				cache_size = 256.0;		// FX100 has 256 Byte $ line
 			}
-			// L2 hit  = L2_READ_DM + L2_READ_PF
+			// L2 hit  = L2_READ_DM + L2_READ_PF - (L2_MISS_DM + L2_MISS_PF)
 			// L2 miss = L2_MISS_DM + L2_MISS_PF + L2_WB_DM + L2_WB_PF
-			d_hit_L2  = my_papi.accumu[ip] + my_papi.accumu[ip+1] ;
+			d_hit_L2  = my_papi.accumu[ip] + my_papi.accumu[ip+1] - (my_papi.accumu[ip+2] + my_papi.accumu[ip+3]) ;
 			d_miss_L2 = my_papi.accumu[ip+2] + my_papi.accumu[ip+3] + my_papi.accumu[ip+4] + my_papi.accumu[ip+5] ;
 
 			// L2 hit BandWidth
@@ -1577,7 +1577,8 @@ void PerfWatch::outputPapiCounterLegend (FILE* fp)
 	fprintf(fp, "\t\t L2_MISS_PF: L2 cache misses by prefetch request\n");
 	fprintf(fp, "\t\t L2_WB_DM:   writeback by demand L2 cache misses \n");
 	fprintf(fp, "\t\t L2_WB_PF:   writeback by prefetch L2 cache misses \n");
-	fprintf(fp, "\t\t [Mem B/s]:  Memory bandwidth responding to demand read, prefetch and writeback reaching memory\n");
+	fprintf(fp, "\t\t L2$ [B/s]:  L2 cache bandwidth responding to demand read and prefetch \n");
+	fprintf(fp, "\t\t Mem [B/s]:  Memory bandwidth responding to demand read, prefetch and writeback reaching memory\n");
 	fprintf(fp, "\t\t [Bytes]  :  aggregated data bytes transferred out of L2 cache and memory\n");
 	} else
 
@@ -1588,6 +1589,7 @@ void PerfWatch::outputPapiCounterLegend (FILE* fp)
 	fprintf(fp, "\t\t L2D_HRFB1:  L2 demand access counts hitting refill buffer (allocated by prefetch)\n");
 	fprintf(fp, "\t\t L2D_HRFB2:  L2 prefetch counts hitting refill buffer (allocated by demand access)\n");
 	fprintf(fp, "\t\t L2D_WB   :  L2 writeback counts reaching memory\n");
+	fprintf(fp, "\t\t L2$ [B/s]:  L2 cache bandwidth responding to demand read and prefetch \n");
 	fprintf(fp, "\t\t [Mem B/s]:  Memory bandwidth responding to demand, prefetch and writeback\n");
 	fprintf(fp, "\t\t [Bytes]  :  aggregated data bytes transferred out of L2 cache and memory\n");
 	}
