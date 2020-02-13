@@ -128,14 +128,15 @@ for choosing the right compilers.
 CMAKE_*_FLAGS options can be used for passing compiler options as shown below.
 Adding OpenMP options and fast timer option (-DUSE_PRECISE_TIMER) is generally
 recommended
+Note that C++11 or later standard must be supported for CXXFLAGS.
 on Intel Xeon platform.
 ~~~
 Intel: CC=icc  CXX=icpc F90=ifort FC=ifort
-		CXXFLAGS="-qopenmp -DUSE_PRECISE_TIMER" FCFLAGS="-qopenmp -fpp"
+		CXXFLAGS="-qopenmp -DUSE_PRECISE_TIMER -std=c++11" FCFLAGS="-qopenmp -fpp "
 PGI  : CC=pgcc CXX=pgc++ F90=pgf90 FC=pgfortran
-		CXXFLAGS="-mp" FCFLAGS="-mp -Mpreprocess" LDFLAGS="-pgc++libs"
+		CXXFLAGS="-mp -std=c++11" FCFLAGS="-mp -Mpreprocess" LDFLAGS="-pgc++libs"
 GNU  : CC=gcc  CXX=g++  F90=gfortran FC=gfortran
-		CXXFLAGS="-fopenmp" FCFLAGS="-fopenmp -cpp"
+		CXXFLAGS="-fopenmp -std=c++11" FCFLAGS="-fopenmp -cpp"
 ~~~
 
 An example of cmake command and options for Intel compiler is shown below.
@@ -170,6 +171,29 @@ $ cmake -DINSTALL_DIR=${PM_HOME}/PMlib \
 	-Dwith_PAPI="${PAPI_DIR}" \
 	-Dwith_OTF="${OTF_DIR}" \
   -Denable_PreciseTimer=yes ..
+~~~
+
+
+### Fugaku supercomputer with traditional compilers (i.e. not clang mode compilers)
+~~~
+$ PAPI_DIR=/opt/FJSVxos/devkit/aarch64/rfs/usr
+$ CXXFLAGS="-Kocl "
+$ CFLAGS="-Kocl  "
+$ FFLAGS="-Kocl  "
+$ cmake \
+		-DCMAKE_CXX_FLAGS="${CXXFLAGS} " \
+		-DCMAKE_C_FLAGS="${CFLAGS} " \
+		-DCMAKE_Fortran_FLAGS="${FFLAGS} " \
+		-DINSTALL_DIR=${PM_HOME}/PMlib \
+		-DCMAKE_TOOLCHAIN_FILE=../cmake/Toolchain_fugaku.cmake \
+		-Denable_OPENMP=yes \
+		-Dwith_MPI=yes \
+		-Denable_Fortran=yes \
+		-Dwith_example=yes \
+		-Dwith_PAPI="${PAPI_DIR}" \
+		-Dwith_OTF=no \
+		..
+
 ~~~
 
 
