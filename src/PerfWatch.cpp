@@ -144,7 +144,7 @@ namespace pm_lib {
 
 
 
-  /// HWPCによるイベントカウンターの測定値を Allgather する
+  /// HWPCによるイベントカウンターのプロセスレベルの測定値を Allgather する
   /// Calibrate some numbers to represent the process value as the sum of thread values
   ///
   ///
@@ -155,11 +155,10 @@ namespace pm_lib {
 	if ( (is_unit == 0) || (is_unit == 1) ) {
 		return;
 	}
-	//	if ( my_papi.num_events == 0) return;
+	if ( my_papi.num_events == 0) return;
 
 	sortPapiCounterList ();
 
-	double x;
 	double perf_rate=0.0;
 	if ( m_time > 0.0 ) { perf_rate = 1.0/m_time; }
     // 0: user set bandwidth
@@ -181,12 +180,7 @@ namespace pm_lib {
 	if ( is_unit == 3 ) {
 		m_flop = my_papi.v_sorted[my_papi.num_sorted-3] ;		// Total_FP
 		// re-calculate Flops and peak % of the process values
-		x = m_flop*perf_rate;
-		//
-		// DEBUG from here
-		//
-		// If thread value is being reported, the peak % must be re-scaled (x num_threads)for thread
-		my_papi.v_sorted[my_papi.num_sorted-1] = x / (hwpc_group.corePERF*num_threads) * 100.0;	// peak %
+		my_papi.v_sorted[my_papi.num_sorted-1] = m_flop*perf_rate / (hwpc_group.corePERF*num_threads) * 100.0;	// peak %
 	} else 
 	if ( is_unit == 4 ) {
 		m_flop = my_papi.v_sorted[my_papi.num_sorted-3] ;		// Total_FP
@@ -202,10 +196,6 @@ namespace pm_lib {
 
 	} else
 	if ( is_unit == 6 ) {
-		//
-		// DEBUG from here
-		//
-		// If thread value is being reported, the CYCLE must be re-scaled (x num_threads)for thread
 		my_papi.v_sorted[0] = my_papi.v_sorted[0] / num_threads;	// average cycles
 		m_flop = my_papi.v_sorted[1] ;								// TOT_INS
 
@@ -246,19 +236,94 @@ namespace pm_lib {
   }
 
 
-/*
-  /// HWPCによるイベントカウンターの測定値を Allgather する
+  /// HWPCによるイベントカウンターのスレッドレベルの測定値を Allgather する
   /// Does not calibrate numbers, so they represent the actual thread values
+  /// This API is called by PerfWatch::printDetailThreads() only.
   ///
   void PerfWatch::gatherThreadHWPC()
   {
 #ifdef USE_PAPI
-	//
-	// DEBUG from here 2020/02/11
-	//
+	int is_unit = statsSwitch();
+	if ( (is_unit == 0) || (is_unit == 1) ) {
+		return;
+	}
+	if ( my_papi.num_events == 0) return;
+
+	sortPapiCounterList ();
+
+	double perf_rate=0.0;
+	if ( m_time > 0.0 ) { perf_rate = 1.0/m_time; }
+    // 0: user set bandwidth
+    // 1: user set flop counts
+    // 2: BANDWIDTH : HWPC measured data access bandwidth
+    // 3: FLOPS     : HWPC measured flop counts
+    // 4: VECTOR    : HWPC measured vectorization
+    // 5: CACHE     : HWPC measured cache hit/miss
+    // 6: CYCLE     : HWPC measured cycles, instructions
+    // 7: LOADSTORE : HWPC measured load/store instruction type
+	m_flop = 0.0;
+	m_percentage = 0.0;
+	if ( is_unit >= 0 && is_unit <= 1 ) {
+		m_flop = m_time * my_papi.v_sorted[my_papi.num_sorted-1] ;
+	} else 
+	if ( is_unit == 2 ) {
+		m_flop = my_papi.v_sorted[my_papi.num_sorted-1] ;		// BYTES
+	} else 
+	if ( is_unit == 3 ) {
+		m_flop = my_papi.v_sorted[my_papi.num_sorted-3] ;		// Total_FP
+		my_papi.v_sorted[my_papi.num_sorted-1] = m_flop*perf_rate / hwpc_group.corePERF * 100.0;	// peak %
+	} else 
+	if ( is_unit == 4 ) {
+		m_flop = my_papi.v_sorted[my_papi.num_sorted-3] ;		// Total_FP
+		m_percentage = my_papi.v_sorted[my_papi.num_sorted-1] ;	// [Vector %]
+
+	} else 
+	if ( is_unit == 5 ) {
+		m_flop = my_papi.v_sorted[0] + my_papi.v_sorted[1] ;	// load+store
+		if (hwpc_group.i_platform == 11 ) {
+			m_flop = my_papi.v_sorted[0] + my_papi.v_sorted[1] + my_papi.v_sorted[2] ;
+		}
+		m_percentage = my_papi.v_sorted[my_papi.num_sorted-1] ;	// [L*$ hit%]
+
+	} else
+	if ( is_unit == 6 ) {
+		m_flop = my_papi.v_sorted[1] ;							// TOT_INS
+
+	} else
+	if ( is_unit == 7 ) {
+		m_flop = my_papi.v_sorted[0] + my_papi.v_sorted[1] ;	// load+store
+		if (hwpc_group.i_platform == 11 ) {
+			m_flop = my_papi.v_sorted[0] + my_papi.v_sorted[1] + my_papi.v_sorted[2] ;
+		}
+		m_percentage = my_papi.v_sorted[my_papi.num_sorted-1] ;	// [Vector %]
+	}
+
+	// The space is reserved only once as a fixed size array
+	if ( m_sortedArrayHWPC == NULL) {
+		m_sortedArrayHWPC = new double[num_process*my_papi.num_sorted];
+		if (!(m_sortedArrayHWPC)) {
+			printError("gatherHWPC", "new memory failed. %d x %d x 8\n", num_process, my_papi.num_sorted);
+			PM_Exit(0);
+		}
+	}
+
+	if ( num_process > 1 ) {
+		int iret =
+		MPI_Allgather (my_papi.v_sorted, my_papi.num_sorted, MPI_DOUBLE,
+					m_sortedArrayHWPC, my_papi.num_sorted, MPI_DOUBLE, MPI_COMM_WORLD);
+		if ( iret != 0 ) {
+			printError("gatherHWPC", " MPI_Allather failed.\n");
+			PM_Exit(0);
+		}
+	} else {
+
+        for (int i = 0; i < my_papi.num_sorted; i++) {
+			m_sortedArrayHWPC[i] = my_papi.v_sorted[i];
+		}
+	}
+
 #endif
   }
- */
 
 
   /// 測定結果情報をノード０に集約.
@@ -1048,7 +1113,11 @@ namespace pm_lib {
 
 		PerfWatch::selectPerfSingleThread(j);
 
-		PerfWatch::gatherHWPC();
+		//
+		// DEBUG from here
+		//
+		//	PerfWatch::gatherHWPC();
+		PerfWatch::gatherThreadHWPC();
 
 		PerfWatch::gather();
 

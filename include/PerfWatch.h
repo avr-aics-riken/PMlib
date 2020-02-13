@@ -188,9 +188,13 @@ namespace pm_lib {
     ///
     void gather(void);
 
-    /// HWPCによるイベントカウンターの測定値を PAPI APIで取得収集する
+    /// HWPCにより測定したプロセスレベルのイベントカウンター測定値を収集する
     ///
     void gatherHWPC(void);
+
+    /// HWPCにより測定したスレッドレベルのイベントカウンター測定値を収集する
+    ///
+    void gatherThreadHWPC(void);
 
     /// 測定結果の平均値・標準偏差などの基礎的な統計計算
     ///
