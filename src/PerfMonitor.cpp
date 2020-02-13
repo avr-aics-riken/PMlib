@@ -1297,14 +1297,14 @@ namespace pm_lib {
       if (w.m_time_av == 0.0) {
         fops = 0.0;
       } else {
-        if ( is_unit >= 0 && is_unit <= 3 ) {
+        if ( is_unit >= 0 && is_unit <= 1 ) {
+          fops = (w.m_count_av==0) ? 0.0 : w.m_flop_av/w.m_time_av;
+        } else
+        if ( (is_unit == 2) || (is_unit == 3) || (is_unit == 6) ) {
           fops = (w.m_count_av==0) ? 0.0 : w.m_flop_av/w.m_time_av;
         } else
         if ( (is_unit == 4) || (is_unit == 5) || (is_unit == 7) ) {
           fops = w.m_percentage;
-        } else
-        if ( is_unit == 6 ) {
-          fops = (w.m_count_av==0) ? 0.0 : w.m_flop_av/w.m_time_av;
         }
       }
 

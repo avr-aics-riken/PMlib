@@ -159,8 +159,6 @@ namespace pm_lib {
 
 	sortPapiCounterList ();
 
-// DEBUG from here 2020/02/12
-
 	double x;
 	double perf_rate=0.0;
 	if ( m_time > 0.0 ) { perf_rate = 1.0/m_time; }
@@ -194,15 +192,6 @@ namespace pm_lib {
 		m_flop = my_papi.v_sorted[my_papi.num_sorted-3] ;		// Total_FP
 		m_percentage = my_papi.v_sorted[my_papi.num_sorted-1] ;	// [Vector %]
 
-/*
-		//	x      = my_papi.v_sorted[my_papi.num_sorted-2] ;		// Vector_FP
-		//	if (m_flop > 0.0 ) {
-		//		m_percentage = x/m_flop * 100.0 ;	// [Vector %]
-		//	} else {
-		//		m_percentage = 0.0 ;				// [Vector %]
-		//	}
- */
-
 	} else 
 	if ( is_unit == 5 ) {
 		m_flop = my_papi.v_sorted[0] + my_papi.v_sorted[1] ;	// load+store
@@ -219,15 +208,6 @@ namespace pm_lib {
 		// If thread value is being reported, the CYCLE must be re-scaled (x num_threads)for thread
 		my_papi.v_sorted[0] = my_papi.v_sorted[0] / num_threads;	// average cycles
 		m_flop = my_papi.v_sorted[1] ;								// TOT_INS
-/*
-		if (hwpc_group.i_platform == 21 ) {
-			if (my_papi.v_sorted[2] > 0.0 ) {
-			my_papi.v_sorted[4] = my_papi.v_sorted[3]/my_papi.v_sorted[2] *100.0 ;	// "[FMA_ins%]"
-			} else {
-			my_papi.v_sorted[4] = 0.0 ;								// "[FMA_ins%]"
-			}
-		}
-*/
 
 	} else
 	if ( is_unit == 7 ) {
