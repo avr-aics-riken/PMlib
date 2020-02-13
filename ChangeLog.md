@@ -3,6 +3,13 @@
 ## REVISION HISTORY
 
 ---
+- 2020-02-12 Version 7.0.0
+  - Major update to support Fugaku supercomputer HWPC
+  - HWPC_CHOOSER choice is available from BANDWIDTH FLOPS VECTOR CACHE CYCLE LOADSTORE USER
+  - Rearranged the report format for Basic report section and HWPC report section
+  - Add cmake/Toolchain_fugaku.cmake
+  
+---
 - 2020-01-07 Version 6.4.5
   - copyright 2020
   - Toolchain_intel_F_TCS.cmake >> Toolchain_ITO_TCS.cmake

@@ -184,22 +184,25 @@ namespace pm_lib {
 		m_flop = my_papi.v_sorted[my_papi.num_sorted-3] ;		// Total_FP
 		// re-calculate Flops and peak % of the process values
 		x = m_flop*perf_rate;
-/*
-		my_papi.v_sorted[my_papi.num_sorted-2] = x;				// Flops
-*/
+		//
+		// DEBUG from here
+		//
+		// If thread value is being reported, the peak % must be re-scaled (x num_threads)for thread
 		my_papi.v_sorted[my_papi.num_sorted-1] = x / (hwpc_group.corePERF*num_threads) * 100.0;	// peak %
 	} else 
 	if ( is_unit == 4 ) {
 		m_flop = my_papi.v_sorted[my_papi.num_sorted-3] ;		// Total_FP
-		x      = my_papi.v_sorted[my_papi.num_sorted-2] ;		// Vector_FP
-		if (m_flop > 0.0 ) {
-			m_percentage = x/m_flop * 100.0 ;	// [Vector %]
-		} else {
-			m_percentage = 0.0 ;				// [Vector %]
-		}
+		m_percentage = my_papi.v_sorted[my_papi.num_sorted-1] ;	// [Vector %]
+
 /*
-		my_papi.v_sorted[my_papi.num_sorted-1] = m_percentage ;	// [Vector %]
-*/
+		//	x      = my_papi.v_sorted[my_papi.num_sorted-2] ;		// Vector_FP
+		//	if (m_flop > 0.0 ) {
+		//		m_percentage = x/m_flop * 100.0 ;	// [Vector %]
+		//	} else {
+		//		m_percentage = 0.0 ;				// [Vector %]
+		//	}
+ */
+
 	} else 
 	if ( is_unit == 5 ) {
 		m_flop = my_papi.v_sorted[0] + my_papi.v_sorted[1] ;	// load+store
@@ -210,19 +213,22 @@ namespace pm_lib {
 
 	} else
 	if ( is_unit == 6 ) {
+		//
+		// DEBUG from here
+		//
+		// If thread value is being reported, the CYCLE must be re-scaled (x num_threads)for thread
 		my_papi.v_sorted[0] = my_papi.v_sorted[0] / num_threads;	// average cycles
 		m_flop = my_papi.v_sorted[1] ;								// TOT_INS
+/*
 		if (hwpc_group.i_platform == 21 ) {
-			x = my_papi.v_sorted[2] ;								//	FP_INS
-			if (x > 0.0 ) {
-			my_papi.v_sorted[4] = my_papi.v_sorted[3]/x *100.0 ;	// "[FMA_ins%]"
+			if (my_papi.v_sorted[2] > 0.0 ) {
+			my_papi.v_sorted[4] = my_papi.v_sorted[3]/my_papi.v_sorted[2] *100.0 ;	// "[FMA_ins%]"
 			} else {
 			my_papi.v_sorted[4] = 0.0 ;								// "[FMA_ins%]"
 			}
 		}
-/*
-		my_papi.v_sorted[my_papi.num_sorted-1] = my_papi.v_sorted[1] / my_papi.v_sorted[0];	// [Ins/cyc]
 */
+
 	} else
 	if ( is_unit == 7 ) {
 		m_flop = my_papi.v_sorted[0] + my_papi.v_sorted[1] ;	// load+store
