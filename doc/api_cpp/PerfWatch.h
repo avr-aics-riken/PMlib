@@ -333,6 +333,7 @@ namespace pm_lib {
     void stopSectionParallel(double flopPerTask, unsigned iterationCount);
 
   private:
+	void identifyARMplatform (void);
 	void createPapiCounterList (void);
 	void sortPapiCounterList (void);
 	void outputPapiCounterHeader (FILE* fp, std::string s_label);
