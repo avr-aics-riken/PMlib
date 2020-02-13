@@ -1564,9 +1564,9 @@ void PerfWatch::outputPapiCounterLegend (FILE* fp)
 	fprintf(fp, "\t\t L2_PF_HIT: L2 cache data prefetch hit \n");
 	fprintf(fp, "\t\t L3_HIT:    Last Level Cache data read hit \n");
 	fprintf(fp, "\t\t L3_MISS:   Last Level Cache data read miss \n");
-	fprintf(fp, "\t\t [L2$ B/s]: L2 cache working bandwidth responding to demand read and prefetch\n");
-	fprintf(fp, "\t\t [L3$ B/s]: Last Level Cache bandwidth responding to demand read and prefetch\n");
-	fprintf(fp, "\t\t [Mem B/s]: Memory bandwidth responding to demand read and prefetch\n");
+	fprintf(fp, "\t\t L2$ [B/s]: L2 cache working bandwidth responding to demand read and prefetch\n");
+	fprintf(fp, "\t\t L3$ [B/s]: Last Level Cache bandwidth responding to demand read and prefetch\n");
+	fprintf(fp, "\t\t Mem [B/s]: Memory bandwidth responding to demand read and prefetch\n");
 	fprintf(fp, "\t\t [Bytes]  : aggregated data bytes transferred out of L2, L3 cache and memory\n");
 	} else
 
@@ -1590,7 +1590,7 @@ void PerfWatch::outputPapiCounterLegend (FILE* fp)
 	fprintf(fp, "\t\t L2D_HRFB2:  L2 prefetch counts hitting refill buffer (allocated by demand access)\n");
 	fprintf(fp, "\t\t L2D_WB   :  L2 writeback counts reaching memory\n");
 	fprintf(fp, "\t\t L2$ [B/s]:  L2 cache bandwidth responding to demand read and prefetch \n");
-	fprintf(fp, "\t\t [Mem B/s]:  Memory bandwidth responding to demand, prefetch and writeback\n");
+	fprintf(fp, "\t\t Mem [B/s]:  Memory bandwidth responding to demand, prefetch and writeback\n");
 	fprintf(fp, "\t\t [Bytes]  :  aggregated data bytes transferred out of L2 cache and memory\n");
 	}
 

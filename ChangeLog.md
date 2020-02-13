@@ -4,10 +4,10 @@
 
 ---
 - 2020-02-12 Version 7.0.0
-  - Major update to support Fugaku supercomputer HWPC
-  - HWPC_CHOOSER choice is available from BANDWIDTH FLOPS VECTOR CACHE CYCLE LOADSTORE USER
+  - Major update in src/ to support Fugaku supercomputer HWPC, add cmake/Toolchain_fugaku.cmake
   - Rearranged the report format for Basic report section and HWPC report section
-  - Add cmake/Toolchain_fugaku.cmake
+  - New HWPC_CHOOSER choice. The available choices are BANDWIDTH FLOPS VECTOR CACHE CYCLE LOADSTORE USER
+  - Report sustained % of peak performance, vectorized % for F.P. operations and load/store instructions
   
 ---
 - 2020-01-07 Version 6.4.5
