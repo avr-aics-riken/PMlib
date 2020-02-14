@@ -130,6 +130,7 @@ Adding OpenMP options and fast timer option (-DUSE_PRECISE_TIMER) is generally
 recommended
 Note that C++11 or later standard must be supported for CXXFLAGS.
 on Intel Xeon platform.
+
 ~~~
 Intel: CC=icc  CXX=icpc F90=ifort FC=ifort
 		CXXFLAGS="-qopenmp -DUSE_PRECISE_TIMER -std=c++11" FCFLAGS="-qopenmp -fpp "
@@ -140,6 +141,7 @@ GNU  : CC=gcc  CXX=g++  F90=gfortran FC=gfortran
 ~~~
 
 An example of cmake command and options for Intel compiler is shown below.
+
 ~~~
 $ # Intel compiler SERIAL
 $ export CC=icc CXX=icpc F90=ifort FC=ifort
@@ -158,6 +160,7 @@ In this document, MPI version means multi process (MPI) version with possible
 OpenMP thread parallel model, if OpenMP is available on the target platform.
 If PAPI and/or OTF library is available on the system, set their path
 as the example below to activate the functionality within PMlib.
+
 ~~~
 $ # Intel compiler example
 $ export CC=mpiicc CXX=mpiicpc F90=mpiifort FC=mpiifort
@@ -175,6 +178,7 @@ $ cmake -DINSTALL_DIR=${PM_HOME}/PMlib \
 
 
 ### Fugaku supercomputer with traditional compilers (i.e. not clang mode compilers)
+
 ~~~
 $ PAPI_DIR=/opt/FJSVxos/devkit/aarch64/rfs/usr
 $ CXXFLAGS="-Kocl "
@@ -198,6 +202,7 @@ $ cmake \
 
 
 ### FUJITSU FX100, K computer (Cross compilation on login nodes) and Fujitsu TCS environment for intel PC
+
 ~~~
 $ cmake -DINSTALL_DIR=${PM_HOME}/PMlib \
             -DCMAKE_TOOLCHAIN_FILE=../cmake/Toolchain_fx10.cmake \
@@ -257,6 +262,7 @@ $ cmake -DINSTALL_DIR=${PM_HOME}/PMlib \
 ##### Note
 - On Fujitsu machines(fx10, K, fx100), confirm appropriate directory path for compiler environment.
 - Before rebuilding, execute the following command for cleaning up.
+
 ~~~
 $ make distclean
 ~~~
@@ -318,6 +324,7 @@ Meanwhile, the summary is displayed for stdout.
 
 
 ## PAPI install (intel compiler)
+
 ~~~
 $ ./configure --prefix=${PREFIX} CC=icc F77=ifort
 $ make
