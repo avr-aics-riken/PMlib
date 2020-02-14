@@ -5,7 +5,7 @@
 # Copyright (c) 2010-2011 VCAD System Research Program, RIKEN.
 # All rights reserved.
 #
-# Copyright (c) 2012-2020 Advanced Institute for Computational Science(AICS), RIKEN.
+# Copyright (c) 2012-2020 RIKEN Center for Computational Science(R-CCS), RIKEN.
 # All rights reserved.
 #
 # Copyright (c) 2016-2020 Research Institute for Information Technology(RIIT), Kyushu University.
@@ -61,4 +61,5 @@ set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)
 set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
 set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
 
+set(TARGET_ARCH "F_TCS")
 set(USE_F_TCS "YES")

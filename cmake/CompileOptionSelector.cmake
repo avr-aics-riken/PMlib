@@ -5,7 +5,7 @@
 # Copyright (c) 2010-2011 VCAD System Research Program, RIKEN.
 # All rights reserved.
 #
-# Copyright (c) 2012-2020 Advanced Institute for Computational Science(AICS), RIKEN.
+# Copyright (c) 2012-2020 RIKEN Center for Computational Science(R-CCS), RIKEN.
 # All rights reserved.
 #
 # Copyright (c) 2016-2020 Research Institute for Information Technology(RIIT), Kyushu University.
@@ -18,7 +18,15 @@
 ##
 
 macro (AddOptimizeOption)
-  if (TARGET_ARCH STREQUAL "FX10")
+  if (TARGET_ARCH STREQUAL "FUGAKU")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Kfast -Nrt_notune -w")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Kfast -Nrt_notune -w")
+    set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -Cpp -Kfast -Nrt_notune -Knooptmsg")
+    if(enable_PreciseTimer)
+      SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Nfjcex")
+    endif()
+
+  elseif (TARGET_ARCH STREQUAL "FX10")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DFX10 -Kfast -Nrt_notune -w -Xg")
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DFX10 -Kfast -Nrt_notune -w -Xg")
     set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -Cpp -DFX10 -Kfast -Nrt_notune -Knooptmsg")
@@ -35,15 +43,7 @@ macro (AddOptimizeOption)
       SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Nfjcex")
     endif()
 
-  elseif (TARGET_ARCH STREQUAL "ITO_TCS")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Kfast -Nrt_notune -w -Xg")
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Kfast -Nrt_notune -w -Xg")
-    set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -Cpp -Kfast -Nrt_notune -Knooptmsg")
-    if(enable_PreciseTimer)
-      SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Nfjcex")
-    endif()
-    
-  elseif (USE_F_TCS STREQUAL "YES")
+  elseif(USE_F_TCS STREQUAL "YES")	# (TARGET_ARCH STREQUAL "ITO_TCS") OR (TARGET_ARCH STREQUAL "F_TCS")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Kfast -Nrt_notune -w -Xg")
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Kfast -Nrt_notune -w -Xg")
     set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -Cpp -Kfast -Nrt_notune -Knooptmsg")
@@ -87,11 +87,8 @@ endmacro()
 macro (FreeForm)
   if(CMAKE_Fortran_COMPILER MATCHES ".*frtpx$")
     #set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS}")
-    
-  elseif (USE_F_TCS STREQUAL "YES")
-    set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -Free")
 
-  elseif(TARGET_ARCH STREQUAL "ITO_TCS")
+  elseif(USE_F_TCS STREQUAL "YES")	# (TARGET_ARCH STREQUAL "ITO_TCS") OR (TARGET_ARCH STREQUAL "F_TCS")
     set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -Free")
 
   elseif(CMAKE_Fortran_COMPILER_ID STREQUAL "GNU")
