@@ -1,0 +1,441 @@
++ export LANG=C
++ LANG=C
++ PACKAGE_DIR=/home/g9200002/u92028/pmlib/package
++ PMLIB_DIR=/home/g9200002/u92028/pmlib/usr_local_pmlib/fugaku
++ PAPI_DIR=/opt/FJSVxos/devkit/aarch64/rfs/usr
++ OTF_DIR=no
++ CXXFLAGS='-Kocl -Nnofjprof -Nfjomplib '
++ CFLAGS='-Kocl -Nnofjprof -Nfjomplib '
++ FFLAGS='-Kocl -Nnofjprof -Nfjomplib '
++ DEBUG=' '
++ BUILD_DIR=/home/g9200002/u92028/pmlib/package/BUILD_SERIAL
++ mkdir -p /home/g9200002/u92028/pmlib/package/BUILD_SERIAL
++ cd /home/g9200002/u92028/pmlib/package/BUILD_SERIAL
++ '[' 0 '!=' 0 ']'
++ rm -rf /home/g9200002/u92028/pmlib/package/BUILD_SERIAL/CMakeCache.txt /home/g9200002/u92028/pmlib/package/BUILD_SERIAL/CMakeFiles /home/g9200002/u92028/pmlib/package/BUILD_SERIAL/CPackConfig.cmake /home/g9200002/u92028/pmlib/package/BUILD_SERIAL/CPackSourceConfig.cmake /home/g9200002/u92028/pmlib/package/BUILD_SERIAL/CTestTestfile.cmake /home/g9200002/u92028/pmlib/package/BUILD_SERIAL/Makefile /home/g9200002/u92028/pmlib/package/BUILD_SERIAL/cmake_install.cmake /home/g9200002/u92028/pmlib/package/BUILD_SERIAL/config.h /home/g9200002/u92028/pmlib/package/BUILD_SERIAL/doc /home/g9200002/u92028/pmlib/package/BUILD_SERIAL/example /home/g9200002/u92028/pmlib/package/BUILD_SERIAL/include /home/g9200002/u92028/pmlib/package/BUILD_SERIAL/install_manifest.txt /home/g9200002/u92028/pmlib/package/BUILD_SERIAL/src /home/g9200002/u92028/pmlib/package/BUILD_SERIAL/src_papi_ext
++ cmake '-DCMAKE_CXX_FLAGS=-Kocl -Nnofjprof -Nfjomplib   ' '-DCMAKE_C_FLAGS=-Kocl -Nnofjprof -Nfjomplib   ' '-DCMAKE_Fortran_FLAGS=-Kocl -Nnofjprof -Nfjomplib   ' -DCMAKE_TOOLCHAIN_FILE=../cmake/Toolchain_fugaku.cmake -DINSTALL_DIR=/home/g9200002/u92028/pmlib/usr_local_pmlib/fugaku -Denable_OPENMP=yes -Dwith_MPI=no -Denable_Fortran=yes -Dwith_example=yes -Dwith_PAPI=/opt/FJSVxos/devkit/aarch64/rfs/usr -Dwith_OTF=no ..
+ 
+PMlib Version : 7.0.0
+ 
+ 
+-- Destination PATH  : /home/g9200002/u92028/pmlib/usr_local_pmlib/fugaku
+-- CMAKE_C_COMPILER  : /opt/FJSVxtclanga/tcsds-1.2.24/bin/fccpx
+-- CMAKE_C_FLAGS     : -Kocl -Nnofjprof -Nfjomplib -Kfast -Nrt_notune -w -Kopenmp -DDISABLE_MPI
+-- CMAKE_CXX_COMPILER: /opt/FJSVxtclanga/tcsds-1.2.24/bin/FCCpx
+-- CMAKE_CXX_FLAGS   : -Kocl -Nnofjprof -Nfjomplib -Kfast -Nrt_notune -w -Nfjcex -Kopenmp -DDISABLE_MPI -DUSE_PRECISE_TIMER
+-- CMAKE_Fortran_COMPILER : /opt/FJSVxtclanga/tcsds-1.2.24/bin/frtpx
+-- CMAKE_Fortran_FLAGS    : -Kocl -Nnofjprof -Nfjomplib -Cpp -Kfast -Nrt_notune -Knooptmsg -Kopenmp -DDISABLE_MPI
+ 
+-- OpenMP            : yes
+-- MPI               : no
+-- PAPI              : /opt/FJSVxos/devkit/aarch64/rfs/usr
+-- OTF               : no
+-- Example           : yes
+ 
+Code test will be performed
+-- Looking for include file inttypes.h
+-- Looking for include file inttypes.h - found
+-- Looking for include file memory.h
+-- Looking for include file memory.h - found
+-- Looking for include file stdint.h
+-- Looking for include file stdint.h - found
+-- Looking for include file stdlib.h
+-- Looking for include file stdlib.h - found
+-- Looking for include file strings.h
+-- Looking for include file strings.h - found
+-- Looking for include file string.h
+-- Looking for include file string.h - found
+-- Looking for include file sys/stat.h
+-- Looking for include file sys/stat.h - found
+-- Looking for include file sys/types.h
+-- Looking for include file sys/types.h - found
+-- Looking for include file unistd.h
+-- Looking for include file unistd.h - found
+ 
+Examples : 
+-- PAPI_DIR            = /opt/FJSVxos/devkit/aarch64/rfs/usr
+-- OTF_DIR             = 
+-- with_MPI            = no
+-- Configuring done
+-- Generating done
+-- Build files have been written to: /home/g9200002/u92028/pmlib/PMlib/BUILD_SERIAL
++ make VERBOSE=1
+/usr/bin/cmake -H/home/g9200002/u92028/pmlib/PMlib -B/home/g9200002/u92028/pmlib/PMlib/BUILD_SERIAL --check-build-system CMakeFiles/Makefile.cmake 0
+/usr/bin/cmake -E cmake_progress_start /home/g9200002/u92028/pmlib/PMlib/BUILD_SERIAL/CMakeFiles /home/g9200002/u92028/pmlib/PMlib/BUILD_SERIAL/CMakeFiles/progress.marks
+make -f CMakeFiles/Makefile2 all
+make[1]: Entering directory `/reserved/g9200002/u92028/pmlib/PMlib/BUILD_SERIAL'
+make -f src/CMakeFiles/PM.dir/build.make src/CMakeFiles/PM.dir/depend
+make[2]: Entering directory `/reserved/g9200002/u92028/pmlib/PMlib/BUILD_SERIAL'
+cd /home/g9200002/u92028/pmlib/PMlib/BUILD_SERIAL && /usr/bin/cmake -E cmake_depends "Unix Makefiles" /home/g9200002/u92028/pmlib/PMlib /home/g9200002/u92028/pmlib/PMlib/src /home/g9200002/u92028/pmlib/PMlib/BUILD_SERIAL /home/g9200002/u92028/pmlib/PMlib/BUILD_SERIAL/src /home/g9200002/u92028/pmlib/PMlib/BUILD_SERIAL/src/CMakeFiles/PM.dir/DependInfo.cmake --color=
+Dependee "/home/g9200002/u92028/pmlib/PMlib/BUILD_SERIAL/src/CMakeFiles/PM.dir/DependInfo.cmake" is newer than depender "/home/g9200002/u92028/pmlib/PMlib/BUILD_SERIAL/src/CMakeFiles/PM.dir/depend.internal".
+Dependee "/home/g9200002/u92028/pmlib/PMlib/BUILD_SERIAL/src/CMakeFiles/CMakeDirectoryInformation.cmake" is newer than depender "/home/g9200002/u92028/pmlib/PMlib/BUILD_SERIAL/src/CMakeFiles/PM.dir/depend.internal".
+Scanning dependencies of target PM
+make[2]: Leaving directory `/reserved/g9200002/u92028/pmlib/PMlib/BUILD_SERIAL'
+make -f src/CMakeFiles/PM.dir/build.make src/CMakeFiles/PM.dir/build
+make[2]: Entering directory `/reserved/g9200002/u92028/pmlib/PMlib/BUILD_SERIAL'
+/usr/bin/cmake -E cmake_progress_report /home/g9200002/u92028/pmlib/PMlib/BUILD_SERIAL/CMakeFiles 1
+[ 11%] Building CXX object src/CMakeFiles/PM.dir/PerfCpuType.cpp.o
+cd /home/g9200002/u92028/pmlib/PMlib/BUILD_SERIAL/src && /opt/FJSVxtclanga/tcsds-1.2.24/bin/FCCpx   -DHAVE_CONFIG_H -DUSE_PAPI -Kocl -Nnofjprof -Nfjomplib -Kfast -Nrt_notune -w -Nfjcex -Kopenmp -DDISABLE_MPI -DUSE_PRECISE_TIMER -I/home/g9200002/u92028/pmlib/PMlib/src -I/home/g9200002/u92028/pmlib/PMlib/include -I/home/g9200002/u92028/pmlib/PMlib/BUILD_SERIAL/include -I/opt/FJSVxos/devkit/aarch64/rfs/usr/include    -o CMakeFiles/PM.dir/PerfCpuType.cpp.o -c /home/g9200002/u92028/pmlib/PMlib/src/PerfCpuType.cpp
+/usr/bin/cmake -E cmake_progress_report /home/g9200002/u92028/pmlib/PMlib/BUILD_SERIAL/CMakeFiles 2
+[ 22%] Building CXX object src/CMakeFiles/PM.dir/PerfMonitor.cpp.o
+cd /home/g9200002/u92028/pmlib/PMlib/BUILD_SERIAL/src && /opt/FJSVxtclanga/tcsds-1.2.24/bin/FCCpx   -DHAVE_CONFIG_H -DUSE_PAPI -Kocl -Nnofjprof -Nfjomplib -Kfast -Nrt_notune -w -Nfjcex -Kopenmp -DDISABLE_MPI -DUSE_PRECISE_TIMER -I/home/g9200002/u92028/pmlib/PMlib/src -I/home/g9200002/u92028/pmlib/PMlib/include -I/home/g9200002/u92028/pmlib/PMlib/BUILD_SERIAL/include -I/opt/FJSVxos/devkit/aarch64/rfs/usr/include    -o CMakeFiles/PM.dir/PerfMonitor.cpp.o -c /home/g9200002/u92028/pmlib/PMlib/src/PerfMonitor.cpp
+/usr/bin/cmake -E cmake_progress_report /home/g9200002/u92028/pmlib/PMlib/BUILD_SERIAL/CMakeFiles 3
+[ 33%] Building CXX object src/CMakeFiles/PM.dir/PerfWatch.cpp.o
+cd /home/g9200002/u92028/pmlib/PMlib/BUILD_SERIAL/src && /opt/FJSVxtclanga/tcsds-1.2.24/bin/FCCpx   -DHAVE_CONFIG_H -DUSE_PAPI -Kocl -Nnofjprof -Nfjomplib -Kfast -Nrt_notune -w -Nfjcex -Kopenmp -DDISABLE_MPI -DUSE_PRECISE_TIMER -I/home/g9200002/u92028/pmlib/PMlib/src -I/home/g9200002/u92028/pmlib/PMlib/include -I/home/g9200002/u92028/pmlib/PMlib/BUILD_SERIAL/include -I/opt/FJSVxos/devkit/aarch64/rfs/usr/include    -o CMakeFiles/PM.dir/PerfWatch.cpp.o -c /home/g9200002/u92028/pmlib/PMlib/src/PerfWatch.cpp
+/usr/bin/cmake -E cmake_progress_report /home/g9200002/u92028/pmlib/PMlib/BUILD_SERIAL/CMakeFiles 4
+[ 44%] Building CXX object src/CMakeFiles/PM.dir/PerfProgFortran.cpp.o
+cd /home/g9200002/u92028/pmlib/PMlib/BUILD_SERIAL/src && /opt/FJSVxtclanga/tcsds-1.2.24/bin/FCCpx   -DHAVE_CONFIG_H -DUSE_PAPI -Kocl -Nnofjprof -Nfjomplib -Kfast -Nrt_notune -w -Nfjcex -Kopenmp -DDISABLE_MPI -DUSE_PRECISE_TIMER -I/home/g9200002/u92028/pmlib/PMlib/src -I/home/g9200002/u92028/pmlib/PMlib/include -I/home/g9200002/u92028/pmlib/PMlib/BUILD_SERIAL/include -I/opt/FJSVxos/devkit/aarch64/rfs/usr/include    -o CMakeFiles/PM.dir/PerfProgFortran.cpp.o -c /home/g9200002/u92028/pmlib/PMlib/src/PerfProgFortran.cpp
+Linking CXX static library libPM.a
+cd /home/g9200002/u92028/pmlib/PMlib/BUILD_SERIAL/src && /usr/bin/cmake -P CMakeFiles/PM.dir/cmake_clean_target.cmake
+cd /home/g9200002/u92028/pmlib/PMlib/BUILD_SERIAL/src && /usr/bin/cmake -E cmake_link_script CMakeFiles/PM.dir/link.txt --verbose=1
+/usr/bin/ar cr libPM.a  CMakeFiles/PM.dir/PerfCpuType.cpp.o CMakeFiles/PM.dir/PerfMonitor.cpp.o CMakeFiles/PM.dir/PerfWatch.cpp.o CMakeFiles/PM.dir/PerfProgFortran.cpp.o
+/usr/bin/ranlib libPM.a
+make[2]: Leaving directory `/reserved/g9200002/u92028/pmlib/PMlib/BUILD_SERIAL'
+/usr/bin/cmake -E cmake_progress_report /home/g9200002/u92028/pmlib/PMlib/BUILD_SERIAL/CMakeFiles  1 2 3 4
+[ 44%] Built target PM
+make -f src_papi_ext/CMakeFiles/papi_ext.dir/build.make src_papi_ext/CMakeFiles/papi_ext.dir/depend
+make[2]: Entering directory `/reserved/g9200002/u92028/pmlib/PMlib/BUILD_SERIAL'
+cd /home/g9200002/u92028/pmlib/PMlib/BUILD_SERIAL && /usr/bin/cmake -E cmake_depends "Unix Makefiles" /home/g9200002/u92028/pmlib/PMlib /home/g9200002/u92028/pmlib/PMlib/src_papi_ext /home/g9200002/u92028/pmlib/PMlib/BUILD_SERIAL /home/g9200002/u92028/pmlib/PMlib/BUILD_SERIAL/src_papi_ext /home/g9200002/u92028/pmlib/PMlib/BUILD_SERIAL/src_papi_ext/CMakeFiles/papi_ext.dir/DependInfo.cmake --color=
+Dependee "/home/g9200002/u92028/pmlib/PMlib/BUILD_SERIAL/src_papi_ext/CMakeFiles/papi_ext.dir/DependInfo.cmake" is newer than depender "/home/g9200002/u92028/pmlib/PMlib/BUILD_SERIAL/src_papi_ext/CMakeFiles/papi_ext.dir/depend.internal".
+Dependee "/home/g9200002/u92028/pmlib/PMlib/BUILD_SERIAL/src_papi_ext/CMakeFiles/CMakeDirectoryInformation.cmake" is newer than depender "/home/g9200002/u92028/pmlib/PMlib/BUILD_SERIAL/src_papi_ext/CMakeFiles/papi_ext.dir/depend.internal".
+Scanning dependencies of target papi_ext
+make[2]: Leaving directory `/reserved/g9200002/u92028/pmlib/PMlib/BUILD_SERIAL'
+make -f src_papi_ext/CMakeFiles/papi_ext.dir/build.make src_papi_ext/CMakeFiles/papi_ext.dir/build
+make[2]: Entering directory `/reserved/g9200002/u92028/pmlib/PMlib/BUILD_SERIAL'
+/usr/bin/cmake -E cmake_progress_report /home/g9200002/u92028/pmlib/PMlib/BUILD_SERIAL/CMakeFiles 9
+[ 55%] Building C object src_papi_ext/CMakeFiles/papi_ext.dir/papi_ext.c.o
+cd /home/g9200002/u92028/pmlib/PMlib/BUILD_SERIAL/src_papi_ext && /opt/FJSVxtclanga/tcsds-1.2.24/bin/fccpx  -DHAVE_CONFIG_H -DUSE_PAPI -Kocl -Nnofjprof -Nfjomplib -Kfast -Nrt_notune -w -Kopenmp -DDISABLE_MPI -std=c99 -DSTATIC_PAPI_EVENTS_TABLE -D_REENTRANT -D_GNU_SOURCE -DUSE_COMPILER_TLS  -DPAPI_NO_MEMORY_MANAGEMENT -DUSE_PAPI -I/home/g9200002/u92028/pmlib/PMlib/src -I/home/g9200002/u92028/pmlib/PMlib/include -I/opt/FJSVxos/devkit/aarch64/rfs/usr/include    -o CMakeFiles/papi_ext.dir/papi_ext.c.o   -c /home/g9200002/u92028/pmlib/PMlib/src_papi_ext/papi_ext.c
+Linking CXX static library libpapi_ext.a
+cd /home/g9200002/u92028/pmlib/PMlib/BUILD_SERIAL/src_papi_ext && /usr/bin/cmake -P CMakeFiles/papi_ext.dir/cmake_clean_target.cmake
+cd /home/g9200002/u92028/pmlib/PMlib/BUILD_SERIAL/src_papi_ext && /usr/bin/cmake -E cmake_link_script CMakeFiles/papi_ext.dir/link.txt --verbose=1
+/usr/bin/ar cr libpapi_ext.a  CMakeFiles/papi_ext.dir/papi_ext.c.o
+/usr/bin/ranlib libpapi_ext.a
+make[2]: Leaving directory `/reserved/g9200002/u92028/pmlib/PMlib/BUILD_SERIAL'
+/usr/bin/cmake -E cmake_progress_report /home/g9200002/u92028/pmlib/PMlib/BUILD_SERIAL/CMakeFiles  9
+[ 55%] Built target papi_ext
+make -f example/CMakeFiles/example1.dir/build.make example/CMakeFiles/example1.dir/depend
+make[2]: Entering directory `/reserved/g9200002/u92028/pmlib/PMlib/BUILD_SERIAL'
+cd /home/g9200002/u92028/pmlib/PMlib/BUILD_SERIAL && /usr/bin/cmake -E cmake_depends "Unix Makefiles" /home/g9200002/u92028/pmlib/PMlib /home/g9200002/u92028/pmlib/PMlib/example /home/g9200002/u92028/pmlib/PMlib/BUILD_SERIAL /home/g9200002/u92028/pmlib/PMlib/BUILD_SERIAL/example /home/g9200002/u92028/pmlib/PMlib/BUILD_SERIAL/example/CMakeFiles/example1.dir/DependInfo.cmake --color=
+Dependee "/home/g9200002/u92028/pmlib/PMlib/BUILD_SERIAL/example/CMakeFiles/example1.dir/DependInfo.cmake" is newer than depender "/home/g9200002/u92028/pmlib/PMlib/BUILD_SERIAL/example/CMakeFiles/example1.dir/depend.internal".
+Dependee "/home/g9200002/u92028/pmlib/PMlib/BUILD_SERIAL/example/CMakeFiles/CMakeDirectoryInformation.cmake" is newer than depender "/home/g9200002/u92028/pmlib/PMlib/BUILD_SERIAL/example/CMakeFiles/example1.dir/depend.internal".
+Scanning dependencies of target example1
+make[2]: Leaving directory `/reserved/g9200002/u92028/pmlib/PMlib/BUILD_SERIAL'
+make -f example/CMakeFiles/example1.dir/build.make example/CMakeFiles/example1.dir/build
+make[2]: Entering directory `/reserved/g9200002/u92028/pmlib/PMlib/BUILD_SERIAL'
+/usr/bin/cmake -E cmake_progress_report /home/g9200002/u92028/pmlib/PMlib/BUILD_SERIAL/CMakeFiles 5
+[ 66%] Building CXX object example/CMakeFiles/example1.dir/test1/main_pmlib.cpp.o
+cd /home/g9200002/u92028/pmlib/PMlib/BUILD_SERIAL/example && /opt/FJSVxtclanga/tcsds-1.2.24/bin/FCCpx   -DHAVE_CONFIG_H -DUSE_PAPI -Kocl -Nnofjprof -Nfjomplib -Kfast -Nrt_notune -w -Nfjcex -Kopenmp -DDISABLE_MPI -DUSE_PRECISE_TIMER -I/home/g9200002/u92028/pmlib/PMlib/src -I/home/g9200002/u92028/pmlib/PMlib/include -I/home/g9200002/u92028/pmlib/PMlib/BUILD_SERIAL/include -I/opt/FJSVxos/devkit/aarch64/rfs/usr/include    -o CMakeFiles/example1.dir/test1/main_pmlib.cpp.o -c /home/g9200002/u92028/pmlib/PMlib/example/test1/main_pmlib.cpp
+Linking CXX executable example1
+cd /home/g9200002/u92028/pmlib/PMlib/BUILD_SERIAL/example && /usr/bin/cmake -E cmake_link_script CMakeFiles/example1.dir/link.txt --verbose=1
+/opt/FJSVxtclanga/tcsds-1.2.24/bin/FCCpx   -Kocl -Nnofjprof -Nfjomplib -Kfast -Nrt_notune -w -Nfjcex -Kopenmp -DDISABLE_MPI -DUSE_PRECISE_TIMER     CMakeFiles/example1.dir/test1/main_pmlib.cpp.o  -o example1  -L/home/g9200002/u92028/pmlib/PMlib/BUILD_SERIAL/src  -L/home/g9200002/u92028/pmlib/PMlib/BUILD_SERIAL/src_papi_ext  -L/opt/FJSVxos/devkit/aarch64/rfs/usr/lib -rdynamic -lPM -lpapi_ext -lpapi -lpfm -Nnofjprof -Wl,-rpath,/home/g9200002/u92028/pmlib/PMlib/BUILD_SERIAL/src:/home/g9200002/u92028/pmlib/PMlib/BUILD_SERIAL/src_papi_ext:/opt/FJSVxos/devkit/aarch64/rfs/usr/lib 
+make[2]: Leaving directory `/reserved/g9200002/u92028/pmlib/PMlib/BUILD_SERIAL'
+/usr/bin/cmake -E cmake_progress_report /home/g9200002/u92028/pmlib/PMlib/BUILD_SERIAL/CMakeFiles  5
+[ 66%] Built target example1
+make -f example/CMakeFiles/example2.dir/build.make example/CMakeFiles/example2.dir/depend
+make[2]: Entering directory `/reserved/g9200002/u92028/pmlib/PMlib/BUILD_SERIAL'
+cd /home/g9200002/u92028/pmlib/PMlib/BUILD_SERIAL && /usr/bin/cmake -E cmake_depends "Unix Makefiles" /home/g9200002/u92028/pmlib/PMlib /home/g9200002/u92028/pmlib/PMlib/example /home/g9200002/u92028/pmlib/PMlib/BUILD_SERIAL /home/g9200002/u92028/pmlib/PMlib/BUILD_SERIAL/example /home/g9200002/u92028/pmlib/PMlib/BUILD_SERIAL/example/CMakeFiles/example2.dir/DependInfo.cmake --color=
+Dependee "/home/g9200002/u92028/pmlib/PMlib/BUILD_SERIAL/example/CMakeFiles/example2.dir/DependInfo.cmake" is newer than depender "/home/g9200002/u92028/pmlib/PMlib/BUILD_SERIAL/example/CMakeFiles/example2.dir/depend.internal".
+Dependee "/home/g9200002/u92028/pmlib/PMlib/BUILD_SERIAL/example/CMakeFiles/CMakeDirectoryInformation.cmake" is newer than depender "/home/g9200002/u92028/pmlib/PMlib/BUILD_SERIAL/example/CMakeFiles/example2.dir/depend.internal".
+Scanning dependencies of target example2
+make[2]: Leaving directory `/reserved/g9200002/u92028/pmlib/PMlib/BUILD_SERIAL'
+make -f example/CMakeFiles/example2.dir/build.make example/CMakeFiles/example2.dir/build
+make[2]: Entering directory `/reserved/g9200002/u92028/pmlib/PMlib/BUILD_SERIAL'
+/usr/bin/cmake -E cmake_progress_report /home/g9200002/u92028/pmlib/PMlib/BUILD_SERIAL/CMakeFiles 6
+[ 77%] Building CXX object example/CMakeFiles/example2.dir/test2/main_kernel.cpp.o
+cd /home/g9200002/u92028/pmlib/PMlib/BUILD_SERIAL/example && /opt/FJSVxtclanga/tcsds-1.2.24/bin/FCCpx   -DHAVE_CONFIG_H -DUSE_PAPI -Kocl -Nnofjprof -Nfjomplib -Kfast -Nrt_notune -w -Nfjcex -Kopenmp -DDISABLE_MPI -DUSE_PRECISE_TIMER -I/home/g9200002/u92028/pmlib/PMlib/src -I/home/g9200002/u92028/pmlib/PMlib/include -I/home/g9200002/u92028/pmlib/PMlib/BUILD_SERIAL/include -I/opt/FJSVxos/devkit/aarch64/rfs/usr/include    -o CMakeFiles/example2.dir/test2/main_kernel.cpp.o -c /home/g9200002/u92028/pmlib/PMlib/example/test2/main_kernel.cpp
+/usr/bin/cmake -E cmake_progress_report /home/g9200002/u92028/pmlib/PMlib/BUILD_SERIAL/CMakeFiles 7
+[ 88%] Building C object example/CMakeFiles/example2.dir/test2/sub_kernel.c.o
+cd /home/g9200002/u92028/pmlib/PMlib/BUILD_SERIAL/example && /opt/FJSVxtclanga/tcsds-1.2.24/bin/fccpx  -DHAVE_CONFIG_H -DUSE_PAPI -Kocl -Nnofjprof -Nfjomplib -Kfast -Nrt_notune -w -Kopenmp -DDISABLE_MPI -I/home/g9200002/u92028/pmlib/PMlib/src -I/home/g9200002/u92028/pmlib/PMlib/include -I/home/g9200002/u92028/pmlib/PMlib/BUILD_SERIAL/include -I/opt/FJSVxos/devkit/aarch64/rfs/usr/include    -o CMakeFiles/example2.dir/test2/sub_kernel.c.o   -c /home/g9200002/u92028/pmlib/PMlib/example/test2/sub_kernel.c
+Linking CXX executable example2
+cd /home/g9200002/u92028/pmlib/PMlib/BUILD_SERIAL/example && /usr/bin/cmake -E cmake_link_script CMakeFiles/example2.dir/link.txt --verbose=1
+/opt/FJSVxtclanga/tcsds-1.2.24/bin/FCCpx   -Kocl -Nnofjprof -Nfjomplib -Kfast -Nrt_notune -w -Nfjcex -Kopenmp -DDISABLE_MPI -DUSE_PRECISE_TIMER     CMakeFiles/example2.dir/test2/main_kernel.cpp.o CMakeFiles/example2.dir/test2/sub_kernel.c.o  -o example2  -L/home/g9200002/u92028/pmlib/PMlib/BUILD_SERIAL/src  -L/home/g9200002/u92028/pmlib/PMlib/BUILD_SERIAL/src_papi_ext  -L/opt/FJSVxos/devkit/aarch64/rfs/usr/lib -rdynamic -lPM -lpapi_ext -lpapi -lpfm -Nnofjprof -Wl,-rpath,/home/g9200002/u92028/pmlib/PMlib/BUILD_SERIAL/src:/home/g9200002/u92028/pmlib/PMlib/BUILD_SERIAL/src_papi_ext:/opt/FJSVxos/devkit/aarch64/rfs/usr/lib 
+make[2]: Leaving directory `/reserved/g9200002/u92028/pmlib/PMlib/BUILD_SERIAL'
+/usr/bin/cmake -E cmake_progress_report /home/g9200002/u92028/pmlib/PMlib/BUILD_SERIAL/CMakeFiles  6 7
+[ 88%] Built target example2
+make -f example/CMakeFiles/example4.dir/build.make example/CMakeFiles/example4.dir/depend
+make[2]: Entering directory `/reserved/g9200002/u92028/pmlib/PMlib/BUILD_SERIAL'
+cd /home/g9200002/u92028/pmlib/PMlib/BUILD_SERIAL && /usr/bin/cmake -E cmake_depends "Unix Makefiles" /home/g9200002/u92028/pmlib/PMlib /home/g9200002/u92028/pmlib/PMlib/example /home/g9200002/u92028/pmlib/PMlib/BUILD_SERIAL /home/g9200002/u92028/pmlib/PMlib/BUILD_SERIAL/example /home/g9200002/u92028/pmlib/PMlib/BUILD_SERIAL/example/CMakeFiles/example4.dir/DependInfo.cmake --color=
+Dependee "/home/g9200002/u92028/pmlib/PMlib/BUILD_SERIAL/example/CMakeFiles/example4.dir/DependInfo.cmake" is newer than depender "/home/g9200002/u92028/pmlib/PMlib/BUILD_SERIAL/example/CMakeFiles/example4.dir/depend.internal".
+Dependee "/home/g9200002/u92028/pmlib/PMlib/BUILD_SERIAL/example/CMakeFiles/CMakeDirectoryInformation.cmake" is newer than depender "/home/g9200002/u92028/pmlib/PMlib/BUILD_SERIAL/example/CMakeFiles/example4.dir/depend.internal".
+Scanning dependencies of target example4
+make[2]: Leaving directory `/reserved/g9200002/u92028/pmlib/PMlib/BUILD_SERIAL'
+make -f example/CMakeFiles/example4.dir/build.make example/CMakeFiles/example4.dir/requires
+make[2]: Entering directory `/reserved/g9200002/u92028/pmlib/PMlib/BUILD_SERIAL'
+make[2]: Nothing to be done for `example/CMakeFiles/example4.dir/requires'.
+make[2]: Leaving directory `/reserved/g9200002/u92028/pmlib/PMlib/BUILD_SERIAL'
+make -f example/CMakeFiles/example4.dir/build.make example/CMakeFiles/example4.dir/build
+make[2]: Entering directory `/reserved/g9200002/u92028/pmlib/PMlib/BUILD_SERIAL'
+/usr/bin/cmake -E cmake_progress_report /home/g9200002/u92028/pmlib/PMlib/BUILD_SERIAL/CMakeFiles 8
+[100%] Building Fortran object example/CMakeFiles/example4.dir/test4/f_main.f90.o
+cd /home/g9200002/u92028/pmlib/PMlib/BUILD_SERIAL/example && /opt/FJSVxtclanga/tcsds-1.2.24/bin/frtpx  -DHAVE_CONFIG_H -DUSE_PAPI -Kocl -Nnofjprof -Nfjomplib -Cpp -Kfast -Nrt_notune -Knooptmsg -Kopenmp -DDISABLE_MPI -I/home/g9200002/u92028/pmlib/PMlib/src -I/home/g9200002/u92028/pmlib/PMlib/include -I/home/g9200002/u92028/pmlib/PMlib/BUILD_SERIAL/include -I/opt/FJSVxos/devkit/aarch64/rfs/usr/include    -c /home/g9200002/u92028/pmlib/PMlib/example/test4/f_main.f90 -o CMakeFiles/example4.dir/test4/f_main.f90.o
+Fortran diagnostic messages: program name(main)
+  jwd2004i-i  "/home/g9200002/u92028/pmlib/PMlib/example/test4/f_main.f90", line 33: 'icomm' is set but never used.
+  jwd2004i-i  "/home/g9200002/u92028/pmlib/PMlib/example/test4/f_main.f90", line 43: 'dbyte' is set but never used.
+Linking CXX executable example4
+cd /home/g9200002/u92028/pmlib/PMlib/BUILD_SERIAL/example && /usr/bin/cmake -E cmake_link_script CMakeFiles/example4.dir/link.txt --verbose=1
+/opt/FJSVxtclanga/tcsds-1.2.24/bin/FCCpx   -Kocl -Nnofjprof -Nfjomplib -Kfast -Nrt_notune -w -Nfjcex -Kopenmp -DDISABLE_MPI -DUSE_PRECISE_TIMER     CMakeFiles/example4.dir/test4/f_main.f90.o  -o example4  -L/home/g9200002/u92028/pmlib/PMlib/BUILD_SERIAL/src  -L/home/g9200002/u92028/pmlib/PMlib/BUILD_SERIAL/src_papi_ext  -L/opt/FJSVxos/devkit/aarch64/rfs/usr/lib -rdynamic -lPM -lpapi_ext -lpapi -lpfm -Nnofjprof --linkfortran -Wl,-rpath,/home/g9200002/u92028/pmlib/PMlib/BUILD_SERIAL/src:/home/g9200002/u92028/pmlib/PMlib/BUILD_SERIAL/src_papi_ext:/opt/FJSVxos/devkit/aarch64/rfs/usr/lib 
+make[2]: Leaving directory `/reserved/g9200002/u92028/pmlib/PMlib/BUILD_SERIAL'
+/usr/bin/cmake -E cmake_progress_report /home/g9200002/u92028/pmlib/PMlib/BUILD_SERIAL/CMakeFiles  8
+[100%] Built target example4
+make[1]: Leaving directory `/reserved/g9200002/u92028/pmlib/PMlib/BUILD_SERIAL'
+/usr/bin/cmake -E cmake_progress_start /home/g9200002/u92028/pmlib/PMlib/BUILD_SERIAL/CMakeFiles 0
++ make install
+[ 44%] Built target PM
+[ 55%] Built target papi_ext
+[ 66%] Built target example1
+[ 88%] Built target example2
+[100%] Built target example4
+Install the project...
+-- Install configuration: ""
+-- Up-to-date: /home/g9200002/u92028/pmlib/usr_local_pmlib/fugaku/share/ChangeLog.md
+-- Up-to-date: /home/g9200002/u92028/pmlib/usr_local_pmlib/fugaku/share/Readme.md
+-- Up-to-date: /home/g9200002/u92028/pmlib/usr_local_pmlib/fugaku/share/License.txt
+-- Installing: /home/g9200002/u92028/pmlib/usr_local_pmlib/fugaku/share/CMakeCache.txt
+-- Installing: /home/g9200002/u92028/pmlib/usr_local_pmlib/fugaku/lib/libPM.a
+-- Up-to-date: /home/g9200002/u92028/pmlib/usr_local_pmlib/fugaku/include/mpi_stubs.h
+-- Up-to-date: /home/g9200002/u92028/pmlib/usr_local_pmlib/fugaku/include/PerfMonitor.h
+-- Up-to-date: /home/g9200002/u92028/pmlib/usr_local_pmlib/fugaku/include/PerfWatch.h
+-- Up-to-date: /home/g9200002/u92028/pmlib/usr_local_pmlib/fugaku/include/pmlib_otf.h
+-- Up-to-date: /home/g9200002/u92028/pmlib/usr_local_pmlib/fugaku/include/pmlib_papi.h
+-- Installing: /home/g9200002/u92028/pmlib/usr_local_pmlib/fugaku/include/pmVersion.h
+-- Up-to-date: /home/g9200002/u92028/pmlib/usr_local_pmlib/fugaku/doc/PMlib-Getting-Started.pdf
+-- Installing: /home/g9200002/u92028/pmlib/usr_local_pmlib/fugaku/lib/libpapi_ext.a
++ BUILD_DIR=/home/g9200002/u92028/pmlib/package/BUILD_MPI
++ mkdir -p /home/g9200002/u92028/pmlib/package/BUILD_MPI
++ cd /home/g9200002/u92028/pmlib/package/BUILD_MPI
++ '[' 0 '!=' 0 ']'
++ rm -rf /home/g9200002/u92028/pmlib/package/BUILD_MPI/CMakeCache.txt /home/g9200002/u92028/pmlib/package/BUILD_MPI/CMakeFiles /home/g9200002/u92028/pmlib/package/BUILD_MPI/CPackConfig.cmake /home/g9200002/u92028/pmlib/package/BUILD_MPI/CPackSourceConfig.cmake /home/g9200002/u92028/pmlib/package/BUILD_MPI/CTestTestfile.cmake /home/g9200002/u92028/pmlib/package/BUILD_MPI/Makefile /home/g9200002/u92028/pmlib/package/BUILD_MPI/cmake_install.cmake /home/g9200002/u92028/pmlib/package/BUILD_MPI/config.h /home/g9200002/u92028/pmlib/package/BUILD_MPI/doc /home/g9200002/u92028/pmlib/package/BUILD_MPI/example /home/g9200002/u92028/pmlib/package/BUILD_MPI/include /home/g9200002/u92028/pmlib/package/BUILD_MPI/install_manifest.txt /home/g9200002/u92028/pmlib/package/BUILD_MPI/src /home/g9200002/u92028/pmlib/package/BUILD_MPI/src_papi_ext
++ cmake '-DCMAKE_CXX_FLAGS=-Kocl -Nnofjprof -Nfjomplib   ' '-DCMAKE_C_FLAGS=-Kocl -Nnofjprof -Nfjomplib   ' '-DCMAKE_Fortran_FLAGS=-Kocl -Nnofjprof -Nfjomplib   ' -DCMAKE_TOOLCHAIN_FILE=../cmake/Toolchain_fugaku.cmake -DINSTALL_DIR=/home/g9200002/u92028/pmlib/usr_local_pmlib/fugaku -Denable_OPENMP=yes -Dwith_MPI=yes -Denable_Fortran=yes -Dwith_example=yes -Dwith_PAPI=/opt/FJSVxos/devkit/aarch64/rfs/usr -Dwith_OTF=no ..
+ 
+PMlib Version : 7.0.0
+ 
+ 
+-- Destination PATH  : /home/g9200002/u92028/pmlib/usr_local_pmlib/fugaku
+-- CMAKE_C_COMPILER  : /opt/FJSVxtclanga/tcsds-1.2.24/bin/mpifccpx
+-- CMAKE_C_FLAGS     : -Kocl -Nnofjprof -Nfjomplib -Kfast -Nrt_notune -w -Kopenmp
+-- CMAKE_CXX_COMPILER: /opt/FJSVxtclanga/tcsds-1.2.24/bin/mpiFCCpx
+-- CMAKE_CXX_FLAGS   : -Kocl -Nnofjprof -Nfjomplib -Kfast -Nrt_notune -w -Nfjcex -Kopenmp -DUSE_PRECISE_TIMER
+-- CMAKE_Fortran_COMPILER : /opt/FJSVxtclanga/tcsds-1.2.24/bin/mpifrtpx
+-- CMAKE_Fortran_FLAGS    : -Kocl -Nnofjprof -Nfjomplib -Cpp -Kfast -Nrt_notune -Knooptmsg -Kopenmp
+ 
+-- OpenMP            : yes
+-- MPI               : yes
+-- PAPI              : /opt/FJSVxos/devkit/aarch64/rfs/usr
+-- OTF               : no
+-- Example           : yes
+ 
+Code test will be performed
+-- Looking for include file inttypes.h
+-- Looking for include file inttypes.h - found
+-- Looking for include file memory.h
+-- Looking for include file memory.h - found
+-- Looking for include file stdint.h
+-- Looking for include file stdint.h - found
+-- Looking for include file stdlib.h
+-- Looking for include file stdlib.h - found
+-- Looking for include file strings.h
+-- Looking for include file strings.h - found
+-- Looking for include file string.h
+-- Looking for include file string.h - found
+-- Looking for include file sys/stat.h
+-- Looking for include file sys/stat.h - found
+-- Looking for include file sys/types.h
+-- Looking for include file sys/types.h - found
+-- Looking for include file unistd.h
+-- Looking for include file unistd.h - found
+ 
+Examples : 
+-- PAPI_DIR            = /opt/FJSVxos/devkit/aarch64/rfs/usr
+-- OTF_DIR             = 
+-- with_MPI            = yes
+-- Configuring done
+-- Generating done
+-- Build files have been written to: /home/g9200002/u92028/pmlib/PMlib/BUILD_MPI
++ make VERBOSE=1
+/usr/bin/cmake -H/home/g9200002/u92028/pmlib/PMlib -B/home/g9200002/u92028/pmlib/PMlib/BUILD_MPI --check-build-system CMakeFiles/Makefile.cmake 0
+/usr/bin/cmake -E cmake_progress_start /home/g9200002/u92028/pmlib/PMlib/BUILD_MPI/CMakeFiles /home/g9200002/u92028/pmlib/PMlib/BUILD_MPI/CMakeFiles/progress.marks
+make -f CMakeFiles/Makefile2 all
+make[1]: Entering directory `/reserved/g9200002/u92028/pmlib/PMlib/BUILD_MPI'
+make -f src/CMakeFiles/PMmpi.dir/build.make src/CMakeFiles/PMmpi.dir/depend
+make[2]: Entering directory `/reserved/g9200002/u92028/pmlib/PMlib/BUILD_MPI'
+cd /home/g9200002/u92028/pmlib/PMlib/BUILD_MPI && /usr/bin/cmake -E cmake_depends "Unix Makefiles" /home/g9200002/u92028/pmlib/PMlib /home/g9200002/u92028/pmlib/PMlib/src /home/g9200002/u92028/pmlib/PMlib/BUILD_MPI /home/g9200002/u92028/pmlib/PMlib/BUILD_MPI/src /home/g9200002/u92028/pmlib/PMlib/BUILD_MPI/src/CMakeFiles/PMmpi.dir/DependInfo.cmake --color=
+Dependee "/home/g9200002/u92028/pmlib/PMlib/BUILD_MPI/src/CMakeFiles/PMmpi.dir/DependInfo.cmake" is newer than depender "/home/g9200002/u92028/pmlib/PMlib/BUILD_MPI/src/CMakeFiles/PMmpi.dir/depend.internal".
+Dependee "/home/g9200002/u92028/pmlib/PMlib/BUILD_MPI/src/CMakeFiles/CMakeDirectoryInformation.cmake" is newer than depender "/home/g9200002/u92028/pmlib/PMlib/BUILD_MPI/src/CMakeFiles/PMmpi.dir/depend.internal".
+Scanning dependencies of target PMmpi
+make[2]: Leaving directory `/reserved/g9200002/u92028/pmlib/PMlib/BUILD_MPI'
+make -f src/CMakeFiles/PMmpi.dir/build.make src/CMakeFiles/PMmpi.dir/build
+make[2]: Entering directory `/reserved/g9200002/u92028/pmlib/PMlib/BUILD_MPI'
+/usr/bin/cmake -E cmake_progress_report /home/g9200002/u92028/pmlib/PMlib/BUILD_MPI/CMakeFiles 1
+[  6%] Building CXX object src/CMakeFiles/PMmpi.dir/PerfCpuType.cpp.o
+cd /home/g9200002/u92028/pmlib/PMlib/BUILD_MPI/src && /opt/FJSVxtclanga/tcsds-1.2.24/bin/mpiFCCpx   -DHAVE_CONFIG_H -DUSE_PAPI -Kocl -Nnofjprof -Nfjomplib -Kfast -Nrt_notune -w -Nfjcex -Kopenmp -DUSE_PRECISE_TIMER -I/home/g9200002/u92028/pmlib/PMlib/src -I/home/g9200002/u92028/pmlib/PMlib/include -I/home/g9200002/u92028/pmlib/PMlib/BUILD_MPI/include -I/opt/FJSVxos/devkit/aarch64/rfs/usr/include    -o CMakeFiles/PMmpi.dir/PerfCpuType.cpp.o -c /home/g9200002/u92028/pmlib/PMlib/src/PerfCpuType.cpp
+/usr/bin/cmake -E cmake_progress_report /home/g9200002/u92028/pmlib/PMlib/BUILD_MPI/CMakeFiles 2
+[ 13%] Building CXX object src/CMakeFiles/PMmpi.dir/PerfMonitor.cpp.o
+cd /home/g9200002/u92028/pmlib/PMlib/BUILD_MPI/src && /opt/FJSVxtclanga/tcsds-1.2.24/bin/mpiFCCpx   -DHAVE_CONFIG_H -DUSE_PAPI -Kocl -Nnofjprof -Nfjomplib -Kfast -Nrt_notune -w -Nfjcex -Kopenmp -DUSE_PRECISE_TIMER -I/home/g9200002/u92028/pmlib/PMlib/src -I/home/g9200002/u92028/pmlib/PMlib/include -I/home/g9200002/u92028/pmlib/PMlib/BUILD_MPI/include -I/opt/FJSVxos/devkit/aarch64/rfs/usr/include    -o CMakeFiles/PMmpi.dir/PerfMonitor.cpp.o -c /home/g9200002/u92028/pmlib/PMlib/src/PerfMonitor.cpp
+/usr/bin/cmake -E cmake_progress_report /home/g9200002/u92028/pmlib/PMlib/BUILD_MPI/CMakeFiles 3
+[ 20%] Building CXX object src/CMakeFiles/PMmpi.dir/PerfWatch.cpp.o
+cd /home/g9200002/u92028/pmlib/PMlib/BUILD_MPI/src && /opt/FJSVxtclanga/tcsds-1.2.24/bin/mpiFCCpx   -DHAVE_CONFIG_H -DUSE_PAPI -Kocl -Nnofjprof -Nfjomplib -Kfast -Nrt_notune -w -Nfjcex -Kopenmp -DUSE_PRECISE_TIMER -I/home/g9200002/u92028/pmlib/PMlib/src -I/home/g9200002/u92028/pmlib/PMlib/include -I/home/g9200002/u92028/pmlib/PMlib/BUILD_MPI/include -I/opt/FJSVxos/devkit/aarch64/rfs/usr/include    -o CMakeFiles/PMmpi.dir/PerfWatch.cpp.o -c /home/g9200002/u92028/pmlib/PMlib/src/PerfWatch.cpp
+/usr/bin/cmake -E cmake_progress_report /home/g9200002/u92028/pmlib/PMlib/BUILD_MPI/CMakeFiles 4
+[ 26%] Building CXX object src/CMakeFiles/PMmpi.dir/PerfProgFortran.cpp.o
+cd /home/g9200002/u92028/pmlib/PMlib/BUILD_MPI/src && /opt/FJSVxtclanga/tcsds-1.2.24/bin/mpiFCCpx   -DHAVE_CONFIG_H -DUSE_PAPI -Kocl -Nnofjprof -Nfjomplib -Kfast -Nrt_notune -w -Nfjcex -Kopenmp -DUSE_PRECISE_TIMER -I/home/g9200002/u92028/pmlib/PMlib/src -I/home/g9200002/u92028/pmlib/PMlib/include -I/home/g9200002/u92028/pmlib/PMlib/BUILD_MPI/include -I/opt/FJSVxos/devkit/aarch64/rfs/usr/include    -o CMakeFiles/PMmpi.dir/PerfProgFortran.cpp.o -c /home/g9200002/u92028/pmlib/PMlib/src/PerfProgFortran.cpp
+Linking CXX static library libPMmpi.a
+cd /home/g9200002/u92028/pmlib/PMlib/BUILD_MPI/src && /usr/bin/cmake -P CMakeFiles/PMmpi.dir/cmake_clean_target.cmake
+cd /home/g9200002/u92028/pmlib/PMlib/BUILD_MPI/src && /usr/bin/cmake -E cmake_link_script CMakeFiles/PMmpi.dir/link.txt --verbose=1
+/usr/bin/ar cr libPMmpi.a  CMakeFiles/PMmpi.dir/PerfCpuType.cpp.o CMakeFiles/PMmpi.dir/PerfMonitor.cpp.o CMakeFiles/PMmpi.dir/PerfWatch.cpp.o CMakeFiles/PMmpi.dir/PerfProgFortran.cpp.o
+/usr/bin/ranlib libPMmpi.a
+make[2]: Leaving directory `/reserved/g9200002/u92028/pmlib/PMlib/BUILD_MPI'
+/usr/bin/cmake -E cmake_progress_report /home/g9200002/u92028/pmlib/PMlib/BUILD_MPI/CMakeFiles  1 2 3 4
+[ 26%] Built target PMmpi
+make -f src_papi_ext/CMakeFiles/papi_ext.dir/build.make src_papi_ext/CMakeFiles/papi_ext.dir/depend
+make[2]: Entering directory `/reserved/g9200002/u92028/pmlib/PMlib/BUILD_MPI'
+cd /home/g9200002/u92028/pmlib/PMlib/BUILD_MPI && /usr/bin/cmake -E cmake_depends "Unix Makefiles" /home/g9200002/u92028/pmlib/PMlib /home/g9200002/u92028/pmlib/PMlib/src_papi_ext /home/g9200002/u92028/pmlib/PMlib/BUILD_MPI /home/g9200002/u92028/pmlib/PMlib/BUILD_MPI/src_papi_ext /home/g9200002/u92028/pmlib/PMlib/BUILD_MPI/src_papi_ext/CMakeFiles/papi_ext.dir/DependInfo.cmake --color=
+Dependee "/home/g9200002/u92028/pmlib/PMlib/BUILD_MPI/src_papi_ext/CMakeFiles/papi_ext.dir/DependInfo.cmake" is newer than depender "/home/g9200002/u92028/pmlib/PMlib/BUILD_MPI/src_papi_ext/CMakeFiles/papi_ext.dir/depend.internal".
+Dependee "/home/g9200002/u92028/pmlib/PMlib/BUILD_MPI/src_papi_ext/CMakeFiles/CMakeDirectoryInformation.cmake" is newer than depender "/home/g9200002/u92028/pmlib/PMlib/BUILD_MPI/src_papi_ext/CMakeFiles/papi_ext.dir/depend.internal".
+Scanning dependencies of target papi_ext
+make[2]: Leaving directory `/reserved/g9200002/u92028/pmlib/PMlib/BUILD_MPI'
+make -f src_papi_ext/CMakeFiles/papi_ext.dir/build.make src_papi_ext/CMakeFiles/papi_ext.dir/build
+make[2]: Entering directory `/reserved/g9200002/u92028/pmlib/PMlib/BUILD_MPI'
+/usr/bin/cmake -E cmake_progress_report /home/g9200002/u92028/pmlib/PMlib/BUILD_MPI/CMakeFiles 15
+[ 33%] Building C object src_papi_ext/CMakeFiles/papi_ext.dir/papi_ext.c.o
+cd /home/g9200002/u92028/pmlib/PMlib/BUILD_MPI/src_papi_ext && /opt/FJSVxtclanga/tcsds-1.2.24/bin/mpifccpx  -DHAVE_CONFIG_H -DUSE_PAPI -Kocl -Nnofjprof -Nfjomplib -Kfast -Nrt_notune -w -Kopenmp -std=c99 -DSTATIC_PAPI_EVENTS_TABLE -D_REENTRANT -D_GNU_SOURCE -DUSE_COMPILER_TLS  -DPAPI_NO_MEMORY_MANAGEMENT -DUSE_PAPI -I/home/g9200002/u92028/pmlib/PMlib/src -I/home/g9200002/u92028/pmlib/PMlib/include -I/opt/FJSVxos/devkit/aarch64/rfs/usr/include    -o CMakeFiles/papi_ext.dir/papi_ext.c.o   -c /home/g9200002/u92028/pmlib/PMlib/src_papi_ext/papi_ext.c
+Linking CXX static library libpapi_ext.a
+cd /home/g9200002/u92028/pmlib/PMlib/BUILD_MPI/src_papi_ext && /usr/bin/cmake -P CMakeFiles/papi_ext.dir/cmake_clean_target.cmake
+cd /home/g9200002/u92028/pmlib/PMlib/BUILD_MPI/src_papi_ext && /usr/bin/cmake -E cmake_link_script CMakeFiles/papi_ext.dir/link.txt --verbose=1
+/usr/bin/ar cr libpapi_ext.a  CMakeFiles/papi_ext.dir/papi_ext.c.o
+/usr/bin/ranlib libpapi_ext.a
+make[2]: Leaving directory `/reserved/g9200002/u92028/pmlib/PMlib/BUILD_MPI'
+/usr/bin/cmake -E cmake_progress_report /home/g9200002/u92028/pmlib/PMlib/BUILD_MPI/CMakeFiles  15
+[ 33%] Built target papi_ext
+make -f example/CMakeFiles/example1.dir/build.make example/CMakeFiles/example1.dir/depend
+make[2]: Entering directory `/reserved/g9200002/u92028/pmlib/PMlib/BUILD_MPI'
+cd /home/g9200002/u92028/pmlib/PMlib/BUILD_MPI && /usr/bin/cmake -E cmake_depends "Unix Makefiles" /home/g9200002/u92028/pmlib/PMlib /home/g9200002/u92028/pmlib/PMlib/example /home/g9200002/u92028/pmlib/PMlib/BUILD_MPI /home/g9200002/u92028/pmlib/PMlib/BUILD_MPI/example /home/g9200002/u92028/pmlib/PMlib/BUILD_MPI/example/CMakeFiles/example1.dir/DependInfo.cmake --color=
+Dependee "/home/g9200002/u92028/pmlib/PMlib/BUILD_MPI/example/CMakeFiles/example1.dir/DependInfo.cmake" is newer than depender "/home/g9200002/u92028/pmlib/PMlib/BUILD_MPI/example/CMakeFiles/example1.dir/depend.internal".
+Dependee "/home/g9200002/u92028/pmlib/PMlib/BUILD_MPI/example/CMakeFiles/CMakeDirectoryInformation.cmake" is newer than depender "/home/g9200002/u92028/pmlib/PMlib/BUILD_MPI/example/CMakeFiles/example1.dir/depend.internal".
+Scanning dependencies of target example1
+make[2]: Leaving directory `/reserved/g9200002/u92028/pmlib/PMlib/BUILD_MPI'
+make -f example/CMakeFiles/example1.dir/build.make example/CMakeFiles/example1.dir/build
+make[2]: Entering directory `/reserved/g9200002/u92028/pmlib/PMlib/BUILD_MPI'
+/usr/bin/cmake -E cmake_progress_report /home/g9200002/u92028/pmlib/PMlib/BUILD_MPI/CMakeFiles 5
+[ 40%] Building CXX object example/CMakeFiles/example1.dir/test1/main_pmlib.cpp.o
+cd /home/g9200002/u92028/pmlib/PMlib/BUILD_MPI/example && /opt/FJSVxtclanga/tcsds-1.2.24/bin/mpiFCCpx   -DHAVE_CONFIG_H -DUSE_PAPI -Kocl -Nnofjprof -Nfjomplib -Kfast -Nrt_notune -w -Nfjcex -Kopenmp -DUSE_PRECISE_TIMER -I/home/g9200002/u92028/pmlib/PMlib/src -I/home/g9200002/u92028/pmlib/PMlib/include -I/home/g9200002/u92028/pmlib/PMlib/BUILD_MPI/include -I/opt/FJSVxos/devkit/aarch64/rfs/usr/include    -o CMakeFiles/example1.dir/test1/main_pmlib.cpp.o -c /home/g9200002/u92028/pmlib/PMlib/example/test1/main_pmlib.cpp
+Linking CXX executable example1
+cd /home/g9200002/u92028/pmlib/PMlib/BUILD_MPI/example && /usr/bin/cmake -E cmake_link_script CMakeFiles/example1.dir/link.txt --verbose=1
+/opt/FJSVxtclanga/tcsds-1.2.24/bin/mpiFCCpx   -Kocl -Nnofjprof -Nfjomplib -Kfast -Nrt_notune -w -Nfjcex -Kopenmp -DUSE_PRECISE_TIMER     CMakeFiles/example1.dir/test1/main_pmlib.cpp.o  -o example1  -L/home/g9200002/u92028/pmlib/PMlib/BUILD_MPI/src  -L/home/g9200002/u92028/pmlib/PMlib/BUILD_MPI/src_papi_ext  -L/opt/FJSVxos/devkit/aarch64/rfs/usr/lib -rdynamic -lPMmpi -lpapi_ext -lpapi -lpfm -Nnofjprof -Wl,-rpath,/home/g9200002/u92028/pmlib/PMlib/BUILD_MPI/src:/home/g9200002/u92028/pmlib/PMlib/BUILD_MPI/src_papi_ext:/opt/FJSVxos/devkit/aarch64/rfs/usr/lib 
+make[2]: Leaving directory `/reserved/g9200002/u92028/pmlib/PMlib/BUILD_MPI'
+/usr/bin/cmake -E cmake_progress_report /home/g9200002/u92028/pmlib/PMlib/BUILD_MPI/CMakeFiles  5
+[ 40%] Built target example1
+make -f example/CMakeFiles/example2.dir/build.make example/CMakeFiles/example2.dir/depend
+make[2]: Entering directory `/reserved/g9200002/u92028/pmlib/PMlib/BUILD_MPI'
+cd /home/g9200002/u92028/pmlib/PMlib/BUILD_MPI && /usr/bin/cmake -E cmake_depends "Unix Makefiles" /home/g9200002/u92028/pmlib/PMlib /home/g9200002/u92028/pmlib/PMlib/example /home/g9200002/u92028/pmlib/PMlib/BUILD_MPI /home/g9200002/u92028/pmlib/PMlib/BUILD_MPI/example /home/g9200002/u92028/pmlib/PMlib/BUILD_MPI/example/CMakeFiles/example2.dir/DependInfo.cmake --color=
+Dependee "/home/g9200002/u92028/pmlib/PMlib/BUILD_MPI/example/CMakeFiles/example2.dir/DependInfo.cmake" is newer than depender "/home/g9200002/u92028/pmlib/PMlib/BUILD_MPI/example/CMakeFiles/example2.dir/depend.internal".
+Dependee "/home/g9200002/u92028/pmlib/PMlib/BUILD_MPI/example/CMakeFiles/CMakeDirectoryInformation.cmake" is newer than depender "/home/g9200002/u92028/pmlib/PMlib/BUILD_MPI/example/CMakeFiles/example2.dir/depend.internal".
+Scanning dependencies of target example2
+make[2]: Leaving directory `/reserved/g9200002/u92028/pmlib/PMlib/BUILD_MPI'
+make -f example/CMakeFiles/example2.dir/build.make example/CMakeFiles/example2.dir/build
+make[2]: Entering directory `/reserved/g9200002/u92028/pmlib/PMlib/BUILD_MPI'
+/usr/bin/cmake -E cmake_progress_report /home/g9200002/u92028/pmlib/PMlib/BUILD_MPI/CMakeFiles 6
+[ 46%] Building CXX object example/CMakeFiles/example2.dir/test2/main_kernel.cpp.o
+cd /home/g9200002/u92028/pmlib/PMlib/BUILD_MPI/example && /opt/FJSVxtclanga/tcsds-1.2.24/bin/mpiFCCpx   -DHAVE_CONFIG_H -DUSE_PAPI -Kocl -Nnofjprof -Nfjomplib -Kfast -Nrt_notune -w -Nfjcex -Kopenmp -DUSE_PRECISE_TIMER -I/home/g9200002/u92028/pmlib/PMlib/src -I/home/g9200002/u92028/pmlib/PMlib/include -I/home/g9200002/u92028/pmlib/PMlib/BUILD_MPI/include -I/opt/FJSVxos/devkit/aarch64/rfs/usr/include    -o CMakeFiles/example2.dir/test2/main_kernel.cpp.o -c /home/g9200002/u92028/pmlib/PMlib/example/test2/main_kernel.cpp
+/usr/bin/cmake -E cmake_progress_report /home/g9200002/u92028/pmlib/PMlib/BUILD_MPI/CMakeFiles 7
+[ 53%] Building C object example/CMakeFiles/example2.dir/test2/sub_kernel.c.o
+cd /home/g9200002/u92028/pmlib/PMlib/BUILD_MPI/example && /opt/FJSVxtclanga/tcsds-1.2.24/bin/mpifccpx  -DHAVE_CONFIG_H -DUSE_PAPI -Kocl -Nnofjprof -Nfjomplib -Kfast -Nrt_notune -w -Kopenmp -I/home/g9200002/u92028/pmlib/PMlib/src -I/home/g9200002/u92028/pmlib/PMlib/include -I/home/g9200002/u92028/pmlib/PMlib/BUILD_MPI/include -I/opt/FJSVxos/devkit/aarch64/rfs/usr/include    -o CMakeFiles/example2.dir/test2/sub_kernel.c.o   -c /home/g9200002/u92028/pmlib/PMlib/example/test2/sub_kernel.c
+Linking CXX executable example2
+cd /home/g9200002/u92028/pmlib/PMlib/BUILD_MPI/example && /usr/bin/cmake -E cmake_link_script CMakeFiles/example2.dir/link.txt --verbose=1
+/opt/FJSVxtclanga/tcsds-1.2.24/bin/mpiFCCpx   -Kocl -Nnofjprof -Nfjomplib -Kfast -Nrt_notune -w -Nfjcex -Kopenmp -DUSE_PRECISE_TIMER     CMakeFiles/example2.dir/test2/main_kernel.cpp.o CMakeFiles/example2.dir/test2/sub_kernel.c.o  -o example2  -L/home/g9200002/u92028/pmlib/PMlib/BUILD_MPI/src  -L/home/g9200002/u92028/pmlib/PMlib/BUILD_MPI/src_papi_ext  -L/opt/FJSVxos/devkit/aarch64/rfs/usr/lib -rdynamic -lPMmpi -lpapi_ext -lpapi -lpfm -Nnofjprof -Wl,-rpath,/home/g9200002/u92028/pmlib/PMlib/BUILD_MPI/src:/home/g9200002/u92028/pmlib/PMlib/BUILD_MPI/src_papi_ext:/opt/FJSVxos/devkit/aarch64/rfs/usr/lib 
+make[2]: Leaving directory `/reserved/g9200002/u92028/pmlib/PMlib/BUILD_MPI'
+/usr/bin/cmake -E cmake_progress_report /home/g9200002/u92028/pmlib/PMlib/BUILD_MPI/CMakeFiles  6 7
+[ 53%] Built target example2
+make -f example/CMakeFiles/example3.dir/build.make example/CMakeFiles/example3.dir/depend
+make[2]: Entering directory `/reserved/g9200002/u92028/pmlib/PMlib/BUILD_MPI'
+cd /home/g9200002/u92028/pmlib/PMlib/BUILD_MPI && /usr/bin/cmake -E cmake_depends "Unix Makefiles" /home/g9200002/u92028/pmlib/PMlib /home/g9200002/u92028/pmlib/PMlib/example /home/g9200002/u92028/pmlib/PMlib/BUILD_MPI /home/g9200002/u92028/pmlib/PMlib/BUILD_MPI/example /home/g9200002/u92028/pmlib/PMlib/BUILD_MPI/example/CMakeFiles/example3.dir/DependInfo.cmake --color=
+Dependee "/home/g9200002/u92028/pmlib/PMlib/BUILD_MPI/example/CMakeFiles/example3.dir/DependInfo.cmake" is newer than depender "/home/g9200002/u92028/pmlib/PMlib/BUILD_MPI/example/CMakeFiles/example3.dir/depend.internal".
+Dependee "/home/g9200002/u92028/pmlib/PMlib/BUILD_MPI/example/CMakeFiles/CMakeDirectoryInformation.cmake" is newer than depender "/home/g9200002/u92028/pmlib/PMlib/BUILD_MPI/example/CMakeFiles/example3.dir/depend.internal".
+Scanning dependencies of target example3
+make[2]: Leaving directory `/reserved/g9200002/u92028/pmlib/PMlib/BUILD_MPI'
+make -f example/CMakeFiles/example3.dir/build.make example/CMakeFiles/example3.dir/build
+make[2]: Entering directory `/reserved/g9200002/u92028/pmlib/PMlib/BUILD_MPI'
+/usr/bin/cmake -E cmake_progress_report /home/g9200002/u92028/pmlib/PMlib/BUILD_MPI/CMakeFiles 8
+[ 60%] Building CXX object example/CMakeFiles/example3.dir/test3/main_group_comm.cpp.o
+cd /home/g9200002/u92028/pmlib/PMlib/BUILD_MPI/example && /opt/FJSVxtclanga/tcsds-1.2.24/bin/mpiFCCpx   -DHAVE_CONFIG_H -DUSE_PAPI -Kocl -Nnofjprof -Nfjomplib -Kfast -Nrt_notune -w -Nfjcex -Kopenmp -DUSE_PRECISE_TIMER -I/home/g9200002/u92028/pmlib/PMlib/src -I/home/g9200002/u92028/pmlib/PMlib/include -I/home/g9200002/u92028/pmlib/PMlib/BUILD_MPI/include -I/opt/FJSVxos/devkit/aarch64/rfs/usr/include    -o CMakeFiles/example3.dir/test3/main_group_comm.cpp.o -c /home/g9200002/u92028/pmlib/PMlib/example/test3/main_group_comm.cpp
+/usr/bin/cmake -E cmake_progress_report /home/g9200002/u92028/pmlib/PMlib/BUILD_MPI/CMakeFiles 9
+[ 66%] Building C object example/CMakeFiles/example3.dir/test3/sub_copy.c.o
+cd /home/g9200002/u92028/pmlib/PMlib/BUILD_MPI/example && /opt/FJSVxtclanga/tcsds-1.2.24/bin/mpifccpx  -DHAVE_CONFIG_H -DUSE_PAPI -Kocl -Nnofjprof -Nfjomplib -Kfast -Nrt_notune -w -Kopenmp -I/home/g9200002/u92028/pmlib/PMlib/src -I/home/g9200002/u92028/pmlib/PMlib/include -I/home/g9200002/u92028/pmlib/PMlib/BUILD_MPI/include -I/opt/FJSVxos/devkit/aarch64/rfs/usr/include    -o CMakeFiles/example3.dir/test3/sub_copy.c.o   -c /home/g9200002/u92028/pmlib/PMlib/example/test3/sub_copy.c
+/usr/bin/cmake -E cmake_progress_report /home/g9200002/u92028/pmlib/PMlib/BUILD_MPI/CMakeFiles 10
+[ 73%] Building C object example/CMakeFiles/example3.dir/test3/sub_kernel.c.o
+cd /home/g9200002/u92028/pmlib/PMlib/BUILD_MPI/example && /opt/FJSVxtclanga/tcsds-1.2.24/bin/mpifccpx  -DHAVE_CONFIG_H -DUSE_PAPI -Kocl -Nnofjprof -Nfjomplib -Kfast -Nrt_notune -w -Kopenmp -I/home/g9200002/u92028/pmlib/PMlib/src -I/home/g9200002/u92028/pmlib/PMlib/include -I/home/g9200002/u92028/pmlib/PMlib/BUILD_MPI/include -I/opt/FJSVxos/devkit/aarch64/rfs/usr/include    -o CMakeFiles/example3.dir/test3/sub_kernel.c.o   -c /home/g9200002/u92028/pmlib/PMlib/example/test3/sub_kernel.c
+Linking CXX executable example3
+cd /home/g9200002/u92028/pmlib/PMlib/BUILD_MPI/example && /usr/bin/cmake -E cmake_link_script CMakeFiles/example3.dir/link.txt --verbose=1
+/opt/FJSVxtclanga/tcsds-1.2.24/bin/mpiFCCpx   -Kocl -Nnofjprof -Nfjomplib -Kfast -Nrt_notune -w -Nfjcex -Kopenmp -DUSE_PRECISE_TIMER     CMakeFiles/example3.dir/test3/main_group_comm.cpp.o CMakeFiles/example3.dir/test3/sub_copy.c.o CMakeFiles/example3.dir/test3/sub_kernel.c.o  -o example3  -L/home/g9200002/u92028/pmlib/PMlib/BUILD_MPI/src  -L/home/g9200002/u92028/pmlib/PMlib/BUILD_MPI/src_papi_ext  -L/opt/FJSVxos/devkit/aarch64/rfs/usr/lib -rdynamic -lPMmpi -lpapi_ext -lpapi -lpfm -Nnofjprof -Wl,-rpath,/home/g9200002/u92028/pmlib/PMlib/BUILD_MPI/src:/home/g9200002/u92028/pmlib/PMlib/BUILD_MPI/src_papi_ext:/opt/FJSVxos/devkit/aarch64/rfs/usr/lib 
+make[2]: Leaving directory `/reserved/g9200002/u92028/pmlib/PMlib/BUILD_MPI'
+/usr/bin/cmake -E cmake_progress_report /home/g9200002/u92028/pmlib/PMlib/BUILD_MPI/CMakeFiles  8 9 10
+[ 73%] Built target example3
+make -f example/CMakeFiles/example4.dir/build.make example/CMakeFiles/example4.dir/depend
+make[2]: Entering directory `/reserved/g9200002/u92028/pmlib/PMlib/BUILD_MPI'
+cd /home/g9200002/u92028/pmlib/PMlib/BUILD_MPI && /usr/bin/cmake -E cmake_depends "Unix Makefiles" /home/g9200002/u92028/pmlib/PMlib /home/g9200002/u92028/pmlib/PMlib/example /home/g9200002/u92028/pmlib/PMlib/BUILD_MPI /home/g9200002/u92028/pmlib/PMlib/BUILD_MPI/example /home/g9200002/u92028/pmlib/PMlib/BUILD_MPI/example/CMakeFiles/example4.dir/DependInfo.cmake --color=
+Dependee "/home/g9200002/u92028/pmlib/PMlib/BUILD_MPI/example/CMakeFiles/example4.dir/DependInfo.cmake" is newer than depender "/home/g9200002/u92028/pmlib/PMlib/BUILD_MPI/example/CMakeFiles/example4.dir/depend.internal".
+Dependee "/home/g9200002/u92028/pmlib/PMlib/BUILD_MPI/example/CMakeFiles/CMakeDirectoryInformation.cmake" is newer than depender "/home/g9200002/u92028/pmlib/PMlib/BUILD_MPI/example/CMakeFiles/example4.dir/depend.internal".
+Scanning dependencies of target example4
+make[2]: Leaving directory `/reserved/g9200002/u92028/pmlib/PMlib/BUILD_MPI'
+make -f example/CMakeFiles/example4.dir/build.make example/CMakeFiles/example4.dir/requires
+make[2]: Entering directory `/reserved/g9200002/u92028/pmlib/PMlib/BUILD_MPI'
+make[2]: Nothing to be done for `example/CMakeFiles/example4.dir/requires'.
+make[2]: Leaving directory `/reserved/g9200002/u92028/pmlib/PMlib/BUILD_MPI'
+make -f example/CMakeFiles/example4.dir/build.make example/CMakeFiles/example4.dir/build
+make[2]: Entering directory `/reserved/g9200002/u92028/pmlib/PMlib/BUILD_MPI'
+/usr/bin/cmake -E cmake_progress_report /home/g9200002/u92028/pmlib/PMlib/BUILD_MPI/CMakeFiles 11
+[ 80%] Building Fortran object example/CMakeFiles/example4.dir/test4/f_main.f90.o
+cd /home/g9200002/u92028/pmlib/PMlib/BUILD_MPI/example && /opt/FJSVxtclanga/tcsds-1.2.24/bin/mpifrtpx  -DHAVE_CONFIG_H -DUSE_PAPI -Kocl -Nnofjprof -Nfjomplib -Cpp -Kfast -Nrt_notune -Knooptmsg -Kopenmp -I/home/g9200002/u92028/pmlib/PMlib/src -I/home/g9200002/u92028/pmlib/PMlib/include -I/home/g9200002/u92028/pmlib/PMlib/BUILD_MPI/include -I/opt/FJSVxos/devkit/aarch64/rfs/usr/include    -c /home/g9200002/u92028/pmlib/PMlib/example/test4/f_main.f90 -o CMakeFiles/example4.dir/test4/f_main.f90.o
+Linking CXX executable example4
+cd /home/g9200002/u92028/pmlib/PMlib/BUILD_MPI/example && /usr/bin/cmake -E cmake_link_script CMakeFiles/example4.dir/link.txt --verbose=1
+/opt/FJSVxtclanga/tcsds-1.2.24/bin/mpiFCCpx   -Kocl -Nnofjprof -Nfjomplib -Kfast -Nrt_notune -w -Nfjcex -Kopenmp -DUSE_PRECISE_TIMER     CMakeFiles/example4.dir/test4/f_main.f90.o  -o example4  -L/home/g9200002/u92028/pmlib/PMlib/BUILD_MPI/src  -L/home/g9200002/u92028/pmlib/PMlib/BUILD_MPI/src_papi_ext  -L/opt/FJSVxos/devkit/aarch64/rfs/usr/lib -rdynamic -lPMmpi -lpapi_ext -lpapi -lpfm -Nnofjprof --linkfortran -Wl,-rpath,/home/g9200002/u92028/pmlib/PMlib/BUILD_MPI/src:/home/g9200002/u92028/pmlib/PMlib/BUILD_MPI/src_papi_ext:/opt/FJSVxos/devkit/aarch64/rfs/usr/lib 
+make[2]: Leaving directory `/reserved/g9200002/u92028/pmlib/PMlib/BUILD_MPI'
+/usr/bin/cmake -E cmake_progress_report /home/g9200002/u92028/pmlib/PMlib/BUILD_MPI/CMakeFiles  11
+[ 80%] Built target example4
+make -f example/CMakeFiles/example5.dir/build.make example/CMakeFiles/example5.dir/depend
+make[2]: Entering directory `/reserved/g9200002/u92028/pmlib/PMlib/BUILD_MPI'
+cd /home/g9200002/u92028/pmlib/PMlib/BUILD_MPI && /usr/bin/cmake -E cmake_depends "Unix Makefiles" /home/g9200002/u92028/pmlib/PMlib /home/g9200002/u92028/pmlib/PMlib/example /home/g9200002/u92028/pmlib/PMlib/BUILD_MPI /home/g9200002/u92028/pmlib/PMlib/BUILD_MPI/example /home/g9200002/u92028/pmlib/PMlib/BUILD_MPI/example/CMakeFiles/example5.dir/DependInfo.cmake --color=
+Dependee "/home/g9200002/u92028/pmlib/PMlib/BUILD_MPI/example/CMakeFiles/example5.dir/DependInfo.cmake" is newer than depender "/home/g9200002/u92028/pmlib/PMlib/BUILD_MPI/example/CMakeFiles/example5.dir/depend.internal".
+Dependee "/home/g9200002/u92028/pmlib/PMlib/BUILD_MPI/example/CMakeFiles/CMakeDirectoryInformation.cmake" is newer than depender "/home/g9200002/u92028/pmlib/PMlib/BUILD_MPI/example/CMakeFiles/example5.dir/depend.internal".
+Scanning dependencies of target example5
+make[2]: Leaving directory `/reserved/g9200002/u92028/pmlib/PMlib/BUILD_MPI'
+make -f example/CMakeFiles/example5.dir/build.make example/CMakeFiles/example5.dir/build
+make[2]: Entering directory `/reserved/g9200002/u92028/pmlib/PMlib/BUILD_MPI'
+/usr/bin/cmake -E cmake_progress_report /home/g9200002/u92028/pmlib/PMlib/BUILD_MPI/CMakeFiles 12
+[ 86%] Building CXX object example/CMakeFiles/example5.dir/test5/main_split_comm.cpp.o
+cd /home/g9200002/u92028/pmlib/PMlib/BUILD_MPI/example && /opt/FJSVxtclanga/tcsds-1.2.24/bin/mpiFCCpx   -DHAVE_CONFIG_H -DUSE_PAPI -Kocl -Nnofjprof -Nfjomplib -Kfast -Nrt_notune -w -Nfjcex -Kopenmp -DUSE_PRECISE_TIMER -I/home/g9200002/u92028/pmlib/PMlib/src -I/home/g9200002/u92028/pmlib/PMlib/include -I/home/g9200002/u92028/pmlib/PMlib/BUILD_MPI/include -I/opt/FJSVxos/devkit/aarch64/rfs/usr/include    -o CMakeFiles/example5.dir/test5/main_split_comm.cpp.o -c /home/g9200002/u92028/pmlib/PMlib/example/test5/main_split_comm.cpp
+/usr/bin/cmake -E cmake_progress_report /home/g9200002/u92028/pmlib/PMlib/BUILD_MPI/CMakeFiles 13
+[ 93%] Building C object example/CMakeFiles/example5.dir/test5/sub_copy.c.o
+cd /home/g9200002/u92028/pmlib/PMlib/BUILD_MPI/example && /opt/FJSVxtclanga/tcsds-1.2.24/bin/mpifccpx  -DHAVE_CONFIG_H -DUSE_PAPI -Kocl -Nnofjprof -Nfjomplib -Kfast -Nrt_notune -w -Kopenmp -I/home/g9200002/u92028/pmlib/PMlib/src -I/home/g9200002/u92028/pmlib/PMlib/include -I/home/g9200002/u92028/pmlib/PMlib/BUILD_MPI/include -I/opt/FJSVxos/devkit/aarch64/rfs/usr/include    -o CMakeFiles/example5.dir/test5/sub_copy.c.o   -c /home/g9200002/u92028/pmlib/PMlib/example/test5/sub_copy.c
+/usr/bin/cmake -E cmake_progress_report /home/g9200002/u92028/pmlib/PMlib/BUILD_MPI/CMakeFiles 14
+[100%] Building C object example/CMakeFiles/example5.dir/test5/sub_kernel.c.o
+cd /home/g9200002/u92028/pmlib/PMlib/BUILD_MPI/example && /opt/FJSVxtclanga/tcsds-1.2.24/bin/mpifccpx  -DHAVE_CONFIG_H -DUSE_PAPI -Kocl -Nnofjprof -Nfjomplib -Kfast -Nrt_notune -w -Kopenmp -I/home/g9200002/u92028/pmlib/PMlib/src -I/home/g9200002/u92028/pmlib/PMlib/include -I/home/g9200002/u92028/pmlib/PMlib/BUILD_MPI/include -I/opt/FJSVxos/devkit/aarch64/rfs/usr/include    -o CMakeFiles/example5.dir/test5/sub_kernel.c.o   -c /home/g9200002/u92028/pmlib/PMlib/example/test5/sub_kernel.c
+Linking CXX executable example5
+cd /home/g9200002/u92028/pmlib/PMlib/BUILD_MPI/example && /usr/bin/cmake -E cmake_link_script CMakeFiles/example5.dir/link.txt --verbose=1
+/opt/FJSVxtclanga/tcsds-1.2.24/bin/mpiFCCpx   -Kocl -Nnofjprof -Nfjomplib -Kfast -Nrt_notune -w -Nfjcex -Kopenmp -DUSE_PRECISE_TIMER     CMakeFiles/example5.dir/test5/main_split_comm.cpp.o CMakeFiles/example5.dir/test5/sub_copy.c.o CMakeFiles/example5.dir/test5/sub_kernel.c.o  -o example5  -L/home/g9200002/u92028/pmlib/PMlib/BUILD_MPI/src  -L/home/g9200002/u92028/pmlib/PMlib/BUILD_MPI/src_papi_ext  -L/opt/FJSVxos/devkit/aarch64/rfs/usr/lib -rdynamic -lPMmpi -lpapi_ext -lpapi -lpfm -Nnofjprof -Wl,-rpath,/home/g9200002/u92028/pmlib/PMlib/BUILD_MPI/src:/home/g9200002/u92028/pmlib/PMlib/BUILD_MPI/src_papi_ext:/opt/FJSVxos/devkit/aarch64/rfs/usr/lib 
+make[2]: Leaving directory `/reserved/g9200002/u92028/pmlib/PMlib/BUILD_MPI'
+/usr/bin/cmake -E cmake_progress_report /home/g9200002/u92028/pmlib/PMlib/BUILD_MPI/CMakeFiles  12 13 14
+[100%] Built target example5
+make[1]: Leaving directory `/reserved/g9200002/u92028/pmlib/PMlib/BUILD_MPI'
+/usr/bin/cmake -E cmake_progress_start /home/g9200002/u92028/pmlib/PMlib/BUILD_MPI/CMakeFiles 0
++ make install
+[ 26%] Built target PMmpi
+[ 33%] Built target papi_ext
+[ 40%] Built target example1
+[ 53%] Built target example2
+[ 73%] Built target example3
+[ 80%] Built target example4
+[100%] Built target example5
+Install the project...
+-- Install configuration: ""
+-- Up-to-date: /home/g9200002/u92028/pmlib/usr_local_pmlib/fugaku/share/ChangeLog.md
+-- Up-to-date: /home/g9200002/u92028/pmlib/usr_local_pmlib/fugaku/share/Readme.md
+-- Up-to-date: /home/g9200002/u92028/pmlib/usr_local_pmlib/fugaku/share/License.txt
+-- Installing: /home/g9200002/u92028/pmlib/usr_local_pmlib/fugaku/share/CMakeCache.txt
+-- Installing: /home/g9200002/u92028/pmlib/usr_local_pmlib/fugaku/lib/libPMmpi.a
+-- Up-to-date: /home/g9200002/u92028/pmlib/usr_local_pmlib/fugaku/include/mpi_stubs.h
+-- Up-to-date: /home/g9200002/u92028/pmlib/usr_local_pmlib/fugaku/include/PerfMonitor.h
+-- Up-to-date: /home/g9200002/u92028/pmlib/usr_local_pmlib/fugaku/include/PerfWatch.h
+-- Up-to-date: /home/g9200002/u92028/pmlib/usr_local_pmlib/fugaku/include/pmlib_otf.h
+-- Up-to-date: /home/g9200002/u92028/pmlib/usr_local_pmlib/fugaku/include/pmlib_papi.h
+-- Installing: /home/g9200002/u92028/pmlib/usr_local_pmlib/fugaku/include/pmVersion.h
+-- Up-to-date: /home/g9200002/u92028/pmlib/usr_local_pmlib/fugaku/doc/PMlib-Getting-Started.pdf
+-- Installing: /home/g9200002/u92028/pmlib/usr_local_pmlib/fugaku/lib/libpapi_ext.a
