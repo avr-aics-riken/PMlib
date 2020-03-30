@@ -81,7 +81,12 @@ namespace pm_lib {
     PerfMonitor() : m_watchArray(0) {}
 
     /// デストラクタ.
-    ~PerfMonitor() { if (m_watchArray) delete[] m_watchArray; }
+    ~PerfMonitor() {
+	#ifdef DEBUG_PRINT_MONITOR
+    	fprintf(stderr, "*** <PerfMonitor.h> destructor is called. ***\n");
+	#endif
+		if (m_watchArray) delete[] m_watchArray;
+	}
 
 
     /// PMlibの内部初期化

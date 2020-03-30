@@ -957,7 +957,11 @@ namespace pm_lib {
 		//	printGroup(stdout, new_group, new_comm, p, i);
 		PerfMonitor::printGroup (stdout, new_group, new_comm, p, i, 0, op_sort);
 	}
-
+	delete[] g_icolor ;
+	delete[] g_myid ;
+	delete[] p_gid  ;
+	delete[] p_color ;
+	delete[] p_size ;
   }
 
 

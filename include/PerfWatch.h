@@ -135,6 +135,9 @@ namespace pm_lib {
 
     /// デストラクタ.
     ~PerfWatch() {
+	#ifdef DEBUG_PRINT_WATCH
+    	fprintf(stderr, "*** <PerfWatch.h> destructor is called. ***\n");
+	#endif
       if (m_timeArray != NULL)  delete[] m_timeArray;
       if (m_flopArray != NULL)  delete[] m_flopArray;
       if (m_countArray != NULL) delete[] m_countArray;
