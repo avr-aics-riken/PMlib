@@ -74,7 +74,7 @@ namespace pm_lib {
       // PerfWatchのインスタンスは全部で m_nWatch 生成され、その番号対応は以下
       // m_watchArray[0]  :PMlibが定義するRoot区間
       // m_watchArray[1 .. m_nWatch] :ユーザーが定義する各区間
-    unsigned *m_order;         ///< 測定区間ソート用のリストm_order[m_nWatch]
+    unsigned* m_order;         ///< 測定区間ソート用のリストm_order[m_nWatch]
 
   public:
     /// コンストラクタ.
@@ -86,6 +86,7 @@ namespace pm_lib {
     	fprintf(stderr, "*** <PerfMonitor.h> destructor is called. ***\n");
 	#endif
 		if (m_watchArray) delete[] m_watchArray;
+		if (m_order) delete[] m_order;
 	}
 
 
