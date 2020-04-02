@@ -83,7 +83,9 @@ namespace pm_lib {
     /// デストラクタ.
     ~PerfMonitor() {
 	#ifdef DEBUG_PRINT_MONITOR
-    	fprintf(stderr, "*** <PerfMonitor.h> destructor is called. ***\n");
+		if (my_rank == 0) {
+			fprintf(stderr, "*** <PerfMonitor.h> destructor is called. ***\n");
+		}
 	#endif
 		if (m_watchArray) delete[] m_watchArray;
 		if (m_order) delete[] m_order;
