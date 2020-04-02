@@ -130,14 +130,14 @@ namespace pm_lib {
     /// コンストラクタ.
     PerfWatch() : m_time(0.0), m_flop(0.0), m_count(0), m_started(false),
       ExclusiveStarted(false),
-      my_rank(0), m_timeArray(0), m_flopArray(0), m_countArray(0),
+      my_rank(-1), m_timeArray(0), m_flopArray(0), m_countArray(0),
       m_sortedArrayHWPC(0), m_is_set(false), m_is_healthy(true) {}
 
     /// デストラクタ.
     ~PerfWatch() {
 	#ifdef DEBUG_PRINT_WATCH
 		if (my_rank == 0) {
-    		fprintf(stderr, "*** <PerfWatch.h> destructor is called. ***\n");
+    	fprintf(stderr, "\t\t rank %d destructor is called for [%s]\n", my_rank, m_label.c_str() );
 		}
 	#endif
       if (m_timeArray != NULL)  delete[] m_timeArray;
