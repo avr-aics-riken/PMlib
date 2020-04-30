@@ -42,7 +42,6 @@ namespace pm_lib {
   void PerfMonitor::initialize (int inn)
   {
     char* cp_env;
-    std::string s;
 
 	int my_thread;	// Note this my_thread is just a local variable
 
@@ -103,18 +102,30 @@ namespace pm_lib {
       }
     }
 
-    cp_env = std::getenv("HWPC_CHOOSER");
-    if (cp_env == NULL) {
-			env_str_hwpc = "USER";
-    } else {
-		s = cp_env;
-    	if	(s == "FLOPS" || s == "BANDWIDTH" || s == "VECTOR" || s == "CACHE" || s == "CYCLE" || s == "LOADSTORE" || "USER" ) {
-			env_str_hwpc = s;
-    	} else {
-			printDiag("initialize()",  "HWPC_CHOOSER value [%s] is not valid. User API values will be reported.\n", cp_env);
-			env_str_hwpc = "USER";
+// Parse the Environment Variable HWPC_CHOOSER
+	string s_chooser;
+	string s_default = "USER";
+
+    cp_env = NULL;
+	cp_env = std::getenv("HWPC_CHOOSER");
+	if (cp_env == NULL) {
+		s_chooser = s_default;
+	} else {
+		s_chooser = cp_env;
+		if (s_chooser == "FLOPS" ||
+			s_chooser == "BANDWIDTH" ||
+			s_chooser == "VECTOR" ||
+			s_chooser == "CACHE" ||
+			s_chooser == "CYCLE" ||
+			s_chooser == "LOADSTORE" ||
+			s_chooser == "USER" ) {
+			;
+		} else {
+			printDiag("initialize()",  "unknown HWPC_CHOOSER value [%s]. User API values will be reported.\n", cp_env);
+			s_chooser = s_default;
 		}
 	}
+	env_str_hwpc = s_chooser;
 
     // Start m_watchArray[0] instance
     // m_watchArray[] は PerfWatch classである(PerfMonitorではない)ことに留意
@@ -137,6 +148,8 @@ namespace pm_lib {
     m_order = NULL;
 	reserved_nWatch = init_nWatch;
 
+    m_watchArray[0].my_rank = my_rank;
+    m_watchArray[0].num_process = num_process;
     m_watchArray[0].initializeHWPC();
     int id = add_perf_label(label);	// id for "Root Section" should be 0
     m_nWatch++;
@@ -516,25 +529,32 @@ namespace pm_lib {
 
 	#ifdef DEBUG_PRINT_MONITOR
 	(void) MPI_Barrier(MPI_COMM_WORLD);
-	if (my_rank == 0) fprintf(stderr, "\n<sort_m_order> DEBUG print starts.\n");
-
+	if (my_rank == 0) {
+		fprintf(stderr, "<sort_m_order> my_rank=%d  m_order[*]:\n", my_rank );
+		for (int j=0; j<m_nWatch; j++) {
+		int k=m_order[j];
+		fprintf(stderr, "\t\t m_order[%d]=%d time_av=%10.2e [%s]\n",
+		j, k, m_watchArray[k].m_time_av, m_watchArray[k].m_label.c_str());
+		}
+	}
+	#ifdef DEEP_DEBUG
 	for (int i=0; i<num_process; i++) {
 		(void) MPI_Barrier(MPI_COMM_WORLD);
-    		if (i == my_rank) {
-			fprintf(stderr, "<sort_m_order> my_rank=%d  m_order[*]:\n", my_rank );
-    			for (int j=0; j<m_nWatch; j++) {
+    	if (i == my_rank) {
+    		for (int j=0; j<m_nWatch; j++) {
 			int k=m_order[j];
 			fprintf(stderr, "\t\t rank:%d, m_order[%d]=%d time_av=%10.2e [%s]\n",
 			my_rank, j, k, m_watchArray[k].m_time_av, m_watchArray[k].m_label.c_str());
 			}
 		}
-		(void) MPI_Barrier(MPI_COMM_WORLD);
 	}
 	if (my_rank == 0) fprintf(stderr, "<sort_m_order> ends");
 	(void) MPI_Barrier(MPI_COMM_WORLD);
 	#endif
+	#endif
 
   }
+  
 
 
   /// 測定結果の基本統計レポートを出力.

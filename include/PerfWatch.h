@@ -97,7 +97,15 @@ namespace pm_lib {
 
 	struct pmlib_papi_chooser my_papi;
 
+    /// MPI並列時の並列プロセス数と自ランク番号
+    int num_process;
+    int my_rank;
+
   private:
+    /// OpenMP並列時のスレッド数と自スレッド番号
+    int num_threads;
+    int my_thread;
+
     // 測定時の補助変数
     double m_startTime;  ///< 測定区間の測定開始時刻
     double m_stopTime;   ///< 測定区間の測定終了時刻
@@ -108,13 +116,6 @@ namespace pm_lib {
     long* m_countArray; ///< 「測定回数」集計用配列
     double* m_sortedArrayHWPC;   ///< 集計後ソートされたHWPC配列のポインタ
 
-    /// MPI並列時の並列プロセス数と自ランク番号
-    int num_process;
-    int my_rank;
-    /// OpenMP並列時のスレッド数と自スレッド番号
-    int num_threads;
-    int my_thread;
-
     /// 測定区間に関する各種の判定フラグ ：  bool値(true|false)
     bool m_is_set;         /// 測定区間がプロパティ設定済みかどうか
     bool m_is_healthy;     /// 測定区間に排他性・非排他性の矛盾がないか
@@ -123,7 +124,6 @@ namespace pm_lib {
     bool m_gathered;       /// 全プロセスの結果をランク0に集計済みかどうか
     bool m_started;        /// 測定区間がstart済みかどうか
     bool ExclusiveStarted; /// 排他測定実行中フラグ. 非排他測定では未使用
-
 
 
   public:
