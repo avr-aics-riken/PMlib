@@ -97,7 +97,15 @@ namespace pm_lib {
 
 	struct pmlib_papi_chooser my_papi;
 
+    /// MPI並列時の並列プロセス数と自ランク番号
+    int num_process;
+    int my_rank;
+
   private:
+    /// OpenMP並列時のスレッド数と自スレッド番号
+    int num_threads;
+    int my_thread;
+
     // 測定時の補助変数
     double m_startTime;  ///< 測定区間の測定開始時刻
     double m_stopTime;   ///< 測定区間の測定終了時刻
@@ -107,13 +115,6 @@ namespace pm_lib {
     double* m_flopArray;         ///< 「浮動小数点演算量or通信量」集計用配列
     long* m_countArray; ///< 「測定回数」集計用配列
     double* m_sortedArrayHWPC;   ///< 集計後ソートされたHWPC配列のポインタ
-
-    /// MPI並列時の並列プロセス数と自ランク番号
-    int num_process;
-    int my_rank;
-    /// OpenMP並列時のスレッド数と自スレッド番号
-    int num_threads;
-    int my_thread;
 
     /// 測定区間に関する各種の判定フラグ ：  bool値(true|false)
     bool m_is_set;         /// 測定区間がプロパティ設定済みかどうか
@@ -125,16 +126,20 @@ namespace pm_lib {
     bool ExclusiveStarted; /// 排他測定実行中フラグ. 非排他測定では未使用
 
 
-
   public:
     /// コンストラクタ.
     PerfWatch() : m_time(0.0), m_flop(0.0), m_count(0), m_started(false),
       ExclusiveStarted(false),
-      my_rank(0), m_timeArray(0), m_flopArray(0), m_countArray(0),
+      my_rank(-1), m_timeArray(0), m_flopArray(0), m_countArray(0),
       m_sortedArrayHWPC(0), m_is_set(false), m_is_healthy(true) {}
 
     /// デストラクタ.
     ~PerfWatch() {
+	#ifdef DEBUG_PRINT_WATCH
+		if (my_rank == 0) {
+    	fprintf(stderr, "\t\t rank %d destructor is called for [%s]\n", my_rank, m_label.c_str() );
+		}
+	#endif
       if (m_timeArray != NULL)  delete[] m_timeArray;
       if (m_flopArray != NULL)  delete[] m_flopArray;
       if (m_countArray != NULL) delete[] m_countArray;

@@ -47,7 +47,6 @@ namespace pm_lib {
   ///
 void PerfWatch::initializeHWPC ()
 {
-#include <string>
 
 	bool root_in_parallel;
 	int root_thread;
@@ -81,6 +80,27 @@ void PerfWatch::initializeHWPC ()
 		}
 		}
 	}
+
+// Parse the Environment Variable HWPC_CHOOSER
+	std::string s_chooser;
+	std::string s_default = "USER";
+	char* c_env = std::getenv("HWPC_CHOOSER");
+	if (c_env != NULL) {
+		s_chooser = c_env;
+		if (s_chooser == "FLOPS" ||
+			s_chooser == "BANDWIDTH" ||
+			s_chooser == "VECTOR" ||
+			s_chooser == "CACHE" ||
+			s_chooser == "CYCLE" ||
+			s_chooser == "LOADSTORE" ) {
+			;
+		} else {
+			s_chooser = s_default;
+		}
+	} else {
+		s_chooser = s_default;
+	}
+	hwpc_group.env_str_hwpc = s_chooser;
 
 	read_cpu_clock_freq(); /// API for reading processor clock frequency.
 
@@ -324,8 +344,8 @@ void PerfWatch::createPapiCounterList ()
 
 
 // 2. Parse the Environment Variable HWPC_CHOOSER
-	string s_chooser;
-	string s_default = "USER";
+	std::string s_chooser;
+	std::string s_default = "USER";
 	char* c_env = std::getenv("HWPC_CHOOSER");
 	if (c_env != NULL) {
 		s_chooser = c_env;
@@ -1836,12 +1856,14 @@ void PerfWatch::identifyARMplatform (void)
 		hwpc_group.i_platform = 99;	// unsupported ARM hardware
 	}
 	#ifdef DEBUG_PRINT_PAPI
+	if (my_rank == 0) {
 		fprintf(stderr, "<identifyARMplatform> reads /proc/cpuinfo\n");
 		fprintf(stderr, "cpu_implementer=0x%x\n", cpu_implementer);
 		fprintf(stderr, "cpu_architecture=%d\n", cpu_architecture);
 		fprintf(stderr, "cpu_variant=0x%x\n", cpu_variant);
 		fprintf(stderr, "cpu_part=0x%x\n", cpu_part);
 		fprintf(stderr, "cpu_revision=%x\n", cpu_revision);
+	}
 	#endif
 	return;
 #endif // USE_PAPI

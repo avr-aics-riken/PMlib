@@ -345,8 +345,10 @@ namespace pm_lib {
 		}
 
 		#ifdef DEBUG_PRINT_WATCH
-		fprintf(stderr, "\t<PerfWatch::gather> [%15s] my_rank=%d. Allocated new m_countArray[%d] at address:%p and others.\n",
-			m_label.c_str(), my_rank, m_np, m_countArray);
+		if (my_rank == 0) {
+			fprintf(stderr, "\t<PerfWatch::gather> [%15s] my_rank=%d. Allocated new m_countArray[%d] at address:%p and others.\n",
+				m_label.c_str(), my_rank, m_np, m_countArray);
+		}
 		#endif
 	}
 

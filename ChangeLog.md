@@ -3,6 +3,10 @@
 ## REVISION HISTORY
 
 ---
+- 2020-02-12 Version 7.0.1
+  - add "-std=c++11" option as default for intel, pgi, and gnu c++ compiler
+
+---
 - 2020-02-12 Version 7.0.0
   - Major update in src/ to support Fugaku supercomputer HWPC, add cmake/Toolchain_fugaku.cmake
   - Rearranged the report format for Basic report section and HWPC report section
