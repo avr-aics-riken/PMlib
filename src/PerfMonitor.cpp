@@ -103,8 +103,8 @@ namespace pm_lib {
     }
 
 // Parse the Environment Variable HWPC_CHOOSER
-	string s_chooser;
-	string s_default = "USER";
+	std::string s_chooser;
+	std::string s_default = "USER";
 
     cp_env = NULL;
 	cp_env = std::getenv("HWPC_CHOOSER");

@@ -47,7 +47,6 @@ namespace pm_lib {
   ///
 void PerfWatch::initializeHWPC ()
 {
-#include <string>
 
 	bool root_in_parallel;
 	int root_thread;
@@ -83,8 +82,8 @@ void PerfWatch::initializeHWPC ()
 	}
 
 // Parse the Environment Variable HWPC_CHOOSER
-	string s_chooser;
-	string s_default = "USER";
+	std::string s_chooser;
+	std::string s_default = "USER";
 	char* c_env = std::getenv("HWPC_CHOOSER");
 	if (c_env != NULL) {
 		s_chooser = c_env;
@@ -345,8 +344,8 @@ void PerfWatch::createPapiCounterList ()
 
 
 // 2. Parse the Environment Variable HWPC_CHOOSER
-	string s_chooser;
-	string s_default = "USER";
+	std::string s_chooser;
+	std::string s_default = "USER";
 	char* c_env = std::getenv("HWPC_CHOOSER");
 	if (c_env != NULL) {
 		s_chooser = c_env;
