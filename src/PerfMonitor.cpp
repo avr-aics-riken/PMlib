@@ -287,9 +287,13 @@ namespace pm_lib {
     }
     id = find_perf_label(label);
     if (id < 0) {
-      printDiag("start()",  "label [%s] is undefined. This may lead to incorrect measurement.\n",
-				label.c_str());
-      return;
+      #ifdef DEBUG_PRINT_MONITOR
+      if (my_rank == 0) {
+        fprintf(stderr, "<start> adding property for [%s] id=%d\n", label.c_str(), id);
+      }
+      #endif
+      PerfMonitor::setProperties(label, measured_type, is_exclusive);
+      id = find_perf_label(label);
     }
 
     m_watchArray[id].start();
