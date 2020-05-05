@@ -47,8 +47,6 @@ namespace pm_lib {
   double cpu_clock_freq;        /// processor clock frequency, i.e. Hz
   double second_per_cycle;  /// real time to take each cycle
 
-  //	bool PerfWatch::ExclusiveStarted = false;
-
   /// 単位変換.
   ///
   ///   @param[in] fops 浮動小数点演算量又はデータ移動量
@@ -1379,13 +1377,7 @@ namespace pm_lib {
       m_is_healthy=false;
       return;
 	}
-    if (m_exclusive && ExclusiveStarted) {
-      printError("start()",  "Section overlaps other exclusive section. start() is ignored.\n");
-      m_is_healthy=false;
-      return;
-    }
     m_started = true;
-    if (m_exclusive) ExclusiveStarted = true;
     m_startTime = getTime();
 
 #ifdef DEBUG_PRINT_WATCH
@@ -1528,7 +1520,6 @@ namespace pm_lib {
     m_time += m_stopTime - m_startTime;
     m_count++;
     m_started = false;
-    if (m_exclusive) ExclusiveStarted = false;
 
 	if ( m_in_parallel ) {
 		// The threads are active and running in parallel region

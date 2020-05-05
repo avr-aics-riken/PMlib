@@ -71,7 +71,7 @@ namespace pm_lib {
     std::string m_label;   ///< 測定区間のラベル
     int m_id;             ///< 測定区間のラベルに対応する番号
     int m_typeCalc;        ///< 測定対象タイプ (0:通信, 1:計算)
-    bool m_exclusive;      ///< 排他測定フラグ (false, true)
+    bool m_exclusive;      ///< 測定区間の排他性フラグ (false, true)
 
     // 測定値の積算量
     long m_count;          ///< 測定回数 (プロセス内の全スレッドの最大値)
@@ -123,13 +123,11 @@ namespace pm_lib {
     bool m_threads_merged; /// 全スレッドの情報をマスタースレッドに集約済みか
     bool m_gathered;       /// 全プロセスの結果をランク0に集計済みかどうか
     bool m_started;        /// 測定区間がstart済みかどうか
-    bool ExclusiveStarted; /// 排他測定実行中フラグ. 非排他測定では未使用
 
 
   public:
     /// コンストラクタ.
     PerfWatch() : m_time(0.0), m_flop(0.0), m_count(0), m_started(false),
-      ExclusiveStarted(false),
       my_rank(-1), m_timeArray(0), m_flopArray(0), m_countArray(0),
       m_sortedArrayHWPC(0), m_is_set(false), m_is_healthy(true) {}
 

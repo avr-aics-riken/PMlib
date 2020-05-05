@@ -64,6 +64,7 @@ namespace pm_lib {
     bool is_OTF_enabled;       ///< 対応動作可能フラグ:OTF tracing 出力
     bool is_PMlib_enabled;     ///< PMlibの動作を有効にするフラグ
     bool is_Root_active;       ///< 背景区間(Root区間)の動作フラグ
+    bool is_exclusive_construct; ///< 測定区間の重なり状態検出フラグ
 
     std::string parallel_mode; ///< 並列動作モード
       // {"Serial", "OpenMP", "FlatMPI", "Hybrid"}

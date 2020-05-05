@@ -205,11 +205,12 @@ namespace pm_lib {
       	return;
 	}
     id = add_perf_label(label);
+    is_exclusive_construct = exclusive;
 
 //
-// Move the existing PerfWatch class storage into the new address
+// If short of memory, allocate new space
+//	and move the existing PerfWatch class storage into the new address
 //
-    //	if (short of memory) {
     if ((m_nWatch+1) >= reserved_nWatch) {
 
       reserved_nWatch = m_nWatch + init_nWatch;
@@ -292,7 +293,8 @@ namespace pm_lib {
         fprintf(stderr, "<start> adding property for [%s] id=%d\n", label.c_str(), id);
       }
       #endif
-      PerfMonitor::setProperties(label, measured_type, is_exclusive);
+      //	PerfMonitor::setProperties(std::string& label, Type type=CALC, bool exclusive=true);
+      PerfMonitor::setProperties(label);
       id = find_perf_label(label);
     }
 
@@ -331,6 +333,11 @@ namespace pm_lib {
       return;
     }
     m_watchArray[id].stop(flopPerTask, iterationCount);
+
+    if (!is_exclusive_construct) {
+      m_watchArray[id].m_exclusive = false;
+    }
+    is_exclusive_construct = false;
 
     #ifdef DEBUG_PRINT_MONITOR
     if (my_rank == 0) {
