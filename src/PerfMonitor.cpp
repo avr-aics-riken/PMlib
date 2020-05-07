@@ -205,7 +205,6 @@ namespace pm_lib {
       	return;
 	}
     id = add_perf_label(label);
-    is_exclusive_construct = exclusive;
 
 //
 // If short of memory, allocate new space
@@ -237,6 +236,7 @@ namespace pm_lib {
       #endif
     }
 
+    is_exclusive_construct = exclusive;
     m_nWatch++;
     m_watchArray[id].setProperties(label, id, type, num_process, my_rank, num_threads, exclusive);
 
@@ -297,6 +297,7 @@ namespace pm_lib {
       PerfMonitor::setProperties(label);
       id = find_perf_label(label);
     }
+    is_exclusive_construct = true;
 
     m_watchArray[id].start();
 
