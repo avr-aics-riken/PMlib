@@ -1,0 +1,199 @@
++ export PATH=/opt/FJSVstclanga/v1.0.0/bin:/home/users/kazunori.mikami/.local/bin:/home/users/kazunori.mikami/bin:/home/users/kazunori.mikami/.local/bin:/home/users/kazunori.mikami/bin:/usr/share/Modules/bin:/usr/local/bin:/usr/bin:/usr/local/sbin:/usr/sbin
++ PATH=/opt/FJSVstclanga/v1.0.0/bin:/home/users/kazunori.mikami/.local/bin:/home/users/kazunori.mikami/bin:/home/users/kazunori.mikami/.local/bin:/home/users/kazunori.mikami/bin:/usr/share/Modules/bin:/usr/local/bin:/usr/bin:/usr/local/sbin:/usr/sbin
++ export LD_LIBRARY_PATH=/opt/FJSVstclanga/v1.0.0/lib64:
++ LD_LIBRARY_PATH=/opt/FJSVstclanga/v1.0.0/lib64:
++ export LANG=C
++ LANG=C
++ date
+Wed Jul  8 15:40:34 JST 2020
++ hostname
+fx01.cloud.r-ccs.riken.jp
++ xospastop
+./x.run-single.sh: line 18: xospastop: command not found
++ DIR_SERIAL=/home/users/kazunori.mikami/pmlib/package/BUILD_SERIAL/example
++ HERE=/home/users/kazunori.mikami/pmlib/package/BUILD_SERIAL/example
++ cd /home/users/kazunori.mikami/pmlib/package/BUILD_SERIAL/example
++ '[' 0 '!=' 0 ']'
++ export OMP_NUM_THREADS=12
++ OMP_NUM_THREADS=12
++ ldd /home/users/kazunori.mikami/pmlib/package/BUILD_SERIAL/example/example1
+	linux-vdso.so.1 (0x0000ffff6caf0000)
+	libpapi.so.5 => /lib64/libpapi.so.5 (0x0000ffff6ca20000)
+	libpfm.so.4 => /lib64/libpfm.so.4 (0x0000ffff6c9e0000)
+	libfj90i.so.1 => /opt/FJSVstclanga/v1.0.0/lib64/libfj90i.so.1 (0x0000ffff6c850000)
+	libfj90f.so.1 => /opt/FJSVstclanga/v1.0.0/lib64/libfj90f.so.1 (0x0000ffff6c440000)
+	libfjsrcinfo.so => /opt/FJSVstclanga/v1.0.0/lib64/libfjsrcinfo.so (0x0000ffff6c410000)
+	libfjcrt.so.1 => /opt/FJSVstclanga/v1.0.0/lib64/libfjcrt.so.1 (0x0000ffff6c3f0000)
+	libfjcex.so.1 => /opt/FJSVstclanga/v1.0.0/lib64/libfjcex.so.1 (0x0000ffff6c3d0000)
+	libfjc++.so.3.7.1 => /opt/FJSVstclanga/v1.0.0/lib64/libfjc++.so.3.7.1 (0x0000ffff6c1c0000)
+	libfjc++abi.so.3.7.1 => /opt/FJSVstclanga/v1.0.0/lib64/libfjc++abi.so.3.7.1 (0x0000ffff6c0e0000)
+	libfjdemgl.so.1 => /opt/FJSVstclanga/v1.0.0/lib64/libfjdemgl.so.1 (0x0000ffff6c0c0000)
+	libmpg.so.1 => /opt/FJSVxos/mmm/lib64/libmpg.so.1 (0x0000ffff6c080000)
+	libm.so.6 => /lib64/libm.so.6 (0x0000ffff6bfb0000)
+	libpthread.so.0 => /lib64/libpthread.so.0 (0x0000ffff6bf70000)
+	librt.so.1 => /lib64/librt.so.1 (0x0000ffff6bf40000)
+	libelf.so.1 => /lib64/libelf.so.1 (0x0000ffff6bf00000)
+	libdl.so.2 => /lib64/libdl.so.2 (0x0000ffff6bed0000)
+	libgcc_s.so.1 => /lib64/libgcc_s.so.1 (0x0000ffff6be90000)
+	libc.so.6 => /lib64/libc.so.6 (0x0000ffff6bd10000)
+	/lib/ld-linux-aarch64.so.1 (0x0000ffff6cb00000)
+	libz.so.1 => /lib64/libz.so.1 (0x0000ffff6bcd0000)
++ export HWPC_CHOOSER=USER
++ HWPC_CHOOSER=USER
++ /home/users/kazunori.mikami/pmlib/package/BUILD_SERIAL/example/example1
+	<main> starts. npes=1, MATSIZE=1000 max_threads=12
+PAPI error -4
+
+# PMlib Basic Report -------------------------------------------------------
+
+	Timing Statistics Report from PMlib version 7.0.1
+	Linked PMlib supports: no-MPI, OpenMP, HWPC, no-OTF
+	Host name : fx01.cloud.r-ccs.riken.jp
+	Date      : 2020/07/08 : 15:40:48
+	Mrs. Kobe
+	Parallel Mode:   OpenMP (12 threads)
+	Unknown group HWPC_CHOOSER=USER is ignored. User API values are reported.
+
+	PMlib enabled elapse time (from initialize to print) = 1.405e+01 [sec]
+	Exclusive sections and inclusive sections are reported below.
+	Inclusive sections, marked with (*), are not added in the statistics total.
+
+	Section         |    call  |        accumulated time[sec]           | user defined numerical performance
+	Label           |          |      avr   avr[%]     sdv    avr/call  |  operations   sdv    performance
+	----------------+----------+----------------------------------------+----------------------------
+	Loop-section(*) :        1   1.397e+01  99.44  0.00e+00  1.397e+01    1.920e+11  0.00e+00  13.74 GB/sec(*)
+	Kernel-Slow     :        3   1.360e+01  96.81  0.00e+00  4.533e+00    1.200e+10  0.00e+00 882.33 Mflops
+	Kernel-Fast     :        3   2.658e-01   1.89  0.00e+00  8.860e-02    1.200e+10  0.00e+00  45.15 Gflops
+	Initial-section :        1   6.024e-04   0.00  0.00e+00  6.024e-04    2.000e+06  0.00e+00   3.32 Gflops
+	----------------+----------+----------------------------------------+----------------------------
+	Sections per process         1.387e+01     -Exclusive CALC sections-  2.400e+10             1.73 Gflops
+	----------------+----------+----------------------------------------+----------------------------
+	Sections total job           1.387e+01     -Exclusive CALC sections-  2.400e+10             1.73 Gflops
+
+# PMlib Process Report ------------------------------------------------
+
+Label  Kernel-Slow
+Header ID  :     call   time[s] time[%]  t_wait[s]  t[s]/call   counter     speed              
+Rank     0 :        3  1.360e+01   96.8  0.000e+00  4.533e+00  1.200e+10  8.823e+08 Flops
+Label  Kernel-Fast
+Header ID  :     call   time[s] time[%]  t_wait[s]  t[s]/call   counter     speed              
+Rank     0 :        3  2.658e-01    1.9  0.000e+00  8.860e-02  1.200e+10  4.515e+10 Flops
+Label  Initial-section
+Header ID  :     call   time[s] time[%]  t_wait[s]  t[s]/call   counter     speed              
+Rank     0 :        1  6.024e-04    0.0  0.000e+00  6.024e-04  2.000e+06  3.320e+09 Flops
+
+# PMlib Thread Report for the single process run ---------------------
+
+Label  Kernel-Slow
+Thread  call  time[s]  t/tav[%]  operations  performance
+   0       3  1.360e+01  100.0   1.200e+10  8.823e+08 Flops
+   1		 user mode worksharing threads are represented by thread 0
+   2		 ditto
+   3		 ditto
+   4		 ditto
+   5		 ditto
+   6		 ditto
+   7		 ditto
+   8		 ditto
+   9		 ditto
+  10		 ditto
+  11		 ditto
+Label  Kernel-Fast
+Thread  call  time[s]  t/tav[%]  operations  performance
+   0       3  2.658e-01  100.0   1.200e+10  4.515e+10 Flops
+   1		 user mode worksharing threads are represented by thread 0
+   2		 ditto
+   3		 ditto
+   4		 ditto
+   5		 ditto
+   6		 ditto
+   7		 ditto
+   8		 ditto
+   9		 ditto
+  10		 ditto
+  11		 ditto
+Label  Initial-section
+Thread  call  time[s]  t/tav[%]  operations  performance
+   0       1  6.024e-04  100.0   2.000e+06  3.320e+09 Flops
+   1		 user mode worksharing threads are represented by thread 0
+   2		 ditto
+   3		 ditto
+   4		 ditto
+   5		 ditto
+   6		 ditto
+   7		 ditto
+   8		 ditto
+   9		 ditto
+  10		 ditto
+  11		 ditto
+
+# PMlib Legend - HWPC symbols used in the PMlib report ----------------
+
+	Detected CPU architecture:
+		Fugaku A64FX
+		The available HWPC_CHOOSER values and their HWPC events for this CPU are shown below.
+
+	 HWPC_CHOOSER=FLOPS:
+		 SP_OPS:    single precision floating point operations
+		 DP_OPS:    double precision floating point operations
+		 Total_FP:  total floating point operations
+		 [Flops]:   floating point operations per second 
+		 [%Peak]:   sustained performance over peak performance
+	 HWPC_CHOOSER=BANDWIDTH:
+		 LOAD_INS:   memory load instructions
+		 STORE_INS:  memory store instructions
+		 L2D_REFILL: L2 cache refill events
+		 L2D_HRFB1:  L2 demand access counts hitting refill buffer (allocated by prefetch)
+		 L2D_HRFB2:  L2 prefetch counts hitting refill buffer (allocated by demand access)
+		 L2D_WB   :  L2 writeback counts reaching memory
+		 L2$ [B/s]:  L2 cache bandwidth responding to demand read and prefetch 
+		 Mem [B/s]:  Memory bandwidth responding to demand, prefetch and writeback
+		 [Bytes]  :  aggregated data bytes transferred out of L2 cache and memory
+	 HWPC_CHOOSER=VECTOR:
+		 DP_SVE_op:  double precision f.p. ops by SVE instructions
+		 DP_FIX_op:  double precision f.p. ops by scalar/armv8 instructions
+		 SP_SVE_op:  single precision f.p. ops by SVE instructions
+		 SP_FIX_op:  single precision f.p. ops by scalar/armv8 instructions
+		 Total_FP:   total floating point operations 
+		 Vector_FP:  floating point operations by vector instructions
+		 [Vector %]: percentage of vectorized f.p. operations
+	 HWPC_CHOOSER=CACHE:
+		 LOAD_INS:   memory load instructions
+		 STORE_INS:  memory store instructions
+		 L1_HIT:     L1 data cache hits
+		 L1_TCM:     L1 data cache misses
+		 L2_TCM:     L2 cache misses
+		 [L1$ hit%]: data access hit(%) in L1 cache 
+		 [L2$ hit%]: data access hit(%) in L2 cache
+		 [L*$ hit%]: sum of hit(%) in L1 and L2 cache
+	 HWPC_CHOOSER=LOADSTORE:
+		 LOAD_INS:   memory load instructions
+		 STORE_INS:  memory store instructions
+		 SVE_LOAD:   memory read by SVE and Advanced SIMD load instructions.
+		 SVE_STORE:  memory write by SVE and Advanced SIMD store instructions.
+		 SVE_SMV_LD: memory read by SVE and Advanced SIMD multiple vector contiguous structure load instructions.
+		 SVE_SMV_ST: memory write by SVE and Advanced SIMD multiple vector contiguous structure store instructions.
+		 GATHER_LD:  memory read by SVE non-contiguous gather-load instructions.
+		 SCATTER_ST: memory write by SVE non-contiguous scatter-store instructions.
+		 [Vector %]: percentage of SVE load/store instructions over all load/store instructions.
+	 HWPC_CHOOSER=CYCLE:
+		 TOT_CYC:   total cycles
+		 TOT_INS:   total instructions
+		 FP_inst:   floating point instructions
+		 FMA_inst:  fused multiply+add instructions
+		 [FMA_ins%]: percentage of FMA instructions over all f.p. instructions
+		 [Ins/cyc]: performed instructions per machine clock cycle
+
+	 Remarks.
+		 Symbols represent HWPC (hardware performance counter) native and derived events
+		 Symbols in [] are frequently used performance metrics which are calculated from these events.
+		 The values in the Basic Report section shows the arithmetic mean value of the processes. 
+		 The values in the Process Report section shows the sum of threads generated by the process. 
+		 The values in the Thread Report section shows the precise thread level statistics. 
+		 Note that [FMA_ops %] is a roughly approximated number using the following assumption. 
+			 (FMA vector OPS)/(vector OPS) = (FMA scalar OPS)/(scalar OPS) for both DP and SP 
++ export BYPASS_PMLIB=yes
++ BYPASS_PMLIB=yes
++ /home/users/kazunori.mikami/pmlib/package/BUILD_SERIAL/example/example1
+	<main> starts. npes=1, MATSIZE=1000 max_threads=12
++ exit

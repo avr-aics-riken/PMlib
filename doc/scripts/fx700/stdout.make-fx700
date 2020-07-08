@@ -1,0 +1,435 @@
++ export PATH=/opt/FJSVstclanga/v1.0.0/bin:/home/users/kazunori.mikami/.local/bin:/home/users/kazunori.mikami/bin:/home/users/kazunori.mikami/.local/bin:/home/users/kazunori.mikami/bin:/usr/share/Modules/bin:/usr/local/bin:/usr/bin:/usr/local/sbin:/usr/sbin
++ PATH=/opt/FJSVstclanga/v1.0.0/bin:/home/users/kazunori.mikami/.local/bin:/home/users/kazunori.mikami/bin:/home/users/kazunori.mikami/.local/bin:/home/users/kazunori.mikami/bin:/usr/share/Modules/bin:/usr/local/bin:/usr/bin:/usr/local/sbin:/usr/sbin
++ export LD_LIBRARY_PATH=/opt/FJSVstclanga/v1.0.0/lib64:
++ LD_LIBRARY_PATH=/opt/FJSVstclanga/v1.0.0/lib64:
++ export LANG=C
++ LANG=C
++ PACKAGE_DIR=/home/users/kazunori.mikami/pmlib/package
++ PMLIB_DIR=/home/users/kazunori.mikami/pmlib/usr_local_pmlib/fx700
++ PAPI_DIR=/opt/FJSVxos/devkit/aarch64/rfs/usr
++ OTF_DIR=no
++ CXXFLAGS='-Kocl -Nnofjprof -Nfjomplib '
++ CFLAGS='-Kocl -Nnofjprof -Nfjomplib '
++ FFLAGS='-Kocl -Nnofjprof -Nfjomplib '
++ DEBUG=' '
++ BUILD_DIR=/home/users/kazunori.mikami/pmlib/package/BUILD_SERIAL
++ mkdir -p /home/users/kazunori.mikami/pmlib/package/BUILD_SERIAL
++ cd /home/users/kazunori.mikami/pmlib/package/BUILD_SERIAL
++ '[' 0 '!=' 0 ']'
++ rm -rf /home/users/kazunori.mikami/pmlib/package/BUILD_SERIAL/CMakeCache.txt /home/users/kazunori.mikami/pmlib/package/BUILD_SERIAL/CMakeFiles /home/users/kazunori.mikami/pmlib/package/BUILD_SERIAL/CPackConfig.cmake /home/users/kazunori.mikami/pmlib/package/BUILD_SERIAL/CPackSourceConfig.cmake /home/users/kazunori.mikami/pmlib/package/BUILD_SERIAL/CTestTestfile.cmake /home/users/kazunori.mikami/pmlib/package/BUILD_SERIAL/Makefile /home/users/kazunori.mikami/pmlib/package/BUILD_SERIAL/cmake_install.cmake /home/users/kazunori.mikami/pmlib/package/BUILD_SERIAL/config.h /home/users/kazunori.mikami/pmlib/package/BUILD_SERIAL/doc /home/users/kazunori.mikami/pmlib/package/BUILD_SERIAL/example /home/users/kazunori.mikami/pmlib/package/BUILD_SERIAL/include /home/users/kazunori.mikami/pmlib/package/BUILD_SERIAL/install_manifest.txt /home/users/kazunori.mikami/pmlib/package/BUILD_SERIAL/src /home/users/kazunori.mikami/pmlib/package/BUILD_SERIAL/src_papi_ext
++ cmake '-DCMAKE_CXX_FLAGS=-Kocl -Nnofjprof -Nfjomplib   ' '-DCMAKE_C_FLAGS=-Kocl -Nnofjprof -Nfjomplib   ' '-DCMAKE_Fortran_FLAGS=-Kocl -Nnofjprof -Nfjomplib   ' -DCMAKE_TOOLCHAIN_FILE=../cmake/Toolchain_fx700.cmake -DINSTALL_DIR=/home/users/kazunori.mikami/pmlib/usr_local_pmlib/fx700 -Denable_OPENMP=yes -Dwith_MPI=no -Denable_Fortran=yes -Dwith_example=yes -Dwith_PAPI=/opt/FJSVxos/devkit/aarch64/rfs/usr -Dwith_OTF=no ..
+-- The C compiler identification is Fujitsu
+-- The CXX compiler identification is Fujitsu
+-- The Fortran compiler identification is unknown
+-- Check for working C compiler: /opt/FJSVstclanga/v1.0.0/bin/fcc
+-- Check for working C compiler: /opt/FJSVstclanga/v1.0.0/bin/fcc -- works
+-- Detecting C compiler ABI info
+-- Detecting C compiler ABI info - done
+-- Check for working CXX compiler: /opt/FJSVstclanga/v1.0.0/bin/FCC
+-- Check for working CXX compiler: /opt/FJSVstclanga/v1.0.0/bin/FCC -- works
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- Check for working Fortran compiler: /opt/FJSVstclanga/v1.0.0/bin/frt
+-- Check for working Fortran compiler: /opt/FJSVstclanga/v1.0.0/bin/frt  -- works
+-- Detecting Fortran compiler ABI info
+-- Detecting Fortran compiler ABI info - done
+-- Checking whether /opt/FJSVstclanga/v1.0.0/bin/frt supports Fortran 90
+-- Checking whether /opt/FJSVstclanga/v1.0.0/bin/frt supports Fortran 90 -- yes
+ 
+PMlib Version : 7.0.1
+ 
+ 
+-- Destination PATH  : /home/users/kazunori.mikami/pmlib/usr_local_pmlib/fx700
+-- CMAKE_C_COMPILER  : /opt/FJSVstclanga/v1.0.0/bin/fcc
+-- CMAKE_C_FLAGS     : -Kocl -Nnofjprof -Nfjomplib -Kfast -Nrt_notune -w -Kopenmp -DDISABLE_MPI
+-- CMAKE_CXX_COMPILER: /opt/FJSVstclanga/v1.0.0/bin/FCC
+-- CMAKE_CXX_FLAGS   : -Kocl -Nnofjprof -Nfjomplib -Kfast -Nrt_notune -w -Nfjcex -Kopenmp -DDISABLE_MPI -DUSE_PRECISE_TIMER
+-- CMAKE_Fortran_COMPILER : /opt/FJSVstclanga/v1.0.0/bin/frt
+-- CMAKE_Fortran_FLAGS    : -Kocl -Nnofjprof -Nfjomplib -Cpp -Kfast -Nrt_notune -Knooptmsg -Free -Kopenmp -DDISABLE_MPI
+ 
+-- OpenMP            : yes
+-- MPI               : no
+-- PAPI              : /opt/FJSVxos/devkit/aarch64/rfs/usr
+-- OTF               : no
+-- Example           : yes
+ 
+Code test will be performed
+-- Looking for include file inttypes.h
+-- Looking for include file inttypes.h - found
+-- Looking for include file memory.h
+-- Looking for include file memory.h - found
+-- Looking for include file stdint.h
+-- Looking for include file stdint.h - found
+-- Looking for include file stdlib.h
+-- Looking for include file stdlib.h - found
+-- Looking for include file strings.h
+-- Looking for include file strings.h - found
+-- Looking for include file string.h
+-- Looking for include file string.h - found
+-- Looking for include file sys/stat.h
+-- Looking for include file sys/stat.h - found
+-- Looking for include file sys/types.h
+-- Looking for include file sys/types.h - found
+-- Looking for include file unistd.h
+-- Looking for include file unistd.h - found
+ 
+Examples : 
+-- PAPI_DIR            = /opt/FJSVxos/devkit/aarch64/rfs/usr
+-- OTF_DIR             = 
+-- with_MPI            = no
+-- Configuring done
+-- Generating done
+-- Build files have been written to: /home/users/kazunori.mikami/pmlib/package/BUILD_SERIAL
++ make VERBOSE=1
+/usr/bin/cmake -H/home/users/kazunori.mikami/pmlib/package -B/home/users/kazunori.mikami/pmlib/package/BUILD_SERIAL --check-build-system CMakeFiles/Makefile.cmake 0
+/usr/bin/cmake -E cmake_progress_start /home/users/kazunori.mikami/pmlib/package/BUILD_SERIAL/CMakeFiles /home/users/kazunori.mikami/pmlib/package/BUILD_SERIAL/CMakeFiles/progress.marks
+make -f CMakeFiles/Makefile2 all
+make[1]: Entering directory '/home/users/kazunori.mikami/pmlib/PMlib-develop/BUILD_SERIAL'
+make -f src/CMakeFiles/PM.dir/build.make src/CMakeFiles/PM.dir/depend
+make[2]: Entering directory '/home/users/kazunori.mikami/pmlib/PMlib-develop/BUILD_SERIAL'
+cd /home/users/kazunori.mikami/pmlib/package/BUILD_SERIAL && /usr/bin/cmake -E cmake_depends "Unix Makefiles" /home/users/kazunori.mikami/pmlib/package /home/users/kazunori.mikami/pmlib/package/src /home/users/kazunori.mikami/pmlib/package/BUILD_SERIAL /home/users/kazunori.mikami/pmlib/package/BUILD_SERIAL/src /home/users/kazunori.mikami/pmlib/package/BUILD_SERIAL/src/CMakeFiles/PM.dir/DependInfo.cmake --color=
+Dependee "/home/users/kazunori.mikami/pmlib/package/BUILD_SERIAL/src/CMakeFiles/PM.dir/DependInfo.cmake" is newer than depender "/home/users/kazunori.mikami/pmlib/package/BUILD_SERIAL/src/CMakeFiles/PM.dir/depend.internal".
+Dependee "/home/users/kazunori.mikami/pmlib/package/BUILD_SERIAL/src/CMakeFiles/CMakeDirectoryInformation.cmake" is newer than depender "/home/users/kazunori.mikami/pmlib/package/BUILD_SERIAL/src/CMakeFiles/PM.dir/depend.internal".
+Scanning dependencies of target PM
+make[2]: Leaving directory '/home/users/kazunori.mikami/pmlib/PMlib-develop/BUILD_SERIAL'
+make -f src/CMakeFiles/PM.dir/build.make src/CMakeFiles/PM.dir/build
+make[2]: Entering directory '/home/users/kazunori.mikami/pmlib/PMlib-develop/BUILD_SERIAL'
+[  7%] Building CXX object src/CMakeFiles/PM.dir/PerfCpuType.cpp.o
+cd /home/users/kazunori.mikami/pmlib/package/BUILD_SERIAL/src && /opt/FJSVstclanga/v1.0.0/bin/FCC  -DHAVE_CONFIG_H -DUSE_PAPI -I/home/users/kazunori.mikami/pmlib/package/src -I/home/users/kazunori.mikami/pmlib/package/include -I/home/users/kazunori.mikami/pmlib/package/BUILD_SERIAL/include -I/opt/FJSVxos/devkit/aarch64/rfs/usr/include  -Kocl -Nnofjprof -Nfjomplib -Kfast -Nrt_notune -w -Nfjcex -Kopenmp -DDISABLE_MPI -DUSE_PRECISE_TIMER   -o CMakeFiles/PM.dir/PerfCpuType.cpp.o -c /home/users/kazunori.mikami/pmlib/package/src/PerfCpuType.cpp
+[ 14%] Building CXX object src/CMakeFiles/PM.dir/PerfMonitor.cpp.o
+cd /home/users/kazunori.mikami/pmlib/package/BUILD_SERIAL/src && /opt/FJSVstclanga/v1.0.0/bin/FCC  -DHAVE_CONFIG_H -DUSE_PAPI -I/home/users/kazunori.mikami/pmlib/package/src -I/home/users/kazunori.mikami/pmlib/package/include -I/home/users/kazunori.mikami/pmlib/package/BUILD_SERIAL/include -I/opt/FJSVxos/devkit/aarch64/rfs/usr/include  -Kocl -Nnofjprof -Nfjomplib -Kfast -Nrt_notune -w -Nfjcex -Kopenmp -DDISABLE_MPI -DUSE_PRECISE_TIMER   -o CMakeFiles/PM.dir/PerfMonitor.cpp.o -c /home/users/kazunori.mikami/pmlib/package/src/PerfMonitor.cpp
+[ 21%] Building CXX object src/CMakeFiles/PM.dir/PerfWatch.cpp.o
+cd /home/users/kazunori.mikami/pmlib/package/BUILD_SERIAL/src && /opt/FJSVstclanga/v1.0.0/bin/FCC  -DHAVE_CONFIG_H -DUSE_PAPI -I/home/users/kazunori.mikami/pmlib/package/src -I/home/users/kazunori.mikami/pmlib/package/include -I/home/users/kazunori.mikami/pmlib/package/BUILD_SERIAL/include -I/opt/FJSVxos/devkit/aarch64/rfs/usr/include  -Kocl -Nnofjprof -Nfjomplib -Kfast -Nrt_notune -w -Nfjcex -Kopenmp -DDISABLE_MPI -DUSE_PRECISE_TIMER   -o CMakeFiles/PM.dir/PerfWatch.cpp.o -c /home/users/kazunori.mikami/pmlib/package/src/PerfWatch.cpp
+[ 28%] Building CXX object src/CMakeFiles/PM.dir/PerfProgFortran.cpp.o
+cd /home/users/kazunori.mikami/pmlib/package/BUILD_SERIAL/src && /opt/FJSVstclanga/v1.0.0/bin/FCC  -DHAVE_CONFIG_H -DUSE_PAPI -I/home/users/kazunori.mikami/pmlib/package/src -I/home/users/kazunori.mikami/pmlib/package/include -I/home/users/kazunori.mikami/pmlib/package/BUILD_SERIAL/include -I/opt/FJSVxos/devkit/aarch64/rfs/usr/include  -Kocl -Nnofjprof -Nfjomplib -Kfast -Nrt_notune -w -Nfjcex -Kopenmp -DDISABLE_MPI -DUSE_PRECISE_TIMER   -o CMakeFiles/PM.dir/PerfProgFortran.cpp.o -c /home/users/kazunori.mikami/pmlib/package/src/PerfProgFortran.cpp
+[ 35%] Linking CXX static library libPM.a
+cd /home/users/kazunori.mikami/pmlib/package/BUILD_SERIAL/src && /usr/bin/cmake -P CMakeFiles/PM.dir/cmake_clean_target.cmake
+cd /home/users/kazunori.mikami/pmlib/package/BUILD_SERIAL/src && /usr/bin/cmake -E cmake_link_script CMakeFiles/PM.dir/link.txt --verbose=1
+/usr/bin/ar qc libPM.a  CMakeFiles/PM.dir/PerfCpuType.cpp.o CMakeFiles/PM.dir/PerfMonitor.cpp.o CMakeFiles/PM.dir/PerfWatch.cpp.o CMakeFiles/PM.dir/PerfProgFortran.cpp.o
+/usr/bin/ranlib libPM.a
+make[2]: Leaving directory '/home/users/kazunori.mikami/pmlib/PMlib-develop/BUILD_SERIAL'
+[ 35%] Built target PM
+make -f src_papi_ext/CMakeFiles/papi_ext.dir/build.make src_papi_ext/CMakeFiles/papi_ext.dir/depend
+make[2]: Entering directory '/home/users/kazunori.mikami/pmlib/PMlib-develop/BUILD_SERIAL'
+cd /home/users/kazunori.mikami/pmlib/package/BUILD_SERIAL && /usr/bin/cmake -E cmake_depends "Unix Makefiles" /home/users/kazunori.mikami/pmlib/package /home/users/kazunori.mikami/pmlib/package/src_papi_ext /home/users/kazunori.mikami/pmlib/package/BUILD_SERIAL /home/users/kazunori.mikami/pmlib/package/BUILD_SERIAL/src_papi_ext /home/users/kazunori.mikami/pmlib/package/BUILD_SERIAL/src_papi_ext/CMakeFiles/papi_ext.dir/DependInfo.cmake --color=
+Dependee "/home/users/kazunori.mikami/pmlib/package/BUILD_SERIAL/src_papi_ext/CMakeFiles/papi_ext.dir/DependInfo.cmake" is newer than depender "/home/users/kazunori.mikami/pmlib/package/BUILD_SERIAL/src_papi_ext/CMakeFiles/papi_ext.dir/depend.internal".
+Dependee "/home/users/kazunori.mikami/pmlib/package/BUILD_SERIAL/src_papi_ext/CMakeFiles/CMakeDirectoryInformation.cmake" is newer than depender "/home/users/kazunori.mikami/pmlib/package/BUILD_SERIAL/src_papi_ext/CMakeFiles/papi_ext.dir/depend.internal".
+Scanning dependencies of target papi_ext
+make[2]: Leaving directory '/home/users/kazunori.mikami/pmlib/PMlib-develop/BUILD_SERIAL'
+make -f src_papi_ext/CMakeFiles/papi_ext.dir/build.make src_papi_ext/CMakeFiles/papi_ext.dir/build
+make[2]: Entering directory '/home/users/kazunori.mikami/pmlib/PMlib-develop/BUILD_SERIAL'
+[ 42%] Building C object src_papi_ext/CMakeFiles/papi_ext.dir/papi_ext.c.o
+cd /home/users/kazunori.mikami/pmlib/package/BUILD_SERIAL/src_papi_ext && /opt/FJSVstclanga/v1.0.0/bin/fcc -DHAVE_CONFIG_H -DUSE_PAPI -I/home/users/kazunori.mikami/pmlib/package/src -I/home/users/kazunori.mikami/pmlib/package/include -I/opt/FJSVxos/devkit/aarch64/rfs/usr/include  -Kocl -Nnofjprof -Nfjomplib -Kfast -Nrt_notune -w -Kopenmp -DDISABLE_MPI -std=c99 -DSTATIC_PAPI_EVENTS_TABLE -D_REENTRANT -D_GNU_SOURCE -DUSE_COMPILER_TLS  -DPAPI_NO_MEMORY_MANAGEMENT -DUSE_PAPI   -o CMakeFiles/papi_ext.dir/papi_ext.c.o   -c /home/users/kazunori.mikami/pmlib/package/src_papi_ext/papi_ext.c
+[ 50%] Linking CXX static library libpapi_ext.a
+cd /home/users/kazunori.mikami/pmlib/package/BUILD_SERIAL/src_papi_ext && /usr/bin/cmake -P CMakeFiles/papi_ext.dir/cmake_clean_target.cmake
+cd /home/users/kazunori.mikami/pmlib/package/BUILD_SERIAL/src_papi_ext && /usr/bin/cmake -E cmake_link_script CMakeFiles/papi_ext.dir/link.txt --verbose=1
+/usr/bin/ar qc libpapi_ext.a  CMakeFiles/papi_ext.dir/papi_ext.c.o
+/usr/bin/ranlib libpapi_ext.a
+make[2]: Leaving directory '/home/users/kazunori.mikami/pmlib/PMlib-develop/BUILD_SERIAL'
+[ 50%] Built target papi_ext
+make -f example/CMakeFiles/example2.dir/build.make example/CMakeFiles/example2.dir/depend
+make[2]: Entering directory '/home/users/kazunori.mikami/pmlib/PMlib-develop/BUILD_SERIAL'
+cd /home/users/kazunori.mikami/pmlib/package/BUILD_SERIAL && /usr/bin/cmake -E cmake_depends "Unix Makefiles" /home/users/kazunori.mikami/pmlib/package /home/users/kazunori.mikami/pmlib/package/example /home/users/kazunori.mikami/pmlib/package/BUILD_SERIAL /home/users/kazunori.mikami/pmlib/package/BUILD_SERIAL/example /home/users/kazunori.mikami/pmlib/package/BUILD_SERIAL/example/CMakeFiles/example2.dir/DependInfo.cmake --color=
+Dependee "/home/users/kazunori.mikami/pmlib/package/BUILD_SERIAL/example/CMakeFiles/example2.dir/DependInfo.cmake" is newer than depender "/home/users/kazunori.mikami/pmlib/package/BUILD_SERIAL/example/CMakeFiles/example2.dir/depend.internal".
+Dependee "/home/users/kazunori.mikami/pmlib/package/BUILD_SERIAL/example/CMakeFiles/CMakeDirectoryInformation.cmake" is newer than depender "/home/users/kazunori.mikami/pmlib/package/BUILD_SERIAL/example/CMakeFiles/example2.dir/depend.internal".
+Scanning dependencies of target example2
+make[2]: Leaving directory '/home/users/kazunori.mikami/pmlib/PMlib-develop/BUILD_SERIAL'
+make -f example/CMakeFiles/example2.dir/build.make example/CMakeFiles/example2.dir/build
+make[2]: Entering directory '/home/users/kazunori.mikami/pmlib/PMlib-develop/BUILD_SERIAL'
+[ 57%] Building CXX object example/CMakeFiles/example2.dir/test2/main_kernel.cpp.o
+cd /home/users/kazunori.mikami/pmlib/package/BUILD_SERIAL/example && /opt/FJSVstclanga/v1.0.0/bin/FCC  -DHAVE_CONFIG_H -DUSE_PAPI -I/home/users/kazunori.mikami/pmlib/package/src -I/home/users/kazunori.mikami/pmlib/package/include -I/home/users/kazunori.mikami/pmlib/package/BUILD_SERIAL/include -I/opt/FJSVxos/devkit/aarch64/rfs/usr/include  -Kocl -Nnofjprof -Nfjomplib -Kfast -Nrt_notune -w -Nfjcex -Kopenmp -DDISABLE_MPI -DUSE_PRECISE_TIMER   -o CMakeFiles/example2.dir/test2/main_kernel.cpp.o -c /home/users/kazunori.mikami/pmlib/package/example/test2/main_kernel.cpp
+[ 64%] Building C object example/CMakeFiles/example2.dir/test2/sub_kernel.c.o
+cd /home/users/kazunori.mikami/pmlib/package/BUILD_SERIAL/example && /opt/FJSVstclanga/v1.0.0/bin/fcc -DHAVE_CONFIG_H -DUSE_PAPI -I/home/users/kazunori.mikami/pmlib/package/src -I/home/users/kazunori.mikami/pmlib/package/include -I/home/users/kazunori.mikami/pmlib/package/BUILD_SERIAL/include -I/opt/FJSVxos/devkit/aarch64/rfs/usr/include  -Kocl -Nnofjprof -Nfjomplib -Kfast -Nrt_notune -w -Kopenmp -DDISABLE_MPI   -o CMakeFiles/example2.dir/test2/sub_kernel.c.o   -c /home/users/kazunori.mikami/pmlib/package/example/test2/sub_kernel.c
+[ 71%] Linking CXX executable example2
+cd /home/users/kazunori.mikami/pmlib/package/BUILD_SERIAL/example && /usr/bin/cmake -E cmake_link_script CMakeFiles/example2.dir/link.txt --verbose=1
+/opt/FJSVstclanga/v1.0.0/bin/FCC  -Kocl -Nnofjprof -Nfjomplib -Kfast -Nrt_notune -w -Nfjcex -Kopenmp -DDISABLE_MPI -DUSE_PRECISE_TIMER    CMakeFiles/example2.dir/test2/main_kernel.cpp.o CMakeFiles/example2.dir/test2/sub_kernel.c.o  -o example2  -L/home/users/kazunori.mikami/pmlib/package/BUILD_SERIAL/src  -L/home/users/kazunori.mikami/pmlib/package/BUILD_SERIAL/src_papi_ext  -L/opt/FJSVxos/devkit/aarch64/rfs/usr/lib -Wl,-rpath,/home/users/kazunori.mikami/pmlib/package/BUILD_SERIAL/src:/home/users/kazunori.mikami/pmlib/package/BUILD_SERIAL/src_papi_ext:/opt/FJSVxos/devkit/aarch64/rfs/usr/lib -lPM -lpapi_ext -lpapi -lpfm -Nnofjprof 
+make[2]: Leaving directory '/home/users/kazunori.mikami/pmlib/PMlib-develop/BUILD_SERIAL'
+[ 71%] Built target example2
+make -f example/CMakeFiles/example1.dir/build.make example/CMakeFiles/example1.dir/depend
+make[2]: Entering directory '/home/users/kazunori.mikami/pmlib/PMlib-develop/BUILD_SERIAL'
+cd /home/users/kazunori.mikami/pmlib/package/BUILD_SERIAL && /usr/bin/cmake -E cmake_depends "Unix Makefiles" /home/users/kazunori.mikami/pmlib/package /home/users/kazunori.mikami/pmlib/package/example /home/users/kazunori.mikami/pmlib/package/BUILD_SERIAL /home/users/kazunori.mikami/pmlib/package/BUILD_SERIAL/example /home/users/kazunori.mikami/pmlib/package/BUILD_SERIAL/example/CMakeFiles/example1.dir/DependInfo.cmake --color=
+Dependee "/home/users/kazunori.mikami/pmlib/package/BUILD_SERIAL/example/CMakeFiles/example1.dir/DependInfo.cmake" is newer than depender "/home/users/kazunori.mikami/pmlib/package/BUILD_SERIAL/example/CMakeFiles/example1.dir/depend.internal".
+Dependee "/home/users/kazunori.mikami/pmlib/package/BUILD_SERIAL/example/CMakeFiles/CMakeDirectoryInformation.cmake" is newer than depender "/home/users/kazunori.mikami/pmlib/package/BUILD_SERIAL/example/CMakeFiles/example1.dir/depend.internal".
+Scanning dependencies of target example1
+make[2]: Leaving directory '/home/users/kazunori.mikami/pmlib/PMlib-develop/BUILD_SERIAL'
+make -f example/CMakeFiles/example1.dir/build.make example/CMakeFiles/example1.dir/build
+make[2]: Entering directory '/home/users/kazunori.mikami/pmlib/PMlib-develop/BUILD_SERIAL'
+[ 78%] Building CXX object example/CMakeFiles/example1.dir/test1/main_pmlib.cpp.o
+cd /home/users/kazunori.mikami/pmlib/package/BUILD_SERIAL/example && /opt/FJSVstclanga/v1.0.0/bin/FCC  -DHAVE_CONFIG_H -DUSE_PAPI -I/home/users/kazunori.mikami/pmlib/package/src -I/home/users/kazunori.mikami/pmlib/package/include -I/home/users/kazunori.mikami/pmlib/package/BUILD_SERIAL/include -I/opt/FJSVxos/devkit/aarch64/rfs/usr/include  -Kocl -Nnofjprof -Nfjomplib -Kfast -Nrt_notune -w -Nfjcex -Kopenmp -DDISABLE_MPI -DUSE_PRECISE_TIMER   -o CMakeFiles/example1.dir/test1/main_pmlib.cpp.o -c /home/users/kazunori.mikami/pmlib/package/example/test1/main_pmlib.cpp
+[ 85%] Linking CXX executable example1
+cd /home/users/kazunori.mikami/pmlib/package/BUILD_SERIAL/example && /usr/bin/cmake -E cmake_link_script CMakeFiles/example1.dir/link.txt --verbose=1
+/opt/FJSVstclanga/v1.0.0/bin/FCC  -Kocl -Nnofjprof -Nfjomplib -Kfast -Nrt_notune -w -Nfjcex -Kopenmp -DDISABLE_MPI -DUSE_PRECISE_TIMER    CMakeFiles/example1.dir/test1/main_pmlib.cpp.o  -o example1  -L/home/users/kazunori.mikami/pmlib/package/BUILD_SERIAL/src  -L/home/users/kazunori.mikami/pmlib/package/BUILD_SERIAL/src_papi_ext  -L/opt/FJSVxos/devkit/aarch64/rfs/usr/lib -Wl,-rpath,/home/users/kazunori.mikami/pmlib/package/BUILD_SERIAL/src:/home/users/kazunori.mikami/pmlib/package/BUILD_SERIAL/src_papi_ext:/opt/FJSVxos/devkit/aarch64/rfs/usr/lib -lPM -lpapi_ext -lpapi -lpfm -Nnofjprof 
+make[2]: Leaving directory '/home/users/kazunori.mikami/pmlib/PMlib-develop/BUILD_SERIAL'
+[ 85%] Built target example1
+make -f example/CMakeFiles/example4.dir/build.make example/CMakeFiles/example4.dir/depend
+make[2]: Entering directory '/home/users/kazunori.mikami/pmlib/PMlib-develop/BUILD_SERIAL'
+cd /home/users/kazunori.mikami/pmlib/package/BUILD_SERIAL && /usr/bin/cmake -E cmake_depends "Unix Makefiles" /home/users/kazunori.mikami/pmlib/package /home/users/kazunori.mikami/pmlib/package/example /home/users/kazunori.mikami/pmlib/package/BUILD_SERIAL /home/users/kazunori.mikami/pmlib/package/BUILD_SERIAL/example /home/users/kazunori.mikami/pmlib/package/BUILD_SERIAL/example/CMakeFiles/example4.dir/DependInfo.cmake --color=
+Dependee "/home/users/kazunori.mikami/pmlib/package/BUILD_SERIAL/example/CMakeFiles/example4.dir/DependInfo.cmake" is newer than depender "/home/users/kazunori.mikami/pmlib/package/BUILD_SERIAL/example/CMakeFiles/example4.dir/depend.internal".
+Dependee "/home/users/kazunori.mikami/pmlib/package/BUILD_SERIAL/example/CMakeFiles/CMakeDirectoryInformation.cmake" is newer than depender "/home/users/kazunori.mikami/pmlib/package/BUILD_SERIAL/example/CMakeFiles/example4.dir/depend.internal".
+Scanning dependencies of target example4
+make[2]: Leaving directory '/home/users/kazunori.mikami/pmlib/PMlib-develop/BUILD_SERIAL'
+make -f example/CMakeFiles/example4.dir/build.make example/CMakeFiles/example4.dir/build
+make[2]: Entering directory '/home/users/kazunori.mikami/pmlib/PMlib-develop/BUILD_SERIAL'
+[ 92%] Building Fortran object example/CMakeFiles/example4.dir/test4/f_main.f90.o
+cd /home/users/kazunori.mikami/pmlib/package/BUILD_SERIAL/example && /opt/FJSVstclanga/v1.0.0/bin/frt -DHAVE_CONFIG_H -DUSE_PAPI -I/home/users/kazunori.mikami/pmlib/package/src -I/home/users/kazunori.mikami/pmlib/package/include -I/home/users/kazunori.mikami/pmlib/package/BUILD_SERIAL/include -I/opt/FJSVxos/devkit/aarch64/rfs/usr/include  -Kocl -Nnofjprof -Nfjomplib -Cpp -Kfast -Nrt_notune -Knooptmsg -Free -Kopenmp -DDISABLE_MPI   -c /home/users/kazunori.mikami/pmlib/package/example/test4/f_main.f90 -o CMakeFiles/example4.dir/test4/f_main.f90.o
+Fortran diagnostic messages: program name(main)
+  jwd2004i-i  "/home/users/kazunori.mikami/pmlib/package/example/test4/f_main.f90", line 33: 'icomm' is set but never used.
+  jwd2004i-i  "/home/users/kazunori.mikami/pmlib/package/example/test4/f_main.f90", line 43: 'dbyte' is set but never used.
+[100%] Linking CXX executable example4
+cd /home/users/kazunori.mikami/pmlib/package/BUILD_SERIAL/example && /usr/bin/cmake -E cmake_link_script CMakeFiles/example4.dir/link.txt --verbose=1
+/opt/FJSVstclanga/v1.0.0/bin/FCC  -Kocl -Nnofjprof -Nfjomplib -Kfast -Nrt_notune -w -Nfjcex -Kopenmp -DDISABLE_MPI -DUSE_PRECISE_TIMER    CMakeFiles/example4.dir/test4/f_main.f90.o  -o example4  -L/home/users/kazunori.mikami/pmlib/package/BUILD_SERIAL/src  -L/home/users/kazunori.mikami/pmlib/package/BUILD_SERIAL/src_papi_ext  -L/opt/FJSVxos/devkit/aarch64/rfs/usr/lib -Wl,-rpath,/home/users/kazunori.mikami/pmlib/package/BUILD_SERIAL/src:/home/users/kazunori.mikami/pmlib/package/BUILD_SERIAL/src_papi_ext:/opt/FJSVxos/devkit/aarch64/rfs/usr/lib -lPM -lpapi_ext -lpapi -lpfm -Nnofjprof --linkfortran 
+make[2]: Leaving directory '/home/users/kazunori.mikami/pmlib/PMlib-develop/BUILD_SERIAL'
+[100%] Built target example4
+make[1]: Leaving directory '/home/users/kazunori.mikami/pmlib/PMlib-develop/BUILD_SERIAL'
+/usr/bin/cmake -E cmake_progress_start /home/users/kazunori.mikami/pmlib/package/BUILD_SERIAL/CMakeFiles 0
++ make install
+[ 35%] Built target PM
+[ 50%] Built target papi_ext
+[ 71%] Built target example2
+[ 85%] Built target example1
+[100%] Built target example4
+Install the project...
+-- Install configuration: ""
+-- Up-to-date: /home/users/kazunori.mikami/pmlib/usr_local_pmlib/fx700/share/ChangeLog.md
+-- Up-to-date: /home/users/kazunori.mikami/pmlib/usr_local_pmlib/fx700/share/Readme.md
+-- Up-to-date: /home/users/kazunori.mikami/pmlib/usr_local_pmlib/fx700/share/License.txt
+-- Installing: /home/users/kazunori.mikami/pmlib/usr_local_pmlib/fx700/share/CMakeCache.txt
+-- Installing: /home/users/kazunori.mikami/pmlib/usr_local_pmlib/fx700/lib/libPM.a
+-- Up-to-date: /home/users/kazunori.mikami/pmlib/usr_local_pmlib/fx700/include/mpi_stubs.h
+-- Up-to-date: /home/users/kazunori.mikami/pmlib/usr_local_pmlib/fx700/include/PerfMonitor.h
+-- Up-to-date: /home/users/kazunori.mikami/pmlib/usr_local_pmlib/fx700/include/PerfWatch.h
+-- Up-to-date: /home/users/kazunori.mikami/pmlib/usr_local_pmlib/fx700/include/pmlib_otf.h
+-- Up-to-date: /home/users/kazunori.mikami/pmlib/usr_local_pmlib/fx700/include/pmlib_papi.h
+-- Installing: /home/users/kazunori.mikami/pmlib/usr_local_pmlib/fx700/include/pmVersion.h
+-- Up-to-date: /home/users/kazunori.mikami/pmlib/usr_local_pmlib/fx700/doc/PMlib-Getting-Started.pdf
+-- Installing: /home/users/kazunori.mikami/pmlib/usr_local_pmlib/fx700/lib/libpapi_ext.a
++ BUILD_DIR=/home/users/kazunori.mikami/pmlib/package/BUILD_MPI
++ mkdir -p /home/users/kazunori.mikami/pmlib/package/BUILD_MPI
++ cd /home/users/kazunori.mikami/pmlib/package/BUILD_MPI
++ '[' 0 '!=' 0 ']'
++ rm -rf /home/users/kazunori.mikami/pmlib/package/BUILD_MPI/CMakeCache.txt /home/users/kazunori.mikami/pmlib/package/BUILD_MPI/CMakeFiles /home/users/kazunori.mikami/pmlib/package/BUILD_MPI/CPackConfig.cmake /home/users/kazunori.mikami/pmlib/package/BUILD_MPI/CPackSourceConfig.cmake /home/users/kazunori.mikami/pmlib/package/BUILD_MPI/CTestTestfile.cmake /home/users/kazunori.mikami/pmlib/package/BUILD_MPI/Makefile /home/users/kazunori.mikami/pmlib/package/BUILD_MPI/cmake_install.cmake /home/users/kazunori.mikami/pmlib/package/BUILD_MPI/config.h /home/users/kazunori.mikami/pmlib/package/BUILD_MPI/doc /home/users/kazunori.mikami/pmlib/package/BUILD_MPI/example /home/users/kazunori.mikami/pmlib/package/BUILD_MPI/include /home/users/kazunori.mikami/pmlib/package/BUILD_MPI/src /home/users/kazunori.mikami/pmlib/package/BUILD_MPI/src_papi_ext
++ cmake '-DCMAKE_CXX_FLAGS=-Kocl -Nnofjprof -Nfjomplib   ' '-DCMAKE_C_FLAGS=-Kocl -Nnofjprof -Nfjomplib   ' '-DCMAKE_Fortran_FLAGS=-Kocl -Nnofjprof -Nfjomplib   ' -DCMAKE_TOOLCHAIN_FILE=../cmake/Toolchain_fx700.cmake -DINSTALL_DIR=/home/users/kazunori.mikami/pmlib/usr_local_pmlib/fx700 -Denable_OPENMP=yes -Dwith_MPI=yes -Denable_Fortran=yes -Dwith_example=yes -Dwith_PAPI=/opt/FJSVxos/devkit/aarch64/rfs/usr -Dwith_OTF=no ..
+-- The C compiler identification is Fujitsu
+-- The CXX compiler identification is Fujitsu
+-- The Fortran compiler identification is unknown
+-- Check for working C compiler: /opt/FJSVstclanga/v1.0.0/bin/mpifcc
+-- Check for working C compiler: /opt/FJSVstclanga/v1.0.0/bin/mpifcc -- works
+-- Detecting C compiler ABI info
+-- Detecting C compiler ABI info - done
+-- Check for working CXX compiler: /opt/FJSVstclanga/v1.0.0/bin/mpiFCC
+-- Check for working CXX compiler: /opt/FJSVstclanga/v1.0.0/bin/mpiFCC -- works
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- Check for working Fortran compiler: /opt/FJSVstclanga/v1.0.0/bin/mpifrt
+-- Check for working Fortran compiler: /opt/FJSVstclanga/v1.0.0/bin/mpifrt  -- works
+-- Detecting Fortran compiler ABI info
+-- Detecting Fortran compiler ABI info - done
+-- Checking whether /opt/FJSVstclanga/v1.0.0/bin/mpifrt supports Fortran 90
+-- Checking whether /opt/FJSVstclanga/v1.0.0/bin/mpifrt supports Fortran 90 -- yes
+ 
+PMlib Version : 7.0.1
+ 
+ 
+-- Destination PATH  : /home/users/kazunori.mikami/pmlib/usr_local_pmlib/fx700
+-- CMAKE_C_COMPILER  : /opt/FJSVstclanga/v1.0.0/bin/mpifcc
+-- CMAKE_C_FLAGS     : -Kocl -Nnofjprof -Nfjomplib -Kfast -Nrt_notune -w -Kopenmp
+-- CMAKE_CXX_COMPILER: /opt/FJSVstclanga/v1.0.0/bin/mpiFCC
+-- CMAKE_CXX_FLAGS   : -Kocl -Nnofjprof -Nfjomplib -Kfast -Nrt_notune -w -Nfjcex -Kopenmp -DUSE_PRECISE_TIMER
+-- CMAKE_Fortran_COMPILER : /opt/FJSVstclanga/v1.0.0/bin/mpifrt
+-- CMAKE_Fortran_FLAGS    : -Kocl -Nnofjprof -Nfjomplib -Cpp -Kfast -Nrt_notune -Knooptmsg -Free -Kopenmp
+ 
+-- OpenMP            : yes
+-- MPI               : yes
+-- PAPI              : /opt/FJSVxos/devkit/aarch64/rfs/usr
+-- OTF               : no
+-- Example           : yes
+ 
+Code test will be performed
+-- Looking for include file inttypes.h
+-- Looking for include file inttypes.h - found
+-- Looking for include file memory.h
+-- Looking for include file memory.h - found
+-- Looking for include file stdint.h
+-- Looking for include file stdint.h - found
+-- Looking for include file stdlib.h
+-- Looking for include file stdlib.h - found
+-- Looking for include file strings.h
+-- Looking for include file strings.h - found
+-- Looking for include file string.h
+-- Looking for include file string.h - found
+-- Looking for include file sys/stat.h
+-- Looking for include file sys/stat.h - found
+-- Looking for include file sys/types.h
+-- Looking for include file sys/types.h - found
+-- Looking for include file unistd.h
+-- Looking for include file unistd.h - found
+ 
+Examples : 
+-- PAPI_DIR            = /opt/FJSVxos/devkit/aarch64/rfs/usr
+-- OTF_DIR             = 
+-- with_MPI            = yes
+-- Configuring done
+-- Generating done
+-- Build files have been written to: /home/users/kazunori.mikami/pmlib/package/BUILD_MPI
++ make VERBOSE=1
+/usr/bin/cmake -H/home/users/kazunori.mikami/pmlib/package -B/home/users/kazunori.mikami/pmlib/package/BUILD_MPI --check-build-system CMakeFiles/Makefile.cmake 0
+/usr/bin/cmake -E cmake_progress_start /home/users/kazunori.mikami/pmlib/package/BUILD_MPI/CMakeFiles /home/users/kazunori.mikami/pmlib/package/BUILD_MPI/CMakeFiles/progress.marks
+make -f CMakeFiles/Makefile2 all
+make[1]: Entering directory '/home/users/kazunori.mikami/pmlib/PMlib-develop/BUILD_MPI'
+make -f src/CMakeFiles/PMmpi.dir/build.make src/CMakeFiles/PMmpi.dir/depend
+make[2]: Entering directory '/home/users/kazunori.mikami/pmlib/PMlib-develop/BUILD_MPI'
+cd /home/users/kazunori.mikami/pmlib/package/BUILD_MPI && /usr/bin/cmake -E cmake_depends "Unix Makefiles" /home/users/kazunori.mikami/pmlib/package /home/users/kazunori.mikami/pmlib/package/src /home/users/kazunori.mikami/pmlib/package/BUILD_MPI /home/users/kazunori.mikami/pmlib/package/BUILD_MPI/src /home/users/kazunori.mikami/pmlib/package/BUILD_MPI/src/CMakeFiles/PMmpi.dir/DependInfo.cmake --color=
+Dependee "/home/users/kazunori.mikami/pmlib/package/BUILD_MPI/src/CMakeFiles/PMmpi.dir/DependInfo.cmake" is newer than depender "/home/users/kazunori.mikami/pmlib/package/BUILD_MPI/src/CMakeFiles/PMmpi.dir/depend.internal".
+Dependee "/home/users/kazunori.mikami/pmlib/package/BUILD_MPI/src/CMakeFiles/CMakeDirectoryInformation.cmake" is newer than depender "/home/users/kazunori.mikami/pmlib/package/BUILD_MPI/src/CMakeFiles/PMmpi.dir/depend.internal".
+Scanning dependencies of target PMmpi
+make[2]: Leaving directory '/home/users/kazunori.mikami/pmlib/PMlib-develop/BUILD_MPI'
+make -f src/CMakeFiles/PMmpi.dir/build.make src/CMakeFiles/PMmpi.dir/build
+make[2]: Entering directory '/home/users/kazunori.mikami/pmlib/PMlib-develop/BUILD_MPI'
+[  4%] Building CXX object src/CMakeFiles/PMmpi.dir/PerfCpuType.cpp.o
+cd /home/users/kazunori.mikami/pmlib/package/BUILD_MPI/src && /opt/FJSVstclanga/v1.0.0/bin/mpiFCC  -DHAVE_CONFIG_H -DUSE_PAPI -I/home/users/kazunori.mikami/pmlib/package/src -I/home/users/kazunori.mikami/pmlib/package/include -I/home/users/kazunori.mikami/pmlib/package/BUILD_MPI/include -I/opt/FJSVxos/devkit/aarch64/rfs/usr/include  -Kocl -Nnofjprof -Nfjomplib -Kfast -Nrt_notune -w -Nfjcex -Kopenmp -DUSE_PRECISE_TIMER   -o CMakeFiles/PMmpi.dir/PerfCpuType.cpp.o -c /home/users/kazunori.mikami/pmlib/package/src/PerfCpuType.cpp
+[  9%] Building CXX object src/CMakeFiles/PMmpi.dir/PerfMonitor.cpp.o
+cd /home/users/kazunori.mikami/pmlib/package/BUILD_MPI/src && /opt/FJSVstclanga/v1.0.0/bin/mpiFCC  -DHAVE_CONFIG_H -DUSE_PAPI -I/home/users/kazunori.mikami/pmlib/package/src -I/home/users/kazunori.mikami/pmlib/package/include -I/home/users/kazunori.mikami/pmlib/package/BUILD_MPI/include -I/opt/FJSVxos/devkit/aarch64/rfs/usr/include  -Kocl -Nnofjprof -Nfjomplib -Kfast -Nrt_notune -w -Nfjcex -Kopenmp -DUSE_PRECISE_TIMER   -o CMakeFiles/PMmpi.dir/PerfMonitor.cpp.o -c /home/users/kazunori.mikami/pmlib/package/src/PerfMonitor.cpp
+[ 13%] Building CXX object src/CMakeFiles/PMmpi.dir/PerfWatch.cpp.o
+cd /home/users/kazunori.mikami/pmlib/package/BUILD_MPI/src && /opt/FJSVstclanga/v1.0.0/bin/mpiFCC  -DHAVE_CONFIG_H -DUSE_PAPI -I/home/users/kazunori.mikami/pmlib/package/src -I/home/users/kazunori.mikami/pmlib/package/include -I/home/users/kazunori.mikami/pmlib/package/BUILD_MPI/include -I/opt/FJSVxos/devkit/aarch64/rfs/usr/include  -Kocl -Nnofjprof -Nfjomplib -Kfast -Nrt_notune -w -Nfjcex -Kopenmp -DUSE_PRECISE_TIMER   -o CMakeFiles/PMmpi.dir/PerfWatch.cpp.o -c /home/users/kazunori.mikami/pmlib/package/src/PerfWatch.cpp
+[ 18%] Building CXX object src/CMakeFiles/PMmpi.dir/PerfProgFortran.cpp.o
+cd /home/users/kazunori.mikami/pmlib/package/BUILD_MPI/src && /opt/FJSVstclanga/v1.0.0/bin/mpiFCC  -DHAVE_CONFIG_H -DUSE_PAPI -I/home/users/kazunori.mikami/pmlib/package/src -I/home/users/kazunori.mikami/pmlib/package/include -I/home/users/kazunori.mikami/pmlib/package/BUILD_MPI/include -I/opt/FJSVxos/devkit/aarch64/rfs/usr/include  -Kocl -Nnofjprof -Nfjomplib -Kfast -Nrt_notune -w -Nfjcex -Kopenmp -DUSE_PRECISE_TIMER   -o CMakeFiles/PMmpi.dir/PerfProgFortran.cpp.o -c /home/users/kazunori.mikami/pmlib/package/src/PerfProgFortran.cpp
+[ 22%] Linking CXX static library libPMmpi.a
+cd /home/users/kazunori.mikami/pmlib/package/BUILD_MPI/src && /usr/bin/cmake -P CMakeFiles/PMmpi.dir/cmake_clean_target.cmake
+cd /home/users/kazunori.mikami/pmlib/package/BUILD_MPI/src && /usr/bin/cmake -E cmake_link_script CMakeFiles/PMmpi.dir/link.txt --verbose=1
+/usr/bin/ar qc libPMmpi.a  CMakeFiles/PMmpi.dir/PerfCpuType.cpp.o CMakeFiles/PMmpi.dir/PerfMonitor.cpp.o CMakeFiles/PMmpi.dir/PerfWatch.cpp.o CMakeFiles/PMmpi.dir/PerfProgFortran.cpp.o
+/usr/bin/ranlib libPMmpi.a
+make[2]: Leaving directory '/home/users/kazunori.mikami/pmlib/PMlib-develop/BUILD_MPI'
+[ 22%] Built target PMmpi
+make -f src_papi_ext/CMakeFiles/papi_ext.dir/build.make src_papi_ext/CMakeFiles/papi_ext.dir/depend
+make[2]: Entering directory '/home/users/kazunori.mikami/pmlib/PMlib-develop/BUILD_MPI'
+cd /home/users/kazunori.mikami/pmlib/package/BUILD_MPI && /usr/bin/cmake -E cmake_depends "Unix Makefiles" /home/users/kazunori.mikami/pmlib/package /home/users/kazunori.mikami/pmlib/package/src_papi_ext /home/users/kazunori.mikami/pmlib/package/BUILD_MPI /home/users/kazunori.mikami/pmlib/package/BUILD_MPI/src_papi_ext /home/users/kazunori.mikami/pmlib/package/BUILD_MPI/src_papi_ext/CMakeFiles/papi_ext.dir/DependInfo.cmake --color=
+Dependee "/home/users/kazunori.mikami/pmlib/package/BUILD_MPI/src_papi_ext/CMakeFiles/papi_ext.dir/DependInfo.cmake" is newer than depender "/home/users/kazunori.mikami/pmlib/package/BUILD_MPI/src_papi_ext/CMakeFiles/papi_ext.dir/depend.internal".
+Dependee "/home/users/kazunori.mikami/pmlib/package/BUILD_MPI/src_papi_ext/CMakeFiles/CMakeDirectoryInformation.cmake" is newer than depender "/home/users/kazunori.mikami/pmlib/package/BUILD_MPI/src_papi_ext/CMakeFiles/papi_ext.dir/depend.internal".
+Scanning dependencies of target papi_ext
+make[2]: Leaving directory '/home/users/kazunori.mikami/pmlib/PMlib-develop/BUILD_MPI'
+make -f src_papi_ext/CMakeFiles/papi_ext.dir/build.make src_papi_ext/CMakeFiles/papi_ext.dir/build
+make[2]: Entering directory '/home/users/kazunori.mikami/pmlib/PMlib-develop/BUILD_MPI'
+[ 27%] Building C object src_papi_ext/CMakeFiles/papi_ext.dir/papi_ext.c.o
+cd /home/users/kazunori.mikami/pmlib/package/BUILD_MPI/src_papi_ext && /opt/FJSVstclanga/v1.0.0/bin/mpifcc -DHAVE_CONFIG_H -DUSE_PAPI -I/home/users/kazunori.mikami/pmlib/package/src -I/home/users/kazunori.mikami/pmlib/package/include -I/opt/FJSVxos/devkit/aarch64/rfs/usr/include  -Kocl -Nnofjprof -Nfjomplib -Kfast -Nrt_notune -w -Kopenmp -std=c99 -DSTATIC_PAPI_EVENTS_TABLE -D_REENTRANT -D_GNU_SOURCE -DUSE_COMPILER_TLS  -DPAPI_NO_MEMORY_MANAGEMENT -DUSE_PAPI   -o CMakeFiles/papi_ext.dir/papi_ext.c.o   -c /home/users/kazunori.mikami/pmlib/package/src_papi_ext/papi_ext.c
+[ 31%] Linking CXX static library libpapi_ext.a
+cd /home/users/kazunori.mikami/pmlib/package/BUILD_MPI/src_papi_ext && /usr/bin/cmake -P CMakeFiles/papi_ext.dir/cmake_clean_target.cmake
+cd /home/users/kazunori.mikami/pmlib/package/BUILD_MPI/src_papi_ext && /usr/bin/cmake -E cmake_link_script CMakeFiles/papi_ext.dir/link.txt --verbose=1
+/usr/bin/ar qc libpapi_ext.a  CMakeFiles/papi_ext.dir/papi_ext.c.o
+/usr/bin/ranlib libpapi_ext.a
+make[2]: Leaving directory '/home/users/kazunori.mikami/pmlib/PMlib-develop/BUILD_MPI'
+[ 31%] Built target papi_ext
+make -f example/CMakeFiles/example2.dir/build.make example/CMakeFiles/example2.dir/depend
+make[2]: Entering directory '/home/users/kazunori.mikami/pmlib/PMlib-develop/BUILD_MPI'
+cd /home/users/kazunori.mikami/pmlib/package/BUILD_MPI && /usr/bin/cmake -E cmake_depends "Unix Makefiles" /home/users/kazunori.mikami/pmlib/package /home/users/kazunori.mikami/pmlib/package/example /home/users/kazunori.mikami/pmlib/package/BUILD_MPI /home/users/kazunori.mikami/pmlib/package/BUILD_MPI/example /home/users/kazunori.mikami/pmlib/package/BUILD_MPI/example/CMakeFiles/example2.dir/DependInfo.cmake --color=
+Dependee "/home/users/kazunori.mikami/pmlib/package/BUILD_MPI/example/CMakeFiles/example2.dir/DependInfo.cmake" is newer than depender "/home/users/kazunori.mikami/pmlib/package/BUILD_MPI/example/CMakeFiles/example2.dir/depend.internal".
+Dependee "/home/users/kazunori.mikami/pmlib/package/BUILD_MPI/example/CMakeFiles/CMakeDirectoryInformation.cmake" is newer than depender "/home/users/kazunori.mikami/pmlib/package/BUILD_MPI/example/CMakeFiles/example2.dir/depend.internal".
+Scanning dependencies of target example2
+make[2]: Leaving directory '/home/users/kazunori.mikami/pmlib/PMlib-develop/BUILD_MPI'
+make -f example/CMakeFiles/example2.dir/build.make example/CMakeFiles/example2.dir/build
+make[2]: Entering directory '/home/users/kazunori.mikami/pmlib/PMlib-develop/BUILD_MPI'
+[ 36%] Building CXX object example/CMakeFiles/example2.dir/test2/main_kernel.cpp.o
+cd /home/users/kazunori.mikami/pmlib/package/BUILD_MPI/example && /opt/FJSVstclanga/v1.0.0/bin/mpiFCC  -DHAVE_CONFIG_H -DUSE_PAPI -I/home/users/kazunori.mikami/pmlib/package/src -I/home/users/kazunori.mikami/pmlib/package/include -I/home/users/kazunori.mikami/pmlib/package/BUILD_MPI/include -I/opt/FJSVxos/devkit/aarch64/rfs/usr/include  -Kocl -Nnofjprof -Nfjomplib -Kfast -Nrt_notune -w -Nfjcex -Kopenmp -DUSE_PRECISE_TIMER   -o CMakeFiles/example2.dir/test2/main_kernel.cpp.o -c /home/users/kazunori.mikami/pmlib/package/example/test2/main_kernel.cpp
+[ 40%] Building C object example/CMakeFiles/example2.dir/test2/sub_kernel.c.o
+cd /home/users/kazunori.mikami/pmlib/package/BUILD_MPI/example && /opt/FJSVstclanga/v1.0.0/bin/mpifcc -DHAVE_CONFIG_H -DUSE_PAPI -I/home/users/kazunori.mikami/pmlib/package/src -I/home/users/kazunori.mikami/pmlib/package/include -I/home/users/kazunori.mikami/pmlib/package/BUILD_MPI/include -I/opt/FJSVxos/devkit/aarch64/rfs/usr/include  -Kocl -Nnofjprof -Nfjomplib -Kfast -Nrt_notune -w -Kopenmp   -o CMakeFiles/example2.dir/test2/sub_kernel.c.o   -c /home/users/kazunori.mikami/pmlib/package/example/test2/sub_kernel.c
+[ 45%] Linking CXX executable example2
+cd /home/users/kazunori.mikami/pmlib/package/BUILD_MPI/example && /usr/bin/cmake -E cmake_link_script CMakeFiles/example2.dir/link.txt --verbose=1
+/opt/FJSVstclanga/v1.0.0/bin/mpiFCC  -Kocl -Nnofjprof -Nfjomplib -Kfast -Nrt_notune -w -Nfjcex -Kopenmp -DUSE_PRECISE_TIMER    CMakeFiles/example2.dir/test2/main_kernel.cpp.o CMakeFiles/example2.dir/test2/sub_kernel.c.o  -o example2  -L/home/users/kazunori.mikami/pmlib/package/BUILD_MPI/src  -L/home/users/kazunori.mikami/pmlib/package/BUILD_MPI/src_papi_ext  -L/opt/FJSVxos/devkit/aarch64/rfs/usr/lib -Wl,-rpath,/home/users/kazunori.mikami/pmlib/package/BUILD_MPI/src:/home/users/kazunori.mikami/pmlib/package/BUILD_MPI/src_papi_ext:/opt/FJSVxos/devkit/aarch64/rfs/usr/lib -lPMmpi -lpapi_ext -lpapi -lpfm -Nnofjprof 
+make[2]: Leaving directory '/home/users/kazunori.mikami/pmlib/PMlib-develop/BUILD_MPI'
+[ 45%] Built target example2
+make -f example/CMakeFiles/example1.dir/build.make example/CMakeFiles/example1.dir/depend
+make[2]: Entering directory '/home/users/kazunori.mikami/pmlib/PMlib-develop/BUILD_MPI'
+cd /home/users/kazunori.mikami/pmlib/package/BUILD_MPI && /usr/bin/cmake -E cmake_depends "Unix Makefiles" /home/users/kazunori.mikami/pmlib/package /home/users/kazunori.mikami/pmlib/package/example /home/users/kazunori.mikami/pmlib/package/BUILD_MPI /home/users/kazunori.mikami/pmlib/package/BUILD_MPI/example /home/users/kazunori.mikami/pmlib/package/BUILD_MPI/example/CMakeFiles/example1.dir/DependInfo.cmake --color=
+Dependee "/home/users/kazunori.mikami/pmlib/package/BUILD_MPI/example/CMakeFiles/example1.dir/DependInfo.cmake" is newer than depender "/home/users/kazunori.mikami/pmlib/package/BUILD_MPI/example/CMakeFiles/example1.dir/depend.internal".
+Dependee "/home/users/kazunori.mikami/pmlib/package/BUILD_MPI/example/CMakeFiles/CMakeDirectoryInformation.cmake" is newer than depender "/home/users/kazunori.mikami/pmlib/package/BUILD_MPI/example/CMakeFiles/example1.dir/depend.internal".
+Scanning dependencies of target example1
+make[2]: Leaving directory '/home/users/kazunori.mikami/pmlib/PMlib-develop/BUILD_MPI'
+make -f example/CMakeFiles/example1.dir/build.make example/CMakeFiles/example1.dir/build
+make[2]: Entering directory '/home/users/kazunori.mikami/pmlib/PMlib-develop/BUILD_MPI'
+[ 50%] Building CXX object example/CMakeFiles/example1.dir/test1/main_pmlib.cpp.o
+cd /home/users/kazunori.mikami/pmlib/package/BUILD_MPI/example && /opt/FJSVstclanga/v1.0.0/bin/mpiFCC  -DHAVE_CONFIG_H -DUSE_PAPI -I/home/users/kazunori.mikami/pmlib/package/src -I/home/users/kazunori.mikami/pmlib/package/include -I/home/users/kazunori.mikami/pmlib/package/BUILD_MPI/include -I/opt/FJSVxos/devkit/aarch64/rfs/usr/include  -Kocl -Nnofjprof -Nfjomplib -Kfast -Nrt_notune -w -Nfjcex -Kopenmp -DUSE_PRECISE_TIMER   -o CMakeFiles/example1.dir/test1/main_pmlib.cpp.o -c /home/users/kazunori.mikami/pmlib/package/example/test1/main_pmlib.cpp
+[ 54%] Linking CXX executable example1
+cd /home/users/kazunori.mikami/pmlib/package/BUILD_MPI/example && /usr/bin/cmake -E cmake_link_script CMakeFiles/example1.dir/link.txt --verbose=1
+/opt/FJSVstclanga/v1.0.0/bin/mpiFCC  -Kocl -Nnofjprof -Nfjomplib -Kfast -Nrt_notune -w -Nfjcex -Kopenmp -DUSE_PRECISE_TIMER    CMakeFiles/example1.dir/test1/main_pmlib.cpp.o  -o example1  -L/home/users/kazunori.mikami/pmlib/package/BUILD_MPI/src  -L/home/users/kazunori.mikami/pmlib/package/BUILD_MPI/src_papi_ext  -L/opt/FJSVxos/devkit/aarch64/rfs/usr/lib -Wl,-rpath,/home/users/kazunori.mikami/pmlib/package/BUILD_MPI/src:/home/users/kazunori.mikami/pmlib/package/BUILD_MPI/src_papi_ext:/opt/FJSVxos/devkit/aarch64/rfs/usr/lib -lPMmpi -lpapi_ext -lpapi -lpfm -Nnofjprof 
+make[2]: Leaving directory '/home/users/kazunori.mikami/pmlib/PMlib-develop/BUILD_MPI'
+[ 54%] Built target example1
+make -f example/CMakeFiles/example3.dir/build.make example/CMakeFiles/example3.dir/depend
+make[2]: Entering directory '/home/users/kazunori.mikami/pmlib/PMlib-develop/BUILD_MPI'
+cd /home/users/kazunori.mikami/pmlib/package/BUILD_MPI && /usr/bin/cmake -E cmake_depends "Unix Makefiles" /home/users/kazunori.mikami/pmlib/package /home/users/kazunori.mikami/pmlib/package/example /home/users/kazunori.mikami/pmlib/package/BUILD_MPI /home/users/kazunori.mikami/pmlib/package/BUILD_MPI/example /home/users/kazunori.mikami/pmlib/package/BUILD_MPI/example/CMakeFiles/example3.dir/DependInfo.cmake --color=
+Dependee "/home/users/kazunori.mikami/pmlib/package/BUILD_MPI/example/CMakeFiles/example3.dir/DependInfo.cmake" is newer than depender "/home/users/kazunori.mikami/pmlib/package/BUILD_MPI/example/CMakeFiles/example3.dir/depend.internal".
+Dependee "/home/users/kazunori.mikami/pmlib/package/BUILD_MPI/example/CMakeFiles/CMakeDirectoryInformation.cmake" is newer than depender "/home/users/kazunori.mikami/pmlib/package/BUILD_MPI/example/CMakeFiles/example3.dir/depend.internal".
+Scanning dependencies of target example3
+make[2]: Leaving directory '/home/users/kazunori.mikami/pmlib/PMlib-develop/BUILD_MPI'
+make -f example/CMakeFiles/example3.dir/build.make example/CMakeFiles/example3.dir/build
+make[2]: Entering directory '/home/users/kazunori.mikami/pmlib/PMlib-develop/BUILD_MPI'
+[ 59%] Building CXX object example/CMakeFiles/example3.dir/test3/main_group_comm.cpp.o
+cd /home/users/kazunori.mikami/pmlib/package/BUILD_MPI/example && /opt/FJSVstclanga/v1.0.0/bin/mpiFCC  -DHAVE_CONFIG_H -DUSE_PAPI -I/home/users/kazunori.mikami/pmlib/package/src -I/home/users/kazunori.mikami/pmlib/package/include -I/home/users/kazunori.mikami/pmlib/package/BUILD_MPI/include -I/opt/FJSVxos/devkit/aarch64/rfs/usr/include  -Kocl -Nnofjprof -Nfjomplib -Kfast -Nrt_notune -w -Nfjcex -Kopenmp -DUSE_PRECISE_TIMER   -o CMakeFiles/example3.dir/test3/main_group_comm.cpp.o -c /home/users/kazunori.mikami/pmlib/package/example/test3/main_group_comm.cpp
+[ 63%] Building C object example/CMakeFiles/example3.dir/test3/sub_copy.c.o
+cd /home/users/kazunori.mikami/pmlib/package/BUILD_MPI/example && /opt/FJSVstclanga/v1.0.0/bin/mpifcc -DHAVE_CONFIG_H -DUSE_PAPI -I/home/users/kazunori.mikami/pmlib/package/src -I/home/users/kazunori.mikami/pmlib/package/include -I/home/users/kazunori.mikami/pmlib/package/BUILD_MPI/include -I/opt/FJSVxos/devkit/aarch64/rfs/usr/include  -Kocl -Nnofjprof -Nfjomplib -Kfast -Nrt_notune -w -Kopenmp   -o CMakeFiles/example3.dir/test3/sub_copy.c.o   -c /home/users/kazunori.mikami/pmlib/package/example/test3/sub_copy.c
+[ 68%] Building C object example/CMakeFiles/example3.dir/test3/sub_kernel.c.o
+cd /home/users/kazunori.mikami/pmlib/package/BUILD_MPI/example && /opt/FJSVstclanga/v1.0.0/bin/mpifcc -DHAVE_CONFIG_H -DUSE_PAPI -I/home/users/kazunori.mikami/pmlib/package/src -I/home/users/kazunori.mikami/pmlib/package/include -I/home/users/kazunori.mikami/pmlib/package/BUILD_MPI/include -I/opt/FJSVxos/devkit/aarch64/rfs/usr/include  -Kocl -Nnofjprof -Nfjomplib -Kfast -Nrt_notune -w -Kopenmp   -o CMakeFiles/example3.dir/test3/sub_kernel.c.o   -c /home/users/kazunori.mikami/pmlib/package/example/test3/sub_kernel.c
+[ 72%] Linking CXX executable example3
+cd /home/users/kazunori.mikami/pmlib/package/BUILD_MPI/example && /usr/bin/cmake -E cmake_link_script CMakeFiles/example3.dir/link.txt --verbose=1
+/opt/FJSVstclanga/v1.0.0/bin/mpiFCC  -Kocl -Nnofjprof -Nfjomplib -Kfast -Nrt_notune -w -Nfjcex -Kopenmp -DUSE_PRECISE_TIMER    CMakeFiles/example3.dir/test3/main_group_comm.cpp.o CMakeFiles/example3.dir/test3/sub_copy.c.o CMakeFiles/example3.dir/test3/sub_kernel.c.o  -o example3  -L/home/users/kazunori.mikami/pmlib/package/BUILD_MPI/src  -L/home/users/kazunori.mikami/pmlib/package/BUILD_MPI/src_papi_ext  -L/opt/FJSVxos/devkit/aarch64/rfs/usr/lib -Wl,-rpath,/home/users/kazunori.mikami/pmlib/package/BUILD_MPI/src:/home/users/kazunori.mikami/pmlib/package/BUILD_MPI/src_papi_ext:/opt/FJSVxos/devkit/aarch64/rfs/usr/lib -lPMmpi -lpapi_ext -lpapi -lpfm -Nnofjprof 
+make[2]: Leaving directory '/home/users/kazunori.mikami/pmlib/PMlib-develop/BUILD_MPI'
+[ 72%] Built target example3
+make -f example/CMakeFiles/example4.dir/build.make example/CMakeFiles/example4.dir/depend
+make[2]: Entering directory '/home/users/kazunori.mikami/pmlib/PMlib-develop/BUILD_MPI'
+cd /home/users/kazunori.mikami/pmlib/package/BUILD_MPI && /usr/bin/cmake -E cmake_depends "Unix Makefiles" /home/users/kazunori.mikami/pmlib/package /home/users/kazunori.mikami/pmlib/package/example /home/users/kazunori.mikami/pmlib/package/BUILD_MPI /home/users/kazunori.mikami/pmlib/package/BUILD_MPI/example /home/users/kazunori.mikami/pmlib/package/BUILD_MPI/example/CMakeFiles/example4.dir/DependInfo.cmake --color=
+Dependee "/home/users/kazunori.mikami/pmlib/package/BUILD_MPI/example/CMakeFiles/example4.dir/DependInfo.cmake" is newer than depender "/home/users/kazunori.mikami/pmlib/package/BUILD_MPI/example/CMakeFiles/example4.dir/depend.internal".
+Dependee "/home/users/kazunori.mikami/pmlib/package/BUILD_MPI/example/CMakeFiles/CMakeDirectoryInformation.cmake" is newer than depender "/home/users/kazunori.mikami/pmlib/package/BUILD_MPI/example/CMakeFiles/example4.dir/depend.internal".
+Scanning dependencies of target example4
+make[2]: Leaving directory '/home/users/kazunori.mikami/pmlib/PMlib-develop/BUILD_MPI'
+make -f example/CMakeFiles/example4.dir/build.make example/CMakeFiles/example4.dir/build
+make[2]: Entering directory '/home/users/kazunori.mikami/pmlib/PMlib-develop/BUILD_MPI'
+[ 77%] Building Fortran object example/CMakeFiles/example4.dir/test4/f_main.f90.o
+cd /home/users/kazunori.mikami/pmlib/package/BUILD_MPI/example && /opt/FJSVstclanga/v1.0.0/bin/mpifrt -DHAVE_CONFIG_H -DUSE_PAPI -I/home/users/kazunori.mikami/pmlib/package/src -I/home/users/kazunori.mikami/pmlib/package/include -I/home/users/kazunori.mikami/pmlib/package/BUILD_MPI/include -I/opt/FJSVxos/devkit/aarch64/rfs/usr/include  -Kocl -Nnofjprof -Nfjomplib -Cpp -Kfast -Nrt_notune -Knooptmsg -Free -Kopenmp   -c /home/users/kazunori.mikami/pmlib/package/example/test4/f_main.f90 -o CMakeFiles/example4.dir/test4/f_main.f90.o
+[ 81%] Linking CXX executable example4
+cd /home/users/kazunori.mikami/pmlib/package/BUILD_MPI/example && /usr/bin/cmake -E cmake_link_script CMakeFiles/example4.dir/link.txt --verbose=1
+/opt/FJSVstclanga/v1.0.0/bin/mpiFCC  -Kocl -Nnofjprof -Nfjomplib -Kfast -Nrt_notune -w -Nfjcex -Kopenmp -DUSE_PRECISE_TIMER    CMakeFiles/example4.dir/test4/f_main.f90.o  -o example4  -L/home/users/kazunori.mikami/pmlib/package/BUILD_MPI/src  -L/home/users/kazunori.mikami/pmlib/package/BUILD_MPI/src_papi_ext  -L/opt/FJSVxos/devkit/aarch64/rfs/usr/lib -Wl,-rpath,/home/users/kazunori.mikami/pmlib/package/BUILD_MPI/src:/home/users/kazunori.mikami/pmlib/package/BUILD_MPI/src_papi_ext:/opt/FJSVxos/devkit/aarch64/rfs/usr/lib -lPMmpi -lpapi_ext -lpapi -lpfm -Nnofjprof --linkfortran 
+make[2]: Leaving directory '/home/users/kazunori.mikami/pmlib/PMlib-develop/BUILD_MPI'
+[ 81%] Built target example4
+make -f example/CMakeFiles/example5.dir/build.make example/CMakeFiles/example5.dir/depend
+make[2]: Entering directory '/home/users/kazunori.mikami/pmlib/PMlib-develop/BUILD_MPI'
+cd /home/users/kazunori.mikami/pmlib/package/BUILD_MPI && /usr/bin/cmake -E cmake_depends "Unix Makefiles" /home/users/kazunori.mikami/pmlib/package /home/users/kazunori.mikami/pmlib/package/example /home/users/kazunori.mikami/pmlib/package/BUILD_MPI /home/users/kazunori.mikami/pmlib/package/BUILD_MPI/example /home/users/kazunori.mikami/pmlib/package/BUILD_MPI/example/CMakeFiles/example5.dir/DependInfo.cmake --color=
+Dependee "/home/users/kazunori.mikami/pmlib/package/BUILD_MPI/example/CMakeFiles/example5.dir/DependInfo.cmake" is newer than depender "/home/users/kazunori.mikami/pmlib/package/BUILD_MPI/example/CMakeFiles/example5.dir/depend.internal".
+Dependee "/home/users/kazunori.mikami/pmlib/package/BUILD_MPI/example/CMakeFiles/CMakeDirectoryInformation.cmake" is newer than depender "/home/users/kazunori.mikami/pmlib/package/BUILD_MPI/example/CMakeFiles/example5.dir/depend.internal".
+Scanning dependencies of target example5
+make[2]: Leaving directory '/home/users/kazunori.mikami/pmlib/PMlib-develop/BUILD_MPI'
+make -f example/CMakeFiles/example5.dir/build.make example/CMakeFiles/example5.dir/build
+make[2]: Entering directory '/home/users/kazunori.mikami/pmlib/PMlib-develop/BUILD_MPI'
+[ 86%] Building CXX object example/CMakeFiles/example5.dir/test5/main_split_comm.cpp.o
+cd /home/users/kazunori.mikami/pmlib/package/BUILD_MPI/example && /opt/FJSVstclanga/v1.0.0/bin/mpiFCC  -DHAVE_CONFIG_H -DUSE_PAPI -I/home/users/kazunori.mikami/pmlib/package/src -I/home/users/kazunori.mikami/pmlib/package/include -I/home/users/kazunori.mikami/pmlib/package/BUILD_MPI/include -I/opt/FJSVxos/devkit/aarch64/rfs/usr/include  -Kocl -Nnofjprof -Nfjomplib -Kfast -Nrt_notune -w -Nfjcex -Kopenmp -DUSE_PRECISE_TIMER   -o CMakeFiles/example5.dir/test5/main_split_comm.cpp.o -c /home/users/kazunori.mikami/pmlib/package/example/test5/main_split_comm.cpp
+[ 90%] Building C object example/CMakeFiles/example5.dir/test5/sub_copy.c.o
+cd /home/users/kazunori.mikami/pmlib/package/BUILD_MPI/example && /opt/FJSVstclanga/v1.0.0/bin/mpifcc -DHAVE_CONFIG_H -DUSE_PAPI -I/home/users/kazunori.mikami/pmlib/package/src -I/home/users/kazunori.mikami/pmlib/package/include -I/home/users/kazunori.mikami/pmlib/package/BUILD_MPI/include -I/opt/FJSVxos/devkit/aarch64/rfs/usr/include  -Kocl -Nnofjprof -Nfjomplib -Kfast -Nrt_notune -w -Kopenmp   -o CMakeFiles/example5.dir/test5/sub_copy.c.o   -c /home/users/kazunori.mikami/pmlib/package/example/test5/sub_copy.c
+[ 95%] Building C object example/CMakeFiles/example5.dir/test5/sub_kernel.c.o
+cd /home/users/kazunori.mikami/pmlib/package/BUILD_MPI/example && /opt/FJSVstclanga/v1.0.0/bin/mpifcc -DHAVE_CONFIG_H -DUSE_PAPI -I/home/users/kazunori.mikami/pmlib/package/src -I/home/users/kazunori.mikami/pmlib/package/include -I/home/users/kazunori.mikami/pmlib/package/BUILD_MPI/include -I/opt/FJSVxos/devkit/aarch64/rfs/usr/include  -Kocl -Nnofjprof -Nfjomplib -Kfast -Nrt_notune -w -Kopenmp   -o CMakeFiles/example5.dir/test5/sub_kernel.c.o   -c /home/users/kazunori.mikami/pmlib/package/example/test5/sub_kernel.c
+[100%] Linking CXX executable example5
+cd /home/users/kazunori.mikami/pmlib/package/BUILD_MPI/example && /usr/bin/cmake -E cmake_link_script CMakeFiles/example5.dir/link.txt --verbose=1
+/opt/FJSVstclanga/v1.0.0/bin/mpiFCC  -Kocl -Nnofjprof -Nfjomplib -Kfast -Nrt_notune -w -Nfjcex -Kopenmp -DUSE_PRECISE_TIMER    CMakeFiles/example5.dir/test5/main_split_comm.cpp.o CMakeFiles/example5.dir/test5/sub_copy.c.o CMakeFiles/example5.dir/test5/sub_kernel.c.o  -o example5  -L/home/users/kazunori.mikami/pmlib/package/BUILD_MPI/src  -L/home/users/kazunori.mikami/pmlib/package/BUILD_MPI/src_papi_ext  -L/opt/FJSVxos/devkit/aarch64/rfs/usr/lib -Wl,-rpath,/home/users/kazunori.mikami/pmlib/package/BUILD_MPI/src:/home/users/kazunori.mikami/pmlib/package/BUILD_MPI/src_papi_ext:/opt/FJSVxos/devkit/aarch64/rfs/usr/lib -lPMmpi -lpapi_ext -lpapi -lpfm -Nnofjprof 
+make[2]: Leaving directory '/home/users/kazunori.mikami/pmlib/PMlib-develop/BUILD_MPI'
+[100%] Built target example5
+make[1]: Leaving directory '/home/users/kazunori.mikami/pmlib/PMlib-develop/BUILD_MPI'
+/usr/bin/cmake -E cmake_progress_start /home/users/kazunori.mikami/pmlib/package/BUILD_MPI/CMakeFiles 0
++ make install
+[ 22%] Built target PMmpi
+[ 31%] Built target papi_ext
+[ 45%] Built target example2
+[ 54%] Built target example1
+[ 72%] Built target example3
+[ 81%] Built target example4
+[100%] Built target example5
+Install the project...
+-- Install configuration: ""
+-- Up-to-date: /home/users/kazunori.mikami/pmlib/usr_local_pmlib/fx700/share/ChangeLog.md
+-- Up-to-date: /home/users/kazunori.mikami/pmlib/usr_local_pmlib/fx700/share/Readme.md
+-- Up-to-date: /home/users/kazunori.mikami/pmlib/usr_local_pmlib/fx700/share/License.txt
+-- Installing: /home/users/kazunori.mikami/pmlib/usr_local_pmlib/fx700/share/CMakeCache.txt
+-- Installing: /home/users/kazunori.mikami/pmlib/usr_local_pmlib/fx700/lib/libPMmpi.a
+-- Up-to-date: /home/users/kazunori.mikami/pmlib/usr_local_pmlib/fx700/include/mpi_stubs.h
+-- Up-to-date: /home/users/kazunori.mikami/pmlib/usr_local_pmlib/fx700/include/PerfMonitor.h
+-- Up-to-date: /home/users/kazunori.mikami/pmlib/usr_local_pmlib/fx700/include/PerfWatch.h
+-- Up-to-date: /home/users/kazunori.mikami/pmlib/usr_local_pmlib/fx700/include/pmlib_otf.h
+-- Up-to-date: /home/users/kazunori.mikami/pmlib/usr_local_pmlib/fx700/include/pmlib_papi.h
+-- Installing: /home/users/kazunori.mikami/pmlib/usr_local_pmlib/fx700/include/pmVersion.h
+-- Up-to-date: /home/users/kazunori.mikami/pmlib/usr_local_pmlib/fx700/doc/PMlib-Getting-Started.pdf
+-- Installing: /home/users/kazunori.mikami/pmlib/usr_local_pmlib/fx700/lib/libpapi_ext.a
