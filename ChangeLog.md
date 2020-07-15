@@ -3,6 +3,9 @@
 ## REVISION HISTORY
 
 ---
+- 2020-07-15 Version 7.0.2
+  - add "std=c++1" option to TCS environment
+
 - 2020-02-12 Version 7.0.1
   - add "-std=c++11" option as default for intel, pgi, and gnu c++ compiler
 
