@@ -1750,6 +1750,11 @@ void PerfWatch::outputPapiCounterLegend (FILE* fp)
 	}
 	fprintf(fp, "\t\t [Ins/cyc]: performed instructions per machine clock cycle\n");
 
+// USER
+	fprintf(fp, "\t HWPC_CHOOSER=USER:\n");
+	fprintf(fp, "\t\t User provided argument values (Arithmetic Workload) are accumulated and reported.\n");
+
+
 // remarks
 	fprintf(fp, "\n");
 	fprintf(fp, "\t Remarks.\n");
