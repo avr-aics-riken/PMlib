@@ -84,25 +84,31 @@ void PerfWatch::initializeHWPC ()
 // Parse the Environment Variable HWPC_CHOOSER
 	std::string s_chooser;
 	std::string s_default = "USER";
-	char* c_env = std::getenv("HWPC_CHOOSER");
-	if (c_env != NULL) {
-		s_chooser = c_env;
+	char* cp_env = std::getenv("HWPC_CHOOSER");
+	if (cp_env == NULL) {
+		s_chooser = s_default;
+	} else {
+		s_chooser = cp_env;
 		if (s_chooser == "FLOPS" ||
 			s_chooser == "BANDWIDTH" ||
 			s_chooser == "VECTOR" ||
 			s_chooser == "CACHE" ||
 			s_chooser == "CYCLE" ||
-			s_chooser == "LOADSTORE" ) {
+			s_chooser == "LOADSTORE" ||
+			s_chooser == "USER" ) {
 			;
 		} else {
 			s_chooser = s_default;
 		}
-	} else {
-		s_chooser = s_default;
 	}
 	hwpc_group.env_str_hwpc = s_chooser;
 
 	read_cpu_clock_freq(); /// API for reading processor clock frequency.
+
+// DEBUG from HERE.
+// 2020/7/27
+
+	if (hwpc_group.env_str_hwpc == "USER" ) return;	// Is this a correct return?
 
 #ifdef USE_PAPI
 	int i_papi;
@@ -208,7 +214,10 @@ void PerfWatch::createPapiCounterList ()
 
 	hwinfo = PAPI_get_hardware_info();
 	if (hwinfo == NULL) {
-		fprintf (stderr, "*** error. <PAPI_get_hardware_info> failed.\n" );
+		if (my_rank == 0) {
+		fprintf (stderr, "*** PMlib error. <createPapiCounterList> calling <PAPI_get_hardware_info> failed.\n" );
+		fprintf (stderr, "\t check if the program is linked with the correct libpapi and libpfm .\n" );
+		}
 	}
 
 	#ifdef DEBUG_PRINT_PAPI
@@ -312,13 +321,6 @@ void PerfWatch::createPapiCounterList ()
 	// ARM based processors
     else if (s_model_string.empty() && s_vendor_string.find( "ARM" ) != string::npos ) {
 		// on ARM, PAPI_get_hardware_info() does not provide so useful information.
-		// PAPI_get_hardware_info() output on Fugaku A64FX is as follows
-		//	hwinfo->vendor			// 7
-		//	hwinfo->vendor_string	// "ARM"
-		//	hwinfo->model			// 0
-		//	hwinfo->model_string	// ""
-		//	hwinfo->cpuid_stepping	// 0
-		//
 		// so we check /proc/cpuinfo for further information
 		//
 		identifyARMplatform ();
@@ -346,23 +348,23 @@ void PerfWatch::createPapiCounterList ()
 // 2. Parse the Environment Variable HWPC_CHOOSER
 	std::string s_chooser;
 	std::string s_default = "USER";
-	char* c_env = std::getenv("HWPC_CHOOSER");
-	if (c_env != NULL) {
-		s_chooser = c_env;
+	char* cp_env = std::getenv("HWPC_CHOOSER");
+	if (cp_env == NULL) {
+		s_chooser = s_default;
+	} else {
+		s_chooser = cp_env;
 		if (s_chooser == "FLOPS" ||
 			s_chooser == "BANDWIDTH" ||
 			s_chooser == "VECTOR" ||
 			s_chooser == "CACHE" ||
 			s_chooser == "CYCLE" ||
-			s_chooser == "LOADSTORE" ) {
+			s_chooser == "LOADSTORE" ||
+			s_chooser == "USER" ) {
 			;
 		} else {
 			s_chooser = s_default;
 		}
-	} else {
-		s_chooser = s_default;
 	}
-
 	hwpc_group.env_str_hwpc = s_chooser;
 
 
@@ -1517,7 +1519,6 @@ void PerfWatch::outputPapiCounterGroup (FILE* fp, MPI_Group p_group, int* pp_ran
 
 
 
-
   /// Display the HWPC legend
   ///
   ///   @param[in] fp 出力ファイルポインタ
@@ -1535,9 +1536,13 @@ void PerfWatch::outputPapiCounterLegend (FILE* fp)
 
 	hwinfo = PAPI_get_hardware_info();
 	if (hwinfo == NULL) {
-		fprintf (fp, "\n\tHWPC legend is not available. <PAPI_get_hardware_info> failed. \n" );
+		//	fprintf (fp, "\n\t<PAPI_get_hardware_info> failed. \n" );
+		fprintf(fp, "\n\t HWPC was not initialized, so automatic CPU detection and HWPC legend was disabled.\n");
+		fprintf(fp, "\t In order to enable HWPC feature, HWPC_CHOOSER env. var. must be set for the job as:\n");
+		fprintf(fp, "\t $ export HWPC_CHOOSER=FLOPS # [FLOPS|BANDWIDTH|VECTOR|CACHE|CYCLE|LOADSTORE]\n\n");
 		return;
 	}
+
     if (s_model_string.empty() && s_vendor_string.find( "ARM" ) != string::npos ) {
 		identifyARMplatform ();
 	}
@@ -1799,7 +1804,7 @@ void PerfWatch::identifyARMplatform (void)
 	// on ARM, PAPI_get_hardware_info() does not provide so useful information.
 	// so we use /proc/cpuinfo information instead
 
-	// PAPI_get_hardware_info() output on Fugaku A64FX is as follows
+	// as of 2020/7/1, PAPI_get_hardware_info() output on Fugaku A64FX is as follows
 		//	hwinfo->vendor			// 7
 		//	hwinfo->vendor_string	// "ARM"
 		//	hwinfo->model			// 0
