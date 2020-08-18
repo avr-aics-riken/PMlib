@@ -44,7 +44,7 @@ macro (AddOptimizeOption)
     endif()
 
   elseif(USE_F_TCS STREQUAL "YES")	# (TARGET_ARCH STREQUAL "ITO_TCS") OR (TARGET_ARCH STREQUAL "F_TCS")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Kfast -Nrt_notune -w -Xg")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Kfast -Nrt_notune -w -Xg -std=c++11")
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Kfast -Nrt_notune -w -Xg")
     set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -Cpp -Kfast -Nrt_notune -Knooptmsg")
     if(enable_PreciseTimer)

@@ -75,7 +75,7 @@ struct hwpc_group_chooser {
 };
 
 const int Max_chooser_events=12;
-const int Max_nthreads=65;
+const int Max_nthreads=36;
 
 struct pmlib_papi_chooser {
 	int num_events;				// number of PAPI events
