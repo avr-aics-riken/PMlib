@@ -215,7 +215,7 @@ void PerfWatch::createPapiCounterList ()
 	hwinfo = PAPI_get_hardware_info();
 	if (hwinfo == NULL) {
 		if (my_rank == 0) {
-		fprintf (stderr, "*** PMlib error. <createPapiCounterList> calling <PAPI_get_hardware_info> failed.\n" );
+		fprintf (stderr, "*** PMlib error. <createPapiCounterList> PAPI_get_hardware_info() failed.\n" );
 		fprintf (stderr, "\t check if the program is linked with the correct libpapi and libpfm .\n" );
 		}
 	}
@@ -346,26 +346,7 @@ void PerfWatch::createPapiCounterList ()
 
 
 // 2. Parse the Environment Variable HWPC_CHOOSER
-	std::string s_chooser;
-	std::string s_default = "USER";
-	char* cp_env = std::getenv("HWPC_CHOOSER");
-	if (cp_env == NULL) {
-		s_chooser = s_default;
-	} else {
-		s_chooser = cp_env;
-		if (s_chooser == "FLOPS" ||
-			s_chooser == "BANDWIDTH" ||
-			s_chooser == "VECTOR" ||
-			s_chooser == "CACHE" ||
-			s_chooser == "CYCLE" ||
-			s_chooser == "LOADSTORE" ||
-			s_chooser == "USER" ) {
-			;
-		} else {
-			s_chooser = s_default;
-		}
-	}
-	hwpc_group.env_str_hwpc = s_chooser;
+//	the parsing has been done in initializeHWPC() routine
 
 
 // 3. Select the corresponding PAPI hardware counter events
@@ -373,7 +354,7 @@ void PerfWatch::createPapiCounterList ()
 
 
 // if (FLOPS)
-	if ( s_chooser.find( "FLOPS" ) != string::npos ) {
+	if ( hwpc_group.env_str_hwpc == "FLOPS" ) {
 		hwpc_group.index[I_flops] = ip;
 		hwpc_group.number[I_flops] = 0;
 
@@ -410,7 +391,7 @@ void PerfWatch::createPapiCounterList ()
 
 	else
 // if (BANDWIDTH)
-	if ( s_chooser.find( "BANDWIDTH" ) != string::npos ) {
+	if ( hwpc_group.env_str_hwpc == "BANDWIDTH" ) {
 		hwpc_group.index[I_bandwidth] = ip;
 		hwpc_group.number[I_bandwidth] = 0;
 
@@ -505,7 +486,7 @@ void PerfWatch::createPapiCounterList ()
 
 	else
 // if (VECTOR)
-	if ( s_chooser.find( "VECTOR" ) != string::npos ) {
+	if ( hwpc_group.env_str_hwpc == "VECTOR" ) {
 		hwpc_group.index[I_vector] = ip;
 		hwpc_group.number[I_vector] = 0;
 
@@ -643,7 +624,7 @@ void PerfWatch::createPapiCounterList ()
 	else
 // if (CACHE)
 
-	if ( s_chooser.find( "CACHE" ) != string::npos ) {
+	if ( hwpc_group.env_str_hwpc == "CACHE" ) {
 		hwpc_group.index[I_cache] = ip;
 		hwpc_group.number[I_cache] = 0;
 
@@ -700,7 +681,7 @@ void PerfWatch::createPapiCounterList ()
 
 	else
 // if (CYCLE)
-	if ( s_chooser.find( "CYCLE" ) != string::npos ) {
+	if ( hwpc_group.env_str_hwpc == "CYCLE" ) {
 		hwpc_group.index[I_cycle] = ip;
 		hwpc_group.number[I_cycle] = 0;
 
@@ -727,7 +708,7 @@ void PerfWatch::createPapiCounterList ()
 
 	else
 // if (LOADSTORE)
-	if ( s_chooser.find( "LOADSTORE" ) != string::npos ) {
+	if ( hwpc_group.env_str_hwpc == "LOADSTORE" ) {
 		hwpc_group.index[I_loadstore] = ip;
 		hwpc_group.number[I_loadstore] = 0;
 

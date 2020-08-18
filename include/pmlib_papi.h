@@ -69,7 +69,7 @@ struct hwpc_group_chooser {
 		// 99:processor is not supported
 	std::string platform;	// "Xeon", "SPARC64", "ARM", "unsupported_hardware"
 	std::string env_str_hwpc;
-		// USER or one of FLOPS, BANDWIDTH, VECTOR, CACHE, CYCLE, WRITEBACK
+		// USER or one of FLOPS, BANDWIDTH, VECTOR, CACHE, CYCLE, LOADSTORE
 	double coreGHz;
 	double corePERF;
 };
