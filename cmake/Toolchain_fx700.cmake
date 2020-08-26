@@ -15,18 +15,14 @@
 
 set(CMAKE_SYSTEM_NAME Linux)
 
-# check on it 2020/7/8
-#	do this on compute nodes.
-#	cmake is not installed on login node.
-#
 if(with_MPI)
-	set(CMAKE_C_COMPILER mpifcc)
-	set(CMAKE_CXX_COMPILER mpiFCC)
-	set(CMAKE_Fortran_COMPILER mpifrt)
+	set(CMAKE_C_COMPILER mpifccpx)
+	set(CMAKE_CXX_COMPILER mpiFCCpx)
+	set(CMAKE_Fortran_COMPILER mpifrtpx)
 else()
-	set(CMAKE_C_COMPILER fcc)
-	set(CMAKE_CXX_COMPILER FCC)
-	set(CMAKE_Fortran_COMPILER frt)
+	set(CMAKE_C_COMPILER fccpx)
+	set(CMAKE_CXX_COMPILER FCCpx)
+	set(CMAKE_Fortran_COMPILER frtpx)
 endif()
 
 # compiler location
