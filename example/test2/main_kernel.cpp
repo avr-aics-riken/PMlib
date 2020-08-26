@@ -30,9 +30,6 @@ int main (int argc, char *argv[])
 
 	PM.initialize();
 
-	PM.setProperties("First location", PerfMonitor::CALC);
-	PM.setProperties("Second location", PerfMonitor::CALC);
-
 	if(my_id == 0) fprintf(stderr, "<main> starting the First location.\n");
 	set_array();
 	loop=3;
