@@ -1,8 +1,8 @@
 #! /bin/bash
-#PJM -N PMLIB-MPI-EXAMPLES
+#PJM -N FX100-SINGLE-EXAMPLES
 #PJM -L "elapse=1:00:00"
-#PJM -L "node=4"
-#PJM --mpi "proc=4"
+#PJM -L "node=1"
+#PJM --mpi "proc=1"
 #PJM -j
 #PJM -S
 
@@ -14,15 +14,13 @@ xospastop
 TEST_DIR=${HOME}/pmlib/package/BUILD_DIR/example
 cd $TEST_DIR; if [ $? != 0 ] ; then echo '@@@ Directory error @@@'; exit; fi
 
-NPROCS=4
 export OMP_NUM_THREADS=8
 #	export OTF_TRACING=full
 #	export OTF_FILENAME="trace_pmlib"
 
-for HWPC_CHOOSER in FLOPS BANDWIDTH VECTOR CACHE LOADSTORE CYCLE USER
+for HWPC_CHOOSER in BANDWIDTH FLOPS VECTOR CACHE CYCLE LOADSTORE USER
 do
 export HWPC_CHOOSER
-mpiexec -n ${NPROCS} ./example4
+./example4
 done
-
 

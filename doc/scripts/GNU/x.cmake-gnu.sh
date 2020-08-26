@@ -10,12 +10,10 @@ export  PATH=${OPENMPI_DIR}/bin:${PATH}
 export  LD_LIBRARY_PATH=${OPENMPI_DIR}/lib:${LD_LIBRARY_PATH}
 
 PACKAGE_DIR=${HOME}/pmlib/package
-PMLIB_DIR=${HOME}/pmlib/usr_local_pmlib/gnu
+PMLIB_DIR=${HOME}/pmlib/usr_local_pmlib/pmlib-5.7.0-gnu
 
 #	PAPI_DIR="no"
-PAPI_DIR=${HOME}/papi/usr_local_papi/papi-5.5.1-gnu
-#Remark-- PAPI 5.5 contains ffsll() which is not compatible with Linux.
-#Remark-- Comment out ${PAPI_DIR}/include/papi.h line 1024, i.e. ffsll()
+PAPI_DIR=${HOME}/papi/usr_local_papi/papi-5.6.0-gnu
 
 OTF_DIR="no"
 #	OTF_DIR=${HOME}/otf/usr_local_otf/otf-1.12-gnu
@@ -54,8 +52,6 @@ if [ ${RUN_EXAMPLE} == yes ] ; then
 	NPROCS=2
 	export OMP_NUM_THREADS=4
 	export HWPC_CHOOSER=FLOPS
-	export OTF_TRACING=full
-	export OTF_FILENAME="trace_pmlib"
 	mpirun -np ${NPROCS} example/example1
 	ls -l
 fi
@@ -88,8 +84,6 @@ RUN_EXAMPLE="no"
 if [ ${RUN_EXAMPLE} == yes ] ; then
 	export OMP_NUM_THREADS=4
 	export HWPC_CHOOSER=FLOPS
-	export OTF_TRACING=full
-	export OTF_FILENAME="trace_pmlib"
 	example/example1
 ls -l
 fi

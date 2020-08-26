@@ -9,7 +9,7 @@ export LD_LIBRARY_PATH=/opt/FJSVstclanga/v1.0.0/lib64:$LD_LIBRARY_PATH
 export LANG=C
 
 PACKAGE_DIR=${HOME}/pmlib/package
-PMLIB_DIR=${HOME}/pmlib/usr_local_pmlib/fx700
+PMLIB_DIR=${HOME}/pmlib/usr_local_pmlib/pmlib-5.7.0-fx700
 
 #	PAPI_DIR="no"
 #	PAPI_DIR="yes"	# doesn't work on fugaku
