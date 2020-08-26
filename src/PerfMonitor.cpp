@@ -207,9 +207,9 @@ namespace pm_lib {
     id = add_perf_label(label);
 
 //
-// Move the existing PerfWatch class storage into the new address
+// If short of memory, allocate new space
+//	and move the existing PerfWatch class storage into the new address
 //
-    //	if (short of memory) {
     if ((m_nWatch+1) >= reserved_nWatch) {
 
       reserved_nWatch = m_nWatch + init_nWatch;
@@ -236,6 +236,7 @@ namespace pm_lib {
       #endif
     }
 
+    is_exclusive_construct = exclusive;
     m_nWatch++;
     m_watchArray[id].setProperties(label, id, type, num_process, my_rank, num_threads, exclusive);
 
@@ -287,10 +288,16 @@ namespace pm_lib {
     }
     id = find_perf_label(label);
     if (id < 0) {
-      printDiag("start()",  "label [%s] is undefined. This may lead to incorrect measurement.\n",
-				label.c_str());
-      return;
+      #ifdef DEBUG_PRINT_MONITOR
+      if (my_rank == 0) {
+        fprintf(stderr, "<start> adding property for [%s] id=%d\n", label.c_str(), id);
+      }
+      #endif
+      //	PerfMonitor::setProperties(std::string& label, Type type=CALC, bool exclusive=true);
+      PerfMonitor::setProperties(label);
+      id = find_perf_label(label);
     }
+    is_exclusive_construct = true;
 
     m_watchArray[id].start();
 
@@ -327,6 +334,11 @@ namespace pm_lib {
       return;
     }
     m_watchArray[id].stop(flopPerTask, iterationCount);
+
+    if (!is_exclusive_construct) {
+      m_watchArray[id].m_exclusive = false;
+    }
+    is_exclusive_construct = false;
 
     #ifdef DEBUG_PRINT_MONITOR
     if (my_rank == 0) {

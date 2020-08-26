@@ -29,15 +29,6 @@ program main
 	nWatch=4
 	call f_pm_initialize (nWatch)
 
-	icalc=1
-	icomm=0
-	iexclusive=1
-	iinclusive=0    !cx i.e. not exclusive
-	call f_pm_setproperties ("Initial-section", icalc, iexclusive)
-	call f_pm_setproperties ("Loop-section", icalc, iinclusive)
-	call f_pm_setproperties ("Kernel-Slow", icalc, iexclusive)
-	call f_pm_setproperties ("Kernel-Fast", icalc, iexclusive)
-
 	dinit=(n**2)*4.0
 	dflop=(n**3)*4.0
 	dbyte=(n**3)*4.0*3.0

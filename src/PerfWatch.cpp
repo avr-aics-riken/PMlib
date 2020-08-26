@@ -33,6 +33,7 @@
 #include <string>
 #include <cstdlib>
 #include <cstdio>
+#include <algorithm>
 
 extern void sortPapiCounterList ();
 extern void outputPapiCounterHeader (FILE*, std::string);
@@ -46,8 +47,6 @@ namespace pm_lib {
   struct hwpc_group_chooser hwpc_group;
   double cpu_clock_freq;        /// processor clock frequency, i.e. Hz
   double second_per_cycle;  /// real time to take each cycle
-
-  //	bool PerfWatch::ExclusiveStarted = false;
 
   /// 単位変換.
   ///
@@ -795,8 +794,6 @@ namespace pm_lib {
   void PerfWatch::printDetailHWPCsums(FILE* fp, std::string s_label)
   {
 #ifdef USE_PAPI
-    //	char* c_env = std::getenv("HWPC_CHOOSER");
-    //	if (c_env == NULL) return;
     if (my_papi.num_events == 0) return;
     if (!m_exclusive) return;
     if ( m_count_sum == 0 ) return;
@@ -821,8 +818,6 @@ namespace pm_lib {
   void PerfWatch::printGroupHWPCsums(FILE* fp, std::string s_label, MPI_Group p_group, int* pp_ranks)
   {
 #ifdef USE_PAPI
-    //	char* c_env = std::getenv("HWPC_CHOOSER");
-    //	if (c_env == NULL) return;
     if (my_papi.num_events == 0) return;
     if (!m_exclusive) return;
     if ( m_count_sum == 0 ) return;
@@ -839,30 +834,35 @@ namespace pm_lib {
   ///
   void PerfWatch::printHWPCHeader(FILE* fp)
   {
-   char* c_env;
-	std::string s;
-#ifdef USE_PAPI
-	const PAPI_hw_info_t *hwinfo = NULL;
-	using namespace std;
 
-	c_env = std::getenv("HWPC_CHOOSER");
-	if (c_env == NULL) {
+	char* cp_env;
+	std::string s_chooser;
+
+#ifdef USE_PAPI
+	cp_env = std::getenv("HWPC_CHOOSER");
+	if (cp_env == NULL) {
 		fprintf(fp, "\tHWPC_CHOOSER is not set. User API values are reported.\n");
 	} else {
-		s = c_env;
-		if  (s == "FLOPS" || s == "BANDWIDTH" || s == "VECTOR" || s == "CACHE" || s == "CYCLE" || s == "LOADSTORE" ) { 
-			fprintf(fp, "\tHWPC_CHOOSER=%s environment variable is provided.\n", s.c_str());
+		s_chooser = cp_env;
+		if (s_chooser == "FLOPS" ||
+			s_chooser == "BANDWIDTH" ||
+			s_chooser == "VECTOR" ||
+			s_chooser == "CACHE" ||
+			s_chooser == "CYCLE" ||
+			s_chooser == "LOADSTORE" ||
+			s_chooser == "USER" ) {
+			fprintf(fp, "\tHWPC_CHOOSER=%s environment variable is provided.\n", s_chooser.c_str());
+			;
 		} else {
-			fprintf(fp, "\tUnknown group HWPC_CHOOSER=%s is ignored. User API values are reported.\n", s.c_str());
+			fprintf(fp, "\tUnknown group HWPC_CHOOSER=%s is ignored. USER API values are reported.\n", s_chooser.c_str());
 		}
 	}
-
 #endif
 
 #ifdef USE_OTF
-    c_env = std::getenv("OTF_TRACING");
-    if (c_env != NULL) {
-	  fprintf(fp, "\tOTF_TRACING=%s environment variable is provided.\n", c_env);
+    cp_env = std::getenv("OTF_TRACING");
+    if (cp_env != NULL) {
+	  fprintf(fp, "\tOTF_TRACING=%s environment variable is provided.\n", cp_env);
     }
 #endif
   }
@@ -876,9 +876,6 @@ namespace pm_lib {
   void PerfWatch::printHWPCLegend(FILE* fp)
   {
 #ifdef USE_PAPI
-	//	char* c_env = std::getenv("HWPC_CHOOSER");
-	//	if (c_env == NULL) return;
-
 	outputPapiCounterLegend (fp);
 #endif
   }
@@ -1229,20 +1226,21 @@ namespace pm_lib {
 	// 環境変数OTF_TRACING が指定された場合
 	// OTF_TRACING = none(default) | yes | on | full
     std::string s;
-    char* c_env;
-    c_env = std::getenv("OTF_TRACING");
-    if (c_env != NULL) {
-      s = c_env;
-      if ((s == "off") || (s == "no") ) {
+    char* cp_env;
+    cp_env = std::getenv("OTF_TRACING");
+    if (cp_env != NULL) {
+      s = cp_env;
+      std::transform(s.begin(), s.end(), s.begin(), toupper); // C func toupper()
+      if ((s == "OFF") || (s == "NO") ) {
         m_is_OTF = 0;
-      } else if ((s == "on") || (s == "yes") ) {
+      } else if ((s == "ON") || (s == "YES") ) {
         m_is_OTF = 1;
-      } else if ((s == "full")) {
+      } else if ((s == "FULL")) {
         m_is_OTF = 2;
       }
       #ifdef DEBUG_PRINT_OTF
       if (my_rank == 0) {
-	    fprintf(stderr, "\t<getenv> OTF_TRACING=%s is provided.\n", c_env);
+	    fprintf(stderr, "\t<getenv> OTF_TRACING=%s is provided.\n", cp_env);
       }
       #endif
     }
@@ -1282,12 +1280,12 @@ namespace pm_lib {
 
 	// 環境変数 OTF_FILENAME が指定された場合
     std::string s;
-    char* c_env = std::getenv("OTF_FILENAME");
-    if (c_env != NULL) {
-      s = c_env;
+    char* cp_env = std::getenv("OTF_FILENAME");
+    if (cp_env != NULL) {
+      s = cp_env;
       otf_filename = s;
     } else {
-      otf_filename = "pmlib_optional_otf_files";
+      otf_filename = "pmlib_otf_files";
     }
     double baseT = PerfWatch::getTime();
     my_otf_initialize(num_process, my_rank, otf_filename.c_str(), baseT);
@@ -1379,13 +1377,7 @@ namespace pm_lib {
       m_is_healthy=false;
       return;
 	}
-    if (m_exclusive && ExclusiveStarted) {
-      printError("start()",  "Section overlaps other exclusive section. start() is ignored.\n");
-      m_is_healthy=false;
-      return;
-    }
     m_started = true;
-    if (m_exclusive) ExclusiveStarted = true;
     m_startTime = getTime();
 
 #ifdef DEBUG_PRINT_WATCH
@@ -1528,7 +1520,6 @@ namespace pm_lib {
     m_time += m_stopTime - m_startTime;
     m_count++;
     m_started = false;
-    if (m_exclusive) ExclusiveStarted = false;
 
 	if ( m_in_parallel ) {
 		// The threads are active and running in parallel region

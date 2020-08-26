@@ -1,4 +1,4 @@
-program check
+program main
 	parameter(msize=1000)
 	real(kind=8), allocatable :: a(:,:),b(:,:),c(:,:)
 	
@@ -7,30 +7,29 @@ program check
 	    stop "*** Allocate() failed."
 	endif
 	
-    !uncomment	nWatch=10
-    !uncomment	call f_pm_initialize (nWatch)
+    !!	nWatch=10
+    !!	call f_pm_initialize (nWatch)
 	
 	n=msize
+    !!	call f_pm_start ("A:subinit2d")
 	call subinit2d (msize,n,a,b,c)
+    !!	call f_pm_stop ("A:subinit2d", 0.0, 0)
 	
-    !uncomment	icalc=0         !cx 0:calc, 1:comm
-    !uncomment	iexclusive=1    !cx 1:true, 2:false
-    !uncomment	call f_pm_setproperties ("Label-1", icalc, iexclusive)
-	
-    !uncomment	call f_pm_start ("Label-1")
+    !!	call f_pm_start ("B:submxm2d")
 	call submxm2d (msize,n,dflop,a,b,c)
-    !uncomment	call f_pm_stop ("Label-1", 0.0, 0)
+    !!	call f_pm_stop ("B:submxm2d", 0.0, 0)
 	
-    !uncomment	call f_pm_print ("","","",0)
-    !uncomment	call f_pm_printdetail ("",0)
+    !!	call f_pm_print ("","","",0)
+    !!	call f_pm_printdetail ("",1,0)
+    !!	call f_pm_printthreads ("",0,0)
 	write(*,*)  'something was computed', c(msize,msize)
 	
 	stop
-end
+end program
 	
 subroutine subinit2d (msize,n,a,b,c)
 	real(kind=8) :: a(msize,msize), b(msize,msize), c(msize,msize)
-	!uncomment  !$omp parallel do 
+	!!  !$omp parallel do 
 	do j=1, n
 	do i=1, n
 	a(i,j)=sin(real(i)/real(n))
@@ -38,14 +37,14 @@ subroutine subinit2d (msize,n,a,b,c)
 	end do
 	end do
 	return
-end
+end subroutine
 	
 subroutine submxm2d (msize,n,dflop,a,b,c)
 	real(kind=8) :: a(msize,msize), b(msize,msize), c(msize,msize)
 	real(kind=8) :: x
 	
 	dflop=2.0*dble(n)**3
-	!uncomment  !$omp parallel do private(i,j,k,x)
+	!!  !$omp parallel do private(i,j,k,x)
 	do j=1, n
 	do i=1, n
 	x=0
@@ -56,4 +55,4 @@ subroutine submxm2d (msize,n,dflop,a,b,c)
 	end do
 	end do
 	return
-end
+end subroutine

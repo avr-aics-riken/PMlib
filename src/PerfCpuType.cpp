@@ -84,25 +84,31 @@ void PerfWatch::initializeHWPC ()
 // Parse the Environment Variable HWPC_CHOOSER
 	std::string s_chooser;
 	std::string s_default = "USER";
-	char* c_env = std::getenv("HWPC_CHOOSER");
-	if (c_env != NULL) {
-		s_chooser = c_env;
+	char* cp_env = std::getenv("HWPC_CHOOSER");
+	if (cp_env == NULL) {
+		s_chooser = s_default;
+	} else {
+		s_chooser = cp_env;
 		if (s_chooser == "FLOPS" ||
 			s_chooser == "BANDWIDTH" ||
 			s_chooser == "VECTOR" ||
 			s_chooser == "CACHE" ||
 			s_chooser == "CYCLE" ||
-			s_chooser == "LOADSTORE" ) {
+			s_chooser == "LOADSTORE" ||
+			s_chooser == "USER" ) {
 			;
 		} else {
 			s_chooser = s_default;
 		}
-	} else {
-		s_chooser = s_default;
 	}
 	hwpc_group.env_str_hwpc = s_chooser;
 
 	read_cpu_clock_freq(); /// API for reading processor clock frequency.
+
+// DEBUG from HERE.
+// 2020/7/27
+
+	if (hwpc_group.env_str_hwpc == "USER" ) return;	// Is this a correct return?
 
 #ifdef USE_PAPI
 	int i_papi;
@@ -208,7 +214,10 @@ void PerfWatch::createPapiCounterList ()
 
 	hwinfo = PAPI_get_hardware_info();
 	if (hwinfo == NULL) {
-		fprintf (stderr, "*** error. <PAPI_get_hardware_info> failed.\n" );
+		if (my_rank == 0) {
+		fprintf (stderr, "*** PMlib error. <createPapiCounterList> PAPI_get_hardware_info() failed.\n" );
+		fprintf (stderr, "\t check if the program is linked with the correct libpapi and libpfm .\n" );
+		}
 	}
 
 	#ifdef DEBUG_PRINT_PAPI
@@ -312,13 +321,6 @@ void PerfWatch::createPapiCounterList ()
 	// ARM based processors
     else if (s_model_string.empty() && s_vendor_string.find( "ARM" ) != string::npos ) {
 		// on ARM, PAPI_get_hardware_info() does not provide so useful information.
-		// PAPI_get_hardware_info() output on Fugaku A64FX is as follows
-		//	hwinfo->vendor			// 7
-		//	hwinfo->vendor_string	// "ARM"
-		//	hwinfo->model			// 0
-		//	hwinfo->model_string	// ""
-		//	hwinfo->cpuid_stepping	// 0
-		//
 		// so we check /proc/cpuinfo for further information
 		//
 		identifyARMplatform ();
@@ -344,26 +346,7 @@ void PerfWatch::createPapiCounterList ()
 
 
 // 2. Parse the Environment Variable HWPC_CHOOSER
-	std::string s_chooser;
-	std::string s_default = "USER";
-	char* c_env = std::getenv("HWPC_CHOOSER");
-	if (c_env != NULL) {
-		s_chooser = c_env;
-		if (s_chooser == "FLOPS" ||
-			s_chooser == "BANDWIDTH" ||
-			s_chooser == "VECTOR" ||
-			s_chooser == "CACHE" ||
-			s_chooser == "CYCLE" ||
-			s_chooser == "LOADSTORE" ) {
-			;
-		} else {
-			s_chooser = s_default;
-		}
-	} else {
-		s_chooser = s_default;
-	}
-
-	hwpc_group.env_str_hwpc = s_chooser;
+//	the parsing has been done in initializeHWPC() routine
 
 
 // 3. Select the corresponding PAPI hardware counter events
@@ -371,7 +354,7 @@ void PerfWatch::createPapiCounterList ()
 
 
 // if (FLOPS)
-	if ( s_chooser.find( "FLOPS" ) != string::npos ) {
+	if ( hwpc_group.env_str_hwpc == "FLOPS" ) {
 		hwpc_group.index[I_flops] = ip;
 		hwpc_group.number[I_flops] = 0;
 
@@ -408,7 +391,7 @@ void PerfWatch::createPapiCounterList ()
 
 	else
 // if (BANDWIDTH)
-	if ( s_chooser.find( "BANDWIDTH" ) != string::npos ) {
+	if ( hwpc_group.env_str_hwpc == "BANDWIDTH" ) {
 		hwpc_group.index[I_bandwidth] = ip;
 		hwpc_group.number[I_bandwidth] = 0;
 
@@ -503,7 +486,7 @@ void PerfWatch::createPapiCounterList ()
 
 	else
 // if (VECTOR)
-	if ( s_chooser.find( "VECTOR" ) != string::npos ) {
+	if ( hwpc_group.env_str_hwpc == "VECTOR" ) {
 		hwpc_group.index[I_vector] = ip;
 		hwpc_group.number[I_vector] = 0;
 
@@ -641,7 +624,7 @@ void PerfWatch::createPapiCounterList ()
 	else
 // if (CACHE)
 
-	if ( s_chooser.find( "CACHE" ) != string::npos ) {
+	if ( hwpc_group.env_str_hwpc == "CACHE" ) {
 		hwpc_group.index[I_cache] = ip;
 		hwpc_group.number[I_cache] = 0;
 
@@ -698,7 +681,7 @@ void PerfWatch::createPapiCounterList ()
 
 	else
 // if (CYCLE)
-	if ( s_chooser.find( "CYCLE" ) != string::npos ) {
+	if ( hwpc_group.env_str_hwpc == "CYCLE" ) {
 		hwpc_group.index[I_cycle] = ip;
 		hwpc_group.number[I_cycle] = 0;
 
@@ -725,7 +708,7 @@ void PerfWatch::createPapiCounterList ()
 
 	else
 // if (LOADSTORE)
-	if ( s_chooser.find( "LOADSTORE" ) != string::npos ) {
+	if ( hwpc_group.env_str_hwpc == "LOADSTORE" ) {
 		hwpc_group.index[I_loadstore] = ip;
 		hwpc_group.number[I_loadstore] = 0;
 
@@ -1517,7 +1500,6 @@ void PerfWatch::outputPapiCounterGroup (FILE* fp, MPI_Group p_group, int* pp_ran
 
 
 
-
   /// Display the HWPC legend
   ///
   ///   @param[in] fp 出力ファイルポインタ
@@ -1535,9 +1517,13 @@ void PerfWatch::outputPapiCounterLegend (FILE* fp)
 
 	hwinfo = PAPI_get_hardware_info();
 	if (hwinfo == NULL) {
-		fprintf (fp, "\n\tHWPC legend is not available. <PAPI_get_hardware_info> failed. \n" );
+		//	fprintf (fp, "\n\t<PAPI_get_hardware_info> failed. \n" );
+		fprintf(fp, "\n\t HWPC was not initialized, so automatic CPU detection and HWPC legend was disabled.\n");
+		fprintf(fp, "\t In order to enable HWPC feature, HWPC_CHOOSER env. var. must be set for the job as:\n");
+		fprintf(fp, "\t $ export HWPC_CHOOSER=FLOPS # [FLOPS|BANDWIDTH|VECTOR|CACHE|CYCLE|LOADSTORE]\n\n");
 		return;
 	}
+
     if (s_model_string.empty() && s_vendor_string.find( "ARM" ) != string::npos ) {
 		identifyARMplatform ();
 	}
@@ -1750,6 +1736,11 @@ void PerfWatch::outputPapiCounterLegend (FILE* fp)
 	}
 	fprintf(fp, "\t\t [Ins/cyc]: performed instructions per machine clock cycle\n");
 
+// USER
+	fprintf(fp, "\t HWPC_CHOOSER=USER:\n");
+	fprintf(fp, "\t\t User provided argument values (Arithmetic Workload) are accumulated and reported.\n");
+
+
 // remarks
 	fprintf(fp, "\n");
 	fprintf(fp, "\t Remarks.\n");
@@ -1794,7 +1785,7 @@ void PerfWatch::identifyARMplatform (void)
 	// on ARM, PAPI_get_hardware_info() does not provide so useful information.
 	// so we use /proc/cpuinfo information instead
 
-	// PAPI_get_hardware_info() output on Fugaku A64FX is as follows
+	// as of 2020/7/1, PAPI_get_hardware_info() output on Fugaku A64FX is as follows
 		//	hwinfo->vendor			// 7
 		//	hwinfo->vendor_string	// "ARM"
 		//	hwinfo->model			// 0
