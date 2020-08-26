@@ -3,17 +3,12 @@ set -x
 umask 0022
 
 # module load pmlib
-PMLIB_DIR=${HOME}/pmlib/usr_local_pmlib/gnu
+PMLIB_DIR=${HOME}/pmlib/usr_local_pmlib/pmlib-5.7.0-gnu
 PMLIB_LDFLAGS="-L${PMLIB_DIR}/lib -lPM "
 
 # module load papi
-PAPI_DIR=${HOME}/papi/usr_local_papi/papi-5.5.1-gnu
+PAPI_DIR=${HOME}/papi/usr_local_papi/papi-5.6.0-gnu
 PAPI_LDFLAGS="-lpapi_ext -L${PAPI_DIR}/lib -Wl,-Bstatic,-lpapi,-lpfm,-Bdynamic "
-
-# module load otf
-#	OTF_DIR=${HOME}/otf/usr_local_otf/otf-1.12-gnu
-#	OTF_LDFLAGS="-lotf_ext -L${OTF_DIR}/lib -lopen-trace-format -lotfaux "
-#	#	OTF_LDFLAGS="-lotf_ext -L${OTF_DIR}/lib -Wl,-lopen-trace-format,-lotfaux,-Bdynamic "
 
 LDFLAGS+=" ${PMLIB_LDFLAGS} ${PAPI_LDFLAGS} ${OTF_LDFLAGS} -lstdc++ "
 
@@ -30,14 +25,11 @@ rm $WKDIR/*
 
 cp ${HOME}/pmlib/scripts/src_tests/f_serial.f90 serial.f90
 
-
 FCFLAGS="-O3 -fopenmp -cpp "
 gfortran    ${FCFLAGS} ${INCLUDES} serial.f90 ${LDFLAGS}
 
 export OMP_NUM_THREADS=2
 export HWPC_CHOOSER=FLOPS
-export OTF_TRACING=full
-export OTF_FILENAME="trace_check"
 
 ./a.out
 ls -go

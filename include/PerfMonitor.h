@@ -64,6 +64,7 @@ namespace pm_lib {
     bool is_OTF_enabled;       ///< 対応動作可能フラグ:OTF tracing 出力
     bool is_PMlib_enabled;     ///< PMlibの動作を有効にするフラグ
     bool is_Root_active;       ///< 背景区間(Root区間)の動作フラグ
+    bool is_exclusive_construct; ///< 測定区間の重なり状態検出フラグ
 
     std::string parallel_mode; ///< 並列動作モード
       // {"Serial", "OpenMP", "FlatMPI", "Hybrid"}
@@ -74,14 +75,20 @@ namespace pm_lib {
       // PerfWatchのインスタンスは全部で m_nWatch 生成され、その番号対応は以下
       // m_watchArray[0]  :PMlibが定義するRoot区間
       // m_watchArray[1 .. m_nWatch] :ユーザーが定義する各区間
-    unsigned *m_order;         ///< 測定区間ソート用のリストm_order[m_nWatch]
+    unsigned* m_order;         ///< 測定区間ソート用のリストm_order[m_nWatch]
 
   public:
     /// コンストラクタ.
     PerfMonitor() : m_watchArray(0) {}
 
     /// デストラクタ.
-    ~PerfMonitor() { if (m_watchArray) delete[] m_watchArray; }
+    ~PerfMonitor() {
+	#ifdef DEBUG_PRINT_MONITOR
+		fprintf(stderr, "\t <PerfMonitor> rank %d destructor is called\n", my_rank);
+	#endif
+		if (m_watchArray) delete[] m_watchArray;
+		if (m_order) delete[] m_order;
+	}
 
 
     /// PMlibの内部初期化

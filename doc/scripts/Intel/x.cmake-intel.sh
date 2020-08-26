@@ -1,26 +1,28 @@
 #!/bin/bash
 # eagles
 #	module purge
-#	#	module load intelcompiler
-#	INTEL_DIR=/ap/intel/composer_xe_2015.2.164
-#	source ${INTEL_DIR}/bin/compilervars.sh intel64
-#	#	module load intelmpi
-#	MPI_DIR=/ap/intel/impi/5.0.3.048
-#	source ${MPI_DIR}/bin64/mpivars.sh
-
+#	module load intelcompiler intelmpi
 # chicago
-INTEL_TOP=/opt/intel
-source ${INTEL_TOP}/bin/compilervars.sh intel64
+#	INTEL_TOP=/opt/intel
+#	source ${INTEL_TOP}/bin/compilervars.sh intel64
+# ito
+#	module load intel
+# general cluster
+#	INTEL_DIR=/opt/intel/2018
+#	source ${INTEL_DIR}/bin/compilervars.sh intel64
+#	I_MPI_ROOT=/opt/intel/impi
+#	source ${MPI_DIR}/bin64/mpivars.sh
 
 set -x
 umask 0022
+export LANG=C
 #	export PATH=${HOME}/cmake/cmake-2.8.12.2/build/bin:${PATH}
 
 PACKAGE_DIR=${HOME}/pmlib/package
-PMLIB_DIR=${HOME}/pmlib/usr_local_pmlib/intel
+PMLIB_DIR=${HOME}/pmlib/usr_local_pmlib/pmlib-intel
 
 #	PAPI_DIR="no"
-PAPI_DIR=${HOME}/papi/usr_local_papi/papi-5.5.1-intel
+PAPI_DIR=${HOME}/papi/usr_local_papi/papi-5.6.0-intel
 #Remark-- PAPI 5.5 contains ffsll() which is not compatible with Linux.
 #Remark-- Comment out ${PAPI_DIR}/include/papi.h line 1024, i.e. ffsll()
 

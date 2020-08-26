@@ -4,18 +4,18 @@
 set -x
 
 PACKAGE_DIR=${HOME}/pmlib/package
+
 PMLIB_DIR=${HOME}/pmlib/usr_local_pmlib/pmlib-fx100
-PMLIB_LDFLAGS="-L${PMLIB_DIR}/lib -lPMmpi "
+PMLIB_LDFLAGS="-L${PMLIB_DIR}/lib -lPM "
 
 PAPI_DIR=""
-PAPI_LDFLAGS="-lpapi_ext -lpapi -lpfm "
+PAPI_LDFLAGS=" -lpapi_ext -lpapi -lpfm "
 
 OTF_DIR=${HOME}/otf/usr_local_otf/fx100
-OTF_LDFLAGS="-lotf_ext -L${OTF_DIR}/lib -lopen-trace-format -lotfaux "
+OTF_LDFLAGS=" -lotf_ext -L${OTF_DIR}/lib -lopen-trace-format -lotfaux "
 
 FX100LDFLAGS="-Ntl_notrt -Nfjcex"
 LDFLAGS+=" ${PMLIB_LDFLAGS} ${PAPI_LDFLAGS} ${OTF_LDFLAGS} ${FX100LDFLAGS} "
-
 
 PMLIB_INCLUDES="-I${PMLIB_DIR}/include "
 PAPI_INCLUDES=""
@@ -29,16 +29,11 @@ mkdir -p $WK_DIR
 cd $WK_DIR; if [ $? != 0 ] ; then echo '@@@ Directory error @@@'; exit; fi
 rm $WK_DIR/*
 
-cp ${PACKAGE_DIR}/doc/src_tutorial/mxm.cpp  main.cpp
+#	cp ${HOME}/pmlib/scripts/src_tests/main_thread.f90 main.f90
+cp ${PACKAGE_DIR}/doc/src_tutorial/mxm.f90  main.f90
 
+FCFLAGS="-Cpp -Kopenmp,fast -Ntl_notrt "
+frtpx    ${FCFLAGS} ${INCLUDES} -o a.out main.f90  ${LDFLAGS} 
 
-CXXFLAGS="-Kopenmp,fast -w "
-CFLAGS="-std=c99 -Kopenmp,fast -w "
-FCFLAGS="-Cpp -Kopenmp,fast "
-
-mpiFCCpx ${CXXFLAGS} ${INCLUDES} -o a.out.mpi main.cpp ${LDFLAGS}
-
-ls -go
-file a.out.mpi
-
+file a.out
 

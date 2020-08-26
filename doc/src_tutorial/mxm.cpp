@@ -3,12 +3,11 @@
 #include <stdio.h>
 void init2d();
 void mxm2d();
-	#include <PerfMonitor.h>
-	using namespace pm_lib;
-	PerfMonitor PM;
+	//	#include <PerfMonitor.h>
+	//	using namespace pm_lib;
+	//	PerfMonitor PM;
 
 #define MATSIZE 1000
-//	#define MATSIZE 500
 int nsize;
 struct matrix {
 	int nsize;
@@ -19,15 +18,17 @@ struct matrix {
 
 int main (int argc, char *argv[])
 {
-		PM.initialize();
-		PM.setProperties("Label-1", PerfMonitor::CALC);
+	//	PM.initialize();
+	//	PM.start("A:init2d");
 	init2d();
-		PM.start("Label-1");
+	//	PM.stop ("A:init2d");
+	//	PM.start("B:mxm2d");
 	mxm2d();
-		PM.stop ("Label-1");
-		PM.print(stdout, "", "Mrs. Kobe", 0);
-		PM.printDetail(stdout, 1);
-	printf("something was done^^;\n");
+	//	PM.stop ("B:mxm2d");
+	//	PM.print(stdout, "", "", 0);
+	//	PM.printDetail(stdout);
+	//	PM.printThreads(stdout, 0, 0);
+	printf("something was computed... %f\n",matrix.c2[0][0]);
 	return 0;
 }
 
@@ -37,7 +38,7 @@ void init2d()
 	int i, j, nsize;
 	matrix.nsize = MATSIZE;
 	nsize = matrix.nsize;
-	//	#pragma omp parallel for private(i,j)
+	//	//	#pragma omp parallel for private(i,j)
 	for (i=0; i<nsize; i++){
 	for (j=0; j<nsize; j++){
 	matrix.a2[i][j] = sin((float)j/(float)nsize);
@@ -52,7 +53,7 @@ void mxm2d()
 	int i, j, k, nsize;
 	float c1,c2,c3;
 	nsize = matrix.nsize;
-	//	#pragma omp parallel for private(i,j,k,c1)
+	//	//	#pragma omp parallel for private(i,j,k,c1)
 	for (i=0; i<nsize; i++){
 	for (j=0; j<nsize; j++){
 		c1=0.0;
