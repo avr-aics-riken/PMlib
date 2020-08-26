@@ -28,7 +28,7 @@ int main (int argc, char *argv[])
 	//	PM.print(stdout, "", "", 0);
 	//	PM.printDetail(stdout);
 	//	PM.printThreads(stdout, 0, 0);
-	printf("something was computed... %f\n",c2[0][0]);
+	printf("something was computed... %f\n",matrix.c2[0][0]);
 	return 0;
 }
 

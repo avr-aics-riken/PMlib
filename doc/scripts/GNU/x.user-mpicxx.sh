@@ -9,17 +9,12 @@ export  PATH=${OPENMPI_DIR}/bin:${PATH}
 export  LD_LIBRARY_PATH=${OPENMPI_DIR}/lib:${LD_LIBRARY_PATH}
 
 # module load pmlib
-PMLIB_DIR=${HOME}/pmlib/usr_local_pmlib/gnu
+PMLIB_DIR=${HOME}/pmlib/usr_local_pmlib/pmlib-5.7.0-gnu
 PMLIB_LDFLAGS="-L${PMLIB_DIR}/lib -lPMmpi "
 
 # module load papi
-PAPI_DIR=${HOME}/papi/usr_local_papi/papi-5.5.1-gnu
+PAPI_DIR=${HOME}/papi/usr_local_papi/papi-5.6.0-gnu
 PAPI_LDFLAGS="-lpapi_ext -L${PAPI_DIR}/lib -Wl,-Bstatic,-lpapi,-lpfm,-Bdynamic "
-
-# module load otf
-#	OTF_DIR=${HOME}/otf/usr_local_otf/otf-1.12-gnu
-#	OTF_LDFLAGS="-lotf_ext -L${OTF_DIR}/lib -lopen-trace-format -lotfaux "
-#	#	OTF_LDFLAGS="-lotf_ext -L${OTF_DIR}/lib -Wl,-lopen-trace-format,-lotfaux,-Bdynamic "
 
 LDFLAGS+=" ${PMLIB_LDFLAGS} ${PAPI_LDFLAGS} ${OTF_LDFLAGS} -lstdc++ "
 
@@ -40,12 +35,8 @@ cp ${HOME}/pmlib/scripts/src_tests/main_mpi.cpp main.cpp
 FCFLAGS="-O3 -fopenmp -cpp "
 mpicxx    ${FCFLAGS} ${INCLUDES} main.cpp ${LDFLAGS}
 
-ldd a.out
-
 export OMP_NUM_THREADS=2
 export HWPC_CHOOSER=FLOPS
-export OTF_TRACING=full
-export OTF_FILENAME="trace_check"
 
 NPROCS=2
 mpirun -np ${NPROCS} ./a.out

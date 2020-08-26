@@ -1,24 +1,28 @@
 #!/bin/bash
-#	module load lang
-#	module load lang/fjcompiler20200214_01
-export LANG=C
 set -x
 
 PACKAGE_DIR=${HOME}/pmlib/package
-PMLIB_DIR=${HOME}/pmlib/usr_local_pmlib/fugaku
-PAPI_DIR=/opt/FJSVxos/devkit/aarch64/rfs/usr
-OTF_DIR="no"
+#	PMLIB_DIR=${HOME}/pmlib/usr_local_pmlib/fx100
+#	PMLIB_DIR=${HOME}/pmlib/usr_local_pmlib/pmlib-6.4.0-fx100
+#	PMLIB_DIR=${HOME}/pmlib/usr_local_pmlib/pmlib-7.0.0-fx100
+PMLIB_DIR=${HOME}/pmlib/usr_local_pmlib/pmlib-7.2.0-fx100
 
-BUILD_DIR=${PACKAGE_DIR}/BUILD_DEBUG_SERIAL
+PAPI_DIR="yes"
+#	PAPI_DIR=/opt/FJSVXosDevkit/sparc64fx/target/usr/lib64/
+#	On K/FX100, PAPI library is automatically searched by mpi*px compilers.
+#	So, setting "yes" is good enough to link PAPI.
+
+OTF_DIR=${HOME}/otf/usr_local_otf/fx100
+
+BUILD_DIR=${PACKAGE_DIR}/BUILD_DIR
 mkdir -p $BUILD_DIR
 cd $BUILD_DIR; if [ $? != 0 ] ; then echo '@@@ Directory error @@@'; exit; fi
 
+CXXFLAGS="-DUSE_PRECISE_TIMER -Nfjcex -std=c++11 "
 #	CXXFLAGS="-DUSE_PRECISE_TIMER -Nfjcex "
-CXXFLAGS="-Kocl -Nnofjprof -Nfjomplib -NRtrap -Nquickdbg=inf_detail -O0 "
-CFLAGS="-Kocl -Nnofjprof -Nfjomplib -NRtrap -Nquickdbg=inf_detail -O0 "
-FFLAGS="-Kocl -Nnofjprof -Nfjomplib -NRtrap -O0 "
+CFLAGS=" "
+FFLAGS="-cpp "
 DEBUG=" "
-DEBUG="-DDEBUG_PRINT_PAPI -DDEBUG_PRINT_MONITOR -DDEBUG_PRINT_WATCH "
 
 # 1. Serial version
 
@@ -27,7 +31,7 @@ cmake \
 	-DCMAKE_CXX_FLAGS="${CXXFLAGS} ${DEBUG}" \
 	-DCMAKE_C_FLAGS="${CFLAGS} ${DEBUG}" \
 	-DCMAKE_Fortran_FLAGS="${FFLAGS} ${DEBUG}" \
-	-DCMAKE_TOOLCHAIN_FILE=../cmake/Toolchain_fugaku.cmake \
+	-DCMAKE_TOOLCHAIN_FILE=../cmake/Toolchain_fx100.cmake \
 	-DINSTALL_DIR=${PMLIB_DIR} \
 	-Denable_OPENMP=yes \
 	-Dwith_MPI=no \
@@ -38,20 +42,16 @@ cmake \
 	..
 
 make VERBOSE=1
-
 make install
 
 # 2. MPI version
 
-BUILD_DIR=${PACKAGE_DIR}/BUILD_DEBUG_MPI
-mkdir -p $BUILD_DIR
-cd $BUILD_DIR; if [ $? != 0 ] ; then echo '@@@ Directory error @@@'; exit; fi
 rm -rf  ${BUILD_DIR}/*
 cmake \
 	-DCMAKE_CXX_FLAGS="${CXXFLAGS} ${DEBUG}" \
 	-DCMAKE_C_FLAGS="${CFLAGS} ${DEBUG}" \
 	-DCMAKE_Fortran_FLAGS="${FFLAGS} ${DEBUG}" \
-	-DCMAKE_TOOLCHAIN_FILE=../cmake/Toolchain_fugaku.cmake \
+	-DCMAKE_TOOLCHAIN_FILE=../cmake/Toolchain_fx100.cmake \
 	-DINSTALL_DIR=${PMLIB_DIR} \
 	-Denable_OPENMP=yes \
 	-Dwith_MPI=yes \
