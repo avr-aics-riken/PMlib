@@ -465,20 +465,22 @@ void PerfWatch::createPapiCounterList ()
 
 		if (hwpc_group.platform == "A64FX" ) {
 			if (hwpc_group.i_platform == 21 ) {
-			hwpc_group.number[I_bandwidth] += 5;
-			//	L2 cache access = "L2D_CACHE"
-			//	L2 cache miss (PAPI_L2_DCM) = "L2D_CACHE_REFILL" - "L2D_SWAP_DM" - "L2D_CACHE_MIBMCH_PRF"
-			//	L2 cache hit = L2 cache access - L2 cache miss
-			papi.s_name[ip] = "L2D_CACHE";
-			my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "L2D_TOTAL"; ip++;
-			papi.s_name[ip] = "L2D_CACHE_REFILL";
-			my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "L2D_REFILL"; ip++;
-			papi.s_name[ip] = "L2D_SWAP_DM";
-			my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "L2D_HRFB1"; ip++;
-			papi.s_name[ip] = "L2D_CACHE_MIBMCH_PRF";
-			my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "L2D_HRFB2"; ip++;
-			papi.s_name[ip] = "L2D_CACHE_WB";
-			my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "L2D_WB   "; ip++;
+			// On A64FX, we use native events BUS_READ_TOTAL_MEM and BUS_WRITE_TOTAL_MEM
+			hwpc_group.number[I_bandwidth] += 2;
+			papi.s_name[ip] = "BUS_READ_TOTAL_MEM";
+			my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "CMG_bus_RD"; ip++;
+			papi.s_name[ip] = "BUS_WRITE_TOTAL_MEM";
+			my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "CMG_bus_WR"; ip++;
+
+			// updated 2020/10/15
+			// The following assumption was wrong
+			//		L2 cache access = "L2D_CACHE"
+			//		L2 cache miss (PAPI_L2_DCM) = "L2D_CACHE_REFILL" - "L2D_SWAP_DM" - "L2D_CACHE_MIBMCH_PRF"
+			//		L2 cache hit = L2 cache access - L2 cache miss
+			//		"L2D_CACHE_REFILL"  as "L2D_REFILL";
+			//		"L2D_SWAP_DM"       as "L2D_HRFB1";
+			//		"L2D_CACHE_MIBMCH_PRF" as "L2D_HRFB2";
+
 			}
 		}
 
@@ -783,7 +785,7 @@ void PerfWatch::createPapiCounterList ()
 		fprintf(stderr, " s_model_string=%s\n", s_model_string.c_str());
 
 		fprintf(stderr, " platform: %s\n", hwpc_group.platform.c_str());
-		fprintf(stderr, " HWPC_CHOOSER=%s\n", s_chooser.c_str());
+		fprintf(stderr, " HWPC_CHOOSER=%s\n", hwpc_group.env_str_hwpc.c_str());
 		fprintf(stderr, " hwpc max output groups:%d\n", Max_hwpc_output_group);
 		for (int i=0; i<Max_hwpc_output_group; i++) {
 		fprintf(stderr, "  i:%d hwpc_group.number[i]=%d, hwpc_group.index[i]=%d\n",
@@ -878,6 +880,7 @@ void PerfWatch::sortPapiCounterList (void)
 		double d_load_store, d_simd_load_store, d_xsimd_load_store;
 		double d_hit_L2, d_miss_L2;
 		double d_hit_LLC, d_miss_LLC;
+		double d_Bytes_RD, d_Bytes_WR;
 		double d_Bytes, bandwidth;
 		double d_wb_L2;
 		double cache_size;
@@ -961,29 +964,36 @@ void PerfWatch::sortPapiCounterList (void)
 
     	if (hwpc_group.platform == "A64FX" ) {
 			if (hwpc_group.i_platform == 21 ) {
+
+			//
+			// updated 2020/10/15
+			//
+				for(int jp=0; jp<hwpc_group.number[I_bandwidth]; jp++)
+				{
+					my_papi.v_sorted[jp] = my_papi.accumu[jp + hwpc_group.index[I_bandwidth]] / num_threads;
+				}
+
 				// Fugaku has 256 Byte $ line
 				cache_size = 256.0;
-				// L2 cache miss counts = L2D_refill - L2D_hrf1 - L2D_hrf2
-				d_miss_L2 = my_papi.accumu[ip+1] - my_papi.accumu[ip+2] - my_papi.accumu[ip+3] ;
-				// L2 cache hit = L2 cache access - L2 cache miss
-				d_hit_L2 = my_papi.accumu[ip] - d_miss_L2;
-				// write back from L2 to memory = L2D_WB
-				d_wb_L2 = my_papi.accumu[ip+4];
+				d_Bytes_RD = my_papi.accumu[ip+0] * cache_size / num_threads ;	// averaging for thread stats
+				d_Bytes_WR = my_papi.accumu[ip+1] * cache_size / num_threads ;	// averaging for thread stats
 
-				// L2 hit BandWidth
-				bandwidth = d_hit_L2 * cache_size * perf_rate;
-				my_papi.s_sorted[jp] = "L2$ [B/s]" ;
-				my_papi.v_sorted[jp] = bandwidth ;
+				my_papi.s_sorted[jp] = "RD [Bytes]" ;
+				my_papi.v_sorted[jp] = d_Bytes_RD ;
 				jp++;
 
-				// Memory BandWidth
-				bandwidth = d_miss_L2 * cache_size * perf_rate;
+				my_papi.s_sorted[jp] = "WD [Bytes]" ;
+				my_papi.v_sorted[jp] = d_Bytes_WR ;
+				jp++;
+
+				// Memory BandWidth using events BUS_READ_TOTAL_MEM + BUS_WRITE_TOTAL_MEM
+				d_Bytes = d_Bytes_RD + d_Bytes_WR ;
+				bandwidth = d_Bytes * perf_rate;
 				my_papi.s_sorted[jp] = "Mem [B/s]" ;
 				my_papi.v_sorted[jp] = bandwidth ; //* 1.0e-9;
 				jp++;
 
-				// aggregated data bytes transferred out of L2 cache and memory
-				d_Bytes = (d_hit_L2 + d_miss_L2) * cache_size;
+				// Actual read + write bytes
 				my_papi.s_sorted[jp] = "[Bytes]" ;
 				my_papi.v_sorted[jp] = d_Bytes ;
 				jp++;
@@ -1589,15 +1599,12 @@ void PerfWatch::outputPapiCounterLegend (FILE* fp)
 	} else
 
 	if (hwpc_group.platform == "A64FX" ) {
-	fprintf(fp, "\t\t LOAD_INS:   memory load instructions\n");
-	fprintf(fp, "\t\t STORE_INS:  memory store instructions\n");
-	fprintf(fp, "\t\t L2D_REFILL: L2 cache refill events\n");
-	fprintf(fp, "\t\t L2D_HRFB1:  L2 demand access counts hitting refill buffer (allocated by prefetch)\n");
-	fprintf(fp, "\t\t L2D_HRFB2:  L2 prefetch counts hitting refill buffer (allocated by demand access)\n");
-	fprintf(fp, "\t\t L2D_WB   :  L2 writeback counts reaching memory\n");
-	fprintf(fp, "\t\t L2$ [B/s]:  L2 cache bandwidth responding to demand read and prefetch \n");
-	fprintf(fp, "\t\t Mem [B/s]:  Memory bandwidth responding to demand, prefetch and writeback\n");
-	fprintf(fp, "\t\t [Bytes]  :  aggregated data bytes transferred out of L2 cache and memory\n");
+	fprintf(fp, "\t\t CMG_bus_RD:  CMG local memory read counts\n");
+	fprintf(fp, "\t\t CMG_bus_WR:  CMG local memory write counts\n");
+	fprintf(fp, "\t\t RD [Bytes]:  CMG local memory read bytes\n");
+	fprintf(fp, "\t\t CMG_bus_WR:  CMG local memory write bytes\n");
+	fprintf(fp, "\t\t Mem [B/s]:  CMG local memory read&write bandwidth \n");
+	fprintf(fp, "\t\t [Bytes]  :  CMG local memory read&write bytes\n");
 	}
 
 // VECTOR
@@ -1769,8 +1776,13 @@ void PerfWatch::outputPapiCounterLegend (FILE* fp)
 	}
 
 	if (hwpc_group.platform == "A64FX" ) {
-	fprintf(fp, "\t\t Note that [FMA_ops %] is a roughly approximated number using the following assumption. \n");
+	fprintf(fp, "\t Special remarks for A64FX VECTOR report.\n");
+	fprintf(fp, "\t\t [FMA_ops %] is a roughly approximated number using the following assumption. \n");
 	fprintf(fp, "\t\t\t (FMA vector OPS)/(vector OPS) = (FMA scalar OPS)/(scalar OPS) for both DP and SP \n");
+	fprintf(fp, "\t Special remarks for A64FX BANDWIDTH report.\n");
+	fprintf(fp, "\t\t CMG_bus_RD and CMG_bus_WR both count the CMG aggregated values, not core.\n");
+	fprintf(fp, "\t\t So, Thread Report statistics shows the value internally divided by omp_get_max_threads().\n");
+	fprintf(fp, "\t\t Basic Report and Process Report statistics both show the measured value.\n");
 	}
 
 #endif // USE_PAPI
