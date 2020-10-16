@@ -3,6 +3,10 @@
 ## REVISION HISTORY
 
 ---
+- 2020-10-15 Version 7.0.4
+  - update BANDWIDTH event choice for Fugaku and FX700
+
+---
 - 2020-08-18 Version 7.0.3
   - set default Max_nthreads=48
   - add environment variable BYPASS_PMLIB. Set any value to skip PMlib routines.
