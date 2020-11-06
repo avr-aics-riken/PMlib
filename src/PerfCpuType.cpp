@@ -105,9 +105,6 @@ void PerfWatch::initializeHWPC ()
 
 	read_cpu_clock_freq(); /// API for reading processor clock frequency.
 
-// DEBUG from HERE.
-// 2020/7/27
-
 	if (hwpc_group.env_str_hwpc == "USER" ) return;	// Is this a correct return?
 
 #ifdef USE_PAPI
@@ -461,8 +458,8 @@ void PerfWatch::createPapiCounterList ()
 				my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); ip++;
 			papi.s_name[ip] = "L2_WB_PF";
 				my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); ip++;
-		} else
 
+		} else
 		if (hwpc_group.platform == "A64FX" ) {
 			if (hwpc_group.i_platform == 21 ) {
 			// On A64FX, we use native events BUS_READ_TOTAL_MEM and BUS_WRITE_TOTAL_MEM
@@ -471,15 +468,6 @@ void PerfWatch::createPapiCounterList ()
 			my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "CMG_bus_RD"; ip++;
 			papi.s_name[ip] = "BUS_WRITE_TOTAL_MEM";
 			my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "CMG_bus_WR"; ip++;
-
-			// updated 2020/10/15
-			// The following assumption was wrong
-			//		L2 cache access = "L2D_CACHE"
-			//		L2 cache miss (PAPI_L2_DCM) = "L2D_CACHE_REFILL" - "L2D_SWAP_DM" - "L2D_CACHE_MIBMCH_PRF"
-			//		L2 cache hit = L2 cache access - L2 cache miss
-			//		"L2D_CACHE_REFILL"  as "L2D_REFILL";
-			//		"L2D_SWAP_DM"       as "L2D_HRFB1";
-			//		"L2D_CACHE_MIBMCH_PRF" as "L2D_HRFB2";
 
 			}
 		}
@@ -961,22 +949,21 @@ void PerfWatch::sortPapiCounterList (void)
 			jp++;
 
 		} else
-
     	if (hwpc_group.platform == "A64FX" ) {
 			if (hwpc_group.i_platform == 21 ) {
 
-			//
-			// updated 2020/10/15
-			//
-				for(int jp=0; jp<hwpc_group.number[I_bandwidth]; jp++)
-				{
-					my_papi.v_sorted[jp] = my_papi.accumu[jp + hwpc_group.index[I_bandwidth]] / num_threads;
-				}
+			// updated 2020/11/06
+			// See the remarks in outputPapiCounterLegend()
+
+				//	for(int jp=0; jp<hwpc_group.number[I_bandwidth]; jp++)
+				//	{
+				//		my_papi.v_sorted[jp] = my_papi.accumu[jp + hwpc_group.index[I_bandwidth]] ;
+				//	}
 
 				// Fugaku has 256 Byte $ line
 				cache_size = 256.0;
-				d_Bytes_RD = my_papi.accumu[ip+0] * cache_size / num_threads ;	// averaging for thread stats
-				d_Bytes_WR = my_papi.accumu[ip+1] * cache_size / num_threads ;	// averaging for thread stats
+				d_Bytes_RD = my_papi.accumu[ip+0] * cache_size ;
+				d_Bytes_WR = my_papi.accumu[ip+1] * cache_size ;
 
 				my_papi.s_sorted[jp] = "RD [Bytes]" ;
 				my_papi.v_sorted[jp] = d_Bytes_RD ;
@@ -1509,7 +1496,6 @@ void PerfWatch::outputPapiCounterGroup (FILE* fp, MPI_Group p_group, int* pp_ran
 }
 
 
-
   /// Display the HWPC legend
   ///
   ///   @param[in] fp 出力ファイルポインタ
@@ -1781,7 +1767,7 @@ void PerfWatch::outputPapiCounterLegend (FILE* fp)
 	fprintf(fp, "\t\t\t (FMA vector OPS)/(vector OPS) = (FMA scalar OPS)/(scalar OPS) for both DP and SP \n");
 	fprintf(fp, "\t Special remarks for A64FX BANDWIDTH report.\n");
 	fprintf(fp, "\t\t CMG_bus_RD and CMG_bus_WR both count the CMG aggregated values, not core.\n");
-	fprintf(fp, "\t\t So, Thread Report statistics shows the value internally divided by omp_get_max_threads().\n");
+	fprintf(fp, "\t\t So, Thread Report statistics shows the values in redundant manner.\n");
 	fprintf(fp, "\t\t Basic Report and Process Report statistics both show the measured value.\n");
 	}
 

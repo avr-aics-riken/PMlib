@@ -20,6 +20,7 @@
 #include "stdio.h"
 #include "papi.h"
 #include <string.h>
+#include <stdlib.h>
 
 #define HL_STOP		0
 #define HL_START	1
