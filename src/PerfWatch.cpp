@@ -301,7 +301,7 @@ namespace pm_lib {
 	if ( m_sortedArrayHWPC == NULL) {
 		m_sortedArrayHWPC = new double[num_process*my_papi.num_sorted];
 		if (!(m_sortedArrayHWPC)) {
-			printError("gatherHWPC", "new memory failed. %d x %d x 8\n", num_process, my_papi.num_sorted);
+			printError("gatherThreadHWPC", "new memory failed. %d x %d x 8\n", num_process, my_papi.num_sorted);
 			PM_Exit(0);
 		}
 	}
@@ -311,7 +311,7 @@ namespace pm_lib {
 		MPI_Allgather (my_papi.v_sorted, my_papi.num_sorted, MPI_DOUBLE,
 					m_sortedArrayHWPC, my_papi.num_sorted, MPI_DOUBLE, MPI_COMM_WORLD);
 		if ( iret != 0 ) {
-			printError("gatherHWPC", " MPI_Allather failed.\n");
+			printError("gatherThreadHWPC", " MPI_Allather failed.\n");
 			PM_Exit(0);
 		}
 	} else {
@@ -921,12 +921,31 @@ namespace pm_lib {
 			}
 		} // end of if (m_in_parallel)
 
+		// Normal HWPC events are isolated inside the compute core,
+		// and their values should be accumulated.
+		// Some events such as memory controller are outside compute cores, and their values are shared,
+		// i.e. their values should not be accumulated.
+
+		bool isolated_events;
+
+		isolated_events = true;
+		if ( ( is_unit == 2) && ( hwpc_group.i_platform == 21 ) ) { // special case for A64FX BANDWIDTH events
+		isolated_events = false;
+		}
+
 		for (int i=0; i<my_papi.num_events; i++) {
 			my_papi.accumu[i] = 0.0;
-			for (int j=0; j<num_threads; j++) {
-			my_papi.accumu[i] += my_papi.th_accumu[j][i];
+			if (isolated_events) { // accmulate the values
+				for (int j=0; j<num_threads; j++) {
+				my_papi.accumu[i] += my_papi.th_accumu[j][i];
+				}
+			} else { // choose the maximum value
+				for (int j=0; j<num_threads; j++) {
+				my_papi.accumu[i] = std::max (my_papi.accumu[i], my_papi.th_accumu[j][i]);
+				}
 			}
 		}
+
 
 	} else {	// PMlib user counter mode
 		if (m_in_parallel) { // this section was executed inside parallel region
@@ -1112,10 +1131,6 @@ namespace pm_lib {
 
 		PerfWatch::selectPerfSingleThread(j);
 
-		//
-		// DEBUG from here
-		//
-		//	PerfWatch::gatherHWPC();
 		PerfWatch::gatherThreadHWPC();
 
 		PerfWatch::gather();
