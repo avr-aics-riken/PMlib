@@ -121,7 +121,7 @@ namespace pm_lib {
 			s_chooser == "USER" ) {
 			;
 		} else {
-			printDiag("initialize()",  "unknown HWPC_CHOOSER value [%s]. User API values will be reported.\n", cp_env);
+			printDiag("initialize()",  "unknown HWPC_CHOOSER value [%s]. the default value [%s] is set.\n", cp_env, s_default.c_str());
 			s_chooser = s_default;
 		}
 	}
@@ -158,6 +158,27 @@ namespace pm_lib {
     m_watchArray[0].start();
     is_Root_active = true;			// "Root Section" is now active
 
+
+// Parse the Environment Variable PMLIB_REPORT
+	//	std::string s_chooser;
+	s_default = "BASIC";
+
+    cp_env = NULL;
+	cp_env = std::getenv("PMLIB_REPORT");
+	if (cp_env == NULL) {
+		s_chooser = s_default;	// default setting
+	} else {
+		s_chooser = cp_env;
+		if (s_chooser == "BASIC" ||
+			s_chooser == "DETAIL" ||
+			s_chooser == "FULL" ) {
+			;
+		} else {
+			printDiag("initialize()",  "unknown PMLIB_REPORT value [%s]. the default value [%s] is set.\n", cp_env, s_default.c_str());
+			s_chooser = s_default;
+		}
+	}
+	env_str_report = s_chooser;
   }
 
 
@@ -567,6 +588,46 @@ namespace pm_lib {
 
   }
   
+
+  /// 測定結果の統計レポートを標準出力に表示する。
+  ///   @note
+  ///   基本統計レポート、MPIランク別詳細レポート、HWPC統計情報の詳細レポート、
+  ///   スレッド別詳細レポートをまとめて出力する。
+  ///   出力する内容は環境変数 PMLIB_REPORTの指定によってコントロールする。
+  ///   PMLIB_REPORT=BASIC : 基本統計レポートを出力する。
+  ///   PMLIB_REPORT=DETAIL: MPIランク別に経過時間、頻度、HWPC統計情報の詳細レポートを出力する。
+  ///   PMLIB_REPORT=FULL： BASICとDETAILのレポートに加えて、
+  ///		各MPIランクが生成した各並列スレッド毎にHWPC統計情報の詳細レポートを出力する。
+  ///
+  ///   @param[in] fp       出力ファイルポインタ
+  ///
+
+  void PerfMonitor::report(FILE* fp)
+  {
+    if (!is_PMlib_enabled) return;
+
+	PerfMonitor::print(fp, "", "", 0);
+
+	// env_str_report should be one of {"BASIC" || "DETAIL" || "FULL"}
+	if (env_str_report != "BASIC" ) {
+		PerfMonitor::printDetail(fp, 0, 0);
+	}
+
+	if (env_str_report == "FULL" ) {
+    	for (int i = 0; i < num_process; i++) {
+		PerfMonitor::printThreads(fp, i, 0);
+		}
+	}
+
+	// env_str_hwpc should be one of
+	// {FLOPS| BANDWIDTH| VECTOR| CACHE| CYCLE| LOADSTORE| USER}
+	if (env_str_hwpc != "USER" ) {
+		PerfMonitor::printLegend(fp);
+	}
+
+  }
+
+
 
 
   /// 測定結果の基本統計レポートを出力.
