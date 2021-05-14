@@ -59,10 +59,13 @@ int main (int argc, char *argv[])
 
 	PM.initialize();
 
-	PM.setProperties("Initial-section", PerfMonitor::CALC);
-	PM.setProperties("Loop-section", PerfMonitor::COMM, false);
-	PM.setProperties("Kernel-Slow", PerfMonitor::CALC);
-	PM.setProperties("Kernel-Fast", PerfMonitor::CALC);
+	//
+	//	calling setProperties() is optional
+	//
+	//	PM.setProperties("Initial-section", PerfMonitor::CALC);
+	//	PM.setProperties("Loop-section", PerfMonitor::COMM, false);
+	//	PM.setProperties("Kernel-Slow", PerfMonitor::CALC);
+	//	PM.setProperties("Kernel-Fast", PerfMonitor::CALC);
 
 // checking exclusive section
 	PM.start("Initial-section");
@@ -103,10 +106,15 @@ int main (int argc, char *argv[])
 	PM.stop("Loop-section", byte_count*(2*3), 1);
 	spacer();
 
-	PM.print(stdout, "", "Mrs. Kobe", 0);
-	PM.printDetail(stdout, 0);
-	PM.printThreads(stdout, 0);
-	PM.printLegend(stdout);
+	PM.report(stdout);
+
+	//
+	//	report() is equivalent to the following series of APIs
+	//
+	//	PM.print(stdout, "", "Mrs. Kobe", 0);
+	//	PM.printDetail(stdout, 0);
+	//	PM.printThreads(stdout, 0);
+	//	PM.printLegend(stdout);
 
 	MPI_Finalize();
 	return 0;

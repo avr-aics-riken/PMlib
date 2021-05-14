@@ -1,10 +1,18 @@
 # PMlib API documentation
 
+
+Detail specification of PMlib public class and private class APIs
+is documented in Doxygen format.
 This directory contains the Doxygen format documentation for PMlib public
 and private class APIs.
+	CMakeLists.txt
+	Doxyfile
+	api_cpp/
+	api_fortran/
 
-To produce the documentation files in html format for Web browser viewing,
-do the followings in the doc/ directory.
+The HTML format documentation for Web browser viewing can be generated
+in simple steps as described below.
+
 
 1. Create a symbolic link to C++ headers. They are written according to
  the doxygen style format.
@@ -30,6 +38,4 @@ PMlib->Classes->Class List->pm_lib->PerfMonitor menu.
 
 The Fortran Member Functions (Fortran subroutines) can be found in
 PMlib->Files->File List->api_fortran->PMlib_Fortra_api.f90 menu.
-
-
 

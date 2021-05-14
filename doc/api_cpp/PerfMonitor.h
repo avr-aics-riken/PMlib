@@ -58,24 +58,27 @@ namespace pm_lib {
     int init_nWatch;           ///< 初期に確保する測定区間数
     int reserved_nWatch;       ///< リザーブ済みの測定区間数
 
+    bool is_PMlib_enabled;     /*!< PMlibの動作を有効にするフラグ<br>
+    	//	@note 環境変数BYPASS_PMLIBを定義（任意値）してアプリを実行すると
+		//	PMlibを無効化した動作となり、性能統計処理を行わない */
     bool is_MPI_enabled;       ///< PMlibの対応動作可能フラグ:MPI
     bool is_OpenMP_enabled;	   ///< PMlibの対応動作可能フラグ:OpenMP
     bool is_PAPI_enabled;      ///< PMlibの対応動作可能フラグ:PAPI
-    bool is_OTF_enabled;       ///< 対応動作可能フラグ:OTF tracing 出力
-    bool is_PMlib_enabled;     ///< PMlibの動作を有効にするフラグ
+    bool is_OTF_enabled;       ///< PMlibの対応動作可能フラグ:OTF tracing 出力
     bool is_Root_active;       ///< 背景区間(Root区間)の動作フラグ
     bool is_exclusive_construct; ///< 測定区間の重なり状態検出フラグ
 
-    std::string parallel_mode; ///< 並列動作モード
-      // {"Serial", "OpenMP", "FlatMPI", "Hybrid"}
-    std::string env_str_hwpc;  ///< 環境変数HWPC_CHOOSERの値
-      // "USER" or one of the followings
-      // "FLOPS", "BANDWIDTH", "VECTOR", "CACHE", "CYCLE", "WRITEBACK"
-    PerfWatch* m_watchArray;   ///< 測定区間の配列
-      // PerfWatchのインスタンスは全部で m_nWatch 生成され、その番号対応は以下
-      // m_watchArray[0]  :PMlibが定義するRoot区間
-      // m_watchArray[1 .. m_nWatch] :ユーザーが定義する各区間
-    unsigned* m_order;         ///< 測定区間ソート用のリストm_order[m_nWatch]
+    std::string parallel_mode; /*!< 並列動作モード
+      // {Serial| OpenMP| FlatMPI| Hybrid} */
+    std::string env_str_hwpc;  /*!< 環境変数HWPC_CHOOSERの値
+      // {FLOPS| BANDWIDTH| VECTOR| CACHE| CYCLE| LOADSTORE| USER} */
+
+    PerfWatch* m_watchArray;   /*!< 測定区間の配列
+      // @note PerfWatchのインスタンスは全部で m_nWatch 生成される。<br>
+      // m_watchArray[0] :PMlibが定義するRoot区間、<br>
+      // m_watchArray[1 .. m_nWatch] :ユーザーが定義する各区間 */
+
+    unsigned* m_order;         ///< 測定区間ソート用のリスト m_order[m_nWatch]
 
   public:
     /// コンストラクタ.
