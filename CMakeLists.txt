@@ -32,6 +32,8 @@
 #
 # -D with_PAPI={no|yes|installed_directory}
 #
+# -D with_POWER={no|yes|installed_directory}
+#
 # -D with_OTF={no|installed_directory}
 #
 # -D enable_PreciseTimer={yes|no}
@@ -49,6 +51,7 @@ option (enable_Fortran "Using Fortran" "OFF")
 option (with_MPI "Enable MPI" "OFF")
 option (enable_OPENMP "Enable OpenMP" "OFF")
 option (with_PAPI "Enable PAPI" "OFF")
+option (with_POWER "Enable Power API" "OFF")
 option (with_OTF "Enable tracing" "OFF")
 option (enable_PreciseTimer "Enable PRECISE TIMER" "ON")
 
@@ -80,8 +83,8 @@ cmake_policy(SET CMP0012 NEW)
 
 
 #######
-set(PROJECT_VERSION "7.0.4")
-set(LIB_REVISION "20201015_1500")
+set(PROJECT_VERSION "8.0.0")
+set(LIB_REVISION "20210601_1500")
 
 message(" ")
 message("${PROJECT_NAME} Version : ${PROJECT_VERSION}")
@@ -148,6 +151,7 @@ message(" ")
 message( STATUS "OpenMP            : "    ${enable_OPENMP})
 message( STATUS "MPI               : "    ${with_MPI})
 message( STATUS "PAPI              : "    ${with_PAPI})
+message( STATUS "POWER             : "    ${with_POWER})
 message( STATUS "OTF               : "    ${with_OTF})
 message( STATUS "Example           : "    ${with_example})
 message(" ")
@@ -209,6 +213,20 @@ else()
   set(PAPI_DIR "${with_PAPI}")
 endif()
 
+#######
+# POWER
+#######
+
+if(NOT with_POWER)
+elseif(with_POWER STREQUAL "yes")
+  add_definitions(-DUSE_POWER)
+  set(OPT_POWER "ON")
+else()
+  add_definitions(-DUSE_POWER)
+  set(OPT_POWER "ON")
+  set(POWER_DIR "${with_POWER}")
+endif()
+
 
 #######
 # OTF
@@ -251,6 +269,10 @@ add_subdirectory(doc)
 
 if(OPT_PAPI)
   add_subdirectory(src_papi_ext)
+endif()
+
+if(OPT_POWER)
+  add_subdirectory(src_power_ext)
 endif()
 
 if(OPT_OTF)

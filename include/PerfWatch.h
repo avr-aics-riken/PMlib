@@ -37,6 +37,10 @@
 #include "pmlib_papi.h"
 //	#endif
 
+//	#ifdef USE_POWER
+#include "pmlib_power.h"
+//	#endif
+
 #ifdef USE_OTF
 #include "pmlib_otf.h"
 #endif
@@ -96,6 +100,8 @@ namespace pm_lib {
                         //	marker		: otf_filename + .mdID + .marker
 
 	struct pmlib_papi_chooser my_papi;
+
+	struct pmlib_power_chooser my_power;
 
     /// MPI並列時の並列プロセス数と自ランク番号
     int num_process;
