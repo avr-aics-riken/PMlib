@@ -63,6 +63,7 @@ namespace pm_lib {
     bool is_MPI_enabled;       ///< PMlibの対応動作可能フラグ:MPI
     bool is_OpenMP_enabled;	   ///< PMlibの対応動作可能フラグ:OpenMP
     bool is_PAPI_enabled;      ///< PMlibの対応動作可能フラグ:PAPI
+    bool is_POWER_enabled;     ///< PMlibの対応動作可能フラグ:Power API
     bool is_OTF_enabled;       ///< PMlibの対応動作可能フラグ:OTF tracing 出力
     bool is_Root_active;       ///< 背景区間(Root区間)の動作フラグ
     bool is_exclusive_construct; ///< 測定区間の重なり状態検出フラグ
@@ -123,6 +124,45 @@ namespace pm_lib {
     ///   第３引数は省略可
     ///
     void setProperties(const std::string& label, Type type=CALC, bool exclusive=true);
+
+
+    /// Read the current value for the given power control knob
+    ///
+    ///   @param[in] knob  : power knob chooser 電力制御用ノブの種類
+    ///   @param[in] operation : 0:read, 1:update
+    ///   @param[out] value : current value for the knob  現在の値
+	///
+    /// @note the knob and its value combination must be chosen from the following table
+	///	@verbatim
+    /// knob : value : object description
+    ///  0   : 2200, 2000 : CPU frequency in MHz
+    ///  1   : 100, 90, 80, .. , 10 : MEMORY access throttling percentage
+    ///  2   : 2, 4    : ISSUE instruction issue rate per cycle
+    ///  3   : 1, 2    : PIPE number of concurrent execution pipelines 
+    ///  4   : 0, 1, 2 : ECO mode state
+    ///  5   : 0, 1    : RETENTION mode state DISABLED as of May 2021
+	///	@endverbatim
+	///
+    void getPowerKnob(int knob, int & value);
+
+
+    /// Set the new value for the given power control knob
+    ///
+    ///   @param[in] knob  : power knob chooser 電力制御用ノブの種類
+    ///   @param[in] value : new value for the knob  指定する設定値
+	///
+    /// @note the knob and its value combination must be chosen from the following table
+	///	@verbatim
+    /// knob : value : object description
+    ///  0   : 2200, 2000 : CPU frequency in MHz
+    ///  1   : 100, 90, 80, .. , 10 : MEMORY access throttling percentage
+    ///  2   : 2, 4    : ISSUE instruction issue rate per cycle
+    ///  3   : 1, 2    : PIPE number of concurrent execution pipelines 
+    ///  4   : 0, 1, 2 : ECO mode state
+    ///  5   : 0, 1    : RETENTION mode state DISABLED as of May 2021
+	///	@endverbatim
+	///
+    void setPowerKnob(int knob, int value);
 
 
     /// 測定区間スタート

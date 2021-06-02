@@ -101,6 +101,7 @@ namespace pm_lib {
 
 	struct pmlib_papi_chooser my_papi;
 
+    int m_is_POWER;	     ///< 消費電力情報 出力のフラグ 0(no), 1(yes)
 	struct pmlib_power_chooser my_power;
 
     /// MPI並列時の並列プロセス数と自ランク番号

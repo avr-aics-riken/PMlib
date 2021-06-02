@@ -81,6 +81,12 @@ namespace pm_lib {
 	is_PAPI_enabled = false;
 	#endif
 
+	#ifdef USE_POWER
+	is_POWER_enabled = true;
+	#else
+	is_POWER_enabled = false;
+	#endif
+
     #ifdef USE_OTF
     is_OTF_enabled = true;
     #else
@@ -126,6 +132,12 @@ namespace pm_lib {
 		}
 	}
 	env_str_hwpc = s_chooser;
+
+	#ifdef USE_POWER
+	if( is_POWER_enabled == true) {
+		(void) my_power_bind_initialize () ;
+	}
+	#endif
 
     // Start m_watchArray[0] instance
     // m_watchArray[] は PerfWatch classである(PerfMonitorではない)ことに留意
@@ -288,6 +300,48 @@ namespace pm_lib {
       }
     num_threads   = n_thread;
     num_process   = n_proc;
+	}
+  }
+
+
+  /// Get the power control mode and value
+  ///
+  ///   @param[in] knob  : power knob chooser
+  ///   @param[out] value : new value for the knob
+  ///
+  void PerfMonitor::getPowerKnob(int knob, int & value)
+  {
+    #ifdef DEBUG_PRINT_MONITOR
+    if (my_rank == 0) {
+      fprintf(stderr, "<PerfMonitor::getPowerKnob> is called. knob=%d \n",  knob);
+    }
+    #endif
+
+	if( is_POWER_enabled == true) {
+		(void) my_power_bind_knobs (knob, 0, value);
+	} else {
+		fprintf(stderr, "<PerfMonitor::getPowerKnob> Power API is not supported.\n");
+	}
+  }
+
+
+  /// Set the power control mode and value
+  ///
+  ///   @param[in] knob  : power knob chooser
+  ///   @param[in] value : new value for the knob
+  ///
+  void PerfMonitor::setPowerKnob(int knob, int value)
+  {
+    #ifdef DEBUG_PRINT_MONITOR
+    if (my_rank == 0) {
+      fprintf(stderr, "<PerfMonitor::setPowerKnob> is called. knob=%d, value=%d \n",  knob, value);
+    }
+    #endif
+
+	if( is_POWER_enabled == true) {
+		(void) my_power_bind_knobs (knob, 1, value);
+	} else {
+		fprintf(stderr, "<PerfMonitor::setPowerKnob> Power API is not supported.\n");
 	}
   }
 
