@@ -133,13 +133,8 @@ namespace pm_lib {
 	}
 	env_str_hwpc = s_chooser;
 
-	#ifdef USE_POWER
-	if( is_POWER_enabled == true) {
-		(void) my_power_bind_initialize () ;
-	}
-	#endif
 
-    // Start m_watchArray[0] instance
+// Start m_watchArray[0] instance
     // m_watchArray[] は PerfWatch classである(PerfMonitorではない)ことに留意
     // PerfWatchのインスタンスは全部で m_nWatch 生成される
     // m_watchArray[0]  :PMlibが定義する特別な背景区間(Root)
@@ -162,10 +157,20 @@ namespace pm_lib {
 
     m_watchArray[0].my_rank = my_rank;
     m_watchArray[0].num_process = num_process;
+
+// Note: HWPC, Power API,  and OTF are all initialized by a PerfWatch class member, i.e. "Root Section".
+
+// initialize HWPC interface structure
     m_watchArray[0].initializeHWPC();
+
+// initialize Power API binding contexts
+    m_watchArray[0].initializePOWER();
+
     int id = add_perf_label(label);	// id for "Root Section" should be 0
     m_nWatch++;
     m_watchArray[0].setProperties(label, id, CALC, num_process, my_rank, num_threads, false);
+
+// initialize OTF manager
     m_watchArray[0].initializeOTF();
     m_watchArray[0].start();
     is_Root_active = true;			// "Root Section" is now active
@@ -317,11 +322,11 @@ namespace pm_lib {
     }
     #endif
 
-	if( is_POWER_enabled == true) {
-		(void) my_power_bind_knobs (knob, 0, value);
-	} else {
-		fprintf(stderr, "<PerfMonitor::getPowerKnob> Power API is not supported.\n");
-	}
+	#ifdef USE_POWER
+	(void) my_power_bind_knobs (knob, 0, value);
+	#else
+	fprintf(stderr, "<PerfMonitor::getPowerKnob> is not supported for this system.\n");
+    #endif
   }
 
 
@@ -338,11 +343,11 @@ namespace pm_lib {
     }
     #endif
 
-	if( is_POWER_enabled == true) {
-		(void) my_power_bind_knobs (knob, 1, value);
-	} else {
-		fprintf(stderr, "<PerfMonitor::setPowerKnob> Power API is not supported.\n");
-	}
+	#ifdef USE_POWER
+	(void) my_power_bind_knobs (knob, 1, value);
+	#else
+	fprintf(stderr, "<PerfMonitor::setPowerKnob> is not supported for this system.\n");
+    #endif
   }
 
 

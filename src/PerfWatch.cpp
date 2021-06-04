@@ -47,7 +47,9 @@ namespace pm_lib {
   struct hwpc_group_chooser hwpc_group;
   double cpu_clock_freq;        /// processor clock frequency, i.e. Hz
   double second_per_cycle;  /// real time to take each cycle
+  struct pmlib_power_chooser power;
 
+  ///
   /// 単位変換.
   ///
   ///   @param[in] fops 浮動小数点演算量又はデータ移動量
@@ -65,7 +67,6 @@ namespace pm_lib {
   ///
   ///   @note is_unitは通常PerfWatch::statsSwitch()で事前に決定されている
   ///
-
   double PerfWatch::unitFlop(double fops, std::string &unit, int is_unit)
   {
 
@@ -1222,6 +1223,10 @@ namespace pm_lib {
 
 	if (!m_is_set) {
 		my_papi = papi;
+#ifdef USE_POWER
+		my_power = power;
+		m_is_POWER = my_power.num_power_stats;
+#endif
 		m_is_set = true;
 	}
 
@@ -1282,6 +1287,38 @@ namespace pm_lib {
     }
 #endif
 
+  }
+
+
+
+  /// initialize Power API interface
+  ///
+  void PerfWatch::initializePOWER(void)
+  {
+    m_is_POWER = 0;
+	power.num_power_stats = 0;
+#ifdef USE_POWER
+
+// Parse the Environment Variable POWER_CHOOSER
+	std::string s_chooser;
+	char* cp_env = std::getenv("POWER_CHOOSER");
+	if (cp_env == NULL) {
+		m_is_POWER = 0;
+	} else {
+		s_chooser = cp_env;
+		if (s_chooser == "NODE") {
+			m_is_POWER = 1;
+		} else
+		if (s_chooser == "PARTS") {
+			m_is_POWER = 2;
+		}
+	}
+
+    if(m_is_POWER >  0) {
+        power.num_power_stats = my_power_bind_initialize () ;
+    }
+
+#endif
   }
 
 
@@ -1408,6 +1445,11 @@ namespace pm_lib {
 		startSectionSerial();
 	}
 
+#ifdef USE_POWER
+	if (my_power.num_power_stats != 0) {
+		(void) my_power_bind_start(my_power.pa64timer, my_power.u_joule);
+	}
+#endif
 #ifdef USE_OTF
     if (m_is_OTF != 0) {
       int is_unit = statsSwitch();
@@ -1556,6 +1598,19 @@ namespace pm_lib {
 	}
 	#endif
 
+#ifdef USE_POWER
+	double uvJ, watt;
+	if (my_power.num_power_stats != 0) {
+		(void) my_power_bind_stop (my_power.pa64timer, my_power.v_joule);
+		// output in Joule : 1 Joule == 1 Newton x meter == 1 Watt x second
+		for (int i=0; i<my_power.num_power_stats; i++) {
+			uvJ = my_power.v_joule[i] - my_power.u_joule[i];
+			my_power.w_accumu[i] += uvJ;
+			watt = uvJ /(m_stopTime - m_startTime);
+			my_power.watt_max[i] = std::max (my_power.watt_max[i], watt);
+		}
+	}
+#endif
 #ifdef USE_OTF
     int is_unit = statsSwitch();
 	double w=0.0;

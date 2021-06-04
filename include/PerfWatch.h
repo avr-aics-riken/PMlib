@@ -101,7 +101,7 @@ namespace pm_lib {
 
 	struct pmlib_papi_chooser my_papi;
 
-    int m_is_POWER;	     ///< 消費電力情報 出力のフラグ 0(no), 1(yes)
+    int m_is_POWER;	     ///< 消費電力情報 出力のフラグ 0(no), 1(NODE), 2(PARTS)
 	struct pmlib_power_chooser my_power;
 
     /// MPI並列時の並列プロセス数と自ランク番号
@@ -168,6 +168,10 @@ namespace pm_lib {
     /// HWPCイベントを初期化する
     ///
     void initializeHWPC(void);
+
+    /// initialize Power API interface
+    ///
+    void initializePOWER(void);
 
     /// OTF 用の初期化
     ///

@@ -3,16 +3,22 @@
 ///
 /// @brief header file for calling Power API interface routines
 ///
-///	@note the arguments to the power bind routines are as follows:
-///	@verbatim
-///		knob  : power knob chooser [0..5]
-///		operation : [0:read, 1:update]
-///		value     : controlled value
-///		pa64timer : internal timer
-///		w_joule   : power consumption in Joule
-///	@endverbatim
+/// @li int my_power_bind_initialize (void);
+/// @li int my_power_bind_knobs (int knob, int operation, int & value);
+/// @li int my_power_bind_start (uint64_t pa64timer[], double w_joule[]);
+/// @li int my_power_bind_stop (uint64_t pa64timer[], double w_joule[]);
+/// @li int my_power_bind_finalize ();
 ///
-///  knob and controlled value combinations
+///	@return initialize returns [n:number of reported items, negative:error]
+///	@return other routines returns [0:success, non-zero:error]
+///
+///	@param	knob  : power knob chooser [0..5]
+///	@param	operation : [0:read, 1:update]
+///	@param	value     : controlled value
+///	@param	pa64timer : internal timer
+///	@param	w_joule   : power consumption in Joule
+///
+/// @note valid knob and value combinations are shown below
 ///	@verbatim
 ///  knob=0 (I_knob_CPU)   : cpu frequency (MHz) : 2200, 2000
 ///  knob=1 (I_knob_MEMORY): memory access throttling (%) : 100, 90, 80, .. , 10
@@ -50,13 +56,14 @@ const int Max_power_stats=13;
 
 struct pmlib_power_chooser
 {
-	int num_power_stats;
+	int num_power_stats;				// number of power measured parts
+	std::string s_name[Max_power_stats];	// symbols of the parts
 	uint64_t pa64timer[Max_power_stats];	// typedef uint64_t PWR_Time
-	std::string s_name[Max_power_stats];
-	double w_timer[Max_power_stats];	// time ==  m_time
-	double watt_ave[Max_power_stats];	// Watt average
-	double watt_max[Max_power_stats];	// Watt max
-	double ws_joule[Max_power_stats];	// Power consumption in (J) == Wh/3600
-
+	double u_joule[Max_power_stats];	// temporary Power value (J) at start
+	double v_joule[Max_power_stats];	// temporary Power value (J) at stop
+	//	note : 1 Joule == 1 Newton x meter == 1 Watt x second
+	double w_accumu[Max_power_stats];	// accumulated Power consumption (J)
+	double watt_max[Max_power_stats];	// Watt (during the measurement)
+	double watt_ave[Max_power_stats];	// Watt (average)
 };
 
