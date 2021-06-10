@@ -52,7 +52,7 @@ extern int my_power_bind_finalize ();
 //		CMG has 12 cores which is the largest number among parts
 //	const int Max_power_stats=Max_power_object+Max_power_extended;
 
-const int Max_power_stats=13;
+const int Max_power_stats=20;	// (19(Max_power_object)+1(Max_measure_device))
 
 struct pmlib_power_chooser
 {

@@ -830,10 +830,11 @@ namespace pm_lib {
 
 
 
-  /// PAPI HWPCヘッダーの表示
-  ///   @param[in] fp 出力ファイルポインタ
+  /// Show the PMlib related environment variables
   ///
-  void PerfWatch::printHWPCHeader(FILE* fp)
+  ///   @param[in] fp report file pointer
+  ///
+  void PerfWatch::printEnvVars(FILE* fp)
   {
 
 	char* cp_env;
@@ -860,12 +861,45 @@ namespace pm_lib {
 	}
 #endif
 
+#ifdef USE_POWER
+	//	 unset : m_is_POWER = 0;
+	//	"NODE" : m_is_POWER = 1;
+	//	"PARTS": m_is_POWER = 2;
+	cp_env = std::getenv("POWER_CHOOSER");
+	if (cp_env == NULL) {
+		fprintf(fp, "\tPOWER_CHOOSER is not set. BASIC Power consumption report is chosen.\n");
+	} else {
+		s_chooser = cp_env;
+		if (s_chooser == "NODE" ||
+			s_chooser == "PARTS" ) {
+			fprintf(fp, "\tPOWER_CHOOSER=%s environment variable is provided.\n", s_chooser.c_str());
+		} else {
+			;
+		}
+	}
+#endif
+
 #ifdef USE_OTF
     cp_env = std::getenv("OTF_TRACING");
     if (cp_env != NULL) {
 	  fprintf(fp, "\tOTF_TRACING=%s environment variable is provided.\n", cp_env);
     }
 #endif
+
+	cp_env = std::getenv("PMLIB_REPORT");
+	if (cp_env == NULL) {
+		fprintf(fp, "\tPMLIB_REPORT is not set. default (BASIC) statistics is reported.\n");
+	} else {
+		s_chooser = cp_env;
+		if (s_chooser == "BASIC" ||
+			s_chooser == "DETAIL" ||
+			s_chooser == "FULL" ) {
+			fprintf(fp, "\tPMLIB_REPORT=%s environment variable is provided.\n", s_chooser.c_str());
+		} else {
+			; // ignore other values
+		}
+	}
+
   }
 
 
@@ -1225,7 +1259,6 @@ namespace pm_lib {
 		my_papi = papi;
 #ifdef USE_POWER
 		my_power = power;
-		m_is_POWER = my_power.num_power_stats;
 #endif
 		m_is_set = true;
 	}
@@ -1315,8 +1348,28 @@ namespace pm_lib {
 	}
 
     if(m_is_POWER >  0) {
-        power.num_power_stats = my_power_bind_initialize () ;
+		power.num_power_stats = my_power_bind_initialize () ;
+	}
+
+	#ifdef DEBUG_PRINT_MONITOR
+	if (my_rank == 0) { fprintf(stderr, "<PerfWatch::initializePOWER> m_is_POWER = %d\n", m_is_POWER); }
+	#endif
+
+#endif
+  }
+
+
+  /// finalize Power API interface
+  ///
+  void PerfWatch::finalizePOWER(void)
+  {
+#ifdef USE_POWER
+    if(m_is_POWER >  0) {
+        (void) my_power_bind_finalize () ;
     }
+	#ifdef DEBUG_PRINT_MONITOR
+	if (my_rank == 0) { fprintf(stderr, "<PerfWatch::finalizePOWER> m_is_POWER = %d\n", m_is_POWER); }
+	#endif
 
 #endif
   }

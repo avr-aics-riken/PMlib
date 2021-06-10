@@ -106,7 +106,7 @@ enum power_knob_index
 	};
 
 const int Max_measure_device=1;
-	// NODE ("plat.node") is the only attribute available to get the measured value
+	// NODE ("plat.node") is the only attribute to get the power meter measured value from
 const int Max_power_leaf_parts=12;
 	// max. # of leaf parts in the object group, i.e. 12 cores in the CMG.
 
@@ -133,7 +133,8 @@ int my_power_bind_initialize (void)
 
 	for (int i=0; i<Max_power_object; i++) {
 		isum += irc = PWR_CntxtGetObjByName (pacntxt, p_obj_name[i], &p_obj_array[i]);
-		if (irc != PWR_RET_SUCCESS) { warning_print ("CntxtGetObj", p_obj_name[i], "default"); continue;}
+		if (irc != PWR_RET_SUCCESS)
+			{ warning_print ("CntxtGetObj", p_obj_name[i], "default"); continue;}
 	}
 
 	#ifdef DEBUG_PRINT_POWER_EXT
@@ -145,7 +146,8 @@ int my_power_bind_initialize (void)
 
 	for (int i=0; i<Max_power_extended; i++) {
 		isum += irc = PWR_CntxtGetObjByName (extcntxt, p_ext_name[i], &p_obj_ext[i]);
-		if (irc != PWR_RET_SUCCESS) { warning_print ("CntxtGetObj", p_ext_name[i], "extended"); continue;}
+		if (irc != PWR_RET_SUCCESS)
+			{ warning_print ("CntxtGetObj", p_ext_name[i], "extended"); continue;}
 	}
 
 	if (isum == 0) {
@@ -172,9 +174,11 @@ int my_power_bind_knobs (int knob, int operation, int & value)
 	const int reading_operation=0;
 	const int update_operation=1;
 	double Hz;
+		int j;
 
 	#ifdef DEBUG_PRINT_POWER_EXT
-	fprintf(stderr, "<my_power_bind_knobs> knob=%d, operation=%d, value=%d\n", knob, operation, value);
+	fprintf(stderr, "<my_power_bind_knobs> knob=%d, operation=%d, value=%d\n",
+		knob, operation, value);
 	#endif
 
 	if ( knob < 0 | knob >Max_power_knob ) {
@@ -188,95 +192,117 @@ int my_power_bind_knobs (int knob, int operation, int & value)
 	}
 
 	if ( knob == I_knob_CPU ) {
-		// CPU frequency controll can be obtained either from the default context or the extended context
+		// CPU frequency can be controlled either from the default context or the extended context
 		if ( operation == reading_operation ) {
 			irc = PWR_ObjAttrGetValue (p_obj_ext[I_pext_CPU], PWR_ATTR_FREQ, &Hz, NULL);
-			if (irc != PWR_RET_SUCCESS) { error_print(irc, "GetValue", p_ext_name[I_pext_CPU]); return(irc); }
+			if (irc != PWR_RET_SUCCESS)
+				{ error_print(irc, "GetValue", p_ext_name[I_pext_CPU]); return(irc); }
 			value = lround (Hz / 1.0e6);
 		} else {
-			if ( !(value == 2200 || value == 2000) ) {	// 1.6 GHz retention frequency  is not allowed as of 2021 May
-				warning_print ("SetValue", p_ext_name[I_pext_CPU], "invalid frequency", value); return(-1);
+			if ( !(value == 2200 || value == 2000) ) {	// 1.6 GHz retention is not allowed
+				warning_print ("SetValue", p_ext_name[I_pext_CPU], "invalid frequency", value);
+				return(-1);
 			}
 			Hz = (double)value * 1.0e6;
 			irc = PWR_ObjAttrSetValue (p_obj_ext[I_pext_CPU], PWR_ATTR_FREQ, &Hz);
-			if (irc != PWR_RET_SUCCESS) { error_print(irc, "SetValue", p_ext_name[I_pext_CPU]); return(irc); }
+			if (irc != PWR_RET_SUCCESS)
+				{ error_print(irc, "SetValue", p_ext_name[I_pext_CPU]); return(irc); }
 		}
 	} else
 	if ( knob == I_knob_MEMORY ) {
-		// Memory throttling in the extended context
-		for (int icmg=0; icmg <4 ; icmg++)	//	from I_pobj_CMG0CORES to I_pobj_CMG3CORES
+		// Memory throttling from the extended context
+		for (int icmg=0; icmg <4 ; icmg++)
 		{
-		if ( operation == reading_operation ) {
-			irc = PWR_ObjAttrGetValue (p_obj_ext[I_pext_MEM0+icmg], PWR_ATTR_THROTTLING_STATE, &u64, NULL);
-			if (irc != PWR_RET_SUCCESS) { error_print(irc, "GetValue", p_ext_name[I_pext_MEM0+icmg]); return(irc); }
-			value = u64;
-		} else {
-			if ( !(0 <= value && value <= 9) ) {
-				warning_print ("SetValue", p_ext_name[I_pext_MEM0+icmg], "invalid throttling", value); return(-1);
+			j=I_pext_MEM0+icmg;
+			if ( operation == reading_operation ) {
+				irc = PWR_ObjAttrGetValue (p_obj_ext[j], PWR_ATTR_THROTTLING_STATE, &u64, NULL);
+				if (irc != PWR_RET_SUCCESS)
+					{ error_print(irc, "GetValue", p_ext_name[j]); return(irc); }
+				value = u64;
+			} else {
+				if ( !(0 <= value && value <= 9) ) {
+					warning_print ("SetValue", p_ext_name[j], "invalid throttling", value);
+					return(-1);
 				}
-			u64 = value;
-			irc = PWR_ObjAttrSetValue (p_obj_ext[I_pext_MEM0+icmg], PWR_ATTR_THROTTLING_STATE, &u64);
-			if (irc != PWR_RET_SUCCESS) { error_print(irc, "SetValue", p_ext_name[I_pext_MEM0+icmg]); return(irc); }
-		}
+				u64 = value;
+				irc = PWR_ObjAttrSetValue (p_obj_ext[j], PWR_ATTR_THROTTLING_STATE, &u64);
+				if (irc != PWR_RET_SUCCESS)
+					{ error_print(irc, "SetValue", p_ext_name[j]); return(irc); }
+			}
 		}
 
 	} else
 	if ( knob == I_knob_ISSUE ) {
-		for (int icmg=0; icmg <4 ; icmg++)	//	from I_pobj_CMG0CORES to I_pobj_CMG3CORES
+		// sub group ISSUE control from the extended context
+		for (int icmg=0; icmg <4 ; icmg++)
 		{
 			p_obj_grp = NULL;
-			irc = PWR_ObjGetChildren (p_obj_ext[I_pext_CMG0CORES+icmg], &p_obj_grp);
-			if (irc != PWR_RET_SUCCESS) { error_print(irc, "GetChildren", p_ext_name[I_pext_CMG0CORES+icmg]); return(irc); }
-		if ( operation == reading_operation ) {
-			irc = PWR_GrpAttrGetValue (p_obj_grp, PWR_ATTR_ISSUE_STATE, u64array, NULL, NULL);
-			(void) PWR_GrpDestroy (p_obj_grp);
-			if (irc != PWR_RET_SUCCESS) { error_print(irc, "GrpGet (ISSUE)",  p_ext_name[I_pext_CMG0CORES+icmg]); return(irc); }
-			value = (int)u64array[0];
-		} else {
-			irc = PWR_GrpAttrSetValue (p_obj_grp, PWR_ATTR_ISSUE_STATE, u64array, NULL);
-			(void) PWR_GrpDestroy (p_obj_grp);
-			if (irc != PWR_RET_SUCCESS) { error_print(irc, "GrpSet (ISSUE)",  p_ext_name[I_pext_CMG0CORES+icmg]); return(irc); }
-		}
+			j=I_pext_CMG0CORES+icmg;
+			irc = PWR_ObjGetChildren (p_obj_ext[j], &p_obj_grp);
+			if (irc != PWR_RET_SUCCESS)
+					{ error_print(irc, "GetChildren", p_ext_name[j]); return(irc); }
+			if ( operation == reading_operation ) {
+				irc = PWR_GrpAttrGetValue (p_obj_grp, PWR_ATTR_ISSUE_STATE, u64array, NULL, NULL);
+				(void) PWR_GrpDestroy (p_obj_grp);
+				if (irc != PWR_RET_SUCCESS)
+						{ error_print(irc, "GrpGet (ISSUE)",  p_ext_name[j]); return(irc); }
+				value = (int)u64array[0];
+			} else {
+				irc = PWR_GrpAttrSetValue (p_obj_grp, PWR_ATTR_ISSUE_STATE, u64array, NULL);
+				(void) PWR_GrpDestroy (p_obj_grp);
+				if (irc != PWR_RET_SUCCESS)
+						{ error_print(irc, "GrpSet (ISSUE)",  p_ext_name[j]); return(irc); }
+			}
 		}
 
 	} else
 	if ( knob == I_knob_PIPE ) {
-		for (int icmg=0; icmg <4 ; icmg++)	//	from I_pobj_CMG0CORES to I_pobj_CMG3CORES
+		// sub group PIPE control from the extended context
+		for (int icmg=0; icmg <4 ; icmg++)
 		{
 			p_obj_grp = NULL;
-			irc = PWR_ObjGetChildren (p_obj_ext[I_pext_CMG0CORES+icmg], &p_obj_grp);
-			if (irc != PWR_RET_SUCCESS) { error_print(irc, "GetChildren", p_ext_name[I_pext_CMG0CORES+icmg]); return(irc); }
+			j=I_pext_CMG0CORES+icmg;
+			irc = PWR_ObjGetChildren (p_obj_ext[j], &p_obj_grp);
+			if (irc != PWR_RET_SUCCESS)
+					{ error_print(irc, "GetChildren", p_ext_name[j]); return(irc); }
 
-		if ( operation == reading_operation ) {
-			irc = PWR_GrpAttrGetValue (p_obj_grp, PWR_ATTR_EX_PIPE_STATE, u64array, NULL, NULL);
-			(void) PWR_GrpDestroy (p_obj_grp);
-			if (irc != PWR_RET_SUCCESS) { error_print(irc, "GrpGet (PIPE)",  p_ext_name[I_pext_CMG0CORES+icmg]); return(irc); }
-			value = (int)u64array[0];
-		} else {
-			irc = PWR_GrpAttrSetValue (p_obj_grp, PWR_ATTR_EX_PIPE_STATE, u64array, NULL);
-			(void) PWR_GrpDestroy (p_obj_grp);
-			if (irc != PWR_RET_SUCCESS) { error_print(irc, "GrpSet (PIPE)",  p_ext_name[I_pext_CMG0CORES+icmg]); return(irc); }
-		}
+			if ( operation == reading_operation ) {
+				irc = PWR_GrpAttrGetValue (p_obj_grp, PWR_ATTR_EX_PIPE_STATE, u64array, NULL, NULL);
+				(void) PWR_GrpDestroy (p_obj_grp);
+				if (irc != PWR_RET_SUCCESS)
+						{ error_print(irc, "GrpGet (PIPE)", p_ext_name[j]); return(irc); }
+				value = (int)u64array[0];
+			} else {
+				irc = PWR_GrpAttrSetValue (p_obj_grp, PWR_ATTR_EX_PIPE_STATE, u64array, NULL);
+				(void) PWR_GrpDestroy (p_obj_grp);
+				if (irc != PWR_RET_SUCCESS)
+						{ error_print(irc, "GrpSet (PIPE)", p_ext_name[j]); return(irc); }
+			}
 		}
 
 	} else
 	if ( knob == I_knob_ECO ) {
-		for (int icmg=0; icmg <4 ; icmg++)	//	from I_pobj_CMG0CORES to I_pobj_CMG3CORES
+		// sub group ECO control from the extended context
+		for (int icmg=0; icmg <4 ; icmg++)
 		{
 			p_obj_grp = NULL;
-			irc = PWR_ObjGetChildren (p_obj_ext[I_pext_CMG0CORES+icmg], &p_obj_grp);
-			if (irc != PWR_RET_SUCCESS) { error_print(irc, "GetChildren", p_ext_name[I_pext_CMG0CORES+icmg]); return(irc); }
+			j=I_pext_CMG0CORES+icmg;
+			irc = PWR_ObjGetChildren (p_obj_ext[j], &p_obj_grp);
+			if (irc != PWR_RET_SUCCESS)
+					{ error_print(irc, "GetChildren", p_ext_name[j]); return(irc); }
 
-		if ( operation == reading_operation ) {
-			irc = PWR_GrpAttrGetValue (p_obj_grp, PWR_ATTR_ECO_STATE, u64array, NULL, NULL);
-			irc = PWR_GrpDestroy (p_obj_grp);
-			if (irc != PWR_RET_SUCCESS) { error_print(irc, "GrpGet (ECO)",  p_ext_name[I_pext_CMG0CORES+icmg]); return(irc); }
-			value = (int)u64array[0];
-		} else {
-			irc = PWR_GrpAttrSetValue (p_obj_grp, PWR_ATTR_ECO_STATE, u64array, NULL);
-			irc = PWR_GrpDestroy (p_obj_grp);
-			if (irc != PWR_RET_SUCCESS) { error_print(irc, "GrpSet (ECO)",  p_ext_name[I_pext_CMG0CORES+icmg]); return(irc); }
-		}
+			if ( operation == reading_operation ) {
+				irc = PWR_GrpAttrGetValue (p_obj_grp, PWR_ATTR_ECO_STATE, u64array, NULL, NULL);
+				irc = PWR_GrpDestroy (p_obj_grp);
+				if (irc != PWR_RET_SUCCESS)
+						{ error_print(irc, "GrpGet (ECO)", p_ext_name[j]); return(irc); }
+				value = (int)u64array[0];
+			} else {
+				irc = PWR_GrpAttrSetValue (p_obj_grp, PWR_ATTR_ECO_STATE, u64array, NULL);
+				irc = PWR_GrpDestroy (p_obj_grp);
+				if (irc != PWR_RET_SUCCESS)
+						{ error_print(irc, "GrpSet (ECO)", p_ext_name[j]); return(irc); }
+			}
 		}
 
 	/**
@@ -304,7 +330,8 @@ int my_power_bind_start (uint64_t pa64timer[], double w_joule[])
 		return 0;
 	}
 	#ifdef DEBUG_PRINT_POWER_EXT
-	fprintf(stderr, "<my_power_bind_start> Max_power_object=%d, Max_power_extended=%d\n", Max_power_object, Max_power_extended);
+	fprintf(stderr, "<my_power_bind_start> Max_power_object=%d, Max_power_extended=%d\n",
+			Max_power_object, Max_power_extended);
 	#endif
 
 	#ifdef DEBUG_PRINT_POWER_EXT
@@ -312,7 +339,8 @@ int my_power_bind_start (uint64_t pa64timer[], double w_joule[])
 	#endif
 	for (int i=0; i<Max_power_object; i++) {
 		irc = PWR_ObjAttrGetValue (p_obj_array[i], PWR_ATTR_ENERGY, &w_joule[i], &pa64timer[i]);
-		if (irc != PWR_RET_SUCCESS) { warning_print ("my_power_bind_start", p_obj_name[i], "default GetValue"); }
+		if (irc != PWR_RET_SUCCESS)
+			{ warning_print ("my_power_bind_start", p_obj_name[i], "default GetValue"); }
 	}
 
 	#ifdef DEBUG_PRINT_POWER_EXT
@@ -322,7 +350,8 @@ int my_power_bind_start (uint64_t pa64timer[], double w_joule[])
 	//	for (int i=0; i<Max_power_extended; i++) {
 	for (int i=0; i<Max_measure_device; i++) {
 		irc = PWR_ObjAttrGetValue (p_obj_ext[i], PWR_ATTR_MEASURED_ENERGY, &w_joule[i+iadd], &pa64timer[i+iadd]);
-		if (irc != PWR_RET_SUCCESS) { warning_print ("my_power_bind_start", p_ext_name[i], "extended GetValue"); }
+		if (irc != PWR_RET_SUCCESS)
+			{ warning_print ("my_power_bind_start", p_ext_name[i], "extended GetValue"); }
 	}
 
 	return 0;
@@ -337,19 +366,22 @@ int my_power_bind_stop (uint64_t pa64timer[], double w_joule[])
 		return 0;
 	}
 	#ifdef DEBUG_PRINT_POWER_EXT
-	fprintf(stderr, "\t <my_power_bind_stop> Max_power_object=%d, Max_power_extended=%d\n", Max_power_object, Max_power_extended);
+	fprintf(stderr, "\t <my_power_bind_stop> Max_power_object=%d, Max_power_extended=%d\n",
+			Max_power_object, Max_power_extended);
 	#endif
 
 	for (int i=0; i<Max_power_object; i++) {
 		irc = PWR_ObjAttrGetValue (p_obj_array[i], PWR_ATTR_ENERGY, &w_joule[i], &pa64timer[i]);
-		if (irc != PWR_RET_SUCCESS) { warning_print ("my_power_bind_stop", p_obj_name[i], "default GetValue"); }
+		if (irc != PWR_RET_SUCCESS)
+			{ warning_print ("my_power_bind_stop", p_obj_name[i], "default GetValue"); }
 	}
 
 	int iadd=Max_power_object;
 	//	for (int i=0; i<Max_power_extended; i++) {
 	for (int i=0; i<Max_measure_device; i++) {
 		irc = PWR_ObjAttrGetValue (p_obj_ext[i], PWR_ATTR_MEASURED_ENERGY, &w_joule[i+iadd], &pa64timer[i+iadd]);
-		if (irc != PWR_RET_SUCCESS) { warning_print ("my_power_bind_stop", p_ext_name[i], "extended GetValue"); }
+		if (irc != PWR_RET_SUCCESS)
+			{ warning_print ("my_power_bind_stop", p_ext_name[i], "extended GetValue"); }
 	}
 
 	return 0;
@@ -359,6 +391,12 @@ int my_power_bind_stop (uint64_t pa64timer[], double w_joule[])
 int my_power_bind_finalize ()
 {
 	int irc;
+
+	#ifdef DEBUG_PRINT_POWER_EXT
+	fprintf(stderr, "\t <my_power_bind_finalize> skipping CntxtDestroy()\n");
+	return 0;
+	#endif
+
 
 	irc = 0;
 	irc = PWR_CntxtDestroy(pacntxt);

@@ -142,7 +142,7 @@ namespace pm_lib {
     ~PerfWatch() {
 	#ifdef DEBUG_PRINT_WATCH
 		if (my_rank == 0) {
-    	fprintf(stderr, "\t\t rank %d destructor is called for [%s]\n", my_rank, m_label.c_str() );
+    	fprintf(stderr, "\t <PerfWatch> rank %d destructor for [%s]\n", my_rank, m_label.c_str() );
 		}
 	#endif
       if (m_timeArray != NULL)  delete[] m_timeArray;
@@ -172,6 +172,10 @@ namespace pm_lib {
     /// initialize Power API interface
     ///
     void initializePOWER(void);
+
+    /// finalize Power API interface
+    ///
+    void finalizePOWER(void);
 
     /// OTF 用の初期化
     ///
@@ -273,19 +277,15 @@ namespace pm_lib {
     ///
     void printGroupRanks(FILE* fp, double totalTime, MPI_Group p_group, int* pp_ranks);
 
-    /// HWPCヘッダーを出力.
+    /// Show the PMlib related environment variables
     ///
-    ///   @param[in] fp 出力ファイルポインタ
+    ///   @param[in] fp report file pointer
     ///
-    ///   @note ランク0プロセスからのみ呼び出し可能
-    ///
-    void printHWPCHeader(FILE* fp);
+    void printEnvVars(FILE* fp);
 
     /// HWPCレジェンドを出力.
     ///
     ///   @param[in] fp 出力ファイルポインタ
-    ///
-    ///   @note ランク0プロセスからのみ呼び出し可能
     ///
     void printHWPCLegend(FILE* fp);
 

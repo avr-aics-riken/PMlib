@@ -89,7 +89,8 @@ namespace pm_lib {
     /// デストラクタ.
     ~PerfMonitor() {
 	#ifdef DEBUG_PRINT_MONITOR
-		fprintf(stderr, "\t <PerfMonitor> rank %d destructor is called\n", my_rank);
+		fprintf(stderr, "\t <PerfMonitor> rank %d destructor\n", my_rank);
+		fprintf(stderr, "\t\t the number of sections is %d\n", m_nWatch);
 	#endif
 		if (m_watchArray) delete[] m_watchArray;
 		if (m_order) delete[] m_order;
@@ -359,6 +360,7 @@ namespace pm_lib {
     void printProgress(FILE* fp, const std::string comments, int op_sort=0);
 
 
+
     /// ポスト処理用traceファイルの出力
     ///
     /// @note プログラム実行中一回のみポスト処理用traceファイルを出力できる
@@ -532,6 +534,16 @@ namespace pm_lib {
               double sum_flop, double sum_comm, double sum_other,
               double sum_time_flop, double sum_time_comm, double sum_time_other,
               const std::string unit);
+
+
+	/// Report the BASIC power consumption statistics
+	///
+	///   @param[in] fp         report file pointer
+	///   @param[in] maxLabelLen    maximum label field string length
+    ///   @param[in] op_sort     sorting option (0:sorted by seconds, 1:listed order)
+	///
+	void printBasicPower(FILE* fp, int maxLabelLen, int op_sort=0);
+
 
     /// PerfMonitorクラス用エラーメッセージ出力
     ///

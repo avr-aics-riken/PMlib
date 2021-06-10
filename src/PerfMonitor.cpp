@@ -508,6 +508,7 @@ namespace pm_lib {
     if (is_Root_active) {
     	m_watchArray[0].stop(0.0, 1);
     	is_Root_active = false;
+    	m_watchArray[0].finalizePOWER();
     }
 
 	#ifdef _OPENMP
@@ -668,7 +669,7 @@ namespace pm_lib {
 	PerfMonitor::print(fp, "", "", 0);
 
 	// env_str_report should be one of {"BASIC" || "DETAIL" || "FULL"}
-	if (env_str_report != "BASIC" ) {
+	if (env_str_report == "DETAIL" || env_str_report == "FULL") {
 		PerfMonitor::printDetail(fp, 0, 0);
 	}
 
@@ -683,6 +684,10 @@ namespace pm_lib {
 	if (env_str_hwpc != "USER" ) {
 		PerfMonitor::printLegend(fp);
 	}
+	#ifdef DEBUG_PRINT_MONITOR
+    //	if (my_rank == 0 && my_thread == 0) fprintf(stderr, "\n\n<print>\n\n");
+    if (my_rank == 0 ) fprintf(stderr, "\n<PerfMonitor::report> finished. the end of requested reports.\n");
+	#endif
 
   }
 
@@ -699,7 +704,6 @@ namespace pm_lib {
   ///   @note 基本統計レポートは排他測定区間, 非排他測定区間をともに出力する。
   ///   MPIの場合、rank0プロセスの測定回数が１以上の区間のみを表示する。
   ///
-
   void PerfMonitor::print(FILE* fp, std::string hostname, const std::string comments, int op_sort)
   {
     if (!is_PMlib_enabled) return;
@@ -769,10 +773,141 @@ namespace pm_lib {
                                   sum_time_flop, sum_time_comm, sum_time_other, unit, op_sort);
 
     /// テイラ（合計）部分を出力。
-    PerfMonitor::printBasicTailer(fp, maxLabelLen, sum_flop, sum_comm, sum_other,
+    PerfMonitor::printBasicTailer (fp, maxLabelLen, sum_flop, sum_comm, sum_other,
                                   sum_time_flop, sum_time_comm, sum_time_other, unit);
 
+    PerfMonitor::printBasicPower (fp, maxLabelLen, op_sort);
+
+	#ifdef DEBUG_PRINT_MONITOR
+    if (my_rank == 0 && my_thread == 0) fprintf(stderr, "<PerfMonitor::print> finished.\n");
+	#endif
   }
+
+
+/// Report the BASIC power consumption statistics
+///
+///   @param[in] fp       	report file pointer
+///   @param[in] maxLabelLen    maximum label string field length
+///   @param[in] op_sort 	sorting option (0:sorted by seconds, 1:listed order)
+///
+void PerfMonitor::printBasicPower(FILE* fp, int maxLabelLen, int op_sort)
+{
+    if (!is_PMlib_enabled) return;
+#ifdef USE_POWER
+	int m_is_POWER;
+	int ip;
+	int np;
+
+    std::string p_label;
+
+
+	m_is_POWER = m_watchArray[0].m_is_POWER;
+	if (m_is_POWER == 0) return;
+
+
+#undef DEBUG_POWER
+//	#define DEBUG_POWER yes
+
+	//	np = w.my_power.num_power_stats; // original power.num_power_stats == 20
+	//	0 .. np-2 : estimated parts power cconsumpiton
+	//	np-1      : measured power cconsumpiton
+
+#ifdef DEBUG_POWER
+	//	original power object array i.e. std::string p_obj_name[Max_power_stats] =
+	const int n_parts = 20;
+	static double sorted_joule[n_parts];
+	static std::string sorted_obj_name[n_parts] =
+	{
+		"total", "CMG0 ", "CMG1 ", "CMG2 ", "CMG3 ",	// 0,1,2,3,4 : as is
+		"L2$cmg0", "L2$cmg1", "L2$cmg2", "L2$cmg3",		// 5,6,7,8 : --> merge to COM3
+		"Acore0",  "Acore1",  "Uncmg",					// 9,10,11 : --> 9merge to Tofu+AC
+		"Tofu+AC", "MEM0 ", "MEM1 ", "MEM2 ", "MEM3 ",	// 12,13,14,15,16 : as is
+		"PCI ", "TofuOpt ",								// 17,18 : --> merge to Tofu+AC
+		"Node "											// 19 : as is
+	};
+#else
+	// the symbols of the reported power parts
+	const int n_parts = 11;
+	static double sorted_joule[n_parts];
+	static std::string sorted_obj_name[n_parts] =
+    {
+        "total", "CMG0", "CMG1", "CMG2", "CMG3", "Tofu+AC", "MEM0 ", "MEM1 ", "MEM2 ", "MEM3 ", "Node "
+    };
+#endif
+
+	fprintf(fp, "\n");
+	fprintf(fp, "# PMlib Power Consumption Basic report\n");
+	fprintf(fp, "\n");
+
+	fprintf(fp, "\t\t\t Estimated power consumption of node parts [Watt]");
+    for (int i=0; i<(n_parts-8)*9; i++) { fputc(' ', fp); }
+	fprintf(fp, "       |Measured\n");
+
+	fprintf(fp, "Section"); for (int i=7; i< maxLabelLen; i++) { fputc(' ', fp); }		fputc('|', fp);
+	//	for (int i=0; i<n_parts; i++) { fprintf(fp, " %8s", sorted_obj_name[i].c_str()); }	fprintf(fp, "\n");
+	for (int i=0; i<n_parts-1; i++) { fprintf(fp, " %8s", sorted_obj_name[i].c_str()); }
+	fprintf(fp, "| %8s \n", sorted_obj_name[n_parts-1].c_str());
+
+    for (int i=0; i< maxLabelLen; i++) { fputc('-', fp); }	fputc('+', fp);
+    for (int i=0; i<(n_parts-1)*9; i++) { fputc('-', fp); }	fprintf(fp, "+---------\n");
+
+	// actual records
+    for (int j=0; j<m_nWatch; j++)
+	{
+      int m;
+      if (op_sort == 0) {
+        m = m_order[j]; //	0:経過時間順
+      } else {
+        m = j; //	1:登録順で表示
+      }
+      if (m == 0) continue;
+
+		PerfWatch& w = m_watchArray[m];
+
+	// maybe sometime later...
+	//	if (env_str_report == "FULL" ) {
+	//	} else {
+	//	}
+
+#ifdef DEBUG_POWER
+		for (int i=0; i<n_parts; i++) {
+			sorted_joule[i] = w.my_power.w_accumu[i];
+		}
+#else
+		//	"NodeSumm", "CMG0", "CMG1", "CMG2", "CMG3",
+		for (int i=0; i<5; i++) {
+			sorted_joule[i] = w.my_power.w_accumu[i];
+		}
+		// merge L2$ values into CMG values
+		for (int i=1; i<5; i++) {
+			sorted_joule[i] += w.my_power.w_accumu[i+4];
+		}
+		// "Tofu+AC" as the sum of "Acore0",  "Acore1",  "Uncmg", "Tofu+AC","PCI", "TofuOpt",
+		sorted_joule[5] = w.my_power.w_accumu[9] + w.my_power.w_accumu[10] + w.my_power.w_accumu[11]
+			+ w.my_power.w_accumu[12]
+			+ w.my_power.w_accumu[17] + w.my_power.w_accumu[18] ;
+		// "MEM0", "MEM1", "MEM2", "MEM3"
+		for (int i=6; i<10; i++) {
+			sorted_joule[i] = w.my_power.w_accumu[i+7];
+		}
+		sorted_joule[10] = w.my_power.w_accumu[19]; //actually measured value by the power meter
+#endif
+
+		p_label = w.m_label;
+		if (!w.m_exclusive) { p_label = w.m_label + "(*)"; }	// showing inclusive section
+
+		//	if (!w.m_exclusive) {
+		fprintf(fp, "%-*s: ", maxLabelLen, p_label.c_str() );
+		for (int i=0; i<n_parts; i++) {
+			fprintf(fp, " %7.1e ",  sorted_joule[i]);
+		}
+		fprintf(fp, "\n");
+		//	}
+
+	}
+
+#endif
+}
 
 
   /// MPIランク別詳細レポート、HWPC詳細レポートを出力。
@@ -784,7 +919,6 @@ namespace pm_lib {
   ///   @note 詳細レポートは排他測定区間のみを出力する
   ///         HWPC値は各プロセス毎に子スレッドの値を合算して表示する
   ///
-
   void PerfMonitor::printDetail(FILE* fp, int legend, int op_sort)
   {
 
@@ -945,7 +1079,6 @@ namespace pm_lib {
   ///   利用者にとって識別しずらい場合がある。
   ///   別に1,2,3,..等の昇順でプロセスグループ番号 groupをつけておくと
   ///   レポートが識別しやすくなる。
-  ///   @note HWPCを測定した計集結果があればそれも出力する
   ///
   void PerfMonitor::printGroup(FILE* fp, MPI_Group p_group, MPI_Comm p_comm, int* pp_ranks, int group, int legend, int op_sort)
   {
@@ -1013,13 +1146,6 @@ namespace pm_lib {
       m_watchArray[i].printGroupHWPCsums(fp, m_watchArray[i].m_label, p_group, pp_ranks);
     }
 
-    if (my_rank == 0) {
-      // HWPC Legend の表示はPerfMonitorクラスメンバとして分離する方が良いかも
-      if (legend == 1) {
-        m_watchArray[0].printHWPCLegend(fp);
-        ;
-      }
-    }
 #endif
   }
 
@@ -1032,8 +1158,6 @@ namespace pm_lib {
   ///   @param[in] key    int型 MPI_Comm_split()のkey変数
   ///   @param[in] legend int型 (省略可) HWPC記号説明の表示(0:なし、1:表示する)
   ///   @param[in] op_sort (省略可)測定区間の表示順 (0:経過時間順、1:登録順)
-  ///
-  ///   @note HWPCを測定した計集結果があればそれも出力する
   ///
   void PerfMonitor::printComm (FILE* fp, MPI_Comm new_comm, int icolor, int key, int legend, int op_sort)
   {
@@ -1251,7 +1375,7 @@ namespace pm_lib {
 	// PMlibインストール時のサポートプログラムモデルについての情報を出力する
     fprintf(fp, "\n# PMlib Basic Report -------------------------------------------------------\n");
     fprintf(fp, "\n");
-    fprintf(fp, "\tTiming Statistics Report from PMlib version %s\n", PM_VERSION);
+    fprintf(fp, "\tPerformance Statistics Report from PMlib version %s\n", PM_VERSION);
     fprintf(fp, "\tLinked PMlib supports: ");
 #ifdef DISABLE_MPI
     fprintf(fp, "no-MPI");
@@ -1268,12 +1392,17 @@ namespace pm_lib {
 #else
     fprintf(fp, ", no-HWPC");
 #endif
-#ifdef USE_OTF
-    fprintf(fp, ", OTF\n");
+#ifdef USE_POWER
+    fprintf(fp, ", PowerAPI");
 #else
-    fprintf(fp, ", no-OTF\n");
+    fprintf(fp, ", no-PowerAPI");
 #endif
-
+#ifdef USE_OTF
+    fprintf(fp, ", OTF");
+#else
+    fprintf(fp, ", no-OTF");
+#endif
+    fprintf(fp, " on this system\n");
 
     if (hostname == "") {
       char hn[512];
@@ -1303,12 +1432,12 @@ namespace pm_lib {
       PM_Exit(0);
     }
 #ifdef USE_PAPI
-    m_watchArray[0].printHWPCHeader(fp);
+    m_watchArray[0].printEnvVars(fp);
 #endif
 
     fprintf(fp, "\n");
     //	fprintf(fp, "\tTotal execution time            = %12.6e [sec]\n", m_watchArray[0].m_time);
-    fprintf(fp, "\tPMlib enabled elapse time (from initialize to print) = %9.3e [sec]\n", tot);
+    fprintf(fp, "\tPMlib activated elapse time (from initialize to print) = %9.3e [sec]\n", tot);
     fprintf(fp, "\tExclusive sections and inclusive sections are reported below.\n");
     fprintf(fp, "\tInclusive sections, marked with (*), are not added in the statistics total.\n");
     fprintf(fp, "\n");
