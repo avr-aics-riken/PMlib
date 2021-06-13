@@ -856,24 +856,24 @@ namespace pm_lib {
 			fprintf(fp, "\tHWPC_CHOOSER=%s environment variable is provided.\n", s_chooser.c_str());
 			;
 		} else {
-			fprintf(fp, "\tUnknown group HWPC_CHOOSER=%s is ignored. USER API values are reported.\n", s_chooser.c_str());
+			fprintf(fp, "\tInvalid HWPC_CHOOSER value %s is ignored. USER is assumed.\n", s_chooser.c_str());
 		}
 	}
 #endif
 
 #ifdef USE_POWER
-	//	 unset : m_is_POWER = 0;
-	//	"NODE" : m_is_POWER = 1;
-	//	"PARTS": m_is_POWER = 2;
 	cp_env = std::getenv("POWER_CHOOSER");
 	if (cp_env == NULL) {
 		fprintf(fp, "\tPOWER_CHOOSER is not set. BASIC Power consumption report is chosen.\n");
 	} else {
 		s_chooser = cp_env;
-		if (s_chooser == "NODE" ||
+		if (s_chooser == "OFF" || s_chooser == "NO" ||
+			s_chooser == "NODE" ||
+			s_chooser == "NUMA" ||
 			s_chooser == "PARTS" ) {
 			fprintf(fp, "\tPOWER_CHOOSER=%s environment variable is provided.\n", s_chooser.c_str());
 		} else {
+			fprintf(fp, "\tInvalid POWER_CHOOSER value %s is ignored. NODE is assumed.\n", s_chooser.c_str());
 			;
 		}
 	}
@@ -888,7 +888,7 @@ namespace pm_lib {
 
 	cp_env = std::getenv("PMLIB_REPORT");
 	if (cp_env == NULL) {
-		fprintf(fp, "\tPMLIB_REPORT is not set. default (BASIC) statistics is reported.\n");
+		fprintf(fp, "\tPMLIB_REPORT is not set. default statistics (BASIC) is reported.\n");
 	} else {
 		s_chooser = cp_env;
 		if (s_chooser == "BASIC" ||
@@ -1332,18 +1332,25 @@ namespace pm_lib {
 	power.num_power_stats = 0;
 #ifdef USE_POWER
 
+	m_is_POWER = 1;
 // Parse the Environment Variable POWER_CHOOSER
 	std::string s_chooser;
 	char* cp_env = std::getenv("POWER_CHOOSER");
 	if (cp_env == NULL) {
-		m_is_POWER = 0;
+		;
 	} else {
 		s_chooser = cp_env;
+		if (s_chooser == "OFF" || s_chooser == "NO" ) {
+			m_is_POWER = 0;
+		} else
 		if (s_chooser == "NODE") {
 			m_is_POWER = 1;
 		} else
-		if (s_chooser == "PARTS") {
+		if (s_chooser == "NUMA") {
 			m_is_POWER = 2;
+		} else
+		if (s_chooser == "PARTS") {
+			m_is_POWER = 3;
 		}
 	}
 

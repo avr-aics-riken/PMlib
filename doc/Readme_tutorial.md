@@ -54,53 +54,67 @@ regarding installation/running/reporting.
 
 ### useful environment variables
 
-- HWPC_CHOOSER
+The following environment variables can be used for controlling the PMlib report contents.
 
-HWPC_CHOOSER is used for setting the type of the hardware performance counter
-event groups shown in the PMlib report.
-Set the value of HWPC_CHOOSER from one of the following texts:
-{FLOPS, BANDWIDTH, VECTOR, CACHE, CYCLE, LOADSTORE, USER}
+#### PMLIB_REPORT
 
-	- HWPC_CHOOSER=FLOPS:
+Set the level details of PMlib consumption report.
+Choose the value from one of [BASIC, DETAIL, FULL].
+
+	PMLIB_REPORT=BASIC (default)
+		Produce basic report. the average performance statistics and power consumption statistics, if any.
+	PMLIB_REPORT=DETAIL
+		Produce detail report. the statistics for all the processes.
+	PMLIB_REPORT=FULL
+		Produce detai report as well as the thread performance statistics for each process.
+
+Several example PMlib reports are shown in the log file log_reports/RUN-MPI.1705155.out .
+
+#### HWPC_CHOOSER
+
+Set the type of the hardware performance counter event groups to report.
+Choose the value from one of [FLOPS, BANDWIDTH, VECTOR, CACHE, CYCLE, LOADSTORE, USER].
+
+	HWPC_CHOOSER=FLOPS
 		floating point operations for single precision and for double precision,
 		and their related performance in flops.
-	- HWPC_CHOOSER=BANDWIDTH:
+	HWPC_CHOOSER=BANDWIDTH
 		memory read write counts, and their related performance in bandwidth.
-	- HWPC_CHOOSER=VECTOR:
+	HWPC_CHOOSER=VECTOR
 		floating point operations by vector instructions and scalar operations,
 		and their related percentage.
-	- HWPC_CHOOSER=CACHE:
+	HWPC_CHOOSER=CACHE
 		memory load and store instructions, cache hits and misses,
 		and their related percentage.
-	- HWPC_CHOOSER=LOADSTORE:
+	HWPC_CHOOSER=LOADSTORE
 		memory load and store instructions per vector/SIMD/scalar instructions,
 		gather/scatter instructions.
-	- HWPC_CHOOSER=CYCLE:
+	HWPC_CHOOSER=CYCLE
 		total cycles and instructions
-	- HWPC_CHOOSER=USER:
+	HWPC_CHOOSER=USER (default)
 		User provided argument values, aka Arithmetic Workload,
 		are accumulated and reported.
 
+#### BYPASS_PMLIB
 
-- PMLIB_REPORT
+Set any value to BYPASS_PMLIB to skip all PMlib statistics and report procedures.
+PMlib is always enabled unless this BYPASS_PMLIB is set.
 
-PMLIB_REPORT is used for setting the level details of PMlib
-statisticcs report.
-Set the value of PMLIB_REPORT from one of the followings:
-{BASIC, DETAIL, ALLTHREADS}.
-The example PMlib statistics reports by an application job with
-PMLIB_REPORT=3 setting
-for each of the HWPC_CHOOSER choice are shown in the log file
-log_reports/RUN-MPI.1705155.out .
+#### OTF_TRACING
 
+Set ON for producing the time history file in OTF format.
+default value NO.
 
+#### POWER_CHOOSER
 
-- BYPASS_PMLIB
+Controlls the contents of the power consumption report.
 
-BYPASS_PMLIB disables PMlib statistics counting and reporting.
-
-- OTF_TRACING
-
-OTF_TRACING can be used for producing the time history file in OTF format.
-
+	POWER_CHOOSER=OFF
+		do not report the power consumption stats.
+	POWER_CHOOSER=NODE (default)
+		report the node stats as the group of combined CMGs, MEMORY, Tofu+AC.
+	POWER_CHOOSER=NUMA
+		report the stats grouped per numa node.
+	POWER_CHOOSER=PARTS
+		report the breakdown of all the parts.
 
