@@ -536,11 +536,22 @@ namespace pm_lib {
               const std::string unit);
 
 
-	/// Report the BASIC power consumption statistics
+	/// Report the BASIC HWPC statistics for the master process
+	///
+	///   @param[in] fp       	report file pointer
+	///   @param[in] maxLabelLen    maximum label string field length
+	///   @param[in] op_sort 	sorting option (0:sorted by seconds, 1:listed order)
+	///
+	void printBasicHWPC (FILE* fp, int maxLabelLen, int op_sort=0);
+
+
+	/// Report the BASIC power consumption statistics of the master node
 	///
 	///   @param[in] fp         report file pointer
 	///   @param[in] maxLabelLen    maximum label field string length
     ///   @param[in] op_sort     sorting option (0:sorted by seconds, 1:listed order)
+	///
+	///		@note	remark that power consumption is reported per node, not per process
 	///
 	void printBasicPower(FILE* fp, int maxLabelLen, int op_sort=0);
 

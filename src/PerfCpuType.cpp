@@ -846,7 +846,7 @@ void PerfWatch::sortPapiCounterList (void)
 			counts += my_papi.v_sorted[jp] = my_papi.accumu[ip] ;
 			ip++;jp++;
 		}
-		my_papi.s_sorted[jp] = "Total_FP ";
+		my_papi.s_sorted[jp] = "Total_FP";
 		my_papi.v_sorted[jp] = counts;
 		jp++;
 
@@ -1149,10 +1149,10 @@ void PerfWatch::sortPapiCounterList (void)
 			}
 		}
 
-		my_papi.s_sorted[jp] = "Total_FP " ;
+		my_papi.s_sorted[jp] = "Total_FP" ;
 		my_papi.v_sorted[jp] = fp_total;
 		jp++;
-		my_papi.s_sorted[jp] = "Vector_FP " ;
+		my_papi.s_sorted[jp] = "Vector_FP" ;
 		my_papi.v_sorted[jp] = fp_vector;
 		jp++;
 		my_papi.s_sorted[jp] = "[Vector %]" ;
@@ -1411,22 +1411,21 @@ void PerfWatch::sortPapiCounterList (void)
 
 
 
-  /// Display the HWPC header lines
+  /// print the HWPC report Section Label string line, and the header line with event names
   ///
   ///   @param[in] fp 出力ファイルポインタ
   ///   @param[in] s_label ラベル
   ///
-  // print the Label string line, and the header line with event names
-  //
 void PerfWatch::outputPapiCounterHeader (FILE* fp, std::string s_label)
 {
 #ifdef USE_PAPI
 
-	fprintf(fp, "Label   %s%s\n", m_exclusive ? "" : "*", s_label.c_str());
+	fprintf(fp, "Section Label : %s%s\n", s_label.c_str(), m_exclusive ? "" : "(*)" );
 
 	std::string s;
 	int ip, jp, kp;
-	fprintf (fp, "Header  ID :");
+	//	fprintf (fp, "Header  ID :");
+	fprintf (fp, "MPI rankID :");
 	for(int i=0; i<my_papi.num_sorted; i++) {
 		kp = my_papi.s_sorted[i].find_last_of(':');
 		if ( kp < 0) {

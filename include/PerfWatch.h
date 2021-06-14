@@ -101,7 +101,7 @@ namespace pm_lib {
 
 	struct pmlib_papi_chooser my_papi;
 
-    int m_is_POWER;	     ///< 消費電力情報 出力のフラグ 0(no), 1(NODE), 2(PARTS)
+    int m_is_POWER;	     ///< 消費電力情報 出力のフラグ 0(no), 1(NODE), 2(NUMA), 3(PARTS)
 	struct pmlib_power_chooser my_power;
 
     /// MPI並列時の並列プロセス数と自ランク番号
@@ -295,6 +295,22 @@ namespace pm_lib {
     ///   @param[in] rank_ID      出力対象ランク番号を指定する
     ///
     void printDetailThreads(FILE* fp, int rank_ID);
+
+    /// Show the header line for the averaged HWPC statistics in the Basic report
+    ///
+    ///   @param[in] fp         report file pointer
+    ///   @param[in] maxLabelLen    maximum label field string length
+    ///
+    void printBasicHWPCHeader(FILE* fp, int maxLabelLen);
+
+    /// Report the averaged HWPC statistics as the Basic report
+    ///
+    ///   @param[in] fp         report file pointer
+    ///   @param[in] maxLabelLen    maximum label field string length
+    ///
+    ///     @note   remark that power consumption is reported per node, not per process
+    ///
+    void printBasicHWPCsums(FILE* fp, int maxLabelLen);
 
     /// HWPCイベントの測定結果と統計値を出力.
     ///

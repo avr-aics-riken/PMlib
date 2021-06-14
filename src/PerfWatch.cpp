@@ -657,8 +657,10 @@ namespace pm_lib {
     for (int i = 0; i < m_np; i++) total_count += m_countArray[i];
 
     if ( total_count > 0 && is_unit <= 1) {
-      fprintf(fp, "Label  %s%s\n", m_exclusive ? "" : "*", m_label.c_str());
-      fprintf(fp, "Header ID  :     call   time[s] time[%%]  t_wait[s]  t[s]/call   counter     speed              \n");
+      //	fprintf(fp, "Label  %s%s\n", m_exclusive ? "" : "*", m_label.c_str());
+      //	fprintf(fp, "Header ID  :     call   time[s] time[%%]  t_wait[s]  t[s]/call   counter     speed              \n");
+      fprintf(fp, "Section Label : %s%s\n", m_label.c_str(), m_exclusive ? "" : "(*)" );
+      fprintf(fp, "MPI rankID :     call   time[s] time[%%]  t_wait[s]  t[s]/call   counter     speed              \n");
       for (int i = 0; i < m_np; i++) {
 		t_per_call = (m_countArray[i]==0) ? 0.0: m_timeArray[i]/m_countArray[i];
 		perf_rate = (m_countArray[i]==0) ? 0.0 : m_flopArray[i]/m_timeArray[i];
@@ -675,8 +677,10 @@ namespace pm_lib {
 			);
       }
     } else if ( total_count > 0 && is_unit >= 2) {
-      fprintf(fp, "Label  %s%s\n", m_exclusive ? "" : "*", m_label.c_str());
-      fprintf(fp, "Header ID  :     call   time[s] time[%%]  t_wait[s]  t[s]/call   \n");
+      //	fprintf(fp, "Label  %s%s\n", m_exclusive ? "" : "*", m_label.c_str());
+      //	fprintf(fp, "Header ID  :     call   time[s] time[%%]  t_wait[s]  t[s]/call   \n");
+      fprintf(fp, "Section Label : %s%s\n", m_label.c_str(), m_exclusive ? "" : "(*)" );
+      fprintf(fp, "MPI rankID :     call   time[s] time[%%]  t_wait[s]  t[s]/call   \n");
       for (int i = 0; i < m_np; i++) {
 		t_per_call = (m_countArray[i]==0) ? 0.0: m_timeArray[i]/m_countArray[i];
 		fprintf(fp, "Rank %5d : %8ld  %9.3e  %5.1f  %9.3e  %9.3e  \n",
@@ -722,7 +726,6 @@ namespace pm_lib {
     }
 #endif
 
-
     double t_per_call, perf_rate;
     double tMax = 0.0;
     for (int i = 0; i < m_np; i++) {
@@ -741,14 +744,14 @@ namespace pm_lib {
     if (is_unit == 6) unit = "";		// 6: HWPC measured instructions
     if (is_unit == 7) unit = "";		// 7: HWPC measured memory load/store (demand access, prefetch, writeback, streaming store)
 
-
-
     long total_count = 0;
     for (int i = 0; i < m_np; i++) total_count += m_countArray[pp_ranks[i]];
 
     if ( total_count > 0 && is_unit <= 1) {
-      fprintf(fp, "Label  %s%s\n", m_exclusive ? "" : "*", m_label.c_str());
-      fprintf(fp, "Header ID  :     call   time[s] time[%%]  t_wait[s]  t[s]/call   operations  performance\n");
+      //	fprintf(fp, "Label  %s%s\n", m_exclusive ? "" : "*", m_label.c_str());
+      //	fprintf(fp, "Header ID  :     call   time[s] time[%%]  t_wait[s]  t[s]/call   operations  performance\n");
+      fprintf(fp, "Section Label : %s%s\n", m_label.c_str(), m_exclusive ? "" : "(*)" );
+      fprintf(fp, "MPI rankID :     call   time[s] time[%%]  t_wait[s]  t[s]/call   operations  performance\n");
       for (int i = 0; i < m_np; i++) {
 	ip = pp_ranks[i];
 	t_per_call = (m_countArray[ip]==0) ? 0.0: m_timeArray[ip]/m_countArray[ip];
@@ -766,8 +769,10 @@ namespace pm_lib {
 			);
       }
     } else if ( total_count > 0 && is_unit >= 2) {
-      fprintf(fp, "Label  %s%s\n", m_exclusive ? "" : "*", m_label.c_str());
-      fprintf(fp, "Header ID  :     call   time[s] time[%%]  t_wait[s]  t[s]/call   \n");
+      //	fprintf(fp, "Label  %s%s\n", m_exclusive ? "" : "*", m_label.c_str());
+      //	fprintf(fp, "Header ID  :     call   time[s] time[%%]  t_wait[s]  t[s]/call   \n");
+      fprintf(fp, "Section Label : %s%s\n", m_label.c_str(), m_exclusive ? "" : "(*)" );
+      fprintf(fp, "MPI rankID :     call   time[s] time[%%]  t_wait[s]  t[s]/call   \n");
       for (int i = 0; i < m_np; i++) {
 	ip = pp_ranks[i];
 	t_per_call = (m_countArray[ip]==0) ? 0.0: m_timeArray[ip]/m_countArray[ip];
@@ -781,6 +786,91 @@ namespace pm_lib {
 			);
       }
     }
+  }
+
+
+
+  /// header line for the averaged HWPC statistics in the Basic report
+  ///
+  ///   @param[in] fp         report file pointer
+  ///   @param[in] maxLabelLen    maximum label field string length
+  ///
+  void PerfWatch::printBasicHWPCHeader(FILE* fp, int maxLabelLen)
+  {
+#ifdef USE_PAPI
+    if (my_papi.num_events == 0) return;
+
+    std::string s;
+    int kp;
+	char* cp_env;
+
+	fprintf(fp, "\n");
+	fprintf(fp, "\n# PMlib hardware performance counter (HWPC) report of the averaged process ------- #\n");
+	fprintf(fp, "\n");
+
+	fprintf(fp, "\tReport for option HWPC_CHOOSER=%s is generated.\n\n", hwpc_group.env_str_hwpc.c_str());
+
+	// header line showing event names
+	fprintf(fp, "Section"); for (int i=7; i< maxLabelLen; i++) { fputc(' ', fp); } fputc('|', fp);
+    for(int i=0; i<my_papi.num_sorted; i++) {
+        kp = my_papi.s_sorted[i].find_last_of(':');
+        if ( kp < 0) {
+            s = my_papi.s_sorted[i];
+        } else {
+            s = my_papi.s_sorted[i].substr(kp+1);
+        }
+        fprintf (fp, " %10.10s", s.c_str() );
+    }
+	fprintf (fp, "\n");
+
+	for (int i=0; i< maxLabelLen; i++) { fputc('-', fp); }  fputc('+', fp);
+	for (int i=0; i<(my_papi.num_sorted*11); i++) { fputc('-', fp); } fprintf(fp, "\n");
+
+#endif
+  }
+
+
+
+  /// Report the averaged HWPC statistics as the Basic report
+  ///
+  ///   @param[in] fp         report file pointer
+  ///   @param[in] maxLabelLen    maximum label field string length
+  ///
+  ///     @note   remark that power consumption is reported per node, not per process
+  ///
+  void PerfWatch::printBasicHWPCsums(FILE* fp, int maxLabelLen)
+  {
+#ifdef USE_PAPI
+    if (my_papi.num_events == 0) return;
+    if ( m_count_sum == 0 ) return;
+    if (my_rank != 0) return;
+
+    std::string s;
+    int ip, jp, kp;
+	double dx;
+
+	if (m_exclusive) {
+		s = m_label;
+	} else {
+		s = m_label + "(*)";
+	}
+
+	// stats line showing the average value of HWPC stats
+
+    //	fprintf(fp, "%s\n", s.c_str());
+	fprintf(fp, "%-*s:", maxLabelLen, s.c_str() );
+    for(int n=0; n<my_papi.num_sorted; n++) {
+		dx=0.0;
+		for (int i=0; i<num_process; i++) {
+			dx += fabs(m_sortedArrayHWPC[i*my_papi.num_sorted + n]);
+		}
+
+		dx = dx / num_process;
+		fprintf (fp, "  %9.3e", dx);
+    }
+	fprintf (fp, "\n");
+
+#endif
   }
 
 
@@ -840,10 +930,12 @@ namespace pm_lib {
 	char* cp_env;
 	std::string s_chooser;
 
+	fprintf(fp, "\tThe following cotroll variables are provided to PMlib as environment variable.\n");
+
 #ifdef USE_PAPI
 	cp_env = std::getenv("HWPC_CHOOSER");
 	if (cp_env == NULL) {
-		fprintf(fp, "\tHWPC_CHOOSER is not set. User API values are reported.\n");
+		fprintf(fp, "\tHWPC_CHOOSER is not provided. User API values are reported.\n");
 	} else {
 		s_chooser = cp_env;
 		if (s_chooser == "FLOPS" ||
@@ -853,7 +945,7 @@ namespace pm_lib {
 			s_chooser == "CYCLE" ||
 			s_chooser == "LOADSTORE" ||
 			s_chooser == "USER" ) {
-			fprintf(fp, "\tHWPC_CHOOSER=%s environment variable is provided.\n", s_chooser.c_str());
+			fprintf(fp, "\tHWPC_CHOOSER=%s \n", s_chooser.c_str());
 			;
 		} else {
 			fprintf(fp, "\tInvalid HWPC_CHOOSER value %s is ignored. USER is assumed.\n", s_chooser.c_str());
@@ -864,14 +956,14 @@ namespace pm_lib {
 #ifdef USE_POWER
 	cp_env = std::getenv("POWER_CHOOSER");
 	if (cp_env == NULL) {
-		fprintf(fp, "\tPOWER_CHOOSER is not set. BASIC Power consumption report is chosen.\n");
+		fprintf(fp, "\tPOWER_CHOOSER is not provided. NODE Power consumption report is chosen.\n");
 	} else {
 		s_chooser = cp_env;
 		if (s_chooser == "OFF" || s_chooser == "NO" ||
 			s_chooser == "NODE" ||
 			s_chooser == "NUMA" ||
 			s_chooser == "PARTS" ) {
-			fprintf(fp, "\tPOWER_CHOOSER=%s environment variable is provided.\n", s_chooser.c_str());
+			fprintf(fp, "\tPOWER_CHOOSER=%s \n", s_chooser.c_str());
 		} else {
 			fprintf(fp, "\tInvalid POWER_CHOOSER value %s is ignored. NODE is assumed.\n", s_chooser.c_str());
 			;
@@ -882,19 +974,19 @@ namespace pm_lib {
 #ifdef USE_OTF
     cp_env = std::getenv("OTF_TRACING");
     if (cp_env != NULL) {
-	  fprintf(fp, "\tOTF_TRACING=%s environment variable is provided.\n", cp_env);
+	  fprintf(fp, "\tOTF_TRACING=%s \n", cp_env);
     }
 #endif
 
 	cp_env = std::getenv("PMLIB_REPORT");
 	if (cp_env == NULL) {
-		fprintf(fp, "\tPMLIB_REPORT is not set. default statistics (BASIC) is reported.\n");
+		fprintf(fp, "\tPMLIB_REPORT is not provided. Unless explicit APIs are called, BASIC report is generated.\n");
 	} else {
 		s_chooser = cp_env;
 		if (s_chooser == "BASIC" ||
 			s_chooser == "DETAIL" ||
 			s_chooser == "FULL" ) {
-			fprintf(fp, "\tPMLIB_REPORT=%s environment variable is provided.\n", s_chooser.c_str());
+			fprintf(fp, "\tPMLIB_REPORT=%s \n", s_chooser.c_str());
 		} else {
 			; // ignore other values
 		}
