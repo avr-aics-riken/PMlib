@@ -44,15 +44,12 @@ extern int my_power_bind_stop (uint64_t pa64timer[], double w_joule[]);
 extern int my_power_bind_finalize ();
 #endif
 
+// The following constants and enumerated are defined in power_ext.cpp
 //	const int Max_measure_device=1;
-//		"plat.node" is the only attribute to get the measured value
-//		other attributes return estimated values
 //	const int Max_power_leaf_parts=12;
-//		max. # of leaf parts in the object group
-//		CMG has 12 cores which is the largest number among parts
-//	const int Max_power_stats=Max_power_object+Max_power_extended;
+//	enum Max_power_object = 19
 
-const int Max_power_stats=20;	// (19(Max_power_object)+1(Max_measure_device))
+const int Max_power_stats=20;	// Max_power_object + Max_measure_device
 
 struct pmlib_power_chooser
 {

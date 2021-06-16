@@ -1510,6 +1510,7 @@ void PerfWatch::outputPapiCounterLegend (FILE* fp)
 	std::string s_vendor_string;
 	using namespace std;
 
+	fprintf(fp, "\n\t Symbols in hardware performance counter (HWPC) report:\n\n" );
 	hwinfo = PAPI_get_hardware_info();
 	if (hwinfo == NULL) {
 		//	fprintf (fp, "\n\t<PAPI_get_hardware_info> failed. \n" );
@@ -1527,9 +1528,9 @@ void PerfWatch::outputPapiCounterLegend (FILE* fp)
 	} else {
 		s_model_string = hwinfo->model_string;
 	}
-	fprintf(fp, "\n\tDetected CPU architecture:\n" );
-	fprintf(fp, "\t\t%s\n", s_model_string.c_str());
-	fprintf(fp, "\t\tThe available HWPC_CHOOSER values and their HWPC events for this CPU are shown below.\n");
+	fprintf(fp, "\t Detected CPU architecture: %s \n", s_model_string.c_str());
+
+	fprintf(fp, "\t The available HWPC_CHOOSER values and their HWPC events for this CPU are shown below.\n");
 	fprintf(fp, "\n");
 
 // FLOPS

@@ -103,6 +103,7 @@ namespace pm_lib {
 
     int m_is_POWER;	     ///< 消費電力情報 出力のフラグ 0(no), 1(NODE), 2(NUMA), 3(PARTS)
 	struct pmlib_power_chooser my_power;
+    double m_power_av;    ///< average value of power consumption meter reading
 
     /// MPI並列時の並列プロセス数と自ランク番号
     int num_process;

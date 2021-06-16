@@ -18,11 +18,7 @@
 ///@file   PerfMonitor.cpp
 ///@brief  PerfMonitor class
 
-//	#ifdef DISABLE_MPI
-//	#include "mpi_stubs.h"
-//	#else
-//	#include <mpi.h>
-//	#endif
+//	either <mpi.h> or "mpi_stubs.h" is included in PerfWatch.cpp
 
 #include "PerfMonitor.h"
 #include <time.h>
@@ -813,6 +809,8 @@ void PerfMonitor::printBasicHWPC (FILE* fp, int maxLabelLen, int op_sort)
         m_watchArray[i].printBasicHWPCsums(fp, maxLabelLen);
     }
 
+	for (int i=0; i< maxLabelLen; i++) { fputc('-', fp); }  fputc('+', fp);
+	for (int i=0; i<(m_watchArray[0].my_papi.num_sorted*11); i++) { fputc('-', fp); } fprintf(fp, "\n");
 #endif
 }
 
@@ -829,9 +827,10 @@ void PerfMonitor::printBasicPower(FILE* fp, int maxLabelLen, int op_sort)
 {
     if (!is_PMlib_enabled) return;
 #ifdef USE_POWER
+//
+// Fugaku local implementation
+//
 	int m_is_POWER;
-	int ip;
-	int np;
 	int n_parts;
     std::string p_label;
 
@@ -846,50 +845,51 @@ void PerfMonitor::printBasicPower(FILE* fp, int maxLabelLen, int op_sort)
 	static std::string p_obj_shortname[Max_power_stats] =
 	{
 		"total",	// 0
-		"CMG0 ",	// 1
-		"CMG1 ",	// 2
-		"CMG2 ",	// 3
-		"CMG3 ",	// 4
-		"L2$cmg0",	// 5
-		"L2$cmg1",	// 6
-		"L2$cmg2",	// 7
-		"L2$cmg3",	// 8
+		"CMG0",	// 1
+		"CMG1",	// 2
+		"CMG2",	// 3
+		"CMG3",	// 4
+		"L2CMG0",	// 5
+		"L2CMG1",	// 6
+		"L2CMG2",	// 7
+		"L2CMG3",	// 8
 		"Acore0",	// 9
 		"Acore1",	// 10
-		"Uncmg",	// 11
-		"TofuD ",	// 12
+		"TofuD ",	// 11
+		"UnCMG",	// 12
 		"MEM0 ",	// 13
 		"MEM1 ",	// 14
 		"MEM2 ",	// 15
 		"MEM3 ",	// 16
 		"PCI  ",	// 17
 		"TofuOpt ",	// 18
-		"Measured"	// 19	//	reserved for the measured value
+		"P.meter"	// 19	//	reserved for the measured value
 	};
 	static std::string sorted_obj_name[Max_power_stats];
 
 	n_parts = 0;
 
-	if (m_is_POWER == 1) {	// total, CMG, MEMORY, Tofu+AC, Measured
+	if (m_is_POWER == 1) {	// total, CMG+L2, MEMORY, TF+A+U, P.meter
 		p_label = "NODE";
 		n_parts = 5;
 		sorted_obj_name[0] = "  total ";
-		sorted_obj_name[1] = "   CMG  ";
+		sorted_obj_name[1] = " CMG+L2 ";
 		sorted_obj_name[2] = " MEMORY ";
 		sorted_obj_name[3] = " TF+A+U ";
-		sorted_obj_name[4] = "Measured";
+		sorted_obj_name[4] = " P.meter";
 	} else
-	if (m_is_POWER == 2) {	// total, CMG0, CMG1, CMG2, CMG3, MEM0, MEM1, MEM2, MEM3, Tofu+AC, Node
+	if (m_is_POWER == 2) {	// total, CMG0+L2, CMG1+L2, CMG2+L2, CMG3+L2, MEM0, MEM1, MEM2, MEM3, TF+A+U, P.meter
 		p_label = "NUMA";
 		n_parts = 11;
-		for (int i=0; i<5; i++) {
-			sorted_obj_name[i] = p_obj_shortname[i];	// "total", "CMG0", "CMG1", "CMG2", "CMG3"
+		sorted_obj_name[0] = "  total ";
+		for (int i=1; i<5; i++) {
+			sorted_obj_name[i] = p_obj_shortname[i] + "L2";	// "CMG0+L2", "CMG1+L2", "CMG2+L2", "CMG3+L2"
 		}
 		for (int i=5; i<9; i++) {
-			sorted_obj_name[i] = p_obj_shortname[i+8];	// "MEM0", "MEM1", "MEM2", "MEM3"
+			sorted_obj_name[i] = p_obj_shortname[i+8];
 		}
-		sorted_obj_name[9] = " TF+A+U ";				// p_obj_shortname[12];
-		sorted_obj_name[10] = p_obj_shortname[19];		// "Node "
+		sorted_obj_name[9] = " TF+A+U ";					// TF+A+U
+		sorted_obj_name[10] = p_obj_shortname[19];
 
 	} else
 	if (m_is_POWER == 3) {
@@ -901,20 +901,20 @@ void PerfMonitor::printBasicPower(FILE* fp, int maxLabelLen, int op_sort)
 	}
 
 	fprintf(fp, "\n");
-	fprintf(fp, "# PMlib Power Consumption report for the master node ----------------------------- #\n");
+	fprintf(fp, "# PMlib Power Consumption report per node basis ---------------------------------- #\n");
 	fprintf(fp, "\n");
-    fprintf(fp, "\tReport for option POWER_CHOOSER=%s is generated.\n\n", p_label.c_str());
+    fprintf(fp, "\tReport of the master node is generated for POWER_CHOOSER=%s option.\n\n", p_label.c_str());
 
 
     for (int i=0; i< maxLabelLen; i++) { fputc(' ', fp); }
 	fprintf(fp, "   Estimated power inside node [W]\n");
 
 	fprintf(fp, "Section"); for (int i=7; i< maxLabelLen; i++) { fputc(' ', fp); }		fputc('|', fp);
-	for (int i=0; i<n_parts-1; i++) { fprintf(fp, "  %8s", sorted_obj_name[i].c_str()); }
-	fprintf(fp, "| %8s | Energy[Wh] \n", sorted_obj_name[n_parts-1].c_str());
+	for (int i=0; i<n_parts-1; i++) { fprintf(fp, "%8s", sorted_obj_name[i].c_str()); }
+	fprintf(fp, "|%8s| Energy[Wh] \n", sorted_obj_name[n_parts-1].c_str());
 
     for (int i=0; i< maxLabelLen; i++) { fputc('-', fp); }	fputc('+', fp);
-    for (int i=0; i<(n_parts-1)*10; i++) { fputc('-', fp); }	fprintf(fp, "+----------+----------\n");
+    for (int i=0; i<(n_parts-1)*8; i++) { fputc('-', fp); }	fprintf(fp, "+--------+----------\n");
 
 	// actual records
     for (int j=0; j<m_nWatch; j++)
@@ -928,7 +928,7 @@ void PerfMonitor::printBasicPower(FILE* fp, int maxLabelLen, int op_sort)
 		if (m == 0) continue;
 		PerfWatch& w = m_watchArray[m];
 
-		if (m_is_POWER == 1) {	// total, CMG, MEMORY, Tofu+AC, Measured
+		if (m_is_POWER == 1) {	// total, CMG+L2, MEMORY, TF+A+U, P.meter
 			n_parts = 5;
 			sorted_joule[0] = w.my_power.w_accumu[0];
 			sorted_joule[1] = 0.0;
@@ -940,16 +940,15 @@ void PerfMonitor::printBasicPower(FILE* fp, int maxLabelLen, int op_sort)
 				sorted_joule[2] += w.my_power.w_accumu[i];
 			}
 			sorted_joule[3] = w.my_power.w_accumu[9] + w.my_power.w_accumu[10] + w.my_power.w_accumu[11]
-				+ w.my_power.w_accumu[12]
-				+ w.my_power.w_accumu[17] + w.my_power.w_accumu[18] ;
+				+ w.my_power.w_accumu[12] + w.my_power.w_accumu[17] + w.my_power.w_accumu[18] ;
 			sorted_joule[4] = w.my_power.w_accumu[19];
 	
 		} else
-		if (m_is_POWER == 2) {	// total, CMG0, CMG1, CMG2, CMG3, MEM0, MEM1, MEM2, MEM3, Tofu+AC, Measured
+		if (m_is_POWER == 2) {	// total, CMG0+L2, CMG1+L2, CMG2+L2, CMG3+L2, MEM0, MEM1, MEM2, MEM3, TF+A+U, P.meter
 			n_parts = 11;
 			// total value
 			sorted_joule[0] = w.my_power.w_accumu[0];
-			// "CMGn" : CMG + L2$ value
+			// CMGn + L2$ value
 			for (int i=1; i<5; i++) {
 				sorted_joule[i] = w.my_power.w_accumu[i] + w.my_power.w_accumu[i+4];
 			}
@@ -957,10 +956,10 @@ void PerfMonitor::printBasicPower(FILE* fp, int maxLabelLen, int op_sort)
 			for (int i=5; i<9; i++) {
 				sorted_joule[i] = w.my_power.w_accumu[i+8];
 			}
-			// "Tofu+AC" == Acore0 +  Acore1 + Uncmg + Tofu + PCI + TofuOpt
+			// "Tofu+AC" == Acore0 +  Acore1 + Tofu + Uncmg + PCI + TofuOpt
 			sorted_joule[9] = w.my_power.w_accumu[9] + w.my_power.w_accumu[10] + w.my_power.w_accumu[11]
 						+ w.my_power.w_accumu[12] + w.my_power.w_accumu[17] + w.my_power.w_accumu[18] ;
-			//actually measured value by the power meter
+			//Physically measured value by the power meter
 			sorted_joule[10] = w.my_power.w_accumu[19];
 	
 		} else
@@ -978,12 +977,42 @@ void PerfMonitor::printBasicPower(FILE* fp, int maxLabelLen, int op_sort)
 		fprintf(fp, "%-*s:", maxLabelLen, p_label.c_str() );
 		// Watt value
 		for (int i=0; i<n_parts; i++) {
-			fprintf(fp, "  %8.2e",  sorted_joule[i]/w.m_time_av);
+			fprintf(fp, "%8.2f",  sorted_joule[i]/w.m_time_av);
 		}
 		fprintf(fp, "  %8.2e",  sorted_joule[n_parts-1]/3600.0);
 		// measured Watt-Hour energy value
 		fprintf(fp, "\n");
 	}
+
+    for (int i=0; i< maxLabelLen; i++) { fputc('-', fp); }	fputc('+', fp);
+    for (int i=0; i<(n_parts-1)*8; i++) { fputc('-', fp); }	fprintf(fp, "+--------+----------\n");
+
+	double t_joule;
+	int nnodes;
+	int np_per_node;
+	int iret;
+
+    char* cp_env;
+    cp_env = NULL;
+	cp_env = std::getenv("PJM_PROC_BY_NODE");
+	if (cp_env == NULL) {
+		np_per_node = 1;
+	} else {
+		np_per_node = atoi(cp_env);;
+	}
+    #ifdef DEBUG_PRINT_MONITOR
+	if (my_rank == 0) {
+		fprintf(fp, "<PerfMonitor::printBasicPower> translated PJM_PROC_BY_NODE=%d \n", np_per_node);
+	}
+	#endif
+	nnodes=num_process/np_per_node;
+
+	fprintf(fp, "\n");
+	fprintf(fp, "\t The aggregate power consumption of %d processes on %d nodes =", num_process, nnodes);
+	// m_power_av is the average value of my_power.w_accumu[Max_power_stats-1]; for all processes
+	t_joule = (m_watchArray[0].m_power_av * nnodes);
+	fprintf(fp, "%10.2e [J] == %10.2e [Wh]\n", t_joule, t_joule/3600.0);
+
 #endif
 }
 
@@ -1071,11 +1100,6 @@ void PerfMonitor::printBasicPower(FILE* fp, int maxLabelLen, int op_sort)
         m_watchArray[i].printDetailHWPCsums(fp, m_watchArray[i].m_label);
     }
 
-    // HWPC Legend の表示はPerfMonitorクラスメンバとして分離する方が良いかも
-    if (legend == 1) {
-        m_watchArray[0].printHWPCLegend(fp);
-        ;
-    }
 #endif
   }
 
@@ -1136,7 +1160,7 @@ void PerfMonitor::printBasicPower(FILE* fp, int maxLabelLen, int op_sort)
     if (!is_PAPI_enabled) return;
 
     if (my_rank == 0) {
-      fprintf(fp, "\n# PMlib Legend - HWPC symbols used in the PMlib report ----------------\n");
+      fprintf(fp, "\n# PMlib Legend - the symbols used in the reports  ----------------------\n");
       m_watchArray[0].printHWPCLegend(fp);
     }
   }
@@ -1513,8 +1537,6 @@ void PerfMonitor::printBasicPower(FILE* fp, int maxLabelLen, int op_sort)
 
     m_watchArray[0].printEnvVars(fp);
 
-    fprintf(fp, "\n");
-    //	fprintf(fp, "\tTotal execution time            = %12.6e [sec]\n", m_watchArray[0].m_time);
     fprintf(fp, "\tActive PMlib elapse time (from initialize to report/print) = %9.3e [sec]\n", tot);
     fprintf(fp, "\tExclusive sections and inclusive sections are reported below.\n");
     fprintf(fp, "\tInclusive sections, marked with (*), are not added in the statistics total.\n");
@@ -1579,7 +1601,7 @@ void PerfMonitor::printBasicPower(FILE* fp, int maxLabelLen, int op_sort)
     }
 
 	//	fprintf(fp, "%-*s|   calls  |      avr   avr[%%]     sdv    avr/call  ", maxLabelLen, "Label");
-	fprintf(fp, "%-*s|   calls  |   total    [%]    total/call     sdv    ", maxLabelLen, "Label");
+	fprintf(fp, "%-*s|   calls  |   total    [%]   total/call     sdv    ", maxLabelLen, "Label");
 
     if ( is_unit == 0 || is_unit == 1 ) {
       fprintf(fp, "|  operations   sdv    performance\n");

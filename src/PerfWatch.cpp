@@ -935,7 +935,7 @@ namespace pm_lib {
 #ifdef USE_PAPI
 	cp_env = std::getenv("HWPC_CHOOSER");
 	if (cp_env == NULL) {
-		fprintf(fp, "\tHWPC_CHOOSER is not provided. User API values are reported.\n");
+		fprintf(fp, "\t\tHWPC_CHOOSER is not provided. USER is assumed.\n");
 	} else {
 		s_chooser = cp_env;
 		if (s_chooser == "FLOPS" ||
@@ -945,10 +945,11 @@ namespace pm_lib {
 			s_chooser == "CYCLE" ||
 			s_chooser == "LOADSTORE" ||
 			s_chooser == "USER" ) {
-			fprintf(fp, "\tHWPC_CHOOSER=%s \n", s_chooser.c_str());
+			fprintf(fp, "\t\tHWPC_CHOOSER=%s \n", s_chooser.c_str());
 			;
 		} else {
-			fprintf(fp, "\tInvalid HWPC_CHOOSER value %s is ignored. USER is assumed.\n", s_chooser.c_str());
+			;
+			//	fprintf(fp, "\tInvalid HWPC_CHOOSER value %s is ignored.\n", s_chooser.c_str());
 		}
 	}
 #endif
@@ -956,17 +957,17 @@ namespace pm_lib {
 #ifdef USE_POWER
 	cp_env = std::getenv("POWER_CHOOSER");
 	if (cp_env == NULL) {
-		fprintf(fp, "\tPOWER_CHOOSER is not provided. NODE Power consumption report is chosen.\n");
+		fprintf(fp, "\t\tPOWER_CHOOSER is not provided. NODE is assumed.\n");
 	} else {
 		s_chooser = cp_env;
 		if (s_chooser == "OFF" || s_chooser == "NO" ||
 			s_chooser == "NODE" ||
 			s_chooser == "NUMA" ||
 			s_chooser == "PARTS" ) {
-			fprintf(fp, "\tPOWER_CHOOSER=%s \n", s_chooser.c_str());
+			fprintf(fp, "\t\tPOWER_CHOOSER=%s \n", s_chooser.c_str());
 		} else {
-			fprintf(fp, "\tInvalid POWER_CHOOSER value %s is ignored. NODE is assumed.\n", s_chooser.c_str());
 			;
+			//	fprintf(fp, "\tInvalid POWER_CHOOSER value %s is ignored.\n", s_chooser.c_str());
 		}
 	}
 #endif
@@ -974,19 +975,19 @@ namespace pm_lib {
 #ifdef USE_OTF
     cp_env = std::getenv("OTF_TRACING");
     if (cp_env != NULL) {
-	  fprintf(fp, "\tOTF_TRACING=%s \n", cp_env);
+	  fprintf(fp, "\t\tOTF_TRACING=%s \n", cp_env);
     }
 #endif
 
 	cp_env = std::getenv("PMLIB_REPORT");
 	if (cp_env == NULL) {
-		fprintf(fp, "\tPMLIB_REPORT is not provided. Unless explicit APIs are called, BASIC report is generated.\n");
+		fprintf(fp, "\t\tPMLIB_REPORT is not provided. BASIC is assumed.\n");
 	} else {
 		s_chooser = cp_env;
 		if (s_chooser == "BASIC" ||
 			s_chooser == "DETAIL" ||
 			s_chooser == "FULL" ) {
-			fprintf(fp, "\tPMLIB_REPORT=%s \n", s_chooser.c_str());
+			fprintf(fp, "\t\tPMLIB_REPORT=%s \n", s_chooser.c_str());
 		} else {
 			; // ignore other values
 		}
@@ -996,14 +997,49 @@ namespace pm_lib {
 
 
 
-  /// PAPI HWPC Legendの表示
+  /// printing the HWPC Legend and Power API Legend
   ///
-  ///   @param[in] fp 出力ファイルポインタ
+  ///   @param[in] fp output file pointer
   ///
   void PerfWatch::printHWPCLegend(FILE* fp)
   {
 #ifdef USE_PAPI
 	outputPapiCounterLegend (fp);
+#endif
+
+#ifdef USE_POWER
+	fprintf(fp, "\n\t Symbols in power consumption report: \n" );
+	fprintf(fp, "\t\tThe available POWER_CHOOSER values and their output data are shown below.\n\n");
+
+	if (hwpc_group.platform == "A64FX" ) {
+	
+		fprintf(fp, "\t POWER_CHOOSER=NODE:\n");
+		fprintf(fp, "\t\t total     : Total of all parts. (CMG + MEMORY + TF+A+U) \n");
+		fprintf(fp, "\t\t CMG+L2    : All compute cores and L2 cache memory in all 4 CMGs \n");
+		fprintf(fp, "\t\t MEMORY    : Main memory (HBM)\n");
+		fprintf(fp, "\t\t TF+A+U    : TofuD interface & router + Assistant cores + other UnCMG parts \n");
+		fprintf(fp, "\t\t P.meter   : Physically measured power comsumption measured by power meter \n");
+	
+		fprintf(fp, "\t POWER_CHOOSER=NUMA:\n");
+		fprintf(fp, "\t\t total     : Total of all parts. (CMG[0-3] + MEM[0-3] + TF+A+U)\n");
+		fprintf(fp, "\t\t CMG0+L2   : compute cores and L2 cache memory in CMG0. ditto for CMG[1-3]+L2. \n");
+		fprintf(fp, "\t\t MEM[0-3]  : Main memory (HBM) attached to CMG0[1,2,3]\n");
+		fprintf(fp, "\t\t TF+A+U    : TofuD interface & router + Assistant cores + other UnCMG parts \n");
+		fprintf(fp, "\t\t P.meter   : Physically measured power comsumption measured by power meter \n");
+	
+		fprintf(fp, "\t POWER_CHOOSER=PARTS:\n");
+		fprintf(fp, "\t\t total     : Total of all parts. \n");
+		fprintf(fp, "\t\t CMG[0-3]  : compute cores in CMG0, CMG1, CMG2, CMG3 \n");
+		fprintf(fp, "\t\t L2CMG[0-3]: L2 cache memory in CMG0, CMG1, CMG2, CMG3 \n");
+		fprintf(fp, "\t\t Acore0    : Assistant core 0. \n");
+		fprintf(fp, "\t\t Acore1    : Assistant core 1. \n");
+		fprintf(fp, "\t\t TofuD     : TofuD interface & router \n");
+		fprintf(fp, "\t\t UnCMG     : Other CPU parts (those excluding compute cores, assistant cores or TofuD) \n");
+		fprintf(fp, "\t\t PCI       : PCI express interface \n");
+		fprintf(fp, "\t\t TofuOpt   : Tofu optical modules \n");
+		fprintf(fp, "\t\t P.meter   : Physically measured power comsumption measured by power meter \n");
+	}
+	fprintf(fp, "\n");
 #endif
   }
 
@@ -1463,12 +1499,30 @@ namespace pm_lib {
   void PerfWatch::finalizePOWER(void)
   {
 #ifdef USE_POWER
-    if(m_is_POWER >  0) {
-        (void) my_power_bind_finalize () ;
-    }
-	#ifdef DEBUG_PRINT_MONITOR
+	#ifdef DEBUG_PRINT_POWER_EXT
 	if (my_rank == 0) { fprintf(stderr, "<PerfWatch::finalizePOWER> m_is_POWER = %d\n", m_is_POWER); }
 	#endif
+
+    if(m_is_POWER >  0) {
+        (void) my_power_bind_finalize () ;
+//
+// Fugaku local implementation
+//
+		double t_joule;
+		int iret;
+	
+		if ( num_process > 1 ) {
+			iret = MPI_Reduce (&my_power.w_accumu[Max_power_stats-1], &t_joule, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+			if ( iret != 0 ) {
+				fprintf(stderr, "*** error. <finalizePOWER> MPI_Reduce failed. iret=%d\n", iret);
+				t_joule = 0.0;
+			}
+		} else {
+			t_joule = my_power.w_accumu[Max_power_stats-1];
+		}
+		m_power_av = t_joule/num_process;
+	
+	}
 
 #endif
   }
