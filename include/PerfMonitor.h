@@ -130,7 +130,6 @@ namespace pm_lib {
     /// Read the current value for the given power control knob
     ///
     ///   @param[in] knob  : power knob chooser 電力制御用ノブの種類
-    ///   @param[in] operation : 0:read, 1:update
     ///   @param[out] value : current value for the knob  現在の値
 	///
     /// @note the knob and its value combination must be chosen from the following table
