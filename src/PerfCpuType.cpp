@@ -41,9 +41,21 @@ namespace pm_lib {
 
   /// HWPC interface initialization
   ///
-  /// @note  PMlib - HWPC PAPI interface class
+  /// @brief  PMlib - HWPC PAPI interface class
   /// PAPI library is used to interface HWPC events
   /// this routine is called directly by PerfMonitor class instance
+  ///
+  /// @note
+  ///	Extern variables in thread parallel call.
+  ///	When called from inside the parallel region, all threads
+  ///	share the same address for external "papi" structure.
+  ///	So, the variables such as papi.num_events show the same value.
+  ///	The local variable have different address.
+  ///
+  /// @note
+  ///	Class variables in thread parallel call.
+  ///	If a class member is called from inside parallel region,
+  ///	the variables of the class are given different addresses.
   ///
 void PerfWatch::initializeHWPC ()
 {
@@ -56,6 +68,12 @@ void PerfWatch::initializeHWPC ()
 	#ifdef _OPENMP
 	root_in_parallel = omp_in_parallel();
 	root_thread = omp_get_thread_num();
+	#endif
+
+	#ifdef DEBUG_PRINT_PAPI
+	if (my_rank == 0) {
+		fprintf(stderr, "<initializeHWPC> master process thread %d, address of papi=%p, my_papi=%p\n", root_thread, &papi, &my_papi);
+	}
 	#endif
 
 	if (root_thread == 0)
@@ -1391,7 +1409,7 @@ void PerfWatch::sortPapiCounterList (void)
 // count the number of reported events and derived matrices
 	my_papi.num_sorted = jp;
 
-#ifdef DEBUG_PRINT_PAPI
+#ifdef DEBUG_PRINT_PAPI_THREADS
 	#pragma omp barrier
 	#pragma omp critical
 	{

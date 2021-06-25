@@ -33,17 +33,9 @@
 	#include <omp.h>
 #endif
 
-//	#ifdef USE_PAPI
 #include "pmlib_papi.h"
-//	#endif
-
-//	#ifdef USE_POWER
 #include "pmlib_power.h"
-//	#endif
-
-#ifdef USE_OTF
 #include "pmlib_otf.h"
-#endif
 
 #ifndef _WIN32
 #include <sys/time.h>
@@ -347,8 +339,18 @@ namespace pm_lib {
     ///
     void read_cpu_clock_freq();
 
+    ///	copy in HWPC values from master thread to shared "papi" struct
     ///
-    void mergeAllThreads(void);
+    void mergeMasterThread(void);
+
+    ///	merge private HWPC values from the parallel threads to the master
+    ///
+    void mergeParallelThread(void);
+
+    ///	re-calculate the aggregate HWPC values from all threads
+    ///
+    void updateMergedThread(void);
+
     ///
     void selectPerfSingleThread(int i_thread);
 

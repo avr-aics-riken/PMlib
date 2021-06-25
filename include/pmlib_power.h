@@ -33,10 +33,10 @@
 
 #include <string>
 #include <cstdio>
-#include "pwr.h"
 #include <cstdlib>
 
 #ifdef USE_POWER
+#include "pwr.h"
 extern int my_power_bind_initialize (void);
 extern int my_power_bind_knobs (int knob, int operation, int & value);
 extern int my_power_bind_start (uint64_t pa64timer[], double w_joule[]);

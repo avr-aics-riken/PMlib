@@ -373,14 +373,16 @@ namespace pm_lib {
     }
     id = find_perf_label(label);
     if (id < 0) {
-      #ifdef DEBUG_PRINT_MONITOR
-      if (my_rank == 0) {
-        fprintf(stderr, "<start> adding property for [%s] id=%d\n", label.c_str(), id);
-      }
-      #endif
+      // Create the property for this section
       //	PerfMonitor::setProperties(std::string& label, Type type=CALC, bool exclusive=true);
       PerfMonitor::setProperties(label);
       id = find_perf_label(label);
+      #ifdef DEBUG_PRINT_MONITOR
+      if (my_rank == 0) {
+        fprintf(stderr, "<start> created property for [%s] at class address %p\n",
+				label.c_str(), &m_watchArray[id]);
+      }
+      #endif
     }
     is_exclusive_construct = true;
 
@@ -530,19 +532,29 @@ namespace pm_lib {
   }
 
 
-  ///  OpenMP並列処理されたPMlibスレッド測定区間のうち parallel regionから
-  ///  呼び出された測定区間のスレッド測定情報をマスタースレッドに集約する。
-  ///
-  ///   @note  内部で全測定区間をcheckして該当する測定区間を選択する。
+
+
+  ///  Merging the thread parallel data into the master thread in two steps.
+  ///  The 1st step : Process the data generated in the serial hybrid region.
+  ///  			Copy "my_papi" data of the master thread into shared "papi" space.
+  ///  The 2nd step : Process the data generated from parallel region.
+  ///  			Aggregate the class private "my_papi" data into shared "papi" space.
+  ///  In the end the master thread will retain all the thread vlues in its "my_papi" storage.
   ///
   void PerfMonitor::mergeThreads (void)
   {
     if (!is_PMlib_enabled) return;
     if (!is_OpenMP_enabled) return;
 
-    for (int i=0; i<m_nWatch; i++) {
-      m_watchArray[i].mergeAllThreads();
-    }
+	for (int i=0; i<m_nWatch; i++) {
+		m_watchArray[i].mergeMasterThread();
+		#pragma omp parallel
+		{
+			m_watchArray[i].mergeParallelThread();
+		}
+		#pragma omp barrier
+		m_watchArray[i].updateMergedThread();
+	}
   }
 
   /// 全プロセスの測定中経過情報を集約
@@ -561,15 +573,20 @@ namespace pm_lib {
 
     if (m_nWatch == 0) return; // No section defined with setProperties()
 
-    // 各測定区間のHWPCによるイベントカウンターの統計値を取得する
+    // For each of the sections,
+	// allgather the HWPC event values of all processes in MPI_COMM_WORLD.
+	// Calibrate some numbers to represent the process value as the sum of thread values
+
     for (int i=0; i<m_nWatch; i++) {
       m_watchArray[i].gatherHWPC();
     }
-    // 各測定区間の測定結果情報をノード０に集約
+
+	//   Allgather the process level basic statistics of m_time, m_flop, m_count
     for (int i = 0; i < m_nWatch; i++) {
         m_watchArray[i].gather();
     }
-    // 測定結果の平均値・標準偏差などの基礎的な統計計算
+
+    //	summary stats including the average, standard deviation, etc.
     for (int i = 0; i < m_nWatch; i++) {
       m_watchArray[i].statsAverage();
     }

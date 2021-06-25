@@ -53,6 +53,7 @@ namespace pm_lib {
     int num_process;           ///< 並列プロセス数
     int num_threads;           ///< 並列スレッド数
     int my_rank;               ///< 自ランク番号
+    int my_thread;             ///< thread number
     int m_nWatch;              ///< 測定区間数
     int init_nWatch;           ///< 初期に確保する測定区間数
     int reserved_nWatch;       ///< リザーブ済みの測定区間数
