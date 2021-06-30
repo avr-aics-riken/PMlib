@@ -41,41 +41,38 @@ PerfMonitor PM;
 // Worksharing parallel construct is generally supported.
 // Non-worksharing parallel construct is limited to Intel and PGI only.
 
-#if defined (__INTEL_COMPILER)
+#if defined (__INTEL_COMPILER)	|| \
+	defined (__GXX_ABI_VERSION)	|| \
+	defined (__CLANG_FUJITSU)	|| \
+	defined (__PGI)
+
 	#pragma omp threadprivate(PM)
 
-#elif defined (__PGI)
-	#pragma omp threadprivate(PM)
-
-	#if defined (FORCE_CXX_MAIN)
-	// PGI mixed Fortran and C++ non-worksharing openmp parallel construct
+	#if defined (__PGI)
+	// PGI Fortran and C++ mixed OpenMP non-worksharing parallel construct
 	// needs this small main driver, i.e. PGI's undocumented restrictions.
 	// This main driver handles threadprivate class member variables
 	// passed across Fortran and C++
-	extern "C" void fortmain_(void);
-	extern "C" void main(void);
-	void main(void)
-	{
-		(void) fortmain_();
-	}
+		#if defined (FORCE_CXX_MAIN)
+		extern "C" void fortmain_(void);
+		extern "C" void main(void);
+		void main(void)
+		{
+			(void) fortmain_();
+		}
+		#endif
 	#endif
-
+#else
+	// Other compilers to be tested
+	//	#elif defined (__FUJITSU)	# nop
+	//	#elif defined (__clang__)	# nop Naive Clang yet to support OpenMP
 #endif
 
-	//#elif defined (__FUJITSU)
-	// FX100 and K compiler does not support threadprivate class instance
-	//#elif defined (__clang__)
-	// Clang does not support OpenMP
-	//#elif defined (__GNUC__)
-	// g++ version 5.5 causes compile error against threadprivate class instance
-	//#else
-	// Other compilers to be tested
 #endif
 
 
 // Fortran interface should avoid C++ name space mangling, thus this extern.
 extern "C" {
-
 
 
 /// PMlib Fortran interface

@@ -211,6 +211,11 @@ namespace pm_lib {
 
     if (!is_PMlib_enabled) return;
 
+    if (label.empty()) {
+      printDiag("setProperties()",  "label is blank. Ignoring this call.\n");
+      return;
+    }
+
 	#ifdef _OPENMP
 	i_thread = omp_get_thread_num();
 	in_parallel = omp_in_parallel();
@@ -221,24 +226,29 @@ namespace pm_lib {
 
     #ifdef DEBUG_PRINT_MONITOR
     if (my_rank == 0) {
-		fprintf(stderr, "<setProperties> [%s] my_rank=%d, i_thread=%d, is_PMlib_enabled=%s\n",
-			label.c_str(), my_rank, i_thread, is_PMlib_enabled?"true":"false");
+		fprintf(stderr, "<setProperties> [%s] my_rank=%d, i_thread=%d \n",
+			label.c_str(), my_rank, i_thread);	//	bool is_PMlib_enabled?"true":"false"
 	}
 	#endif
 
-    if (label.empty()) {
-      printDiag("setProperties()",  "label is blank. Ignoring this call.\n");
-      return;
-    }
-
     int id;
+	#ifdef _OPENMP
+	#pragma omp critical
+	// remark. end critical does not exist. its only for fortran !$omp.
+	#endif
+	{
     id = find_perf_label(label);
-    if (id >= 0) {
-      printDiag("setProperties()", "[%s] has been registered already.\n",
-		label.c_str() );
-      	return;
+	if (id < 0) {
+    	id = add_perf_label(label);
+    	#ifdef DEBUG_PRINT_MONITOR
+		fprintf(stderr, "<setProperties> [%s] i_thread=%d NEW label id=%d is created.\n", label.c_str(), i_thread, id);
+		#endif
+	} else {
+    	#ifdef DEBUG_PRINT_MONITOR
+		fprintf(stderr, "<setProperties> [%s] i_thread=%d label exists. id=%d\n", label.c_str(), i_thread, id);
+		#endif
 	}
-    id = add_perf_label(label);
+	}
 
 //
 // If short of memory, allocate new space
@@ -372,6 +382,24 @@ namespace pm_lib {
       return;
     }
     id = find_perf_label(label);
+
+	#ifdef DEBUG_PRINT_MONITOR
+	int i_thread;
+	#ifdef _OPENMP
+	i_thread = omp_get_thread_num();
+	#else
+	i_thread = 0;
+	#endif
+	if (my_rank == 0) {
+		//	fprintf(stderr, "<start> [%s] section i_thread=%d : is %s \n",
+		//		label.c_str(), i_thread, (id<0)?"NEW!":"already in");
+		if (id < 0) {
+			fprintf(stderr, "<start> [%s] i_thread=%d : NEW label is set.\n", label.c_str(), i_thread);
+		} else {
+			fprintf(stderr, "<start> [%s] i_thread=%d : label exists.\n", label.c_str(), i_thread);
+		}
+	}
+	#endif
     if (id < 0) {
       // Create the property for this section
       //	PerfMonitor::setProperties(std::string& label, Type type=CALC, bool exclusive=true);
@@ -545,6 +573,9 @@ namespace pm_lib {
   {
     if (!is_PMlib_enabled) return;
     if (!is_OpenMP_enabled) return;
+	#ifdef DEBUG_PRINT_MONITOR
+    if (my_rank == 0) { fprintf(stderr, "<PerfMonitor::mergeThreads> starts\n"); }
+	#endif
 
 	for (int i=0; i<m_nWatch; i++) {
 		m_watchArray[i].mergeMasterThread();
@@ -571,7 +602,7 @@ namespace pm_lib {
 
     if (!is_PMlib_enabled) return;
 
-    if (m_nWatch == 0) return; // No section defined with setProperties()
+    if (m_nWatch == 0) return; // There is no section defined yet. This is basically an error case.
 
     // For each of the sections,
 	// allgather the HWPC event values of all processes in MPI_COMM_WORLD.
@@ -1011,7 +1042,7 @@ void PerfMonitor::printBasicPower(FILE* fp, int maxLabelLen, int op_sort)
 
     char* cp_env;
     cp_env = NULL;
-	cp_env = std::getenv("PJM_PROC_BY_NODE");
+	cp_env = std::getenv("PJM_PROC_BY_NODE");	// Fugaku job manager holds this variable
 	if (cp_env == NULL) {
 		np_per_node = 1;
 	} else {
@@ -1022,7 +1053,8 @@ void PerfMonitor::printBasicPower(FILE* fp, int maxLabelLen, int op_sort)
 		fprintf(fp, "<PerfMonitor::printBasicPower> translated PJM_PROC_BY_NODE=%d \n", np_per_node);
 	}
 	#endif
-	nnodes=num_process/np_per_node;
+	//	nnodes=num_process/np_per_node;
+	nnodes=(num_process-1)/np_per_node+1;
 
 	fprintf(fp, "\n");
 	fprintf(fp, "\t The aggregate power consumption of %d processes on %d nodes =", num_process, nnodes);

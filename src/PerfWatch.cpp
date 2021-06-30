@@ -485,10 +485,11 @@ namespace pm_lib {
 
 
   ///  Merging the thread parallel data into the master thread in three steps.
-  ///  After these steps, the master thread will retain the aggregated values in its own "my_papi" struct.
-  ///  Shared struct "papi" is used as a scratch space during these two step accumulation.
-  ///  These two step routines are called by <gather> which is called by report/print() in a serial region..
-  ///
+  ///  These three step routines are called by <PerfMonitor::gather>
+  ///  which is called by <PerfMonitor::report/print> in a serial region.
+  ///  After these steps, the master thread will retain the aggregated values
+  ///  in its "my_papi" struct.
+  ///  Shared struct "papi" is used as a scratch space during these steps.
   ///
   ///  The 1st step : Process the data generated in the serial hybrid region.
   ///  			Copy "my_papi" data of the master thread into shared "papi" space.
@@ -500,20 +501,24 @@ namespace pm_lib {
   {
   #ifdef _OPENMP
 	if (m_threads_merged) return;
-	if (m_started) return;	// still active in the middle of start/stop pair
-    int is_unit = statsSwitch();
 
-	// Only the sections executed inside of parallel construct are merged.
-	// In Worksharing parallel structure, everything is in place and nothing is done here.
-	//
-	if ( !(m_in_parallel) ) return;
-
-	#ifdef DEBUG_PRINT_PAPI
+	#ifdef DEBUG_PRINT_WATCH
 	if (my_rank == 0) {
 		fprintf(stderr, "<mergeMasterThread> [%s] merge step 1. address of my_papi=%p \n",
 					m_label.c_str(), &my_papi);
 	}
 	#endif
+
+	if (m_started) {
+		// still active in the middle of start/stop pair
+		// This is somewhat questionable condition. Only printing a humble warning here.
+		if (my_rank == 0) {
+			fprintf(stderr, "\n\t *** warning <mergeMasterThread>  [%s] has not stopped.\n",
+				m_label.c_str());
+		}
+		//	return;
+	}
+    int is_unit = statsSwitch();
 
 	if ( is_unit >= 2) { // PMlib HWPC counter mode
 		// In the following steps, "papi" shared structureis used as a scratch space.
@@ -542,11 +547,12 @@ namespace pm_lib {
   }
 
 
-
-  ///  Merging the thread parallel data into the master thread in two steps.
-  ///  After these two steps, the master thread will retain the aggregated values in its own "my_papi" struct.
-  ///  Shared struct "papi" is used as a scratch space during these two step accumulation.
-  ///  These two step routines are called by <gather> which is called by report/print() in a serial region..
+  ///  Merging the thread parallel data into the master thread in three steps.
+  ///  These three step routines are called by <PerfMonitor::gather>
+  ///  which is called by <PerfMonitor::report/print> in a serial region.
+  ///  After these steps, the master thread will retain the aggregated values
+  ///  in its "my_papi" struct.
+  ///  Shared struct "papi" is used as a scratch space during these steps.
   ///
   ///  The 2nd step : Process the data generated from parallel region.
   ///  			Aggregate the class private "my_papi" data into shared "papi" space.
@@ -557,14 +563,6 @@ namespace pm_lib {
   {
   #ifdef _OPENMP
 	if (m_threads_merged) return;
-	if (m_started) return;	// still active in the middle of start/stop pair
-
-	// If the application calls PMlib from inside the parallel region, the PerfMonitor class must be
-	// instantiated as thread private OpenMP construct to preserve thread private my_papi.* memory storage, 
-	// and mergeParallelThread() must be called to aggregate such private my_papi.*
-
-	// Only the sections executed inside of parallel construct are merged. otherwise just return.
-	if ( !(m_in_parallel) ) return;
 
 	#ifdef DEBUG_PRINT_PAPI
 	if (my_rank == 0) {
@@ -573,11 +571,30 @@ namespace pm_lib {
 	}
 	#endif
 
+	if (m_started) {
+	// still active in the middle of start/stop pair
+	// This is somewhat questionable condition. Only printing a humble warning here.
+		if (my_rank == 0) {
+			fprintf(stderr, "\n\t*** PMlib warning <mergeParallelThread>  section [%s] thread [%d] was not stopped.",
+					m_label.c_str(), my_thread);
+		}
+		return;
+	}
+
+	// If the application calls PMlib from inside the parallel region, the PerfMonitor class must be
+	// instantiated as threadprivate to preserve thread private my_papi.* memory storage, 
+	// and mergeParallelThread() must be called to aggregate such private my_papi.*
+	//
+	// Only the sections executed inside of parallel construct are merged.
+	// In Worksharing parallel structure, everything is in place and nothing is done here.
+	if ( !(m_in_parallel) ) return;
+
 	bool is_caller_parallel = omp_in_parallel();
 	if (is_caller_parallel) {
-		;	// as expected
+		;	// good. move on.
 	} else {
-		printError("<mergeParallelThread>",  "should not be called inside parallel construct \n");
+		fprintf(stderr, "\n\t*** PMlib error <mergeParallelThread> [%s] should not reach here.",
+					m_label.c_str() );
 		return;
 	}
 
@@ -606,7 +623,6 @@ namespace pm_lib {
 		}
 		//	}
 	}
-	#pragma omp barrier
 
 	double m_count_threads, m_time_threads, m_flop_threads;
 	m_count_threads = 0.0;
@@ -621,9 +637,11 @@ namespace pm_lib {
 	m_time = m_time_threads;			// longest time among threads
 	m_flop = m_flop_threads;			// total values of all threads
 
+
+	#ifdef DEBUG_PRINT_PAPI
+	if (my_rank == 0) {
+		fprintf(stderr, "<mergeParallelThread> [%s] my_thread=%d returns \n", m_label.c_str(), my_thread);
 	#ifdef DEBUG_PRINT_PAPI_THREADS
-    if (my_rank == 0) {
-	#pragma omp barrier
 	#pragma omp critical
 	{
 		if ( is_unit >= 2) { // PMlib HWPC counter mode
@@ -641,8 +659,8 @@ namespace pm_lib {
 		}
 		fprintf (stderr, "\t m_count=%d, m_time=%e, m_flop=%e\n", m_count, m_time, m_flop);
 	}
+	#endif
     }
-	#pragma omp barrier
 	#endif
 
   #endif
@@ -650,14 +668,12 @@ namespace pm_lib {
 
 
 
-  ///
-  ///
-  ///
   ///  Merging the thread parallel data into the master thread in three steps.
-  ///  After these steps, the master thread will retain the aggregated values in its own "my_papi" struct.
-  ///  Shared struct "papi" is used as a scratch space during these two step accumulation.
-  ///  These two step routines are called by <gather> which is called by report/print() in a serial region..
-  ///
+  ///  These three step routines are called by <PerfMonitor::gather>
+  ///  which is called by <PerfMonitor::report/print> in a serial region.
+  ///  After these steps, the master thread will retain the aggregated values
+  ///  in its "my_papi" struct.
+  ///  Shared struct "papi" is used as a scratch space during these steps.
   ///
   ///  The 3rd step : Finally update some of the "isolated" stats.
   ///
@@ -803,15 +819,20 @@ namespace pm_lib {
 	}
 
 	if (m_in_parallel) {
-	#if defined (__INTEL_COMPILER) || (__PGI)
-		// Go ahead.
-	#else
-		// Nop. This compiler does not support threadprivate C++ class.
+#if defined (__INTEL_COMPILER)	|| \
+    defined (__GXX_ABI_VERSION)	|| \
+    defined (__CLANG_FUJITSU)	|| \
+	defined (__PGI)
+	// No problem. Go ahead.
+#else
+	// Nop. This compiler does not support threadprivate C++ class.
 		if (my_rank == 0) {
-		printError("setProperties", "This compiler does not support threadprivate C++ class.\n\tPMlib measurement from inside of C++ parallel construct is not available for this compiler. \n");
+		printError("setProperties", "This C++ compiler does not support threadprivate class.\n
+		\tCalling [%s] from inside of parallel construct is not valid for this compiler. \n",
+		label.c_str());
 		}
 		//	m_is_set = false;
-	#endif
+#endif
 	}
 
 
@@ -845,11 +866,11 @@ namespace pm_lib {
     fprintf(stderr, "<PerfWatch::setProperties> [%s] id=%d, master process thread %d, typeCalc=%d, m_in_parallel=%s\n",
 	label.c_str(), id, my_thread, typeCalc, m_in_parallel?"true":"false");
 	#ifdef DEBUG_PRINT_PAPI_THREADS
-		#pragma omp barrier
 		#pragma omp critical
 		{
     		fprintf(stderr, "<PerfWatch::setProperties> [%s] my_thread=%d, &(papi)=%p, &(my_papi)=%p\n",
-				label.c_str(), my_thread, &papi.num_events, &my_papi.num_events);
+				label.c_str(), my_thread, &papi, &my_papi);
+				//	label.c_str(), my_thread, &papi.num_events, &my_papi.num_events);
 			for (int j=0; j<num_threads; j++) {
 				fprintf (stderr, "\tmy_papi.th_accumu[%d][*]:", j);
 				for (int i=0; i<my_papi.num_events; i++) {
@@ -1039,22 +1060,23 @@ namespace pm_lib {
   {
     if (!m_is_healthy) return;
 
+#ifdef DEBUG_PRINT_WATCH
+    if (my_rank == 0)
+		fprintf (stderr, "<PerfWatch::start> [%s] my_thread=%d\n", m_label.c_str(), my_thread);
+#endif
+
     if (m_started) {
-      printError("start()",  "Section was started already. Duplicated start is ignored.\n");
-      return;
+		fprintf (stderr, "\n\t *** warning. [%s] my_thread=%d is already marked started. Duplicated start is ignored. \n", m_label.c_str(), my_thread);
+		//	return;
     }
 	if (!m_is_set) {
-      printError("start()",  "Section has not been defined correctly by setProperties(). start() is ignored.\n");
-      m_is_healthy=false;
-      return;
+		fprintf (stderr, "\n\t *** internal error. [%s] my_thread=%d is marked m_is_set=FALSE. \n",
+			m_label.c_str(), my_thread);
+		//	m_is_healthy=false;
+		//	return;
 	}
     m_started = true;
     m_startTime = getTime();
-
-#ifdef DEBUG_PRINT_WATCH
-    if (my_rank == 0)
-		fprintf (stderr, "<PerfWatch::start> [%s] my_thread=%d, m_startTime=%f\n", m_label.c_str(), my_thread, m_startTime);
-#endif
 
 	if ( m_in_parallel ) {
 		// The threads are active and running in parallel region
@@ -1188,12 +1210,17 @@ namespace pm_lib {
   ///
   void PerfWatch::stop(double flopPerTask, unsigned iterationCount)
   {
-    if (!m_is_healthy) return;
+    if (!m_is_healthy) {
+      printError("stop()",  "[%s] is marked Not healthy. Corrected. \n", m_label.c_str());
+		m_is_healthy=true;
+		//	return;
+	}
 
     if (!m_started) {
-      printError("stop()",  "Section has not been started\n");
-      m_is_healthy=false;
-      return;
+      printError("stop()",  "[%s]  has not been started. Corrected. \n", m_label.c_str());
+      m_started=true;
+      //	m_is_healthy=false;
+      //	return;
     }
 
     m_stopTime = getTime();
@@ -1998,7 +2025,7 @@ namespace pm_lib {
   void PerfWatch::printError(const char* func, const char* fmt, ...)
   {
     if (my_rank == 0) {
-      fprintf(stderr, "*** PMlib Error. PerfWatch::%s [%s] ",
+      fprintf(stderr, "\n\n*** PMlib Error. PerfWatch::%s [%s] \n",
                       func, m_label.c_str());
       va_list ap;
       va_start(ap, fmt);

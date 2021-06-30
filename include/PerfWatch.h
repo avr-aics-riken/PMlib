@@ -28,6 +28,7 @@
 #include <cstdarg>
 #include <string>
 #include <cstdlib>
+#include <string.h>
 
 #ifdef _OPENMP
 	#include <omp.h>
@@ -41,10 +42,6 @@
 #include <sys/time.h>
 #else
 #include "sph_win32_util.h"   // for Windows win32 GetSystemTimeAsFileTime API?
-#endif
-
-#if defined(__x86_64__)
-#include <string.h>
 #endif
 
 namespace pm_lib {
@@ -123,6 +120,8 @@ namespace pm_lib {
     bool m_threads_merged; /// 全スレッドの情報をマスタースレッドに集約済みか
     bool m_gathered;       /// 全プロセスの結果をランク0に集計済みかどうか
     bool m_started;        /// 測定区間がstart済みかどうか
+		/// Remark m_started is usefule for serial construct only.
+		///        in parallel construct
 
 
   public:

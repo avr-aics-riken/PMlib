@@ -217,12 +217,14 @@ void PerfWatch::createPapiCounterList ()
 // 1. Identify the CPU architecture
 
 	// Verified on the following platform
-	//	star:	: Intel(R) Core(TM)2 Duo CPU     E7500  @ 2.93GHz, has sse4
+	//	corot:	: Intel(R) Core(TM) i5-3470S CPU @ 2.90GHz	# Ivybridge	2012 model
+	//	star:	: Intel(R) Core(TM)2 Duo CPU     E7500  @ 2.93GHz, has sse4	# 2009 model
 	// vsh-vsp	: Intel(R) Xeon(R) CPU E5-2670 0 @ 2.60GHz	# Sandybridge
 	//	eagles:	: Intel(R) Xeon(R) CPU E5-2650 v2 @ 2.60GHz	# SandyBridge
 	//	uv01:	: Intel(R) Xeon(R) CPU E5-4620 v2 @ 2.60GHz	# Ivybridge
 	//	c01:	: Intel(R) Xeon(R) CPU E5-2640 v3 @ 2.60GHz	# Haswell
 	// chicago:	: Intel(R) Xeon(R) CPU E3-1220 v5 @ 3.00GHz (94)# Skylake
+	//  ito:	: Intel(R) Xeon(R) Gold 6154 CPU @ 3.00GHz	# Skylake
 	// ito-fep:	: Intel(R) Xeon(R) CPU E7-8880 v4 @ 2.20GHz	# Broadwell
 	// water:	: Intel(R) Xeon(R) Gold 6148 CPU @ 2.40GHz	# Skylake
 	// fugaku:	: Fujitsu A64FX based on ARM SVE edition @ 2.0 GHz base frequency
@@ -282,8 +284,13 @@ void PerfWatch::createPapiCounterList ()
 
 		} else
 		if (s_model_string.find( "Core(TM)" ) != string::npos ) {
-			hwpc_group.platform = "Xeon" ;
-			hwpc_group.i_platform = 1;	// Minimal support. only two FLOPS types
+			if (s_model_string.find( "i5-" ) != string::npos ) {
+				hwpc_group.platform = "Xeon" ;
+				hwpc_group.i_platform = 2;	// Ivybridge
+    		} else {
+				hwpc_group.platform = "Xeon" ;
+				hwpc_group.i_platform = 1;	// Minimal support. only two FLOPS types
+			}
 		}
     	else {
 			hwpc_group.i_platform = 0;	// un-supported Xeon type

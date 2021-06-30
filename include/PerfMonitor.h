@@ -170,6 +170,9 @@ namespace pm_lib {
     ///
     ///   @param[in] label ラベル文字列。測定区間を識別するために用いる。
     ///
+    ///   @note a section can be called either from serial construct or from
+	///		parallel construc. But a section can not be called from 
+	///		both of serial construc and parallel construct.
     ///
     void start (const std::string& label);
 
@@ -564,7 +567,7 @@ namespace pm_lib {
     void printDiag(const char* func, const char* fmt, ...)
     {
       if (my_rank == 0) {
-        fprintf(stderr, "*** PMlib message. PerfMonitor::%s: ", func );
+        fprintf(stderr, "\n\n*** PMlib message. PerfMonitor::%s: ", func );
         va_list ap;
         va_start(ap, fmt);
         vfprintf(stderr, fmt, ap);
