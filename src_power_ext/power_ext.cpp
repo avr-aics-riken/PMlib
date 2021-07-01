@@ -1,3 +1,4 @@
+
 /// Interface routine for Power API
 ///
 ///	@file   power_ext.c
@@ -9,23 +10,16 @@
 #include <cstdio>
 #include "pwr.h"
 #include <cstdlib>
-#include "pmlib_power.h"
+#include <cmath>
 
-// ################################################################
-// 2021/5/17 K. Mikami
-// Testing Power APIs for measured and estimated components
 static void error_print(int , std::string , std::string);
 static void warning_print (std::string , std::string , std::string );
 static void warning_print (std::string , std::string , std::string , int);
-// ################################################################
-
-/**
 
 // Objects supported by default context
 enum power_object_index
 	{
 		I_pobj_NODE=0,
-		I_pobj_CPU,
 		I_pobj_CMG0CORES,
 		I_pobj_CMG1CORES,
 		I_pobj_CMG2CORES,
@@ -36,8 +30,8 @@ enum power_object_index
 		I_pobj_CMG3L2CACHE,
 		I_pobj_ACORES0,
 		I_pobj_ACORES1,
-		I_pobj_UNCMG,
 		I_pobj_TOFU,
+		I_pobj_UNCMG,
 		I_pobj_MEM0,
 		I_pobj_MEM1,
 		I_pobj_MEM2,
@@ -51,7 +45,6 @@ enum power_object_index
 static char p_obj_name[Max_power_object][30] =
 	{
 		"plat.node",
-		"plat.node.cpu",	// valid for SET only.
 		"plat.node.cpu.cmg0.cores",
 		"plat.node.cpu.cmg1.cores",
 		"plat.node.cpu.cmg2.cores",
@@ -62,8 +55,8 @@ static char p_obj_name[Max_power_object][30] =
 		"plat.node.cpu.cmg3.l2cache",
 		"plat.node.cpu.acores.core0",
 		"plat.node.cpu.acores.core1",
-		"plat.node.cpu.uncmg",
 		"plat.node.cpu.tofu",
+		"plat.node.cpu.uncmg",
 		"plat.node.mem0",
 		"plat.node.mem1",
 		"plat.node.mem2",
@@ -74,6 +67,7 @@ static char p_obj_name[Max_power_object][30] =
 enum power_extended_index
 	{
 		I_pext_NODE=0,
+		I_pext_CPU,
 		I_pext_CMG0CORES,
 		I_pext_CMG1CORES,
 		I_pext_CMG2CORES,
@@ -84,9 +78,12 @@ enum power_extended_index
 		I_pext_MEM3,
 		Max_power_extended
 	};
+// NODE is the only attribute available to get the measured value
+// other extended parts are defined to enable power knob controll
 static char p_ext_name[Max_power_extended][30] =
 	{
-		"plat.node",		// "plat.node" is the only attribute available to get the measured value
+		"plat.node",
+		"plat.node.cpu",	// valid both for default and exxtened context
 		"plat.node.cpu.cmg0.cores",	//	ditto.
 		"plat.node.cpu.cmg1.cores",	//	ditto.
 		"plat.node.cpu.cmg2.cores",	//	ditto.
@@ -97,9 +94,6 @@ static char p_ext_name[Max_power_extended][30] =
 		"plat.node.mem3"	//	ditto.
 	};
 
-const int Max_measure_device=1;	// "plat.node" is the only attribute available to get the measured value
-const int Max_power_leaf_parts=12;	// max. # of leaf parts in the object group, i.e. 12 cores in the CMG.
-
 enum power_knob_index
 	{
 		I_knob_CPU=0,
@@ -107,184 +101,220 @@ enum power_knob_index
 		I_knob_ISSUE,
 		I_knob_PIPE,
 		I_knob_ECO,
-		I_knob_RETENTION,
+		//	I_knob_RETENTION,	// disabled
 		Max_power_knob
 	};
 
-**/
+const int Max_measure_device=1;
+	// NODE ("plat.node") is the only attribute to get the power meter measured value from
+const int Max_power_leaf_parts=12;
+	// max. # of leaf parts in the object group, i.e. 12 cores in the CMG.
 
-PWR_Cntxt pacntxt = NULL;				// typedef void* PWR_Cntxt
-PWR_Cntxt extcntxt = NULL;
-PWR_Obj p_obj_array[Max_power_object];		// typedef void* PWR_Obj
-PWR_Obj p_obj_ext[Max_power_extended];
-uint64_t u64array[Max_power_leaf_parts];
-uint64_t u64;
+static PWR_Cntxt pacntxt = NULL;				// typedef void* PWR_Cntxt
+static PWR_Cntxt extcntxt = NULL;
+static PWR_Obj p_obj_array[Max_power_object];		// typedef void* PWR_Obj
+static PWR_Obj p_obj_ext[Max_power_extended];
+static uint64_t u64array[Max_power_leaf_parts];
+static uint64_t u64;
 
 
 int my_power_bind_initialize (void)
 {
 	#ifdef DEBUG_PRINT_POWER_EXT
-	fprintf(stderr,"<my_power_initialize> objects in default context\n");
+	fprintf(stderr, "<my_power_initialize> objects in default context\n");
 	#endif
 
 	int irc;
+	int isum;
 
-	irc = PWR_CntxtInit (PWR_CNTXT_DEFAULT, PWR_ROLE_APP, "app", &pacntxt);
-	if (irc != PWR_RET_SUCCESS) error_print(irc, "Power API PWR_CntxtInit", "default");
+	isum = 0;
+	isum += irc = PWR_CntxtInit (PWR_CNTXT_DEFAULT, PWR_ROLE_APP, "app", &pacntxt);
+	if (irc != PWR_RET_SUCCESS) error_print(irc, "PWR_CntxtInit", "default");
 
 	for (int i=0; i<Max_power_object; i++) {
-		irc = PWR_CntxtGetObjByName (pacntxt, p_obj_name[i], &p_obj_array[i]);
-		if (irc != PWR_RET_SUCCESS) { warning_print ("Power API Cntxt GetObj", p_obj_name[i], "default"); continue;}
+		isum += irc = PWR_CntxtGetObjByName (pacntxt, p_obj_name[i], &p_obj_array[i]);
+		if (irc != PWR_RET_SUCCESS)
+			{ warning_print ("CntxtGetObj", p_obj_name[i], "default"); continue;}
 	}
 
 	#ifdef DEBUG_PRINT_POWER_EXT
-	fprintf(stderr,"<my_power_initialize> objects in extended context\n");
+	fprintf(stderr, "<my_power_initialize> objects in extended context\n");
 	#endif
 
-	irc = PWR_CntxtInit (PWR_CNTXT_FX1000, PWR_ROLE_APP, "app", &extcntxt);
-	if (irc != PWR_RET_SUCCESS) error_print(irc, "Power API PWR_CntxtInit", "extended");
+	isum += irc = PWR_CntxtInit (PWR_CNTXT_FX1000, PWR_ROLE_APP, "app", &extcntxt);
+	if (irc != PWR_RET_SUCCESS) error_print(irc, "PWR_CntxtInit", "extended");
 
 	for (int i=0; i<Max_power_extended; i++) {
-		irc = PWR_CntxtGetObjByName (extcntxt, p_ext_name[i], &p_obj_ext[i]);
-		if (irc != PWR_RET_SUCCESS) { warning_print ("Power API Cntxt GetObj", p_ext_name[i], "extended"); continue;}
+		isum += irc = PWR_CntxtGetObjByName (extcntxt, p_ext_name[i], &p_obj_ext[i]);
+		if (irc != PWR_RET_SUCCESS)
+			{ warning_print ("CntxtGetObj", p_ext_name[i], "extended"); continue;}
 	}
-	return(0);
+
+	if (isum == 0) {
+		return (Max_power_object + Max_measure_device);
+	} else {
+		return(-1);
+	}
 }
 
 
-int my_power_bind_knob ( int knob, int value)
+int my_power_bind_knobs (int knob, int operation, int & value)
 {
+	//	knob and value combinations
+	//		knob=0 : I_knob_CPU    : cpu frequency (MHz)
+	//		knob=1 : I_knob_MEMORY : memory access throttling (%) : 100, 90, 80, .. , 10
+	//		knob=2 : I_knob_ISSUE  : instruction issues (/cycle) : 2, 4
+	//		knob=3 : I_knob_PIPE   : number of PIPEs : 1, 2
+	//		knob=4 : I_knob_ECO    : eco state (mode) : 0, 1, 2
+	//		knob=5 : I_knob_RETENTION : retention state (mode) : 0, 1
+	//	operation : [0:read, 1:update]
+
 	PWR_Grp p_obj_grp = NULL;
 	int irc;
-
+	const int reading_operation=0;
+	const int update_operation=1;
+	double Hz;
+		int j;
 
 	#ifdef DEBUG_PRINT_POWER_EXT
-	fprintf(stderr,"<my_power_bind_knob> knob=%d, value=%d\n", knob, value);
+	fprintf(stderr, "<my_power_bind_knobs> knob=%d, operation=%d, value=%d\n",
+		knob, operation, value);
 	#endif
 
-	//	value for I_knob_CPU    : cpu frequency (MHz) : 2200, 2000, (1600 is possible for limited use)
-	//	value for I_knob_MEMORY : memory access throttling (%) : 100, 90, 80, .. , 10
-	//	value for I_knob_ISSUE  : instruction issues (/cycle) : 2, 4
-	//	value for I_knob_PIPE   : number of PIPEs : 1, 2
-	//	value for I_knob_ECO    : eco state (mode) : 0, 1, 2
-	//	value for I_knob_RETENTION : retention state (mode) : 0, 1 // retention is not allowed as of 2021 May
-
 	if ( knob < 0 | knob >Max_power_knob ) {
-		error_print(knob, "my_power_bind_knob", "invalid controler");
+		error_print(knob, "my_power_bind_knobs", "invalid controler");
 		return(-1);
+	}
+	if ( operation == update_operation ) {
+		for (int i=0; i < Max_power_leaf_parts; i++) {
+			u64array[i] = value;
+		}
 	}
 
 	if ( knob == I_knob_CPU ) {
-		double Hz;
-		if ( !(value == 2200 || value == 2000) ) {
-			//	1.6 GHz retention frequency can not be set by users
-			warning_print ("Power API AttrSetValue", p_obj_name[I_pobj_CPU], "invalid frequency value", value);
-			return(-1);
+		// CPU frequency can be controlled either from the default context or the extended context
+		if ( operation == reading_operation ) {
+			irc = PWR_ObjAttrGetValue (p_obj_ext[I_pext_CPU], PWR_ATTR_FREQ, &Hz, NULL);
+			if (irc != PWR_RET_SUCCESS)
+				{ error_print(irc, "GetValue", p_ext_name[I_pext_CPU]); return(irc); }
+			value = lround (Hz / 1.0e6);
+		} else {
+			if ( !(value == 2200 || value == 2000) ) {	// 1.6 GHz retention is not allowed
+				warning_print ("SetValue", p_ext_name[I_pext_CPU], "invalid frequency", value);
+				return(-1);
+			}
+			Hz = (double)value * 1.0e6;
+			irc = PWR_ObjAttrSetValue (p_obj_ext[I_pext_CPU], PWR_ATTR_FREQ, &Hz);
+			if (irc != PWR_RET_SUCCESS)
+				{ error_print(irc, "SetValue", p_ext_name[I_pext_CPU]); return(irc); }
 		}
-		Hz = (double)value * 1.0e6;
-		irc = PWR_ObjAttrSetValue (p_obj_array[I_pobj_CPU], PWR_ATTR_FREQ, &Hz);
-		if (irc != PWR_RET_SUCCESS) { error_print(irc, "Power API AttrSetValue", p_obj_name[I_pobj_CPU]); return(-1); }
 	} else
 	if ( knob == I_knob_MEMORY ) {
-		if ( value < 0 || value > 10 ) {
-			warning_print ("Power API AttrSetValue", p_ext_name[I_knob_MEMORY], "invalid value", value);
-			return(-1);
-		}
-		u64 = value;
-		for (int icmg=0; icmg <4 ; icmg++)	//	from I_pobj_CMG0CORES to I_pobj_CMG3CORES
+		// Memory throttling from the extended context
+		for (int icmg=0; icmg <4 ; icmg++)
 		{
-			#ifdef DEBUG_PRINT_POWER_EXT
-			fprintf(stderr,"\t setting CMG%d [%s] memory bandwidth : %d\n", icmg, p_ext_name[I_pext_MEM0+icmg], value);
-			#endif
-			irc = PWR_ObjAttrSetValue (p_obj_ext[I_pext_MEM0+icmg], PWR_ATTR_THROTTLING_STATE, &u64);
-			if (irc != PWR_RET_SUCCESS) { error_print(irc, "Power API AttrSetValue", p_ext_name[I_pext_MEM0+icmg]); return(-1); }
+			j=I_pext_MEM0+icmg;
+			if ( operation == reading_operation ) {
+				irc = PWR_ObjAttrGetValue (p_obj_ext[j], PWR_ATTR_THROTTLING_STATE, &u64, NULL);
+				if (irc != PWR_RET_SUCCESS)
+					{ error_print(irc, "GetValue", p_ext_name[j]); return(irc); }
+				value = u64;
+			} else {
+				if ( !(0 <= value && value <= 9) ) {
+					warning_print ("SetValue", p_ext_name[j], "invalid throttling", value);
+					return(-1);
+				}
+				u64 = value;
+				irc = PWR_ObjAttrSetValue (p_obj_ext[j], PWR_ATTR_THROTTLING_STATE, &u64);
+				if (irc != PWR_RET_SUCCESS)
+					{ error_print(irc, "SetValue", p_ext_name[j]); return(irc); }
+			}
 		}
 
 	} else
 	if ( knob == I_knob_ISSUE ) {
-		for (int i=0; i < Max_power_leaf_parts; i++) {
-			u64array[i] = value;
-		}
-		for (int icmg=0; icmg <4 ; icmg++)	//	from I_pobj_CMG0CORES to I_pobj_CMG3CORES
+		// sub group ISSUE control from the extended context
+		for (int icmg=0; icmg <4 ; icmg++)
 		{
 			p_obj_grp = NULL;
-			irc = PWR_ObjGetChildren (p_obj_ext[I_pext_CMG0CORES+icmg], &p_obj_grp);
-			if (irc != PWR_RET_SUCCESS) { error_print(irc, "Power API GetChildren", p_ext_name[I_pext_CMG0CORES+icmg]); return(-1); }
-			#ifdef DEBUG_PRINT_POWER_EXT
-			fprintf(stderr,"\t setting CMG%d [%s] ISSUE value : %d \n", icmg, p_ext_name[I_pext_CMG0CORES+icmg], value);
-			#endif
-
-			irc = PWR_GrpAttrSetValue (p_obj_grp, PWR_ATTR_ISSUE_STATE, u64array, NULL);
-			if (irc != PWR_RET_SUCCESS) { error_print(irc, "Power API GrpSet(ISSUE)",  p_ext_name[I_pext_CMG0CORES+icmg]); return(-1); }
-			irc = PWR_GrpDestroy (p_obj_grp);
-			if (irc != PWR_RET_SUCCESS) { error_print(irc, "Power API PWR_GrpDestroy", p_ext_name[I_pext_CMG0CORES+icmg]); return(-1); }
+			j=I_pext_CMG0CORES+icmg;
+			irc = PWR_ObjGetChildren (p_obj_ext[j], &p_obj_grp);
+			if (irc != PWR_RET_SUCCESS)
+					{ error_print(irc, "GetChildren", p_ext_name[j]); return(irc); }
+			if ( operation == reading_operation ) {
+				irc = PWR_GrpAttrGetValue (p_obj_grp, PWR_ATTR_ISSUE_STATE, u64array, NULL, NULL);
+				(void) PWR_GrpDestroy (p_obj_grp);
+				if (irc != PWR_RET_SUCCESS)
+						{ error_print(irc, "GrpGet (ISSUE)",  p_ext_name[j]); return(irc); }
+				value = (int)u64array[0];
+			} else {
+				irc = PWR_GrpAttrSetValue (p_obj_grp, PWR_ATTR_ISSUE_STATE, u64array, NULL);
+				(void) PWR_GrpDestroy (p_obj_grp);
+				if (irc != PWR_RET_SUCCESS)
+						{ error_print(irc, "GrpSet (ISSUE)",  p_ext_name[j]); return(irc); }
+			}
 		}
 
 	} else
 	if ( knob == I_knob_PIPE ) {
-		for (int i=0; i < Max_power_leaf_parts; i++) {
-			u64array[i] = value;
-		}
-		for (int icmg=0; icmg <4 ; icmg++)	//	from I_pobj_CMG0CORES to I_pobj_CMG3CORES
+		// sub group PIPE control from the extended context
+		for (int icmg=0; icmg <4 ; icmg++)
 		{
 			p_obj_grp = NULL;
-			irc = PWR_ObjGetChildren (p_obj_ext[I_pext_CMG0CORES+icmg], &p_obj_grp);
-			if (irc != PWR_RET_SUCCESS) { error_print(irc, "Power API GetChildren", p_ext_name[I_pext_CMG0CORES+icmg]); return(-1); }
-			#ifdef DEBUG_PRINT_POWER_EXT
-			fprintf(stderr,"\t setting CMG%d [%s] execution PIPE : %d \n", icmg, p_ext_name[I_pext_CMG0CORES+icmg], value);
-			#endif
+			j=I_pext_CMG0CORES+icmg;
+			irc = PWR_ObjGetChildren (p_obj_ext[j], &p_obj_grp);
+			if (irc != PWR_RET_SUCCESS)
+					{ error_print(irc, "GetChildren", p_ext_name[j]); return(irc); }
 
-			irc = PWR_GrpAttrSetValue (p_obj_grp, PWR_ATTR_EX_PIPE_STATE, u64array, NULL);
-			if (irc != PWR_RET_SUCCESS) { error_print(irc, "Power API GrpSet(PIPE)",  p_ext_name[I_pext_CMG0CORES+icmg]); return(-1); }
-			irc = PWR_GrpDestroy (p_obj_grp);
-			if (irc != PWR_RET_SUCCESS) { error_print(irc, "Power API PWR_GrpDestroy", p_ext_name[I_pext_CMG0CORES+icmg]); return(-1); }
+			if ( operation == reading_operation ) {
+				irc = PWR_GrpAttrGetValue (p_obj_grp, PWR_ATTR_EX_PIPE_STATE, u64array, NULL, NULL);
+				(void) PWR_GrpDestroy (p_obj_grp);
+				if (irc != PWR_RET_SUCCESS)
+						{ error_print(irc, "GrpGet (PIPE)", p_ext_name[j]); return(irc); }
+				value = (int)u64array[0];
+			} else {
+				irc = PWR_GrpAttrSetValue (p_obj_grp, PWR_ATTR_EX_PIPE_STATE, u64array, NULL);
+				(void) PWR_GrpDestroy (p_obj_grp);
+				if (irc != PWR_RET_SUCCESS)
+						{ error_print(irc, "GrpSet (PIPE)", p_ext_name[j]); return(irc); }
+			}
 		}
 
 	} else
 	if ( knob == I_knob_ECO ) {
-		for (int i=0; i < Max_power_leaf_parts; i++) {
-			u64array[i] = value;
-		}
-		for (int icmg=0; icmg <4 ; icmg++)	//	from I_pobj_CMG0CORES to I_pobj_CMG3CORES
+		// sub group ECO control from the extended context
+		for (int icmg=0; icmg <4 ; icmg++)
 		{
 			p_obj_grp = NULL;
-			irc = PWR_ObjGetChildren (p_obj_ext[I_pext_CMG0CORES+icmg], &p_obj_grp);
-			if (irc != PWR_RET_SUCCESS) { error_print(irc, "Power API GetChildren", p_ext_name[I_pext_CMG0CORES+icmg]); return(-1); }
-			#ifdef DEBUG_PRINT_POWER_EXT
-			fprintf(stderr,"\t setting CMG%d [%s] ECO state : %d \n", icmg, p_ext_name[I_pext_CMG0CORES+icmg], value);
-			#endif
+			j=I_pext_CMG0CORES+icmg;
+			irc = PWR_ObjGetChildren (p_obj_ext[j], &p_obj_grp);
+			if (irc != PWR_RET_SUCCESS)
+					{ error_print(irc, "GetChildren", p_ext_name[j]); return(irc); }
 
-			irc = PWR_GrpAttrSetValue (p_obj_grp, PWR_ATTR_ECO_STATE, u64array, NULL);
-			if (irc != PWR_RET_SUCCESS) { error_print(irc, "Power API GrpSet(ECO)",  p_ext_name[I_pext_CMG0CORES+icmg]); return(-1); }
-			irc = PWR_GrpDestroy (p_obj_grp);
-			if (irc != PWR_RET_SUCCESS) { error_print(irc, "Power API PWR_GrpDestroy", p_ext_name[I_pext_CMG0CORES+icmg]); return(-1); }
+			if ( operation == reading_operation ) {
+				irc = PWR_GrpAttrGetValue (p_obj_grp, PWR_ATTR_ECO_STATE, u64array, NULL, NULL);
+				irc = PWR_GrpDestroy (p_obj_grp);
+				if (irc != PWR_RET_SUCCESS)
+						{ error_print(irc, "GrpGet (ECO)", p_ext_name[j]); return(irc); }
+				value = (int)u64array[0];
+			} else {
+				irc = PWR_GrpAttrSetValue (p_obj_grp, PWR_ATTR_ECO_STATE, u64array, NULL);
+				irc = PWR_GrpDestroy (p_obj_grp);
+				if (irc != PWR_RET_SUCCESS)
+						{ error_print(irc, "GrpSet (ECO)", p_ext_name[j]); return(irc); }
+			}
 		}
 
+	/**
+	// RETENTION is disabled
 	} else
 	if ( knob == I_knob_RETENTION ) {
-		error_print(-1, "Power API",  "user RETENTION control is not allowed on Fugaku");
+		warning_print ("my_power_bind_knobs", "RETENTION", "user RETENTION control is not allowed");
 		return(-1);
-
-		for (int i=0; i < Max_power_leaf_parts; i++) {
-			u64array[i] = value;
-		}
-		for (int icmg=0; icmg <4 ; icmg++)	//	from I_pobj_CMG0CORES to I_pobj_CMG3CORES
-		{
-			p_obj_grp = NULL;
-			irc = PWR_ObjGetChildren (p_obj_ext[I_pext_CMG0CORES+icmg], &p_obj_grp);
-			if (irc != PWR_RET_SUCCESS) { error_print(irc, "GetChildren", p_ext_name[I_pext_CMG0CORES+icmg]); return(-1); }
-			#ifdef DEBUG_PRINT_POWER_EXT
-			fprintf(stderr,"\t setting CMG%d [%s] retention state : %d \n", icmg, p_ext_name[I_pext_CMG0CORES+icmg], value);
-			#endif
-
-			irc = PWR_GrpAttrSetValue (p_obj_grp, PWR_ATTR_RETENTION_STATE, u64array, NULL);
-			if (irc != PWR_RET_SUCCESS) { error_print(irc, "Power API GrpSet(RETENTION)",  p_ext_name[I_pext_CMG0CORES+icmg]); return(-1); }
-			irc = PWR_GrpDestroy (p_obj_grp);
-			if (irc != PWR_RET_SUCCESS) { error_print(irc, "Power API PWR_GrpDestroy", p_ext_name[I_pext_CMG0CORES+icmg]); return(-1); }
-		}
+	**/
 	} else {
 		//	should not reach here
-		error_print(knob, "my_power_bind_knob", "internal error. knob="); return(-1);
+		error_print(knob, "my_power_bind_knobs", "internal error. knob="); return(-1);
 		;
 	}
 
@@ -300,25 +330,28 @@ int my_power_bind_start (uint64_t pa64timer[], double w_joule[])
 		return 0;
 	}
 	#ifdef DEBUG_PRINT_POWER_EXT
-	fprintf(stderr,"<my_power_bind_start> Max_power_object=%d, Max_power_extended=%d\n", Max_power_object, Max_power_extended);
+	fprintf(stderr, "<my_power_bind_start> Max_power_object=%d, Max_power_extended=%d\n",
+			Max_power_object, Max_power_extended);
 	#endif
 
 	#ifdef DEBUG_PRINT_POWER_EXT
-	fprintf(stderr,"\t starting objects in default context\n");
+	fprintf(stderr, "\t starting objects in default context\n");
 	#endif
 	for (int i=0; i<Max_power_object; i++) {
 		irc = PWR_ObjAttrGetValue (p_obj_array[i], PWR_ATTR_ENERGY, &w_joule[i], &pa64timer[i]);
-		if (irc != PWR_RET_SUCCESS) { warning_print ("Power API AttrGetValue", p_obj_name[i], "default attribute"); }
+		if (irc != PWR_RET_SUCCESS)
+			{ warning_print ("my_power_bind_start", p_obj_name[i], "default GetValue"); }
 	}
 
 	#ifdef DEBUG_PRINT_POWER_EXT
-	fprintf(stderr,"\t starting objects in extended context\n");
+	fprintf(stderr, "\t starting objects in extended context\n");
 	#endif
 	int iadd=Max_power_object;
 	//	for (int i=0; i<Max_power_extended; i++) {
 	for (int i=0; i<Max_measure_device; i++) {
 		irc = PWR_ObjAttrGetValue (p_obj_ext[i], PWR_ATTR_MEASURED_ENERGY, &w_joule[i+iadd], &pa64timer[i+iadd]);
-		if (irc != PWR_RET_SUCCESS) { warning_print ("Power API AttrGetValue ", p_ext_name[i], "extended attribute"); }
+		if (irc != PWR_RET_SUCCESS)
+			{ warning_print ("my_power_bind_start", p_ext_name[i], "extended GetValue"); }
 	}
 
 	return 0;
@@ -333,19 +366,22 @@ int my_power_bind_stop (uint64_t pa64timer[], double w_joule[])
 		return 0;
 	}
 	#ifdef DEBUG_PRINT_POWER_EXT
-	fprintf(stderr,"\t <my_power_bind_stop> Max_power_object=%d, Max_power_extended=%d\n", Max_power_object, Max_power_extended);
+	fprintf(stderr, "\t <my_power_bind_stop> Max_power_object=%d, Max_power_extended=%d\n",
+			Max_power_object, Max_power_extended);
 	#endif
 
 	for (int i=0; i<Max_power_object; i++) {
 		irc = PWR_ObjAttrGetValue (p_obj_array[i], PWR_ATTR_ENERGY, &w_joule[i], &pa64timer[i]);
-		if (irc != PWR_RET_SUCCESS) { warning_print ("Power API AttrGetValue", p_obj_name[i], "default attribute"); }
+		if (irc != PWR_RET_SUCCESS)
+			{ warning_print ("my_power_bind_stop", p_obj_name[i], "default GetValue"); }
 	}
 
 	int iadd=Max_power_object;
 	//	for (int i=0; i<Max_power_extended; i++) {
 	for (int i=0; i<Max_measure_device; i++) {
 		irc = PWR_ObjAttrGetValue (p_obj_ext[i], PWR_ATTR_MEASURED_ENERGY, &w_joule[i+iadd], &pa64timer[i+iadd]);
-		if (irc != PWR_RET_SUCCESS) { warning_print ("Power API AttrGetValue", p_ext_name[i], "extended attribute"); }
+		if (irc != PWR_RET_SUCCESS)
+			{ warning_print ("my_power_bind_stop", p_ext_name[i], "extended GetValue"); }
 	}
 
 	return 0;
@@ -356,12 +392,18 @@ int my_power_bind_finalize ()
 {
 	int irc;
 
+	#ifdef DEBUG_PRINT_POWER_EXT
+	fprintf(stderr, "\t <my_power_bind_finalize> skipping CntxtDestroy()\n");
+	return 0;
+	#endif
+
+
 	irc = 0;
 	irc = PWR_CntxtDestroy(pacntxt);
 	irc += PWR_CntxtDestroy(extcntxt);
 
 	#ifdef DEBUG_PRINT_POWER_EXT
-	fprintf(stderr,"\t <my_power_bind_finalize> returns %d\n", irc);
+	fprintf(stderr, "\t <my_power_bind_finalize> returns %d\n", irc);
 	#endif
 
 	return irc;
@@ -370,17 +412,17 @@ int my_power_bind_finalize ()
 
 void error_print(int irc, std::string cstr1, std::string cstr2)
 {
-	printf("*** Error. <%s> failed. [%s] return code %d \n", cstr1.c_str(), cstr2.c_str(), irc);
+	fprintf(stderr, "*** PMlib Error. <power_ext::%s> failed. [%s] return code %d \n", cstr1.c_str(), cstr2.c_str(), irc);
 	return;
 }
 void warning_print (std::string cstr1, std::string cstr2, std::string cstr3)
 {
-	printf("*** Warning. <%s> failed. [%s] %s \n", cstr1.c_str(), cstr2.c_str(), cstr3.c_str());
+	fprintf(stderr, "*** PMlib Warning. <power_ext::%s> failed. [%s] %s \n", cstr1.c_str(), cstr2.c_str(), cstr3.c_str());
 	return;
 }
 void warning_print (std::string cstr1, std::string cstr2, std::string cstr3, int value)
 {
-	printf("*** Warning. <%s> failed. [%s] %s : value %d \n", cstr1.c_str(), cstr2.c_str(), cstr3.c_str(), value);
+	fprintf(stderr, "*** PMlib Warning. <power_ext::%s> failed. [%s] %s : value %d \n", cstr1.c_str(), cstr2.c_str(), cstr3.c_str(), value);
 	return;
 }
 

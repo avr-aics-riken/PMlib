@@ -53,6 +53,7 @@ namespace pm_lib {
     int num_process;           ///< 並列プロセス数
     int num_threads;           ///< 並列スレッド数
     int my_rank;               ///< 自ランク番号
+    int my_thread;             ///< thread number
     int m_nWatch;              ///< 測定区間数
     int init_nWatch;           ///< 初期に確保する測定区間数
     int reserved_nWatch;       ///< リザーブ済みの測定区間数
@@ -63,6 +64,7 @@ namespace pm_lib {
     bool is_MPI_enabled;       ///< PMlibの対応動作可能フラグ:MPI
     bool is_OpenMP_enabled;	   ///< PMlibの対応動作可能フラグ:OpenMP
     bool is_PAPI_enabled;      ///< PMlibの対応動作可能フラグ:PAPI
+    bool is_POWER_enabled;     ///< PMlibの対応動作可能フラグ:Power API
     bool is_OTF_enabled;       ///< PMlibの対応動作可能フラグ:OTF tracing 出力
     bool is_Root_active;       ///< 背景区間(Root区間)の動作フラグ
     bool is_exclusive_construct; ///< 測定区間の重なり状態検出フラグ
@@ -88,7 +90,8 @@ namespace pm_lib {
     /// デストラクタ.
     ~PerfMonitor() {
 	#ifdef DEBUG_PRINT_MONITOR
-		fprintf(stderr, "\t <PerfMonitor> rank %d destructor is called\n", my_rank);
+		fprintf(stderr, "\t <PerfMonitor> rank %d destructor\n", my_rank);
+		fprintf(stderr, "\t\t the number of sections is %d\n", m_nWatch);
 	#endif
 		if (m_watchArray) delete[] m_watchArray;
 		if (m_order) delete[] m_order;
@@ -125,10 +128,51 @@ namespace pm_lib {
     void setProperties(const std::string& label, Type type=CALC, bool exclusive=true);
 
 
+    /// Read the current value for the given power control knob
+    ///
+    ///   @param[in] knob  : power knob chooser 電力制御用ノブの種類
+    ///   @param[out] value : current value for the knob  現在の値
+	///
+    /// @note the knob and its value combination must be chosen from the following table
+	///	@verbatim
+    /// knob : value : object description
+    ///  0   : 2200, 2000 : CPU frequency in MHz
+    ///  1   : 100, 90, 80, .. , 10 : MEMORY access throttling percentage
+    ///  2   : 2, 4    : ISSUE instruction issue rate per cycle
+    ///  3   : 1, 2    : PIPE number of concurrent execution pipelines 
+    ///  4   : 0, 1, 2 : ECO mode state
+    ///  5   : 0, 1    : RETENTION mode state DISABLED as of May 2021
+	///	@endverbatim
+	///
+    void getPowerKnob(int knob, int & value);
+
+
+    /// Set the new value for the given power control knob
+    ///
+    ///   @param[in] knob  : power knob chooser 電力制御用ノブの種類
+    ///   @param[in] value : new value for the knob  指定する設定値
+	///
+    /// @note the knob and its value combination must be chosen from the following table
+	///	@verbatim
+    /// knob : value : object description
+    ///  0   : 2200, 2000 : CPU frequency in MHz
+    ///  1   : 100, 90, 80, .. , 10 : MEMORY access throttling percentage
+    ///  2   : 2, 4    : ISSUE instruction issue rate per cycle
+    ///  3   : 1, 2    : PIPE number of concurrent execution pipelines 
+    ///  4   : 0, 1, 2 : ECO mode state
+    ///  5   : 0, 1    : RETENTION mode state DISABLED as of May 2021
+	///	@endverbatim
+	///
+    void setPowerKnob(int knob, int value);
+
+
     /// 測定区間スタート
     ///
     ///   @param[in] label ラベル文字列。測定区間を識別するために用いる。
     ///
+    ///   @note a section can be called either from serial construct or from
+	///		parallel construc. But a section can not be called from 
+	///		both of serial construc and parallel construct.
     ///
     void start (const std::string& label);
 
@@ -319,6 +363,7 @@ namespace pm_lib {
     void printProgress(FILE* fp, const std::string comments, int op_sort=0);
 
 
+
     /// ポスト処理用traceファイルの出力
     ///
     /// @note プログラム実行中一回のみポスト処理用traceファイルを出力できる
@@ -493,6 +538,27 @@ namespace pm_lib {
               double sum_time_flop, double sum_time_comm, double sum_time_other,
               const std::string unit);
 
+
+	/// Report the BASIC HWPC statistics for the master process
+	///
+	///   @param[in] fp       	report file pointer
+	///   @param[in] maxLabelLen    maximum label string field length
+	///   @param[in] op_sort 	sorting option (0:sorted by seconds, 1:listed order)
+	///
+	void printBasicHWPC (FILE* fp, int maxLabelLen, int op_sort=0);
+
+
+	/// Report the BASIC power consumption statistics of the master node
+	///
+	///   @param[in] fp         report file pointer
+	///   @param[in] maxLabelLen    maximum label field string length
+    ///   @param[in] op_sort     sorting option (0:sorted by seconds, 1:listed order)
+	///
+	///		@note	remark that power consumption is reported per node, not per process
+	///
+	void printBasicPower(FILE* fp, int maxLabelLen, int op_sort=0);
+
+
     /// PerfMonitorクラス用エラーメッセージ出力
     ///
     ///   @param[in] func  関数名
@@ -501,7 +567,7 @@ namespace pm_lib {
     void printDiag(const char* func, const char* fmt, ...)
     {
       if (my_rank == 0) {
-        fprintf(stderr, "*** PMlib message. PerfMonitor::%s: ", func );
+        fprintf(stderr, "\n\n*** PMlib message. PerfMonitor::%s: ", func );
         va_list ap;
         va_start(ap, fmt);
         vfprintf(stderr, fmt, ap);

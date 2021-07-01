@@ -70,6 +70,12 @@ namespace pm_lib {
     return 0;
   }
 
+  inline int MPI_Reduce(void *sendbuf, void *recvbuf, int count,
+                  MPI_Datatype datatype, MPI_Op op, int root, MPI_Comm comm)
+  {
+    return 0;
+  }
+
   inline int MPI_Allreduce(void *sendbuf, void *recvbuf, int count,
                   MPI_Datatype datatype, MPI_Op op, MPI_Comm comm)
   {

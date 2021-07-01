@@ -18,11 +18,7 @@
 ///@file   PerfMonitor.cpp
 ///@brief  PerfMonitor class
 
-//	#ifdef DISABLE_MPI
-//	#include "mpi_stubs.h"
-//	#else
-//	#include <mpi.h>
-//	#endif
+//	either <mpi.h> or "mpi_stubs.h" is included in PerfWatch.cpp
 
 #include "PerfMonitor.h"
 #include <time.h>
@@ -81,6 +77,12 @@ namespace pm_lib {
 	is_PAPI_enabled = false;
 	#endif
 
+	#ifdef USE_POWER
+	is_POWER_enabled = true;
+	#else
+	is_POWER_enabled = false;
+	#endif
+
     #ifdef USE_OTF
     is_OTF_enabled = true;
     #else
@@ -127,7 +129,8 @@ namespace pm_lib {
 	}
 	env_str_hwpc = s_chooser;
 
-    // Start m_watchArray[0] instance
+
+// Start m_watchArray[0] instance
     // m_watchArray[] は PerfWatch classである(PerfMonitorではない)ことに留意
     // PerfWatchのインスタンスは全部で m_nWatch 生成される
     // m_watchArray[0]  :PMlibが定義する特別な背景区間(Root)
@@ -150,10 +153,20 @@ namespace pm_lib {
 
     m_watchArray[0].my_rank = my_rank;
     m_watchArray[0].num_process = num_process;
+
+// Note: HWPC, Power API,  and OTF are all initialized by a PerfWatch class member, i.e. "Root Section".
+
+// initialize HWPC interface structure
     m_watchArray[0].initializeHWPC();
+
+// initialize Power API binding contexts
+    m_watchArray[0].initializePOWER();
+
     int id = add_perf_label(label);	// id for "Root Section" should be 0
     m_nWatch++;
     m_watchArray[0].setProperties(label, id, CALC, num_process, my_rank, num_threads, false);
+
+// initialize OTF manager
     m_watchArray[0].initializeOTF();
     m_watchArray[0].start();
     is_Root_active = true;			// "Root Section" is now active
@@ -198,6 +211,11 @@ namespace pm_lib {
 
     if (!is_PMlib_enabled) return;
 
+    if (label.empty()) {
+      printDiag("setProperties()",  "label is blank. Ignoring this call.\n");
+      return;
+    }
+
 	#ifdef _OPENMP
 	i_thread = omp_get_thread_num();
 	in_parallel = omp_in_parallel();
@@ -208,24 +226,29 @@ namespace pm_lib {
 
     #ifdef DEBUG_PRINT_MONITOR
     if (my_rank == 0) {
-		fprintf(stderr, "<setProperties> [%s] my_rank=%d, i_thread=%d, is_PMlib_enabled=%s\n",
-			label.c_str(), my_rank, i_thread, is_PMlib_enabled?"true":"false");
+		fprintf(stderr, "<setProperties> [%s] my_rank=%d, i_thread=%d \n",
+			label.c_str(), my_rank, i_thread);	//	bool is_PMlib_enabled?"true":"false"
 	}
 	#endif
 
-    if (label.empty()) {
-      printDiag("setProperties()",  "label is blank. Ignoring this call.\n");
-      return;
-    }
-
     int id;
+	#ifdef _OPENMP
+	#pragma omp critical
+	// remark. end critical does not exist. its only for fortran !$omp.
+	#endif
+	{
     id = find_perf_label(label);
-    if (id >= 0) {
-      printDiag("setProperties()", "[%s] has been registered already.\n",
-		label.c_str() );
-      	return;
+	if (id < 0) {
+    	id = add_perf_label(label);
+    	#ifdef DEBUG_PRINT_MONITOR
+		fprintf(stderr, "<setProperties> [%s] i_thread=%d NEW label id=%d is created.\n", label.c_str(), i_thread, id);
+		#endif
+	} else {
+    	#ifdef DEBUG_PRINT_MONITOR
+		fprintf(stderr, "<setProperties> [%s] i_thread=%d label exists. id=%d\n", label.c_str(), i_thread, id);
+		#endif
 	}
-    id = add_perf_label(label);
+	}
 
 //
 // If short of memory, allocate new space
@@ -292,6 +315,57 @@ namespace pm_lib {
   }
 
 
+  /// Get the power control mode and value
+  ///
+  ///   @param[in] knob  : power knob chooser
+  ///   @param[out] value : new value for the knob
+  ///
+  void PerfMonitor::getPowerKnob(int knob, int & value)
+  {
+    #ifdef DEBUG_PRINT_MONITOR
+    if (my_rank == 0) {
+      fprintf(stderr, "<PerfMonitor::getPowerKnob> is called. knob=%d \n",  knob);
+    }
+    #endif
+
+	#ifdef USE_POWER
+	
+	if (m_watchArray[0].m_is_POWER == 0) {
+		fprintf(stderr, "<getPowerKnob> is ignored because POWER_CHOOSER environment variable is set OFF.\n");
+	} else {
+		(void) my_power_bind_knobs (knob, 0, value);
+	}
+	#else
+	fprintf(stderr, "<PerfMonitor::getPowerKnob> is not supported for this system.\n");
+    #endif
+  }
+
+
+  /// Set the power control mode and value
+  ///
+  ///   @param[in] knob  : power knob chooser
+  ///   @param[in] value : new value for the knob
+  ///
+  void PerfMonitor::setPowerKnob(int knob, int value)
+  {
+    #ifdef DEBUG_PRINT_MONITOR
+    if (my_rank == 0) {
+      fprintf(stderr, "<PerfMonitor::setPowerKnob> is called. knob=%d, value=%d \n",  knob, value);
+    }
+    #endif
+
+	#ifdef USE_POWER
+	if (m_watchArray[0].m_is_POWER == 0) {
+		fprintf(stderr, "<setPowerKnob> is ignored because POWER_CHOOSER environment variable is set OFF.\n");
+	} else {
+		(void) my_power_bind_knobs (knob, 1, value);
+	}
+	#else
+	fprintf(stderr, "<PerfMonitor::setPowerKnob> is not supported for this system.\n");
+    #endif
+  }
+
+
 
   /// 測定区間スタート
   ///
@@ -308,15 +382,35 @@ namespace pm_lib {
       return;
     }
     id = find_perf_label(label);
+
+	#ifdef DEBUG_PRINT_MONITOR
+	int i_thread;
+	#ifdef _OPENMP
+	i_thread = omp_get_thread_num();
+	#else
+	i_thread = 0;
+	#endif
+	if (my_rank == 0) {
+		//	fprintf(stderr, "<start> [%s] section i_thread=%d : is %s \n",
+		//		label.c_str(), i_thread, (id<0)?"NEW!":"already in");
+		if (id < 0) {
+			fprintf(stderr, "<start> [%s] i_thread=%d : NEW label is set.\n", label.c_str(), i_thread);
+		} else {
+			fprintf(stderr, "<start> [%s] i_thread=%d : label exists.\n", label.c_str(), i_thread);
+		}
+	}
+	#endif
     if (id < 0) {
-      #ifdef DEBUG_PRINT_MONITOR
-      if (my_rank == 0) {
-        fprintf(stderr, "<start> adding property for [%s] id=%d\n", label.c_str(), id);
-      }
-      #endif
+      // Create the property for this section
       //	PerfMonitor::setProperties(std::string& label, Type type=CALC, bool exclusive=true);
       PerfMonitor::setProperties(label);
       id = find_perf_label(label);
+      #ifdef DEBUG_PRINT_MONITOR
+      if (my_rank == 0) {
+        fprintf(stderr, "<start> created property for [%s] at class address %p\n",
+				label.c_str(), &m_watchArray[id]);
+      }
+      #endif
     }
     is_exclusive_construct = true;
 
@@ -449,6 +543,7 @@ namespace pm_lib {
     if (is_Root_active) {
     	m_watchArray[0].stop(0.0, 1);
     	is_Root_active = false;
+    	m_watchArray[0].finalizePOWER();
     }
 
 	#ifdef _OPENMP
@@ -465,19 +560,32 @@ namespace pm_lib {
   }
 
 
-  ///  OpenMP並列処理されたPMlibスレッド測定区間のうち parallel regionから
-  ///  呼び出された測定区間のスレッド測定情報をマスタースレッドに集約する。
-  ///
-  ///   @note  内部で全測定区間をcheckして該当する測定区間を選択する。
+
+
+  ///  Merging the thread parallel data into the master thread in two steps.
+  ///  The 1st step : Process the data generated in the serial hybrid region.
+  ///  			Copy "my_papi" data of the master thread into shared "papi" space.
+  ///  The 2nd step : Process the data generated from parallel region.
+  ///  			Aggregate the class private "my_papi" data into shared "papi" space.
+  ///  In the end the master thread will retain all the thread vlues in its "my_papi" storage.
   ///
   void PerfMonitor::mergeThreads (void)
   {
     if (!is_PMlib_enabled) return;
     if (!is_OpenMP_enabled) return;
+	#ifdef DEBUG_PRINT_MONITOR
+    if (my_rank == 0) { fprintf(stderr, "<PerfMonitor::mergeThreads> starts\n"); }
+	#endif
 
-    for (int i=0; i<m_nWatch; i++) {
-      m_watchArray[i].mergeAllThreads();
-    }
+	for (int i=0; i<m_nWatch; i++) {
+		m_watchArray[i].mergeMasterThread();
+		#pragma omp parallel
+		{
+			m_watchArray[i].mergeParallelThread();
+		}
+		#pragma omp barrier
+		m_watchArray[i].updateMergedThread();
+	}
   }
 
   /// 全プロセスの測定中経過情報を集約
@@ -494,17 +602,22 @@ namespace pm_lib {
 
     if (!is_PMlib_enabled) return;
 
-    if (m_nWatch == 0) return; // No section defined with setProperties()
+    if (m_nWatch == 0) return; // There is no section defined yet. This is basically an error case.
 
-    // 各測定区間のHWPCによるイベントカウンターの統計値を取得する
+    // For each of the sections,
+	// allgather the HWPC event values of all processes in MPI_COMM_WORLD.
+	// Calibrate some numbers to represent the process value as the sum of thread values
+
     for (int i=0; i<m_nWatch; i++) {
       m_watchArray[i].gatherHWPC();
     }
-    // 各測定区間の測定結果情報をノード０に集約
+
+	//   Allgather the process level basic statistics of m_time, m_flop, m_count
     for (int i = 0; i < m_nWatch; i++) {
         m_watchArray[i].gather();
     }
-    // 測定結果の平均値・標準偏差などの基礎的な統計計算
+
+    //	summary stats including the average, standard deviation, etc.
     for (int i = 0; i < m_nWatch; i++) {
       m_watchArray[i].statsAverage();
     }
@@ -606,10 +719,11 @@ namespace pm_lib {
   {
     if (!is_PMlib_enabled) return;
 
+	// BASIC report is always generated.
 	PerfMonitor::print(fp, "", "", 0);
 
 	// env_str_report should be one of {"BASIC" || "DETAIL" || "FULL"}
-	if (env_str_report != "BASIC" ) {
+	if (env_str_report == "DETAIL" || env_str_report == "FULL") {
 		PerfMonitor::printDetail(fp, 0, 0);
 	}
 
@@ -624,6 +738,10 @@ namespace pm_lib {
 	if (env_str_hwpc != "USER" ) {
 		PerfMonitor::printLegend(fp);
 	}
+	#ifdef DEBUG_PRINT_MONITOR
+    //	if (my_rank == 0 && my_thread == 0) fprintf(stderr, "\n\n<print>\n\n");
+    if (my_rank == 0 ) fprintf(stderr, "\n<PerfMonitor::report> finished. the end of requested reports.\n");
+	#endif
 
   }
 
@@ -640,7 +758,6 @@ namespace pm_lib {
   ///   @note 基本統計レポートは排他測定区間, 非排他測定区間をともに出力する。
   ///   MPIの場合、rank0プロセスの測定回数が１以上の区間のみを表示する。
   ///
-
   void PerfMonitor::print(FILE* fp, std::string hostname, const std::string comments, int op_sort)
   {
     if (!is_PMlib_enabled) return;
@@ -671,17 +788,6 @@ namespace pm_lib {
     // initialize()からgather()までの区間（==Root区間）の測定時間を分母とする
     double tot = m_watchArray[0].m_time_av;
 
-    // Remark the difference of tot between print() and printProgress()
-    //  排他測定区間の合計 //  .not. 排他測定区間+非排他測定区間の合計
-    /* for printProgress()
-    double tot = 0.0;
-    for (int i = 0; i < m_nWatch; i++) {
-      if (m_watchArray[i].m_exclusive) {
-        tot +=  m_watchArray[i].m_time_av;
-      }
-    }
-    */
-
     int maxLabelLen = 0;
     for (int i = 0; i < m_nWatch; i++) {
       int labelLen = m_watchArray[i].m_label.size();
@@ -710,10 +816,254 @@ namespace pm_lib {
                                   sum_time_flop, sum_time_comm, sum_time_other, unit, op_sort);
 
     /// テイラ（合計）部分を出力。
-    PerfMonitor::printBasicTailer(fp, maxLabelLen, sum_flop, sum_comm, sum_other,
+    PerfMonitor::printBasicTailer (fp, maxLabelLen, sum_flop, sum_comm, sum_other,
                                   sum_time_flop, sum_time_comm, sum_time_other, unit);
 
+    PerfMonitor::printBasicHWPC (fp, maxLabelLen, op_sort);
+
+    PerfMonitor::printBasicPower (fp, maxLabelLen, op_sort);
+
+	#ifdef DEBUG_PRINT_MONITOR
+    if (my_rank == 0 && my_thread == 0) fprintf(stderr, "<PerfMonitor::print> finished.\n");
+	#endif
   }
+
+
+
+/// Report the BASIC HWPC statistics of the master process
+///
+///   @param[in] fp       	report file pointer
+///   @param[in] maxLabelLen    maximum label string field length
+///   @param[in] op_sort 	sorting option (0:sorted by seconds, 1:listed order)
+///
+void PerfMonitor::printBasicHWPC (FILE* fp, int maxLabelLen, int op_sort)
+{
+#ifdef USE_PAPI
+	if (m_watchArray[0].my_papi.num_events == 0) return;
+	if (env_str_hwpc == "USER" ) return;
+
+	m_watchArray[0].printBasicHWPCHeader(fp, maxLabelLen);
+
+    for (int j = 0; j < m_nWatch; j++) {
+        int i;
+        if (op_sort == 0) {
+          i = m_order[j];	// sorted by elapsed time
+        } else {
+          i = j;			// listed order
+        }
+        if (j==0)  continue;
+		// report exclusive sections only
+        //	if (!m_watchArray[i].m_exclusive) continue;
+        m_watchArray[i].printBasicHWPCsums(fp, maxLabelLen);
+    }
+
+	for (int i=0; i< maxLabelLen; i++) { fputc('-', fp); }  fputc('+', fp);
+	for (int i=0; i<(m_watchArray[0].my_papi.num_sorted*11); i++) { fputc('-', fp); } fprintf(fp, "\n");
+#endif
+}
+
+
+/// Report the BASIC power consumption statistics of the master node
+///
+///   @param[in] fp       	report file pointer
+///   @param[in] maxLabelLen    maximum label string field length
+///   @param[in] op_sort 	sorting option (0:sorted by seconds, 1:listed order)
+///
+///	  @note   remark that power consumption is measured per node, not per process
+///
+void PerfMonitor::printBasicPower(FILE* fp, int maxLabelLen, int op_sort)
+{
+    if (!is_PMlib_enabled) return;
+#ifdef USE_POWER
+//
+// Fugaku local implementation
+//
+	int m_is_POWER;
+	int n_parts;
+    std::string p_label;
+
+
+	m_is_POWER = m_watchArray[0].m_is_POWER;
+	if (m_is_POWER == 0) return;
+
+	//original power object array i.e. std::string p_obj_name[Max_power_stats] =
+	// power.num_power_stats == Max_power_stats == 20
+
+	static double sorted_joule[Max_power_stats];
+	static std::string p_obj_shortname[Max_power_stats] =
+	{
+		"total",	// 0
+		"CMG0",	// 1
+		"CMG1",	// 2
+		"CMG2",	// 3
+		"CMG3",	// 4
+		"L2CMG0",	// 5
+		"L2CMG1",	// 6
+		"L2CMG2",	// 7
+		"L2CMG3",	// 8
+		"Acore0",	// 9
+		"Acore1",	// 10
+		"TofuD ",	// 11
+		"UnCMG",	// 12
+		"MEM0 ",	// 13
+		"MEM1 ",	// 14
+		"MEM2 ",	// 15
+		"MEM3 ",	// 16
+		"PCI  ",	// 17
+		"TofuOpt ",	// 18
+		"P.meter"	// 19	//	reserved for the measured value
+	};
+	static std::string sorted_obj_name[Max_power_stats];
+
+	n_parts = 0;
+
+	if (m_is_POWER == 1) {	// total, CMG+L2, MEMORY, TF+A+U, P.meter
+		p_label = "NODE";
+		n_parts = 5;
+		sorted_obj_name[0] = "  total ";
+		sorted_obj_name[1] = " CMG+L2 ";
+		sorted_obj_name[2] = " MEMORY ";
+		sorted_obj_name[3] = " TF+A+U ";
+		sorted_obj_name[4] = " P.meter";
+	} else
+	if (m_is_POWER == 2) {	// total, CMG0+L2, CMG1+L2, CMG2+L2, CMG3+L2, MEM0, MEM1, MEM2, MEM3, TF+A+U, P.meter
+		p_label = "NUMA";
+		n_parts = 11;
+		sorted_obj_name[0] = "  total ";
+		for (int i=1; i<5; i++) {
+			sorted_obj_name[i] = p_obj_shortname[i] + "L2";	// "CMG0+L2", "CMG1+L2", "CMG2+L2", "CMG3+L2"
+		}
+		for (int i=5; i<9; i++) {
+			sorted_obj_name[i] = p_obj_shortname[i+8];
+		}
+		sorted_obj_name[9] = " TF+A+U ";					// TF+A+U
+		sorted_obj_name[10] = p_obj_shortname[19];
+
+	} else
+	if (m_is_POWER == 3) {
+		p_label = "PARTS";
+		n_parts = Max_power_stats;
+		for (int i=0; i<n_parts; i++) {
+		sorted_obj_name[i] = p_obj_shortname[i];
+		}
+	}
+
+	fprintf(fp, "\n");
+	fprintf(fp, "# PMlib Power Consumption report per node basis ---------------------------------- #\n");
+	fprintf(fp, "\n");
+    fprintf(fp, "\tReport of the master node is generated for POWER_CHOOSER=%s option.\n\n", p_label.c_str());
+
+
+    for (int i=0; i< maxLabelLen; i++) { fputc(' ', fp); }
+	fprintf(fp, "   Estimated power inside node [W]\n");
+
+	fprintf(fp, "Section"); for (int i=7; i< maxLabelLen; i++) { fputc(' ', fp); }		fputc('|', fp);
+	for (int i=0; i<n_parts-1; i++) { fprintf(fp, "%8s", sorted_obj_name[i].c_str()); }
+	fprintf(fp, "|%8s| Energy[Wh] \n", sorted_obj_name[n_parts-1].c_str());
+
+    for (int i=0; i< maxLabelLen; i++) { fputc('-', fp); }	fputc('+', fp);
+    for (int i=0; i<(n_parts-1)*8; i++) { fputc('-', fp); }	fprintf(fp, "+--------+----------\n");
+
+	// actual records
+    for (int j=0; j<m_nWatch; j++)
+	{
+		int m;
+		if (op_sort == 0) {
+			m = m_order[j];
+		} else {
+			m = j;
+		}
+		if (m == 0) continue;
+		PerfWatch& w = m_watchArray[m];
+
+		if (m_is_POWER == 1) {	// total, CMG+L2, MEMORY, TF+A+U, P.meter
+			n_parts = 5;
+			sorted_joule[0] = w.my_power.w_accumu[0];
+			sorted_joule[1] = 0.0;
+			for (int i=1; i<9; i++) {
+				sorted_joule[1] += w.my_power.w_accumu[i];
+			}
+			sorted_joule[2] = 0.0;
+			for (int i=13; i<17; i++) {
+				sorted_joule[2] += w.my_power.w_accumu[i];
+			}
+			sorted_joule[3] = w.my_power.w_accumu[9] + w.my_power.w_accumu[10] + w.my_power.w_accumu[11]
+				+ w.my_power.w_accumu[12] + w.my_power.w_accumu[17] + w.my_power.w_accumu[18] ;
+			sorted_joule[4] = w.my_power.w_accumu[19];
+	
+		} else
+		if (m_is_POWER == 2) {	// total, CMG0+L2, CMG1+L2, CMG2+L2, CMG3+L2, MEM0, MEM1, MEM2, MEM3, TF+A+U, P.meter
+			n_parts = 11;
+			// total value
+			sorted_joule[0] = w.my_power.w_accumu[0];
+			// CMGn + L2$ value
+			for (int i=1; i<5; i++) {
+				sorted_joule[i] = w.my_power.w_accumu[i] + w.my_power.w_accumu[i+4];
+			}
+			// memory values
+			for (int i=5; i<9; i++) {
+				sorted_joule[i] = w.my_power.w_accumu[i+8];
+			}
+			// "Tofu+AC" == Acore0 +  Acore1 + Tofu + Uncmg + PCI + TofuOpt
+			sorted_joule[9] = w.my_power.w_accumu[9] + w.my_power.w_accumu[10] + w.my_power.w_accumu[11]
+						+ w.my_power.w_accumu[12] + w.my_power.w_accumu[17] + w.my_power.w_accumu[18] ;
+			//Physically measured value by the power meter
+			sorted_joule[10] = w.my_power.w_accumu[19];
+	
+		} else
+		if (m_is_POWER == 3) {
+			n_parts = Max_power_stats;
+			for (int i=0; i<n_parts; i++) {
+				sorted_joule[i] = w.my_power.w_accumu[i];
+			}
+		}
+
+		p_label = w.m_label;
+		if (!w.m_exclusive) {
+			p_label = w.m_label + "(*)";
+		}
+		fprintf(fp, "%-*s:", maxLabelLen, p_label.c_str() );
+		// Watt value
+		for (int i=0; i<n_parts; i++) {
+			fprintf(fp, "%8.2f",  sorted_joule[i]/w.m_time_av);
+		}
+		fprintf(fp, "  %8.2e",  sorted_joule[n_parts-1]/3600.0);
+		// measured Watt-Hour energy value
+		fprintf(fp, "\n");
+	}
+
+    for (int i=0; i< maxLabelLen; i++) { fputc('-', fp); }	fputc('+', fp);
+    for (int i=0; i<(n_parts-1)*8; i++) { fputc('-', fp); }	fprintf(fp, "+--------+----------\n");
+
+	double t_joule;
+	int nnodes;
+	int np_per_node;
+	int iret;
+
+    char* cp_env;
+    cp_env = NULL;
+	cp_env = std::getenv("PJM_PROC_BY_NODE");	// Fugaku job manager holds this variable
+	if (cp_env == NULL) {
+		np_per_node = 1;
+	} else {
+		np_per_node = atoi(cp_env);;
+	}
+    #ifdef DEBUG_PRINT_MONITOR
+	if (my_rank == 0) {
+		fprintf(fp, "<PerfMonitor::printBasicPower> translated PJM_PROC_BY_NODE=%d \n", np_per_node);
+	}
+	#endif
+	//	nnodes=num_process/np_per_node;
+	nnodes=(num_process-1)/np_per_node+1;
+
+	fprintf(fp, "\n");
+	fprintf(fp, "\t The aggregate power consumption of %d processes on %d nodes =", num_process, nnodes);
+	// m_power_av is the average value of my_power.w_accumu[Max_power_stats-1]; for all processes
+	t_joule = (m_watchArray[0].m_power_av * nnodes);
+	fprintf(fp, "%10.2e [J] == %10.2e [Wh]\n", t_joule, t_joule/3600.0);
+
+#endif
+}
 
 
   /// MPIランク別詳細レポート、HWPC詳細レポートを出力。
@@ -725,7 +1075,6 @@ namespace pm_lib {
   ///   @note 詳細レポートは排他測定区間のみを出力する
   ///         HWPC値は各プロセス毎に子スレッドの値を合算して表示する
   ///
-
   void PerfMonitor::printDetail(FILE* fp, int legend, int op_sort)
   {
 
@@ -747,9 +1096,9 @@ namespace pm_lib {
 
     // 	I. MPIランク別詳細レポート: MPIランク別測定結果を出力
       if (is_MPI_enabled) {
-        fprintf(fp, "\n# PMlib Process Report --- Elapsed time for individual MPI ranks ------\n\n");
+        fprintf(fp, "\n## PMlib Process Report --- Elapsed time for individual MPI ranks ------\n\n");
       } else {
-        fprintf(fp, "\n# PMlib Process Report ------------------------------------------------\n\n");
+        fprintf(fp, "\n## PMlib Process Report ------------------------------------------------\n\n");
       }
 
       // 測定時間の分母
@@ -783,8 +1132,10 @@ namespace pm_lib {
 #ifdef USE_PAPI
     //	II. HWPC/PAPIレポート：HWPC計測結果を出力
 	if (m_watchArray[0].my_papi.num_events == 0) return;
-	if (env_str_hwpc != "USER" ) {
-        fprintf(fp, "\n# PMlib hardware performance counter (HWPC) Report -------------------------\n");
+	if (env_str_hwpc == "USER" ) return;
+    fprintf(fp, "\n## PMlib hardware performance counter (HWPC) report for individual MPI ranks ---------\n\n");
+    fprintf(fp, "\tThe HWPC stats report for HWPC_CHOOSER=%s is generated.\n\n", env_str_hwpc.c_str());
+
 
     for (int j = 0; j < m_nWatch; j++) {
         int i;
@@ -798,12 +1149,6 @@ namespace pm_lib {
         m_watchArray[i].printDetailHWPCsums(fp, m_watchArray[i].m_label);
     }
 
-      // HWPC Legend の表示はPerfMonitorクラスメンバとして分離する方が良いかも
-      if (legend == 1) {
-        m_watchArray[0].printHWPCLegend(fp);
-        ;
-      }
-	}
 #endif
   }
 
@@ -830,9 +1175,9 @@ namespace pm_lib {
 
     if (my_rank == 0) {
       if (is_MPI_enabled) {
-        fprintf(fp, "\n# PMlib Thread Report for MPI rank %d  ----------------------\n\n", rank_ID);
+        fprintf(fp, "\n## PMlib Thread Report for MPI rank %d  ----------------------\n\n", rank_ID);
       } else {
-        fprintf(fp, "\n# PMlib Thread Report for the single process run ---------------------\n\n");
+        fprintf(fp, "\n## PMlib Thread Report for the single process run ---------------------\n\n");
       }
     }
 
@@ -864,7 +1209,7 @@ namespace pm_lib {
     if (!is_PAPI_enabled) return;
 
     if (my_rank == 0) {
-      fprintf(fp, "\n# PMlib Legend - HWPC symbols used in the PMlib report ----------------\n");
+      fprintf(fp, "\n# PMlib Legend - the symbols used in the reports  ----------------------\n");
       m_watchArray[0].printHWPCLegend(fp);
     }
   }
@@ -886,7 +1231,6 @@ namespace pm_lib {
   ///   利用者にとって識別しずらい場合がある。
   ///   別に1,2,3,..等の昇順でプロセスグループ番号 groupをつけておくと
   ///   レポートが識別しやすくなる。
-  ///   @note HWPCを測定した計集結果があればそれも出力する
   ///
   void PerfMonitor::printGroup(FILE* fp, MPI_Group p_group, MPI_Comm p_comm, int* pp_ranks, int group, int legend, int op_sort)
   {
@@ -909,7 +1253,7 @@ namespace pm_lib {
 
     // 	I. MPIランク別詳細レポート: MPIランク別測定結果を出力
     if (my_rank == 0) {
-      fprintf(fp, "\n# PMlib Process Group [%5d] Elapsed time for individual MPI ranks --------\n\n", group);
+      fprintf(fp, "\n## PMlib Process Group [%5d] Elapsed time for individual MPI ranks --------\n\n", group);
 
       // 測定時間の分母
       // initialize()からgather()までの区間（==Root区間）の測定時間を分母とする
@@ -940,7 +1284,7 @@ namespace pm_lib {
     //	II. HWPC/PAPIレポート：HWPC計測結果を出力
 	if (m_watchArray[0].my_papi.num_events == 0) return;
     if (my_rank == 0) {
-      fprintf(fp, "\n# PMlib Process Group [%5d] hardware performance counter (HWPC) Report ---\n", group);
+      fprintf(fp, "\n## PMlib Process Group [%5d] hardware performance counter (HWPC) Report ---\n", group);
     }
 
     for (int j = 0; j < m_nWatch; j++) {
@@ -954,13 +1298,6 @@ namespace pm_lib {
       m_watchArray[i].printGroupHWPCsums(fp, m_watchArray[i].m_label, p_group, pp_ranks);
     }
 
-    if (my_rank == 0) {
-      // HWPC Legend の表示はPerfMonitorクラスメンバとして分離する方が良いかも
-      if (legend == 1) {
-        m_watchArray[0].printHWPCLegend(fp);
-        ;
-      }
-    }
 #endif
   }
 
@@ -973,8 +1310,6 @@ namespace pm_lib {
   ///   @param[in] key    int型 MPI_Comm_split()のkey変数
   ///   @param[in] legend int型 (省略可) HWPC記号説明の表示(0:なし、1:表示する)
   ///   @param[in] op_sort (省略可)測定区間の表示順 (0:経過時間順、1:登録順)
-  ///
-  ///   @note HWPCを測定した計集結果があればそれも出力する
   ///
   void PerfMonitor::printComm (FILE* fp, MPI_Comm new_comm, int icolor, int key, int legend, int op_sort)
   {
@@ -1112,7 +1447,7 @@ namespace pm_lib {
     double sum_other = 0.0;
     std::string unit;
 
-    fprintf(fp, "\n# PMlib printProgress ---------- %s \n", comments.c_str());
+    fprintf(fp, "\n### PMlib printProgress ---------- %s \n", comments.c_str());
     // 各測定区間を出力
     PerfMonitor::printBasicSections (fp, maxLabelLen, tot, sum_flop, sum_comm, sum_other,
                                   sum_time_flop, sum_time_comm, sum_time_other, unit, op_sort);
@@ -1190,9 +1525,9 @@ namespace pm_lib {
     second = date->tm_sec;
 
 	// PMlibインストール時のサポートプログラムモデルについての情報を出力する
-    fprintf(fp, "\n# PMlib Basic Report -------------------------------------------------------\n");
+    fprintf(fp, "\n# PMlib Basic Report ------------------------------------------------------------- #\n");
     fprintf(fp, "\n");
-    fprintf(fp, "\tTiming Statistics Report from PMlib version %s\n", PM_VERSION);
+    fprintf(fp, "\tPerformance Statistics Report from PMlib version %s\n", PM_VERSION);
     fprintf(fp, "\tLinked PMlib supports: ");
 #ifdef DISABLE_MPI
     fprintf(fp, "no-MPI");
@@ -1209,12 +1544,17 @@ namespace pm_lib {
 #else
     fprintf(fp, ", no-HWPC");
 #endif
-#ifdef USE_OTF
-    fprintf(fp, ", OTF\n");
+#ifdef USE_POWER
+    fprintf(fp, ", PowerAPI");
 #else
-    fprintf(fp, ", no-OTF\n");
+    fprintf(fp, ", no-PowerAPI");
 #endif
-
+#ifdef USE_OTF
+    fprintf(fp, ", OTF");
+#else
+    fprintf(fp, ", no-OTF");
+#endif
+    fprintf(fp, " on this system\n");
 
     if (hostname == "") {
       char hn[512];
@@ -1243,13 +1583,10 @@ namespace pm_lib {
       fprintf(fp, "\n\tError : invalid Parallel mode \n");
       PM_Exit(0);
     }
-#ifdef USE_PAPI
-    m_watchArray[0].printHWPCHeader(fp);
-#endif
 
-    fprintf(fp, "\n");
-    //	fprintf(fp, "\tTotal execution time            = %12.6e [sec]\n", m_watchArray[0].m_time);
-    fprintf(fp, "\tPMlib enabled elapse time (from initialize to print) = %9.3e [sec]\n", tot);
+    m_watchArray[0].printEnvVars(fp);
+
+    fprintf(fp, "\tActive PMlib elapse time (from initialize to report/print) = %9.3e [sec]\n", tot);
     fprintf(fp, "\tExclusive sections and inclusive sections are reported below.\n");
     fprintf(fp, "\tInclusive sections, marked with (*), are not added in the statistics total.\n");
     fprintf(fp, "\n");
@@ -1290,7 +1627,8 @@ namespace pm_lib {
 
     int is_unit;
     is_unit = m_watchArray[0].statsSwitch();
-	fprintf(fp, "\t%-*s|    call  |        accumulated time[sec]           ", maxLabelLen, "Section");
+	//	fprintf(fp, "%-*s| number of|        accumulated time[sec]           ", maxLabelLen, "Section");
+	fprintf(fp, "%-*s| number of|  averaged process execution time [sec] ", maxLabelLen, "Section");
 
     if ( is_unit == 0 || is_unit == 1 ) {
       fprintf(fp, "| user defined numerical performance\n");
@@ -1311,7 +1649,8 @@ namespace pm_lib {
 		;	// should not reach here
     }
 
-	fprintf(fp, "\t%-*s|          |      avr   avr[%%]     sdv    avr/call  ", maxLabelLen, "Label");
+	//	fprintf(fp, "%-*s|   calls  |      avr   avr[%%]     sdv    avr/call  ", maxLabelLen, "Label");
+	fprintf(fp, "%-*s|   calls  |   total    [%]   total/call     sdv    ", maxLabelLen, "Label");
 
     if ( is_unit == 0 || is_unit == 1 ) {
       fprintf(fp, "|  operations   sdv    performance\n");
@@ -1332,8 +1671,8 @@ namespace pm_lib {
 		;	// should not reach here
 	}
 
-	fputc('\t', fp); for (int i = 0; i < maxLabelLen; i++) fputc('-', fp);
-	fprintf(fp,       "+----------+----------------------------------------+----------------------------\n");
+	for (int i = 0; i < maxLabelLen; i++) fputc('-', fp);
+	fprintf(fp,       "+----------+----------------------------------------+--------------------------------\n");
 
     sum_time_comm = 0.0;
     sum_time_flop = 0.0;
@@ -1376,14 +1715,17 @@ namespace pm_lib {
       p_label = w.m_label;
       if (!w.m_exclusive) { p_label = w.m_label + "(*)"; }	// 非排他測定区間は単位表示が(*)
 
-      fprintf(fp, "\t%-*s: %8ld   %9.3e %6.2f  %8.2e  %9.3e",
+	//fprintf(fp, "%-*s|   calls  |   total    [%]    total/call     sdv    ", maxLabelLen, "Label");
+
+      fprintf(fp, "%-*s: %8ld   %9.3e %6.2f  %9.3e  %8.2e",
               maxLabelLen,
               p_label.c_str(),
               w.m_count_av,         // 測定区間の平均コール回数 // w.m_count
               w.m_time_av,          // 測定区間の時間(全プロセスの平均値)
-              100*w.m_time_av/tot,  // 測定区間の時間/全区間（=Root区間）の時間
-              w.m_time_sd,          // 標準偏差
-              tav);                 // コール1回あたりの時間
+              100*w.m_time_av/tot,  // 比率：測定区間の時間/全区間（=Root区間）の時間
+              tav,                 // コール1回あたりの時間
+              w.m_time_sd          // 標準偏差
+			);
 
 		// 0: user set bandwidth
 		// 1: user set flop counts
@@ -1465,65 +1807,68 @@ namespace pm_lib {
 
     int is_unit;
     is_unit = m_watchArray[0].statsSwitch();
-    fputc('\t', fp); for (int i = 0; i < maxLabelLen; i++) fputc('-', fp);
-	fprintf(fp,       "+----------+----------------------------------------+----------------------------\n");
+	for (int i = 0; i < maxLabelLen; i++) fputc('-', fp);
+	fprintf(fp,       "+----------+----------------------------------------+--------------------------------\n");
+
 
     // Subtotal of the flop counts and/or byte counts per process
-
-    //	if ( (is_unit == 0) || (is_unit == 1) || ( is_unit == 2) || ( is_unit == 3) ) {
+    //
+    // 2021/6/14 Changed the label from  "Sections per process" to "All sections combined"
+    //
     if ( (is_unit == 0) || (is_unit == 1) ) {
       if ( sum_time_comm > 0.0 ) {
-      fprintf(fp, "\t%-*s %1s %9.3e", maxLabelLen+10, "Sections per process", "", sum_time_comm);
+      fprintf(fp, "%-*s %1s %9.3e", maxLabelLen+10, "All sections combined", "", sum_time_comm);
       double comm_serial = PerfWatch::unitFlop(sum_comm/sum_time_comm, unit, 0);
       fprintf(fp, "%30s  %8.3e          %7.2f %s\n", "-Exclusive COMM sections-", sum_comm, comm_serial, unit.c_str());
       }
       if ( sum_time_flop > 0.0 ) {
-      fprintf(fp, "\t%-*s %1s %9.3e", maxLabelLen+10, "Sections per process", "", sum_time_flop);
+      fprintf(fp, "%-*s %1s %9.3e", maxLabelLen+10, "All sections combined", "", sum_time_flop);
       double flop_serial = PerfWatch::unitFlop(sum_flop/sum_time_flop, unit, 1);
       fprintf(fp, "%30s  %8.3e          %7.2f %s\n", "-Exclusive CALC sections-", sum_flop, flop_serial, unit.c_str());
       }
 	} else
     if ( (is_unit == 2) || (is_unit == 3) || (is_unit == 6) ) {
-      fprintf(fp, "\t%-*s %1s %9.3e", maxLabelLen+10, "Sections per process", "", sum_time_flop);
+      fprintf(fp, "%-*s %1s %9.3e", maxLabelLen+10, "All sections combined", "", sum_time_flop);
       double flop_serial = PerfWatch::unitFlop(sum_flop/sum_time_flop, unit, is_unit);
       fprintf(fp, "%30s  %8.3e          %7.2f %s\n", "-Exclusive HWPC sections-", sum_flop, flop_serial, unit.c_str());
 
 	} else
     if ( (is_unit == 4) || (is_unit == 5) || (is_unit == 7) ) {
-      fprintf(fp, "\t%-*s %1s %9.3e", maxLabelLen+10, "Sections per process", "", sum_time_flop);
+      fprintf(fp, "%-*s %1s %9.3e", maxLabelLen+10, "All sections combined", "", sum_time_flop);
       double other_serial = PerfWatch::unitFlop(sum_other/sum_flop, unit, is_unit);
       fprintf(fp, "%30s  %8.3e          %7.2f %s\n", "-Exclusive HWPC sections-", sum_flop, other_serial, unit.c_str());
 	}
 
 
-    fputc('\t', fp); for (int i = 0; i < maxLabelLen; i++) fputc('-', fp);
-	fprintf(fp,       "+----------+----------------------------------------+----------------------------\n");
+	for (int i = 0; i < maxLabelLen; i++) fputc('-', fp);
+	fprintf(fp,       "+----------+----------------------------------------+--------------------------------\n");
 
     // Job total flop counts and/or byte counts
-
-    //	if ( (is_unit == 0) || (is_unit == 1) || ( is_unit == 2) || ( is_unit == 3) ) {
+    //
+    // 2021/6/14 Changed the label from  "Sections total job" to "Total of all processes"
+    //
     if ( (is_unit == 0) || (is_unit == 1) ) {
       if ( sum_time_comm > 0.0 ) {
-      fprintf(fp, "\t%-*s %1s %9.3e", maxLabelLen+10, "Sections total job", "", sum_time_comm);
+      fprintf(fp, "%-*s %1s %9.3e", maxLabelLen+10, "Total of all processes", "", sum_time_comm);
       double sum_comm_job = (double)num_process*sum_comm;
       double comm_job = PerfWatch::unitFlop(sum_comm_job/sum_time_comm, unit, 0);
       fprintf(fp, "%30s  %8.3e          %7.2f %s\n", "-Exclusive COMM sections-", sum_comm_job, comm_job, unit.c_str());
       }
       if ( sum_time_flop > 0.0 ) {
-      fprintf(fp, "\t%-*s %1s %9.3e", maxLabelLen+10, "Sections total job", "", sum_time_flop);
+      fprintf(fp, "%-*s %1s %9.3e", maxLabelLen+10, "Total of all processes", "", sum_time_flop);
       double sum_flop_job = (double)num_process*sum_flop;
       double flop_job = PerfWatch::unitFlop(sum_flop_job/sum_time_flop, unit, 1);
       fprintf(fp, "%30s  %8.3e          %7.2f %s\n", "-Exclusive CALC sections-", sum_flop_job, flop_job, unit.c_str());
       }
 	} else
     if ( (is_unit == 2) || (is_unit == 3) || (is_unit == 6) ) {
-      fprintf(fp, "\t%-*s %1s %9.3e", maxLabelLen+10, "Sections total job", "", sum_time_flop);
+      fprintf(fp, "%-*s %1s %9.3e", maxLabelLen+10, "Total of all processes", "", sum_time_flop);
       double sum_flop_job = (double)num_process*sum_flop;
       double flop_job = PerfWatch::unitFlop(sum_flop_job/sum_time_flop, unit, is_unit);
       fprintf(fp, "%30s  %8.3e          %7.2f %s\n", "-Exclusive HWPC sections-", sum_flop_job, flop_job, unit.c_str());
 	} else
     if ( (is_unit == 4) || (is_unit == 5) || (is_unit == 7) ) {
-      fprintf(fp, "\t%-*s %1s %9.3e", maxLabelLen+10, "Sections total job", "", sum_time_flop);
+      fprintf(fp, "%-*s %1s %9.3e", maxLabelLen+10, "Total of all processes", "", sum_time_flop);
       double sum_flop_job = (double)num_process*sum_flop;
       double other_serial = PerfWatch::unitFlop(sum_other/sum_flop, unit, is_unit);
       double other_job = other_serial;

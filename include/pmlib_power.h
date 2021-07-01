@@ -1,139 +1,66 @@
-/// Interface routine for Power API
 ///
-///	@file   power_ext.c
-///	@brief  PMlib C functions provide simple monitoring and controlling interface to Power API library
-///	@note   current implementation is validated on supercomputer Fugaku
+/// @file pmlib_power.h
 ///
+/// @brief header file for calling Power API interface routines
+///
+/// @li int my_power_bind_initialize (void);
+/// @li int my_power_bind_knobs (int knob, int operation, int & value);
+/// @li int my_power_bind_start (uint64_t pa64timer[], double w_joule[]);
+/// @li int my_power_bind_stop (uint64_t pa64timer[], double w_joule[]);
+/// @li int my_power_bind_finalize ();
+///
+///	@return initialize returns [n:number of reported items, negative:error]
+///	@return other routines returns [0:success, non-zero:error]
+///
+///	@param	knob  : power knob chooser [0..5]
+///	@param	operation : [0:read, 1:update]
+///	@param	value     : controlled value
+///	@param	pa64timer : internal timer
+///	@param	w_joule   : power consumption in Joule
+///
+/// @note valid knob and value combinations are shown below
+///	@verbatim
+///  knob=0 (I_knob_CPU)   : cpu frequency (MHz) : 2200, 2000
+///  knob=1 (I_knob_MEMORY): memory access throttling (%) : 100, 90, 80, .. , 10
+///  knob=2 (I_knob_ISSUE) : instruction issues (/cycle) : 2, 4
+///  knob=3 (I_knob_PIPE)  : number of PIPEs : 1, 2
+///  knob=4 (I_knob_ECO)   : eco state (mode) : 0, 1, 2
+///  knob=5 (I_knob_RETENTION): retention state (mode) : 0, 1
+///		retention at 1600 MHz is not allowed as of 2021 May
+///	@endverbatim
+///
+
 
 #include <string>
 #include <cstdio>
-#include "pwr.h"
 #include <cstdlib>
 
-// ################################################################
-// 2021/5/17 K. Mikami
-// Testing Power APIs for measured and estimated components
-static void error_print(int , std::string , std::string);
-static void warning_print (std::string , std::string , std::string );
-static void warning_print (std::string , std::string , std::string , int);
-// ################################################################
+#ifdef USE_POWER
+#include "pwr.h"
+extern int my_power_bind_initialize (void);
+extern int my_power_bind_knobs (int knob, int operation, int & value);
+extern int my_power_bind_start (uint64_t pa64timer[], double w_joule[]);
+extern int my_power_bind_stop (uint64_t pa64timer[], double w_joule[]);
+extern int my_power_bind_finalize ();
+#endif
 
+// The following constants and enumerated are defined in power_ext.cpp
+//	const int Max_measure_device=1;
+//	const int Max_power_leaf_parts=12;
+//	enum Max_power_object = 19
 
-// Objects supported by default context
-enum power_object_index
-	{
-		I_pobj_NODE=0,
-		I_pobj_CPU,
-		I_pobj_CMG0CORES,
-		I_pobj_CMG1CORES,
-		I_pobj_CMG2CORES,
-		I_pobj_CMG3CORES,
-		I_pobj_CMG0L2CACHE,
-		I_pobj_CMG1L2CACHE,
-		I_pobj_CMG2L2CACHE,
-		I_pobj_CMG3L2CACHE,
-		I_pobj_ACORES0,
-		I_pobj_ACORES1,
-		I_pobj_UNCMG,
-		I_pobj_TOFU,
-		I_pobj_MEM0,
-		I_pobj_MEM1,
-		I_pobj_MEM2,
-		I_pobj_MEM3,
-		I_pobj_PCI,
-		I_pobj_TOFUOPT,
-		Max_power_object
-	};
-
-// Objects supported by Fugaku extended context
-static char p_obj_name[Max_power_object][30] =
-	{
-		"plat.node",
-		"plat.node.cpu",	// valid for SET only.
-		"plat.node.cpu.cmg0.cores",
-		"plat.node.cpu.cmg1.cores",
-		"plat.node.cpu.cmg2.cores",
-		"plat.node.cpu.cmg3.cores",
-		"plat.node.cpu.cmg0.l2cache",
-		"plat.node.cpu.cmg1.l2cache",
-		"plat.node.cpu.cmg2.l2cache",
-		"plat.node.cpu.cmg3.l2cache",
-		"plat.node.cpu.acores.core0",
-		"plat.node.cpu.acores.core1",
-		"plat.node.cpu.uncmg",
-		"plat.node.cpu.tofu",
-		"plat.node.mem0",
-		"plat.node.mem1",
-		"plat.node.mem2",
-		"plat.node.mem3",
-		"plat.node.pci",
-		"plat.node.tofuopt"
-	};
-enum power_extended_index
-	{
-		I_pext_NODE=0,
-		I_pext_CMG0CORES,
-		I_pext_CMG1CORES,
-		I_pext_CMG2CORES,
-		I_pext_CMG3CORES,
-		I_pext_MEM0,
-		I_pext_MEM1,
-		I_pext_MEM2,
-		I_pext_MEM3,
-		Max_power_extended
-	};
-static char p_ext_name[Max_power_extended][30] =
-	{
-		"plat.node",		// "plat.node" is the only attribute available to get the measured value
-		"plat.node.cpu.cmg0.cores",	//	ditto.
-		"plat.node.cpu.cmg1.cores",	//	ditto.
-		"plat.node.cpu.cmg2.cores",	//	ditto.
-		"plat.node.cpu.cmg3.cores",	//	ditto.
-		"plat.node.mem0",	//  can set the value for the estimation
-		"plat.node.mem1",	//	ditto.
-		"plat.node.mem2",	//	ditto.
-		"plat.node.mem3"	//	ditto.
-	};
-
-enum power_knob_index
-	{
-		I_knob_CPU=0,
-		I_knob_MEMORY,
-		I_knob_ISSUE,
-		I_knob_PIPE,
-		I_knob_ECO,
-		I_knob_RETENTION,
-		Max_power_knob
-	};
-
-const int Max_measure_device=1;	// "plat.node" is the only attribute available to get the measured value
-const int Max_power_leaf_parts=12;	// max. # of leaf parts in the object group, i.e. 12 cores in the CMG.
-const int Max_power_stats=Max_power_object+Max_power_extended;
-
-//	PWR_Cntxt pacntxt = NULL;				// typedef void* PWR_Cntxt
-//	PWR_Cntxt extcntxt = NULL;
-//	PWR_Obj p_obj_array[Max_power_object];		// typedef void* PWR_Obj
-//	PWR_Obj p_obj_ext[Max_power_extended];
-//	uint64_t u64array[Max_power_leaf_parts];
-//	uint64_t u64;
+const int Max_power_stats=20;	// Max_power_object + Max_measure_device
 
 struct pmlib_power_chooser
 {
-	int num_power_stats;
-	PWR_Time pa64timer[Max_power_stats];	// typedef uint64_t
-	std::string s_name[Max_power_stats];
-	double w_timer[Max_power_stats];	// time ==  m_time
-	double watt_ave[Max_power_stats];	// Watt average
-	double watt_max[Max_power_stats];	// Watt max
-	double ws_joule[Max_power_stats];	// Power consumption in (J) == Wh/3600
-
+	int num_power_stats;				// number of power measured parts
+	std::string s_name[Max_power_stats];	// symbols of the parts
+	uint64_t pa64timer[Max_power_stats];	// typedef uint64_t PWR_Time
+	double u_joule[Max_power_stats];	// temporary Power value (J) at start
+	double v_joule[Max_power_stats];	// temporary Power value (J) at stop
+	//	note : 1 Joule == 1 Newton x meter == 1 Watt x second
+	double w_accumu[Max_power_stats];	// accumulated Power consumption (J)
+	double watt_max[Max_power_stats];	// Watt (during the measurement)
+	double watt_ave[Max_power_stats];	// Watt (average)
 };
 
-/*
-public:
-	int m_is_power
-	double p_joule_ave;
-	struct power_group_chooser my_power;
-private:
-	double* p_powerArray;	///< power consumption (Joule)
- */

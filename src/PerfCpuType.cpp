@@ -41,9 +41,21 @@ namespace pm_lib {
 
   /// HWPC interface initialization
   ///
-  /// @note  PMlib - HWPC PAPI interface class
+  /// @brief  PMlib - HWPC PAPI interface class
   /// PAPI library is used to interface HWPC events
   /// this routine is called directly by PerfMonitor class instance
+  ///
+  /// @note
+  ///	Extern variables in thread parallel call.
+  ///	When called from inside the parallel region, all threads
+  ///	share the same address for external "papi" structure.
+  ///	So, the variables such as papi.num_events show the same value.
+  ///	The local variable have different address.
+  ///
+  /// @note
+  ///	Class variables in thread parallel call.
+  ///	If a class member is called from inside parallel region,
+  ///	the variables of the class are given different addresses.
   ///
 void PerfWatch::initializeHWPC ()
 {
@@ -56,6 +68,12 @@ void PerfWatch::initializeHWPC ()
 	#ifdef _OPENMP
 	root_in_parallel = omp_in_parallel();
 	root_thread = omp_get_thread_num();
+	#endif
+
+	#ifdef DEBUG_PRINT_PAPI
+	if (my_rank == 0) {
+		fprintf(stderr, "<initializeHWPC> master process thread %d, address of papi=%p, my_papi=%p\n", root_thread, &papi, &my_papi);
+	}
 	#endif
 
 	if (root_thread == 0)
@@ -199,12 +217,14 @@ void PerfWatch::createPapiCounterList ()
 // 1. Identify the CPU architecture
 
 	// Verified on the following platform
-	//	star:	: Intel(R) Core(TM)2 Duo CPU     E7500  @ 2.93GHz, has sse4
+	//	corot:	: Intel(R) Core(TM) i5-3470S CPU @ 2.90GHz	# Ivybridge	2012 model
+	//	star:	: Intel(R) Core(TM)2 Duo CPU     E7500  @ 2.93GHz, has sse4	# 2009 model
 	// vsh-vsp	: Intel(R) Xeon(R) CPU E5-2670 0 @ 2.60GHz	# Sandybridge
 	//	eagles:	: Intel(R) Xeon(R) CPU E5-2650 v2 @ 2.60GHz	# SandyBridge
 	//	uv01:	: Intel(R) Xeon(R) CPU E5-4620 v2 @ 2.60GHz	# Ivybridge
 	//	c01:	: Intel(R) Xeon(R) CPU E5-2640 v3 @ 2.60GHz	# Haswell
 	// chicago:	: Intel(R) Xeon(R) CPU E3-1220 v5 @ 3.00GHz (94)# Skylake
+	//  ito:	: Intel(R) Xeon(R) Gold 6154 CPU @ 3.00GHz	# Skylake
 	// ito-fep:	: Intel(R) Xeon(R) CPU E7-8880 v4 @ 2.20GHz	# Broadwell
 	// water:	: Intel(R) Xeon(R) Gold 6148 CPU @ 2.40GHz	# Skylake
 	// fugaku:	: Fujitsu A64FX based on ARM SVE edition @ 2.0 GHz base frequency
@@ -264,8 +284,13 @@ void PerfWatch::createPapiCounterList ()
 
 		} else
 		if (s_model_string.find( "Core(TM)" ) != string::npos ) {
-			hwpc_group.platform = "Xeon" ;
-			hwpc_group.i_platform = 1;	// Minimal support. only two FLOPS types
+			if (s_model_string.find( "i5-" ) != string::npos ) {
+				hwpc_group.platform = "Xeon" ;
+				hwpc_group.i_platform = 2;	// Ivybridge
+    		} else {
+				hwpc_group.platform = "Xeon" ;
+				hwpc_group.i_platform = 1;	// Minimal support. only two FLOPS types
+			}
 		}
     	else {
 			hwpc_group.i_platform = 0;	// un-supported Xeon type
@@ -846,7 +871,7 @@ void PerfWatch::sortPapiCounterList (void)
 			counts += my_papi.v_sorted[jp] = my_papi.accumu[ip] ;
 			ip++;jp++;
 		}
-		my_papi.s_sorted[jp] = "Total_FP ";
+		my_papi.s_sorted[jp] = "Total_FP";
 		my_papi.v_sorted[jp] = counts;
 		jp++;
 
@@ -1149,10 +1174,10 @@ void PerfWatch::sortPapiCounterList (void)
 			}
 		}
 
-		my_papi.s_sorted[jp] = "Total_FP " ;
+		my_papi.s_sorted[jp] = "Total_FP" ;
 		my_papi.v_sorted[jp] = fp_total;
 		jp++;
-		my_papi.s_sorted[jp] = "Vector_FP " ;
+		my_papi.s_sorted[jp] = "Vector_FP" ;
 		my_papi.v_sorted[jp] = fp_vector;
 		jp++;
 		my_papi.s_sorted[jp] = "[Vector %]" ;
@@ -1391,7 +1416,7 @@ void PerfWatch::sortPapiCounterList (void)
 // count the number of reported events and derived matrices
 	my_papi.num_sorted = jp;
 
-#ifdef DEBUG_PRINT_PAPI
+#ifdef DEBUG_PRINT_PAPI_THREADS
 	#pragma omp barrier
 	#pragma omp critical
 	{
@@ -1411,22 +1436,21 @@ void PerfWatch::sortPapiCounterList (void)
 
 
 
-  /// Display the HWPC header lines
+  /// print the HWPC report Section Label string line, and the header line with event names
   ///
   ///   @param[in] fp 出力ファイルポインタ
   ///   @param[in] s_label ラベル
   ///
-  // print the Label string line, and the header line with event names
-  //
 void PerfWatch::outputPapiCounterHeader (FILE* fp, std::string s_label)
 {
 #ifdef USE_PAPI
 
-	fprintf(fp, "Label   %s%s\n", m_exclusive ? "" : "*", s_label.c_str());
+	fprintf(fp, "Section Label : %s%s\n", s_label.c_str(), m_exclusive ? "" : "(*)" );
 
 	std::string s;
 	int ip, jp, kp;
-	fprintf (fp, "Header  ID :");
+	//	fprintf (fp, "Header  ID :");
+	fprintf (fp, "MPI rankID :");
 	for(int i=0; i<my_papi.num_sorted; i++) {
 		kp = my_papi.s_sorted[i].find_last_of(':');
 		if ( kp < 0) {
@@ -1511,6 +1535,7 @@ void PerfWatch::outputPapiCounterLegend (FILE* fp)
 	std::string s_vendor_string;
 	using namespace std;
 
+	fprintf(fp, "\n\t Symbols in hardware performance counter (HWPC) report:\n\n" );
 	hwinfo = PAPI_get_hardware_info();
 	if (hwinfo == NULL) {
 		//	fprintf (fp, "\n\t<PAPI_get_hardware_info> failed. \n" );
@@ -1528,9 +1553,9 @@ void PerfWatch::outputPapiCounterLegend (FILE* fp)
 	} else {
 		s_model_string = hwinfo->model_string;
 	}
-	fprintf(fp, "\n\tDetected CPU architecture:\n" );
-	fprintf(fp, "\t\t%s\n", s_model_string.c_str());
-	fprintf(fp, "\t\tThe available HWPC_CHOOSER values and their HWPC events for this CPU are shown below.\n");
+	fprintf(fp, "\t Detected CPU architecture: %s \n", s_model_string.c_str());
+
+	fprintf(fp, "\t The available HWPC_CHOOSER values and their HWPC events for this CPU are shown below.\n");
 	fprintf(fp, "\n");
 
 // FLOPS

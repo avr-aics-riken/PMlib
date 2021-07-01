@@ -41,49 +41,48 @@ PerfMonitor PM;
 // Worksharing parallel construct is generally supported.
 // Non-worksharing parallel construct is limited to Intel and PGI only.
 
-#if defined (__INTEL_COMPILER)
+#if defined (__INTEL_COMPILER)	|| \
+	defined (__GXX_ABI_VERSION)	|| \
+	defined (__CLANG_FUJITSU)	|| \
+	defined (__PGI)
+
 	#pragma omp threadprivate(PM)
 
-#elif defined (__PGI)
-	#pragma omp threadprivate(PM)
-
-	#if defined (FORCE_CXX_MAIN)
-	// PGI mixed Fortran and C++ non-worksharing openmp parallel construct
+	#if defined (__PGI)
+	// PGI Fortran and C++ mixed OpenMP non-worksharing parallel construct
 	// needs this small main driver, i.e. PGI's undocumented restrictions.
 	// This main driver handles threadprivate class member variables
 	// passed across Fortran and C++
-	extern "C" void fortmain_(void);
-	extern "C" void main(void);
-	void main(void)
-	{
-		(void) fortmain_();
-	}
+		#if defined (FORCE_CXX_MAIN)
+		extern "C" void fortmain_(void);
+		extern "C" void main(void);
+		void main(void)
+		{
+			(void) fortmain_();
+		}
+		#endif
 	#endif
-
+#else
+	// Other compilers to be tested
+	//	#elif defined (__FUJITSU)	# nop
+	//	#elif defined (__clang__)	# nop Naive Clang yet to support OpenMP
 #endif
 
-	//#elif defined (__FUJITSU)
-	// FX100 and K compiler does not support threadprivate class instance
-	//#elif defined (__clang__)
-	// Clang does not support OpenMP
-	//#elif defined (__GNUC__)
-	// g++ version 5.5 causes compile error against threadprivate class instance
-	//#else
-	// Other compilers to be tested
 #endif
 
 
 // Fortran interface should avoid C++ name space mangling, thus this extern.
 extern "C" {
 
-/// PMlib Fortran インタフェイス
-/// PMlibの初期化.
+
+/// PMlib Fortran interface
+/// PMlib initialization
 ///
-/// @param[in] init_nWatch 最初に確保する測定区間数。
+/// @param[in] init_nWatch        the number of initially allocated sections.
 ///
-/// @note   測定区間数 m_nWatch は不足すると内部で自動的に追加する
-/// @note   Fortran インタフェイスでは引数を省略する事はできない。
-///         PMlib C++の引数仕様と異なる事に注意
+/// @note   the number of sections m_nWatch is automatically increased internally. in that case,
+///         the argument init_nWatch is used as incremental number.
+/// @note   Unlike C++ interface, the arguments for Fortran interface can not be ommitted.
 ///
 void f_pm_initialize_ (int& init_nWatch)
 {
@@ -93,7 +92,7 @@ void f_pm_initialize_ (int& init_nWatch)
     int my_rank;
 
 #ifdef DEBUG_PRINT_MONITOR
-	//	fprintf(stderr, "<f_pm_initialize_> init_nWatch=%d\n", init_nWatch);
+	fprintf(stderr, "<f_pm_initialize_> init_nWatch=%d\n", init_nWatch);
 #endif
 
 	PM.initialize(init_nWatch);
@@ -127,75 +126,25 @@ void f_pm_initialize_ (int& init_nWatch)
 }
 
 
-/// PMlib Fortran インタフェイス
-/// 測定区間にプロパティを設定.
-///
-///   @param[in] char* fc ラベルとなる character文字列
-///   @param[in] int f_type  測定対象タイプ(0:COMM:通信, 1:CALC:計算)
-///   @param[in] int f_exclusive 排他測定フラグ(0:false, 1:true)
-///   @param[in] int fc_size  character文字列ラベルの長さ（文字数）
-///
-///   @note ラベルは測定区間を識別するために用いる。
-///   		各ラベル毎に対応した区間番号は内部で自動生成する
-///   @note fc_sizeはFortranコンパイラが自動的に追加してしまう引数。
-///			ユーザがFortranプログラムから呼び出す場合に指定する必要はない。
-///
-void f_pm_setproperties_ (char* fc, int& f_type, int& f_exclusive, int fc_size)
-{
-	//	Note on fortran character 2 C++ string
-	//	Although the auto appended fc_size argument value is correct,
-	//	fortran character string is not terminated with NUL
-	//	A simple conversion such as below is not safe.
-	//		std::string s=fc;
-	//	So, we do explicit string conversion here...
-	std::string s=std::string(fc,fc_size);
-	bool exclusive;
-    PerfMonitor::Type arg_type; /// 測定対象タイプ from PerfMonitor.h
 
-#ifdef DEBUG_PRINT_MONITOR
-	//	fprintf(stderr, "<f_pm_setproperties_> fc=%s, f_type=%d, f_exclusive=%d, fc_size=%d\n", s.c_str(), f_type, f_exclusive, fc_size);
-#endif
-	if (s == "" || fc_size == 0) {
-		fprintf(stderr, "<f_pm_setproperties> argument fc is (null). The call is ignored.\n");
-		return;
-	}
-	if (f_exclusive == 1) {
-		exclusive=true;
-	} else if ((f_exclusive == 0)||(f_exclusive == 2)) {
-		exclusive=false;
-	} else {
-		fprintf(stderr, "<f_pm_setproperties> argument f_exclusive is invalid: %u . The call is ignored.\n", f_exclusive);
-		return;
-	}
-	//	PM.setProperties(s, f_type, exclusive);
-	if (f_type == 0) {
-		arg_type = PM.COMM;
-	} else if (f_type == 1) {
-		arg_type = PM.CALC;
-	} else {
-		fprintf(stderr, "<f_pm_setproperties> argument f_type is invalid: %u . The call is ignored. \n", f_type);
-		return;
-	}
-	PM.setProperties(s, arg_type, exclusive);
-	return;
-}
-
-
-/// PMlib Fortran インタフェイス
-/// 測定区間スタート
+/// PMlib Fortran interface
+/// start the measurement section
 ///
-///   @param[in] label ラベル文字列。測定区間を識別するために用いる。
-///   @param[in] int fc_size  character文字列ラベルの長さ（文字数）
+///   @param[in] label        the character label, i.e. name, of the measuring section
+///   @param[in] int fc_size  the length of the character label.
 ///
-///   @note fc_sizeはFortranコンパイラが自動的に追加してしまう引数。
-///			ユーザがFortranプログラムから呼び出す場合に指定する必要はない。
+///   @note
+///   	Fortran compilers automatically add an extra int argument holding the size of character.
+///   @note
+///   	Users do not have to explicitly give it when calling from Fortran programs.
+///			for example, call f_pm_start ("myname") is good enough.
 ///
 void f_pm_start_ (char* fc, int fc_size)
 {
 	std::string s=std::string(fc,fc_size);
 
 #ifdef DEBUG_PRINT_MONITOR
-	//	fprintf(stderr, "<f_pm_start_> fc=%s, fc_size=%d\n", s.c_str(), fc_size);
+	fprintf(stderr, "<f_pm_start_> fc=%s, fc_size=%d\n", s.c_str(), fc_size);
 #endif
 	if (s == "") {
 		fprintf(stderr, "<f_pm_start_> argument fc is empty(null)\n");
@@ -210,116 +159,95 @@ void f_pm_start_ (char* fc, int fc_size)
 }
 
 
-/// PMlib Fortran インタフェイス
-/// 測定区間ストップ
+/// PMlib Fortran interface
+/// stop the measurement section
 ///
-///   @param[in] label ラベル文字列。測定区間を識別するために用いる。
-///   @param[in] fpt 「タスク」あたりの計算量(Flop)または通信量(Byte)
-///   @param[in] tic  「タスク」実行回数
-///   @param[in] int fc_size  character文字列ラベルの長さ（文字数）
+///   @param[in] label        the character label, i.e. name, of the measuring section
+///   @param[in] fpt          computing volume (FLOP) or moved data(Byte), used in "USER" mode measurement only.
+///   @param[in] tic          the number of cycles, used in "USER" mode measurement only.
+///   @param[in] int fc_size  the length of the character label.
 ///
-///   @note  計算量または通信量をユーザが明示的に指定する場合は、
-///          そのボリュームは１区間１回あたりでfpt*ticとして算出される
-///   @note  Fortran PMlib インタフェイスでは引数を省略する事はできない。
-///          引数値 fpt*tic が非0の場合はその数値が採用され、値が0の場合は
-///          HWPC自動計測値が採用される。
-///   @note fc_sizeはFortranコンパイラが自動的に追加してしまう引数。
-///			ユーザがFortranプログラムから呼び出す場合に指定する必要はない。
+///   @note  in "USER" mode measurement, the volume of computation or moved data is calculated
+///          as fpt*tic per each start()/stop() pair.
+///   @note  Fortran compilers automatically add an extra int argument holding the size of character.
+///          Users do not have to explicitly give it when calling from Fortran programs.
+///	         for example, call f_pm_stop ("myname") is good enough.
 ///
-void f_pm_stop_ (char* fc, double& fpt, unsigned& tic, int fc_size)
+void f_pm_stop_ (char* fc, int fc_size)
 {
 	std::string s=std::string(fc,fc_size);
 
 #ifdef DEBUG_PRINT_MONITOR
-	//	fprintf(stderr, "<f_pm_stop_> fc=%s, fpt=%8.0lf, tic=%d, fc_size=%d\n", s.c_str(), fpt, tic, fc_size);
+	fprintf(stderr, "<f_pm_stop_> fc=%s, fc_size=%d\n", s.c_str(), fc_size);
 #endif
 	if (s == "") {
-		fprintf(stderr, "<f_pm_stop_> ");
-		fprintf(stderr, "argument fc is empty(null)\n");
+		;	// section label argument is empty. stdout will be used.
 	}
-	if (fc_size == 0) {
-		fprintf(stderr, "<f_pm_stop_> ");
-		fprintf(stderr, "argument fc_size is 0\n");
+	PM.stop(s);
+	return;
+}
+/** overload version . user specified performance arguments fpt and tic are expected. **/
+//	void f_pm_stop_ (char* fc, double& fpt, unsigned& tic, int fc_size)
+void f_pm_stop_overload_ (char* fc, double& fpt, unsigned& tic, int fc_size)
+{
+	std::string s=std::string(fc,fc_size);
+
+#ifdef DEBUG_PRINT_MONITOR
+	fprintf(stderr, "<f_pm_stop_overload_> fc=%s, fpt=%8.0lf, tic=%d, fc_size=%d\n", s.c_str(), fpt, tic, fc_size);
+#endif
+	if (s == "") {
+		;	// section label argument is empty. stdout will be used.
 	}
 	PM.stop(s, fpt, tic);
 	return;
 }
 
 
-/// PMlib Fortran インタフェイス
-/// 測定区間リセット
+/// PMlib Fortran interface
+/// generic routine to controll and output the various report of the measured statistics
 ///
-///   @param[in] label ラベル文字列。測定区間を識別するために用いる。
-///   @param[in] int fc_size  character文字列ラベルの長さ（文字数）
+///   @param[in] char* fc         output file name(character array). if "" , stdout is chosen.
+///   @param[in] int fc_size      the number of characters in fc
 ///
-///   @note fc_sizeはFortranコンパイラが自動的に追加してしまう引数。
-///			ユーザがFortranプログラムから呼び出す場合に指定する必要はない。
+///   @note the second argument fc_size is automatically added by fortran compilers, and users
+///			do not have to explicitly give it when calling from Fortran programs.
+///			for example, call f_pm_print_ ("") is good enough for most use cases.
 ///
-void f_pm_reset_ (char* fc, int fc_size)
+void f_pm_report_ (char* fc, int fc_size)
 {
+	FILE *fp;
 	std::string s=std::string(fc,fc_size);
+	int user_file;
+	char hostname[512];
 
 #ifdef DEBUG_PRINT_MONITOR
-	//	fprintf(stderr, "<f_pm_reset_> fc=%s, fc_size=%d\n", s.c_str(), fc_size);
+	fprintf(stderr, "<f_pm_report_> fc=%s, fc_size=%d\n", s.c_str(), fc_size);
 #endif
-	if (s == "") {
-		fprintf(stderr, "<f_pm_reset_> argument fc is empty(null)\n");
-		return;
+	if (s == "" || fc_size == 0) { // if filename is null, report to stdout
+		fp=stdout;
+		user_file=0;
+	} else {
+		fp=fopen(fc,"a");
+		if (fp == NULL) {
+			fprintf(stderr, "*** warning <f_pm_print_> can not open: %s\n", fc);
+			fp=stdout;
+			user_file=0;
+		} else {
+			user_file=1;
+		}
 	}
-	if (fc_size == 0) {
-		fprintf(stderr, "<f_pm_reset_> argument fc_size is 0\n");
-		return;
+
+	PM.report(fp);
+
+	if (user_file == 1) {
+		fclose(fp);
 	}
-	PM.reset(s);
 	return;
 }
 
 
-/// PMlib Fortran インタフェイス
-/// 全測定区間リセット
-///
-///
-void f_pm_resetall_ (void)
-{
-#ifdef DEBUG_PRINT_MONITOR
-	//	fprintf(stderr, "<f_pm_resetall_> \n");
-#endif
-	PM.resetAll();
-	return;
-}
-
-
-/// PMlib Fortran インタフェイス
-/// 全プロセスの全測定結果情報をマスタープロセス(0)に集約
-///
-void f_pm_gather_ (void)
-{
-#ifdef DEBUG_PRINT_MONITOR
-	//	fprintf(stderr, "<f_pm_gather_> \n");
-#endif
-	PM.gather();
-	return;
-}
-
-
-/// PMlib Fortran インタフェイス
-///  OpenMP parallel region内のマージ処理
-///  OpenMPスレッド並列処理された測定区間のうち、 parallel regionの内側から
-///  区間を測定した場合（測定区間の外側にparallel 構文がある場合）に限って
-///  呼び出しが必要な関数。
-///  parallel region内で呼び出された全測定区間のスレッド情報を
-///  マスタースレッドに集約する。
-///  parallel regionが全て測定区間の内側にある場合は呼び出し不要。
-
-void f_pm_mergethreads_ (void)
-{
-	PM.mergeThreads();
-	return;
-}
-
-
-/// PMlib Fortran インタフェイス
-/// 測定結果の基本統計レポートを出力
+/// PMlib Fortran interface
+/// output BASIC report of the measured statistics
 ///
 ///   @param[in] char* fc 出力ファイル名(character文字列. ""の場合はstdoutへ出力する)
 ///   @param[in] char* fh ホスト名 (character文字列. ""の場合はrank 0 実行ホスト名を表示)
@@ -329,10 +257,10 @@ void f_pm_mergethreads_ (void)
 ///   @param[in] int fh_size  fhの文字数
 ///   @param[in] int fcmt_size  fcmtの文字数
 ///
-///   @note fc_size, fh_size, fcmt_sizeはFortranコンパイラが自動的に追加してしまう引数。
+///   @note 後半の３引数fc_size, fh_size, fcmt_sizeはFortranコンパイラが自動的に追加してしまう引数。
 ///			ユーザがFortranプログラムから呼び出す場合に指定する必要はない。
+///			void f_pm_print_ (char* fc, int &fp_sort, int fc_size)
 ///
-	// void f_pm_print_ (char* fc, int &fp_sort, int fc_size)
 void f_pm_print_ (char* fc, char* fh, char* fcmt, int &fp_sort, int fc_size, int fh_size, int fcmt_size)
 {
 	FILE *fp;
@@ -650,6 +578,180 @@ void f_pm_posttrace_ (void)
 }
 
 
-// PMlib Fortran インタフェイス終了
-} // closing extern "C"
+/// PMlib Fortran インタフェイス
+/// 測定区間リセット
+///
+///   @param[in] label ラベル文字列。測定区間を識別するために用いる。
+///   @param[in] int fc_size  character文字列ラベルの長さ（文字数）
+///
+///   @note fc_sizeはFortranコンパイラが自動的に追加してしまう引数。
+///			ユーザがFortranプログラムから呼び出す場合に指定する必要はない。
+///
+void f_pm_reset_ (char* fc, int fc_size)
+{
+	std::string s=std::string(fc,fc_size);
+
+#ifdef DEBUG_PRINT_MONITOR
+	//	fprintf(stderr, "<f_pm_reset_> fc=%s, fc_size=%d\n", s.c_str(), fc_size);
+#endif
+	if (s == "") {
+		fprintf(stderr, "<f_pm_reset_> argument fc is empty(null)\n");
+		return;
+	}
+	if (fc_size == 0) {
+		fprintf(stderr, "<f_pm_reset_> argument fc_size is 0\n");
+		return;
+	}
+	PM.reset(s);
+	return;
+}
+
+
+/// PMlib Fortran インタフェイス
+/// 全測定区間リセット
+///
+///
+void f_pm_resetall_ (void)
+{
+#ifdef DEBUG_PRINT_MONITOR
+	//	fprintf(stderr, "<f_pm_resetall_> \n");
+#endif
+	PM.resetAll();
+	return;
+}
+
+
+/// PMlib Fortran インタフェイス
+/// 測定区間にプロパティを設定.
+///
+///   @param[in] char* fc ラベルとなる character文字列
+///   @param[in] int f_type  測定対象タイプ(0:COMM:通信, 1:CALC:計算)
+///   @param[in] int f_exclusive 排他測定フラグ(0:false, 1:true)
+///   @param[in] int fc_size  character文字列ラベルの長さ（文字数）
+///
+///   @note ラベルは測定区間を識別するために用いる。
+///   		各ラベル毎に対応した区間番号は内部で自動生成する
+///   @note fc_sizeはFortranコンパイラが自動的に追加してしまう引数。
+///			ユーザがFortranプログラムから呼び出す場合に指定する必要はない。
+///
+void f_pm_setproperties_ (char* fc, int& f_type, int& f_exclusive, int fc_size)
+{
+	//	Note on fortran character 2 C++ string
+	//	Although the auto appended fc_size argument value is correct,
+	//	fortran character string is not terminated with NUL
+	//	A simple conversion such as below is not safe.
+	//		std::string s=fc;
+	//	So, we do explicit string conversion here...
+	std::string s=std::string(fc,fc_size);
+	bool exclusive;
+    PerfMonitor::Type arg_type; /// 測定対象タイプ from PerfMonitor.h
+
+#ifdef DEBUG_PRINT_MONITOR
+	//	fprintf(stderr, "<f_pm_setproperties_> fc=%s, f_type=%d, f_exclusive=%d, fc_size=%d\n", s.c_str(), f_type, f_exclusive, fc_size);
+#endif
+	if (s == "" || fc_size == 0) {
+		fprintf(stderr, "<f_pm_setproperties> argument fc is (null). The call is ignored.\n");
+		return;
+	}
+	if (f_exclusive == 1) {
+		exclusive=true;
+	} else if ((f_exclusive == 0)||(f_exclusive == 2)) {
+		exclusive=false;
+	} else {
+		fprintf(stderr, "<f_pm_setproperties> argument f_exclusive is invalid: %u . The call is ignored.\n", f_exclusive);
+		return;
+	}
+	//	PM.setProperties(s, f_type, exclusive);
+	if (f_type == 0) {
+		arg_type = PM.COMM;
+	} else if (f_type == 1) {
+		arg_type = PM.CALC;
+	} else {
+		fprintf(stderr, "<f_pm_setproperties> argument f_type is invalid: %u . The call is ignored. \n", f_type);
+		return;
+	}
+	PM.setProperties(s, arg_type, exclusive);
+	return;
+}
+
+
+/// PMlib Fortran インタフェイス
+/// 全プロセスの全測定結果情報をマスタープロセス(0)に集約
+///
+void f_pm_gather_ (void)
+{
+#ifdef DEBUG_PRINT_MONITOR
+	//	fprintf(stderr, "<f_pm_gather_> \n");
+#endif
+	PM.gather();
+	return;
+}
+
+
+/// PMlib Fortran interface
+///  OpenMP parallel region内のマージ処理
+///  OpenMPスレッド並列処理された測定区間のうち、 parallel regionの内側から
+///  区間を測定した場合（測定区間の外側にparallel 構文がある場合）に限って
+///  呼び出しが必要な関数。
+///  parallel region内で呼び出された全測定区間のスレッド情報を
+///  マスタースレッドに集約する。
+///  parallel regionが全て測定区間の内側にある場合は呼び出し不要。
+///
+void f_pm_mergethreads_ (void)
+{
+	PM.mergeThreads();
+	return;
+}
+
+
+/// PMlib Fortran interface
+/// @brief Power knob interface - Read the current value for the given power control knob
+///
+///   @param[in] knob  : power knob chooser 電力制御用ノブの種類
+///   @param[out] value : current value for the knob  現在の値
+///
+/// @note the knob and its value combination must be chosen from the following table
+///	@verbatim
+/// knob : value : object description
+///  0   : 2200, 2000 : CPU frequency in MHz
+///  1   : 100, 90, 80, .. , 10 : MEMORY access throttling percentage
+///  2   : 2, 4    : ISSUE instruction issue rate per cycle
+///  3   : 1, 2    : PIPE number of concurrent execution pipelines 
+///  4   : 0, 1, 2 : ECO mode state
+///  5   : 0, 1    : RETENTION mode state DISABLED as of May 2021
+///	@endverbatim
+///
+void f_pm_getpowerknob_ (int& knob, int& value)
+{
+	PM.getPowerKnob (knob, value);
+	return;
+}
+
+
+/// PMlib Fortran interface
+/// @brief Power knob interface - Set the new value for the given power control knob
+///
+///   @param[in] knob  : power knob chooser 電力制御用ノブの種類
+///   @param[in] value : new value for the knob  指定する設定値
+///
+/// @note the knob and its value combination must be chosen from the following table
+///	@verbatim
+/// knob : value : object description
+///  0   : 2200, 2000 : CPU frequency in MHz
+///  1   : 100, 90, 80, .. , 10 : MEMORY access throttling percentage
+///  2   : 2, 4    : ISSUE instruction issue rate per cycle
+///  3   : 1, 2    : PIPE number of concurrent execution pipelines 
+///  4   : 0, 1, 2 : ECO mode state
+///  5   : 0, 1    : RETENTION mode state DISABLED as of May 2021
+///	@endverbatim
+///
+void f_pm_setpowerknob_ (int& knob, int& value)
+{
+	PM.setPowerKnob (knob, value);
+	return;
+}
+
+
+} // closing extern "C" // PMlib Fortran インタフェイス終了
+
 

@@ -28,31 +28,20 @@
 #include <cstdarg>
 #include <string>
 #include <cstdlib>
+#include <string.h>
 
 #ifdef _OPENMP
 	#include <omp.h>
 #endif
 
-//	#ifdef USE_PAPI
 #include "pmlib_papi.h"
-//	#endif
-
-//	#ifdef USE_POWER
 #include "pmlib_power.h"
-//	#endif
-
-#ifdef USE_OTF
 #include "pmlib_otf.h"
-#endif
 
 #ifndef _WIN32
 #include <sys/time.h>
 #else
 #include "sph_win32_util.h"   // for Windows win32 GetSystemTimeAsFileTime API?
-#endif
-
-#if defined(__x86_64__)
-#include <string.h>
 #endif
 
 namespace pm_lib {
@@ -101,7 +90,9 @@ namespace pm_lib {
 
 	struct pmlib_papi_chooser my_papi;
 
+    int m_is_POWER;	     ///< 消費電力情報 出力のフラグ 0(no), 1(NODE), 2(NUMA), 3(PARTS)
 	struct pmlib_power_chooser my_power;
+    double m_power_av;    ///< average value of power consumption meter reading
 
     /// MPI並列時の並列プロセス数と自ランク番号
     int num_process;
@@ -129,6 +120,8 @@ namespace pm_lib {
     bool m_threads_merged; /// 全スレッドの情報をマスタースレッドに集約済みか
     bool m_gathered;       /// 全プロセスの結果をランク0に集計済みかどうか
     bool m_started;        /// 測定区間がstart済みかどうか
+		/// Remark m_started is usefule for serial construct only.
+		///        in parallel construct
 
 
   public:
@@ -141,7 +134,7 @@ namespace pm_lib {
     ~PerfWatch() {
 	#ifdef DEBUG_PRINT_WATCH
 		if (my_rank == 0) {
-    	fprintf(stderr, "\t\t rank %d destructor is called for [%s]\n", my_rank, m_label.c_str() );
+    	fprintf(stderr, "\t <PerfWatch> rank %d destructor for [%s]\n", my_rank, m_label.c_str() );
 		}
 	#endif
       if (m_timeArray != NULL)  delete[] m_timeArray;
@@ -167,6 +160,14 @@ namespace pm_lib {
     /// HWPCイベントを初期化する
     ///
     void initializeHWPC(void);
+
+    /// initialize Power API interface
+    ///
+    void initializePOWER(void);
+
+    /// finalize Power API interface
+    ///
+    void finalizePOWER(void);
 
     /// OTF 用の初期化
     ///
@@ -268,19 +269,15 @@ namespace pm_lib {
     ///
     void printGroupRanks(FILE* fp, double totalTime, MPI_Group p_group, int* pp_ranks);
 
-    /// HWPCヘッダーを出力.
+    /// Show the PMlib related environment variables
     ///
-    ///   @param[in] fp 出力ファイルポインタ
+    ///   @param[in] fp report file pointer
     ///
-    ///   @note ランク0プロセスからのみ呼び出し可能
-    ///
-    void printHWPCHeader(FILE* fp);
+    void printEnvVars(FILE* fp);
 
     /// HWPCレジェンドを出力.
     ///
     ///   @param[in] fp 出力ファイルポインタ
-    ///
-    ///   @note ランク0プロセスからのみ呼び出し可能
     ///
     void printHWPCLegend(FILE* fp);
 
@@ -290,6 +287,22 @@ namespace pm_lib {
     ///   @param[in] rank_ID      出力対象ランク番号を指定する
     ///
     void printDetailThreads(FILE* fp, int rank_ID);
+
+    /// Show the header line for the averaged HWPC statistics in the Basic report
+    ///
+    ///   @param[in] fp         report file pointer
+    ///   @param[in] maxLabelLen    maximum label field string length
+    ///
+    void printBasicHWPCHeader(FILE* fp, int maxLabelLen);
+
+    /// Report the averaged HWPC statistics as the Basic report
+    ///
+    ///   @param[in] fp         report file pointer
+    ///   @param[in] maxLabelLen    maximum label field string length
+    ///
+    ///     @note   remark that power consumption is reported per node, not per process
+    ///
+    void printBasicHWPCsums(FILE* fp, int maxLabelLen);
 
     /// HWPCイベントの測定結果と統計値を出力.
     ///
@@ -325,8 +338,18 @@ namespace pm_lib {
     ///
     void read_cpu_clock_freq();
 
+    ///	copy in HWPC values from master thread to shared "papi" struct
     ///
-    void mergeAllThreads(void);
+    void mergeMasterThread(void);
+
+    ///	merge private HWPC values from the parallel threads to the master
+    ///
+    void mergeParallelThread(void);
+
+    ///	re-calculate the aggregate HWPC values from all threads
+    ///
+    void updateMergedThread(void);
+
     ///
     void selectPerfSingleThread(int i_thread);
 
