@@ -16,7 +16,6 @@ program f_fortran_api_general
 end program
 
 
-
 !> PMlib Fortran インタフェイスの初期化
 !!
 !! @param[in] integer nWatch 最初に確保する測定区間数。
@@ -38,9 +37,6 @@ end subroutine
 !!   @note ラベル文字列は測定区間を識別するために用いる。
 !!   各ラベル毎に対応した区間番号を内部で自動生成する
 !!   @ 最初に確保した区間数init_nWatchが不足したら動的に追加する
-    ///   第１引数は必須。第２引数は明示的な自己申告モードの場合に必須。
-    ///   第３引数は省略可
-
 !!
 subroutine f_pm_setproperties (fc, f_type, f_exclusive)
 end subroutine
@@ -57,6 +53,23 @@ end subroutine
 
 
 !> PMlib Fortran 測定区間のストップ
+!!	@brief
+!!	subroutine f_pm_stop (fc) : for automatic HWPC measurement
+!!
+!!   @param[in] character*(*)	fc	測定区間を識別するラベル文字列。
+!!
+!!   @verbatim
+!!   @note HWPCによる自動算出モード
+!!      - HWPC/PAPIが利用可能なプラットフォームで利用できる
+!!      - 環境変数HWPC_CHOOSERの値により測定情報を選択する。(FLOPS| BANDWIDTH| VECTOR| LOADSTORE| CACHE| CYCLE)
+!!   @endverbatim
+!!
+subroutine f_pm_stop (fc)
+end subroutine
+
+
+!!	@brief
+!!	subroutine f_pm_stop_usermode (fc, fpt, tic) : for explicit USER mode measurement
 !!
 !!   @param[in] character*(*)	fc	測定区間を識別するラベル文字列。
 !!   @param[in] real(kind=8)	fpt	 計算量。演算量(Flop)または通信量(Byte)
@@ -71,36 +84,16 @@ end subroutine
 !!          されていないジョブでは自動的にユーザ申告モードで実行される。\n
 !!   @note  出力レポートに表示される計算量は測定のモード・引数の
 !!          組み合わせで以下の規則により決定される。 \n
-!!   @verbatim
 !!
-!!    (A) ユーザ申告モード
+!!   @verbatim
+!!   @note ユーザ申告モード
 !!      - ユーザ申告モードでは(1)setProperties() と(2)stop()への引数により出力内容が決定される。
 !!        (1) setProperties(区間名, type, exclusive)の第2引数typeが計算量のタイプを指定する。
 !!        (2) stop (区間名, fPT, iC)の第2引数fPTは計算量（浮動小数点演算、データ移動)を指定する。
-!!      - ユーザ申告モードで 計算量の引数が省略された場合は時間のみレポート出力する。
+!!   @endverbatim
 !!
-!!    (B) HWPCによる自動算出モード
-!!      - HWPC/PAPIが利用可能なプラットフォームで利用できる
-!!      - 環境変数HWPC_CHOOSERの値により測定情報を選択する。(FLOPS| BANDWIDTH| VECTOR| CACHE| CYCLE)
-!!
-!!    ユーザ申告モードかHWPC自動算出モードかは、内部的に下記表の組み合わせで決定される。
-!!
-!!    環境変数     setProperties()  stop()
-!!    HWPC_CHOOSER   type引数      fP引数      基本・詳細レポート出力      HWPC詳細レポート出力
-!!    -----------------------------------------------------------------------------------------
-!!    NONE (無指定)   CALC        指定値      時間、fP引数によるFlops     なし
-!!    NONE (無指定)   COMM        指定値      時間、fP引数によるByte/s    なし
-!!    FLOPS           無視         無視       時間、HWPC自動計測Flops     FLOPSに関連するHWPC統計情報
-!!    VECTOR          無視         無視       時間、HWPC自動計測SIMD率    VECTORに関連するHWPC統計情報
-!!    BANDWIDTH       無視         無視       時間、HWPC自動計測Byte/s    BANDWIDTHに関連するHWPC統計情報
-!!    CACHE           無視         無視       時間、HWPC自動計測L1$,L2$   CACHEに関連するHWPC統計情報
-!!    CYCLE           無視         無視       時間、HWPC自動計測cycle     CYCLEに関連するHWPC統計情報
-!!
-!!	@endverbatim
-!!
-subroutine f_pm_stop (fc, fpt, tic)
+subroutine f_pm_stop_usermode (fc, fpt, tic)
 end subroutine
-
 
 
 !> PMlib Fortran 測定区間のリセット
@@ -156,6 +149,16 @@ end subroutine
 subroutine f_pm_mergethreads ()
 end subroutine
 
+
+!> PMlib Fortran 測定結果のレポート出力をコントロール
+!!
+!!   @param[in] character*(*) fc	出力ファイル名(character文字列)
+!!
+!!   @note  のルーチンを呼ぶと必要なレポートを全て出力することができる。
+!!		出力の内容は環境変数でコントロールする
+!!
+subroutine f_pm_report (fc)
+end subroutine
 
 
 !> PMlib Fortran 測定結果の基本レポートを出力
@@ -257,4 +260,45 @@ end subroutine
 subroutine f_pm_posttrace ()
 end subroutine
 
+
+!! PMlib Fortran interface
+!! @brief Power knob interface - Read the current value for the given power control knob
+!!
+!!   @param[in] knob  : power knob chooser 電力制御用ノブの種類
+!!   @param[out] value : current value for the knob  現在の値
+!!
+!! @note the knob and its value combination must be chosen from the following table
+!! @verbatim
+!! knob : value : object description
+!!  0   : 2200, 2000 : CPU frequency in MHz
+!!  1   : 100, 90, 80, .. , 10 : MEMORY access throttling percentage
+!!  2   : 2, 4    : ISSUE instruction issue rate per cycle
+!!  3   : 1, 2    : PIPE number of concurrent execution pipelines 
+!!  4   : 0, 1, 2 : ECO mode state
+!!  5   : 0, 1    : RETENTION mode state DISABLED as of May 2021
+!! @endverbatim
+!!
+subroutine  f_pm_getpowerknob (knob, value)
+end subroutine
+
+
+!! PMlib Fortran interface
+!! @brief Power knob interface - Set the new value for the given power control knob
+!!
+!!   @param[in] knob  : power knob chooser 電力制御用ノブの種類
+!!   @param[in] value : new value for the knob  指定する設定値
+!!
+!! @note the knob and its value combination must be chosen from the following table
+!! @verbatim
+!! knob : value : object description
+!!  0   : 2200, 2000 : CPU frequency in MHz
+!!  1   : 100, 90, 80, .. , 10 : MEMORY access throttling percentage
+!!  2   : 2, 4    : ISSUE instruction issue rate per cycle
+!!  3   : 1, 2    : PIPE number of concurrent execution pipelines 
+!!  4   : 0, 1, 2 : ECO mode state
+!!  5   : 0, 1    : RETENTION mode state DISABLED as of May 2021
+!! @endverbatim
+!!
+subroutine  f_pm_setpowerknob (knob, value)
+end subroutine
 
