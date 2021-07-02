@@ -18,7 +18,8 @@ set(pm_files
        PerfCpuType.cpp
        PerfMonitor.cpp
        PerfWatch.cpp
-       PerfProgFortran.cpp)
+       PerfProgFortran.cpp
+       PerfProgC.cpp)
 
 if(NOT with_MPI)
   add_library(PM STATIC ${pm_files})
@@ -52,5 +53,6 @@ install(FILES ${PROJECT_SOURCE_DIR}/include/mpi_stubs.h
               ${PROJECT_SOURCE_DIR}/include/pmlib_otf.h
               ${PROJECT_SOURCE_DIR}/include/pmlib_papi.h
               ${PROJECT_SOURCE_DIR}/include/pmlib_power.h
+              ${PROJECT_SOURCE_DIR}/include/pmlib_api_C.h
               ${PROJECT_BINARY_DIR}/include/pmVersion.h
         DESTINATION include )

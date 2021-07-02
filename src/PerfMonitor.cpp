@@ -562,12 +562,7 @@ namespace pm_lib {
 
 
 
-  ///  Merging the thread parallel data into the master thread in two steps.
-  ///  The 1st step : Process the data generated in the serial hybrid region.
-  ///  			Copy "my_papi" data of the master thread into shared "papi" space.
-  ///  The 2nd step : Process the data generated from parallel region.
-  ///  			Aggregate the class private "my_papi" data into shared "papi" space.
-  ///  In the end the master thread will retain all the thread vlues in its "my_papi" storage.
+  ///  Merging the thread parallel data into the master thread in three steps.
   ///
   void PerfMonitor::mergeThreads (void)
   {
@@ -596,7 +591,6 @@ namespace pm_lib {
   ///    各測定区間のHWPCイベントの統計値を取得する。
   ///   @note  gather_and_stats() は複数回呼び出し可能。
   ///
-
   void PerfMonitor::gather_and_stats(void)
   {
 
@@ -630,7 +624,6 @@ namespace pm_lib {
   /// 	Each process stores its own sorted list. Be careful when reporting from rank 0.
   ///
   ///
-
   void PerfMonitor::sort_m_order(void)
   {
     if (!is_PMlib_enabled) return;
@@ -714,7 +707,6 @@ namespace pm_lib {
   ///
   ///   @param[in] fp       出力ファイルポインタ
   ///
-
   void PerfMonitor::report(FILE* fp)
   {
     if (!is_PMlib_enabled) return;
@@ -1159,7 +1151,6 @@ void PerfMonitor::printBasicPower(FILE* fp, int maxLabelLen, int op_sort)
   ///   @param[in] rank_ID      出力対象プロセスのランク番号
   ///   @param[in] op_sort      測定区間の表示順 (0:経過時間順、1:登録順で表示)
   ///
-
   void PerfMonitor::printThreads(FILE* fp, int rank_ID, int op_sort)
   {
 
@@ -1609,6 +1600,7 @@ void PerfMonitor::printBasicPower(FILE* fp, int maxLabelLen, int op_sort)
   ///   @param[in] op_sort int型 測定区間の表示順 (0:経過時間順、1:登録順)
   ///
   ///   @note  計算量（演算数やデータ移動量）選択方法は PerfWatch::stop() のコメントに詳しく説明されている。
+  ///
   void PerfMonitor::printBasicSections(FILE* fp, int maxLabelLen, double& tot,
                                   double& sum_flop, double& sum_comm, double& sum_other,
                                   double& sum_time_flop, double& sum_time_comm, double& sum_time_other,
@@ -1650,7 +1642,7 @@ void PerfMonitor::printBasicPower(FILE* fp, int maxLabelLen, int op_sort)
     }
 
 	//	fprintf(fp, "%-*s|   calls  |      avr   avr[%%]     sdv    avr/call  ", maxLabelLen, "Label");
-	fprintf(fp, "%-*s|   calls  |   total    [%]   total/call     sdv    ", maxLabelLen, "Label");
+	fprintf(fp, "%-*s|   calls  |   total    [%%]   total/call     sdv    ", maxLabelLen, "Label");
 
     if ( is_unit == 0 || is_unit == 1 ) {
       fprintf(fp, "|  operations   sdv    performance\n");

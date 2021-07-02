@@ -476,7 +476,7 @@ namespace pm_lib {
 	(void) MPI_Barrier(MPI_COMM_WORLD);
 	if (my_rank == 0) {
 		fprintf(stderr, "\t<PerfWatch::gather> [%15s] m_countArray[0:*]:", m_label.c_str() );
-		for (int i=0; i<num_process; i++) { fprintf(stderr, " %d",  m_countArray[i]); } fprintf(stderr, "\n");
+		for (int i=0; i<num_process; i++) { fprintf(stderr, " %ld",  m_countArray[i]); } fprintf(stderr, "\n");
 	}
 	(void) MPI_Barrier(MPI_COMM_WORLD);
 	#endif

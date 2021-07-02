@@ -45,7 +45,7 @@ namespace pm_lib {
 
     /// 測定計算量のタイプ
     enum Type {
-      COMM,  ///< 通信（あるいはメモリ転送）
+      COMM,  ///< データ移動
       CALC,  ///< 演算
     };
 
@@ -115,9 +115,9 @@ namespace pm_lib {
     /// 測定区間とそのプロパティを設定.
     ///
     ///   @param[in] label 測定区間に与える名前の文字列
-    ///   @param[in] type  測定計算量のタイプ(COMM:通信, CALC:演算)
+    ///   @param[in] type  測定計算量のタイプ(COMM:データ移動, CALC:演算)
     ///   @param[in] exclusive 排他測定フラグ。bool型(省略時true)、
-    ///                        Fortran仕様は整数型(0:false, 1:true)
+    ///                    FortranおよびCでの引数仕様は整数型(0:false, 1:true)
     ///
     ///   @note labelラベル文字列は測定区間を識別するために用いる。
     ///   各ラベル毎に対応した区間番号を内部で自動生成する
@@ -183,7 +183,7 @@ namespace pm_lib {
     ///   @param[in] flopPerTask 測定区間の計算量(演算量Flopまたは通信量Byte) :省略値0
     ///   @param[in] iterationCount  計算量の乗数（反復回数）:省略値1
     ///
-    ///   @note  引数はユーザ申告モードの場合にのみ利用される。 \n
+    ///   @note  第２、第３引数はユーザ申告モードの場合にのみ利用される。 \n
     ///   @note  測定区間の計算量は次のように算出される。 \n
     ///          (A) ユーザ申告モードの場合は １区間１回あたりで flopPerTask*iterationCount \n
     ///          (B) HWPCによる自動算出モードの場合は引数とは関係なくHWPC内部値を利用\n
@@ -198,24 +198,10 @@ namespace pm_lib {
         (1) setProperties(区間名, type, exclusive)の第2引数typeが計算量のタイプを指定する。
         (2) stop (区間名, fPT, iC)の第2引数fPTは計算量（浮動小数点演算、データ移動)を指定する。
       - ユーザ申告モードで 計算量の引数が省略された場合は時間のみレポート出力する。
-
     (B) HWPCによる自動算出モード
       - HWPC/PAPIが利用可能なプラットフォームで利用できる
-      - 環境変数HWPC_CHOOSERの値により測定情報を選択する。(FLOPS| BANDWIDTH| VECTOR| CACHE| CYCLE| WRITEBACK)
-
-    ユーザ申告モードかHWPC自動算出モードかは、内部的に下記表の組み合わせで決定される。
-
-    環境変数     setProperties()  stop()
-    HWPC_CHOOSER   type引数      fP引数      基本・詳細レポート出力      HWPC詳細レポート出力
-    -----------------------------------------------------------------------------------------
-    USER (無指定)   CALC         指定値      時間、fP引数によるFlops     なし
-    USER (無指定)   COMM         指定値      時間、fP引数によるByte/s    なし
-    FLOPS           無視         無視        時間、HWPC自動計測Flops     FLOPSに関連するHWPC統計情報
-    VECTOR          無視         無視        時間、HWPC自動計測SIMD率    VECTORに関連するHWPC統計情報
-    BANDWIDTH       無視         無視        時間、HWPC自動計測Byte/s    BANDWIDTHに関連するHWPC統計情報
-    CACHE           無視         無視        時間、HWPC自動計測L1$,L2$   CACHEに関連するHWPC統計情報
-    CYCLE           無視         無視        時間、HWPC自動計測cycle     CYCLEに関連するHWPC統計情報
-    WRITEBACK       無視         無視        時間、HWPC自動計測Byte/s    MEM(WRITE)に関するHWPC統計情報
+      - 環境変数HWPC_CHOOSERの値により測定情報を選択する。(FLOPS| BANDWIDTH| VECTOR| CACHE| CYCLE| LOADSTORE)
+        環境変数HWPC_CHOOSERが指定された場合（USER以外の値を指定した場合）は自動的にHWPCが利用される。
      **/
     ///   @endverbatim
     ///
