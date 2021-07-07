@@ -128,7 +128,11 @@ namespace pm_lib {
     /// コンストラクタ.
     PerfWatch() : m_time(0.0), m_flop(0.0), m_count(0), m_started(false),
       my_rank(-1), m_timeArray(0), m_flopArray(0), m_countArray(0),
-      m_sortedArrayHWPC(0), m_is_set(false), m_is_healthy(true) {}
+      m_sortedArrayHWPC(0), m_is_set(false), m_is_healthy(true) {
+	#ifdef DEBUG_PRINT_WATCH
+		fprintf(stderr, "\t<PerfWatch> constructor is called. &m_started=%p : %s\n", &m_started, m_started?"true":"false");
+	#endif
+	}
 
     /// デストラクタ.
     ~PerfWatch() {

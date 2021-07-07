@@ -38,6 +38,7 @@ namespace pm_lib {
   void PerfMonitor::initialize (int inn)
   {
     char* cp_env;
+	int iret;
 
 	int my_thread;	// Note this my_thread is just a local variable
 
@@ -51,8 +52,16 @@ namespace pm_lib {
     if (!is_PMlib_enabled) return;
     init_nWatch = inn;
 
-    (void) MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
-    (void) MPI_Comm_size(MPI_COMM_WORLD, &num_process);
+    iret = MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
+	if (iret != 0) {
+		fprintf(stderr, "*** PMlib error. <initialize> MPI_Comm_rank failed. iret=%d \n", iret);
+		(void) MPI_Abort(MPI_COMM_WORLD, -999);
+	}
+    iret = MPI_Comm_size(MPI_COMM_WORLD, &num_process);
+	if (iret != 0) {
+		fprintf(stderr, "*** PMlib error. <initialize> MPI_Comm_size failed. iret=%d \n", iret);
+		(void) MPI_Abort(MPI_COMM_WORLD, -999);
+	}
 
 	#ifdef _OPENMP
     is_OpenMP_enabled = true;
@@ -139,9 +148,9 @@ namespace pm_lib {
     std::string label;
     label="Root Section";	// label="Total excution time";
 	#ifdef DEBUG_PRINT_MONITOR
-    if (my_rank == 0 && my_thread == 0) {
-    fprintf(stderr, "<initialize> [%s]  HWPC[%s] num_process=%d, num_threads=%d my_rank=%d\n",
-		label.c_str(), env_str_hwpc.c_str(), num_process, num_threads, my_rank);
+    if (my_rank == 0) {
+		fprintf(stderr, "<initialize> [%s]  (%s) num_process=%d, num_threads=%d my_rank=%d, my_thread=%d\n",
+			label.c_str(), env_str_hwpc.c_str(), num_process, num_threads, my_rank, my_thread);
     }
 	#endif
 
@@ -574,11 +583,15 @@ namespace pm_lib {
 
 	for (int i=0; i<m_nWatch; i++) {
 		m_watchArray[i].mergeMasterThread();
+		#ifdef _OPENMP
 		#pragma omp parallel
+		#endif
 		{
 			m_watchArray[i].mergeParallelThread();
 		}
+		#ifdef _OPENMP
 		#pragma omp barrier
+		#endif
 		m_watchArray[i].updateMergedThread();
 	}
   }
@@ -709,6 +722,7 @@ namespace pm_lib {
   ///
   void PerfMonitor::report(FILE* fp)
   {
+	int iret;
     if (!is_PMlib_enabled) return;
 
 	// BASIC report is always generated.
@@ -725,15 +739,16 @@ namespace pm_lib {
 		}
 	}
 
+	#ifdef DEBUG_PRINT_MONITOR
+    fprintf(stderr, "<PerfMonitor::report> my_rank=%d reaching Barrier() \n", my_rank);
+	iret = MPI_Barrier(MPI_COMM_WORLD);
+	#endif
+
 	// env_str_hwpc should be one of
 	// {FLOPS| BANDWIDTH| VECTOR| CACHE| CYCLE| LOADSTORE| USER}
 	if (env_str_hwpc != "USER" ) {
 		PerfMonitor::printLegend(fp);
 	}
-	#ifdef DEBUG_PRINT_MONITOR
-    //	if (my_rank == 0 && my_thread == 0) fprintf(stderr, "\n\n<print>\n\n");
-    if (my_rank == 0 ) fprintf(stderr, "\n<PerfMonitor::report> finished. the end of requested reports.\n");
-	#endif
 
   }
 
@@ -752,6 +767,15 @@ namespace pm_lib {
   ///
   void PerfMonitor::print(FILE* fp, std::string hostname, const std::string comments, int op_sort)
   {
+
+	int my_thread;
+	#ifdef _OPENMP
+	#pragma omp barrier
+	my_thread = omp_get_thread_num();		// a local variable
+	#else
+	my_thread = 0;		// a local variable
+	#endif
+
     if (!is_PMlib_enabled) return;
 
     if (m_nWatch == 0) {
@@ -763,17 +787,6 @@ namespace pm_lib {
     gather();
 
     if (my_rank != 0) return;
-
-	int my_thread;
-	#ifdef _OPENMP
-	#pragma omp barrier
-	my_thread = omp_get_thread_num();		// a local variable
-	#else
-	my_thread = 0;		// a local variable
-	#endif
-	#ifdef DEBUG_PRINT_MONITOR
-    if (my_rank == 0 && my_thread == 0) fprintf(stderr, "\n\n<print>\n\n");
-	#endif
 
 
     // 測定時間の分母
@@ -815,9 +828,6 @@ namespace pm_lib {
 
     PerfMonitor::printBasicPower (fp, maxLabelLen, op_sort);
 
-	#ifdef DEBUG_PRINT_MONITOR
-    if (my_rank == 0 && my_thread == 0) fprintf(stderr, "<PerfMonitor::print> finished.\n");
-	#endif
   }
 
 
@@ -1186,6 +1196,10 @@ void PerfMonitor::printBasicPower(FILE* fp, int maxLabelLen, int op_sort)
 
       m_watchArray[i].printDetailThreads(fp, rank_ID);
     }
+	#ifdef DEBUG_PRINT_MONITOR
+	fprintf(stderr, "<printThreads> my_rank=%d finishing rank_ID=%d\n", my_rank, rank_ID);
+	#endif
+
   }
 
 

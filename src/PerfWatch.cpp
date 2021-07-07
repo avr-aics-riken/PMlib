@@ -411,6 +411,10 @@ namespace pm_lib {
 			printError("gatherThreadHWPC", "new memory failed. %d x %d x 8\n", num_process, my_papi.num_sorted);
 			PM_Exit(0);
 		}
+		#ifdef DEBUG_PRINT_WATCH
+		fprintf(stderr, "<PerfWatch::gatherThreadHWPC> allocated %d Bytes for [%s] my_rank=%d \n",
+			8*num_process*my_papi.num_sorted, m_label.c_str(), my_rank );
+		#endif
 	}
 
 	if ( num_process > 1 ) {
@@ -418,7 +422,7 @@ namespace pm_lib {
 		MPI_Allgather (my_papi.v_sorted, my_papi.num_sorted, MPI_DOUBLE,
 					m_sortedArrayHWPC, my_papi.num_sorted, MPI_DOUBLE, MPI_COMM_WORLD);
 		if ( iret != 0 ) {
-			printError("gatherThreadHWPC", " MPI_Allather failed.\n");
+			printError("gatherThreadHWPC", " MPI_Allather failed. iret=%d\n", iret);
 			PM_Exit(0);
 		}
 	} else {
@@ -472,14 +476,19 @@ namespace pm_lib {
     }
 	// Above arrays will be used by the subsequent routines, and should not be deleted here
 	// i.e. m_timeArray, m_flopArray, m_countArray
+
 	#ifdef DEBUG_PRINT_WATCH
-	(void) MPI_Barrier(MPI_COMM_WORLD);
 	if (my_rank == 0) {
 		fprintf(stderr, "\t<PerfWatch::gather> [%15s] m_countArray[0:*]:", m_label.c_str() );
 		for (int i=0; i<num_process; i++) { fprintf(stderr, " %ld",  m_countArray[i]); } fprintf(stderr, "\n");
 	}
-	(void) MPI_Barrier(MPI_COMM_WORLD);
+	int iret;
+	iret = MPI_Barrier(MPI_COMM_WORLD);
+	if ( iret != 0 ) {
+		printError("gather", " MPI_Barrier failed. iret=%d\n", iret);
+	}
 	#endif
+
   }
 
 
@@ -501,6 +510,7 @@ namespace pm_lib {
   {
   #ifdef _OPENMP
 	if (m_threads_merged) return;
+	if (my_thread != 0) return;
 
 	#ifdef DEBUG_PRINT_WATCH
 	if (my_rank == 0) {
@@ -520,9 +530,9 @@ namespace pm_lib {
 	}
     int is_unit = statsSwitch();
 
+	// In the following steps, "papi" shared structureis used as a scratch space.
+	// First, copy the master thread local "my_papi" to shared "papi"
 	if ( is_unit >= 2) { // PMlib HWPC counter mode
-		// In the following steps, "papi" shared structureis used as a scratch space.
-		// First, copy the master thread local "my_papi" to shared "papi"
 		for (int j=0; j<num_threads; j++) {
 			for (int i=0; i<my_papi.num_events; i++) {
 				papi.th_accumu[j][i] = my_papi.th_accumu[j][i];
@@ -531,11 +541,6 @@ namespace pm_lib {
 		}
 
 	} else {	// PMlib user counter mode
-		//  PerfWatch::stop() should have saved following variables
-		//	my_papi.th_v_sorted[my_thread][0] = (double)m_count;	// call
-		//	my_papi.th_v_sorted[my_thread][1] = m_time;				// time[s]
-		//	my_papi.th_v_sorted[my_thread][2] = m_flop;				// operations
-
 		for (int j=0; j<num_threads; j++) {
 			for (int i=0; i<3; i++) {
 				papi.th_accumu[j][i] = my_papi.th_accumu[j][i];	// This is not necessary. Just keeping symmetry.
@@ -543,6 +548,13 @@ namespace pm_lib {
 			}
 		}
 	}
+	//  Note on the use of my_papi.th_v_sorted[][] array.
+	//  PerfWatch::stop() should have saved following variables (both for HWPC mode and USER mode)
+	//	my_papi.th_v_sorted[my_thread][0] = (double)m_count;	// call
+	//	my_papi.th_v_sorted[my_thread][1] = m_time;				// time[s]
+	//	my_papi.th_v_sorted[my_thread][2] = m_flop;				// operations
+	//	So the copy volume in the above if block is somewhat overdone
+
   #endif
   }
 
@@ -557,7 +569,7 @@ namespace pm_lib {
   ///  The 2nd step : Process the data generated from parallel region.
   ///  			Aggregate the class private "my_papi" data into shared "papi" space.
   ///
-  ///	@note This 2nd step aggregation is called by all the threads inside parallel construct
+  ///	@note This 2nd step aggregation must be called by all the threads inside parallel construct
   ///
   void PerfWatch::mergeParallelThread(void)
   {
@@ -566,7 +578,7 @@ namespace pm_lib {
 
 	#ifdef DEBUG_PRINT_PAPI
 	if (my_rank == 0) {
-		fprintf(stderr, "<mergeParallelThread> [%s] merge step 2. my_thread=%d, address of my_papi=%p \n",
+		fprintf(stderr, "<mergeParallelThread> [%s] merge step 2. my_thread=%d  address &my_papi=%p \n",
 					m_label.c_str(), my_thread, &my_papi);
 	}
 	#endif
@@ -575,14 +587,14 @@ namespace pm_lib {
 	// still active in the middle of start/stop pair
 	// This is somewhat questionable condition. Only printing a humble warning here.
 		if (my_rank == 0) {
-			fprintf(stderr, "\n\t*** PMlib warning <mergeParallelThread>  section [%s] thread [%d] was not stopped.",
+			fprintf(stderr, "\n\t*** PMlib warning <mergeParallelThread>  section [%s] thread [%d] is still active.",
 					m_label.c_str(), my_thread);
 		}
-		return;
+		//	return;
 	}
 
-	// If the application calls PMlib from inside the parallel region, the PerfMonitor class must be
-	// instantiated as threadprivate to preserve thread private my_papi.* memory storage, 
+	// If the application calls PMlib from inside the parallel region, the PerfMonitor class must have
+	// been instantiated as threadprivate to preserve thread private my_papi.* memory storage, 
 	// and mergeParallelThread() must be called to aggregate such private my_papi.*
 	//
 	// Only the sections executed inside of parallel construct are merged.
@@ -593,50 +605,25 @@ namespace pm_lib {
 	if (is_caller_parallel) {
 		;	// good. move on.
 	} else {
-		fprintf(stderr, "\n\t*** PMlib error <mergeParallelThread> [%s] should not reach here.",
+		fprintf(stderr, "\n*** PMlib error <mergeParallelThread> [%s] should be called from parallel region.",
 					m_label.c_str() );
 		return;
 	}
 
-	// This 2nd step aggregation is called by all the threads inside parallel construct
 	// collection of thread values must be done by each thread instances
     int is_unit = statsSwitch();
 
 	if ( is_unit >= 2) { // PMlib HWPC counter mode
-		//	#pragma omp parallel 
-		//	{
 		for (int i=0; i<my_papi.num_events; i++) {
 			papi.th_accumu[my_thread][i] = my_papi.th_accumu[my_thread][i];
 			papi.th_v_sorted[my_thread][i] = my_papi.th_v_sorted[my_thread][i];
 		}
-		//	}
 
 	} else {	// PMlib user counter mode
-			//  PerfWatch::stop() should have saved following variables
-			//	my_papi.th_v_sorted[my_thread][0] = (double)m_count;	// call
-			//	my_papi.th_v_sorted[my_thread][1] = m_time;				// time[s]
-			//	my_papi.th_v_sorted[my_thread][2] = m_flop;				// operations
-		//	#pragma omp parallel 
-		//	{
 		for (int i=0; i<3; i++) {
 			papi.th_v_sorted[my_thread][i] = my_papi.th_v_sorted[my_thread][i];
 		}
-		//	}
 	}
-
-	double m_count_threads, m_time_threads, m_flop_threads;
-	m_count_threads = 0.0;
-	m_time_threads  = 0.0;
-	m_flop_threads  = 0.0;
-	for (int j=0; j<num_threads; j++) {
-		m_count_threads = std::max(m_count_threads, my_papi.th_v_sorted[j][0]);
-		m_time_threads = std::max(m_time_threads, my_papi.th_v_sorted[j][1]);
-		m_flop_threads += my_papi.th_v_sorted[j][2];
-	}
-	m_count = lround(m_count_threads);	// maximum counts among threads
-	m_time = m_time_threads;			// longest time among threads
-	m_flop = m_flop_threads;			// total values of all threads
-
 
 	#ifdef DEBUG_PRINT_PAPI
 	if (my_rank == 0) {
@@ -684,7 +671,18 @@ namespace pm_lib {
   {
   #ifdef _OPENMP
 	if (m_threads_merged) return;
-	if (m_started) return;	// still active in the middle of start/stop pair
+	if (my_thread != 0) return;
+
+	if (m_started) {
+		// still active in the middle of start/stop pair
+		// This is somewhat questionable condition. Only printing a humble warning here.
+		if (my_rank == 0) {
+			fprintf(stderr, "\n\t *** warning <mergeMasterThread>  [%s] has not stopped.\n",
+				m_label.c_str());
+		}
+		//	return;
+	}
+
     int is_unit = statsSwitch();
 
 	if ( is_unit >= 2) { // PMlib HWPC counter mode
@@ -720,10 +718,6 @@ namespace pm_lib {
 			}
 		}
 	} else {	// PMlib user counter mode
-		//  PerfWatch::stop() should have saved following variables
-		//	my_papi.th_v_sorted[my_thread][0] = (double)m_count;	// call
-		//	my_papi.th_v_sorted[my_thread][1] = m_time;				// time[s]
-		//	my_papi.th_v_sorted[my_thread][2] = m_flop;				// operations
 		for (int j=0; j<num_threads; j++) {
 			for (int i=0; i<3; i++) {
 				my_papi.th_v_sorted[j][i] = papi.th_v_sorted[j][i] ;
@@ -732,6 +726,21 @@ namespace pm_lib {
 	}
 
 	m_threads_merged = true;
+
+	double m_count_threads, m_time_threads, m_flop_threads;
+	m_count_threads = 0.0;
+	m_time_threads  = 0.0;
+	m_flop_threads  = 0.0;
+
+	for (int j=0; j<num_threads; j++) {
+		m_count_threads = std::max(m_count_threads, my_papi.th_v_sorted[j][0]);
+		m_time_threads = std::max(m_time_threads, my_papi.th_v_sorted[j][1]);
+		m_flop_threads += my_papi.th_v_sorted[j][2];
+	}
+	m_count = lround(m_count_threads);	// maximum counts among threads
+	m_time = m_time_threads;			// longest time among threads
+	m_flop = m_flop_threads;			// total values of all threads
+
 
 	#ifdef DEBUG_PRINT_PAPI_THREADS
     if (my_rank == 0) {
@@ -755,11 +764,8 @@ namespace pm_lib {
     }
 	#endif
 
-// Check if we should clean up "papi" after these steps.  <= Perhaps not.
-// Both of shared "papi" struct containing the aggregate data and private "my_papi" struct
-// may be used for report()/print()
-// not sure...
-/**
+// we should clean up "papi" after these steps.
+
 	if ( is_unit >= 2) { // PMlib HWPC counter mode
 		for (int j=0; j<num_threads; j++) {
 			for (int i=0; i<my_papi.num_events; i++) {
@@ -775,7 +781,6 @@ namespace pm_lib {
 			}
 		}
 	}
- **/
 
   #endif
   }
@@ -862,22 +867,23 @@ namespace pm_lib {
 #endif
 
 #ifdef DEBUG_PRINT_WATCH
+    //	print the master process
     if (my_rank == 0) {
-    fprintf(stderr, "<PerfWatch::setProperties> [%s] id=%d, master process thread %d, typeCalc=%d, m_in_parallel=%s\n",
-	label.c_str(), id, my_thread, typeCalc, m_in_parallel?"true":"false");
+    fprintf(stderr, "<PerfWatch::setProperties> %d:[%s] thread:%d, typeCalc=%d, m_in_parallel=%s\n",
+			id, label.c_str(), my_thread, typeCalc, m_in_parallel?"true":"false");
 	#ifdef DEBUG_PRINT_PAPI_THREADS
-		#pragma omp critical
-		{
-    		fprintf(stderr, "<PerfWatch::setProperties> [%s] my_thread=%d, &(papi)=%p, &(my_papi)=%p\n",
-				label.c_str(), my_thread, &papi, &my_papi);
-				//	label.c_str(), my_thread, &papi.num_events, &my_papi.num_events);
-			for (int j=0; j<num_threads; j++) {
-				fprintf (stderr, "\tmy_papi.th_accumu[%d][*]:", j);
-				for (int i=0; i<my_papi.num_events; i++) {
-					fprintf (stderr, "%llu, ", my_papi.th_accumu[j][i]);
-				};	fprintf (stderr, "\n");
-			}
+	#pragma omp critical
+	{
+    	fprintf(stderr, "<PerfWatch::setProperties> [%s] thread:%d, &thread=%p, &my_rank=%p, &(papi)=%p, &(my_papi)=%p\n",
+			label.c_str(), my_thread, &my_thread, &my_rank, &papi, &my_papi);
+			//	label.c_str(), my_thread, &papi.num_events, &my_papi.num_events);
+		for (int j=0; j<num_threads; j++) {
+			fprintf (stderr, "\tmy_papi.th_accumu[%d][*]:", j);
+			for (int i=0; i<my_papi.num_events; i++) {
+				fprintf (stderr, "%llu, ", my_papi.th_accumu[j][i]);
+			};	fprintf (stderr, "\n");
 		}
+	}
 	#endif
     }
 #endif
@@ -1828,6 +1834,12 @@ namespace pm_lib {
   void PerfWatch::printDetailThreads(FILE* fp, int rank_ID)
   {
     double perf_rate;
+	#ifdef DEBUG_PRINT_WATCH
+	//	if (my_rank == 0) {
+	//	fprintf(stderr, "\t <PerfWatch::printDetailThreads> my_rank=%d  arg:rank_ID=%d\n", my_rank, rank_ID);
+	//	}
+	#endif
+
 	if(rank_ID<0 || rank_ID>num_process) return;
 
     std::string unit;
@@ -1940,8 +1952,10 @@ namespace pm_lib {
 
 
 
-///	Select the single thread value for reporting
-///
+  ///	Select the single thread value for reporting
+  ///
+  ///   @param[in] i_thread : choosing thread number
+  ///
   void PerfWatch::selectPerfSingleThread(int i_thread)
   {
 	for (int ip=0; ip<my_papi.num_events; ip++) {
@@ -1961,10 +1975,10 @@ namespace pm_lib {
 	}
 
 #ifdef DEBUG_PRINT_PAPI_THREADS
-    if (my_rank == 0) {
-    	fprintf(stderr, "\t <selectPerfSingleThread> [%s] i_thread=%d, m_time=%e, m_flop=%e, m_count=%lu\n",
-						m_label.c_str(), i_thread, m_time, m_flop, m_count );
-    }
+	//    if (my_rank == 0) {
+	//    	fprintf(stderr, "\t <selectPerfSingleThread> [%s] i_thread=%d, m_time=%e, m_flop=%e, m_count=%lu\n",
+	//						m_label.c_str(), i_thread, m_time, m_flop, m_count );
+	//    }
 #endif
   }
 

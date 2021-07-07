@@ -44,6 +44,8 @@ namespace pm_lib {
 
   inline bool MPI_Init(int* argc, char*** argv) { return true; }
 
+  inline int MPI_Abort(MPI_Comm comm, int ier) { std::exit(ier); }
+
   inline int MPI_Comm_rank(MPI_Comm comm, int *rank)
   {
     *rank = 0;
@@ -120,3 +122,4 @@ namespace pm_lib {
 }
 
 #endif /* _PM_MPI_STUBS_H_ */
+

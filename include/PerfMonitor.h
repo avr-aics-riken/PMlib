@@ -85,7 +85,11 @@ namespace pm_lib {
 
   public:
     /// コンストラクタ.
-    PerfMonitor() : m_watchArray(0) {}
+    PerfMonitor() : my_rank(-1), m_watchArray(0) {
+	#ifdef DEBUG_PRINT_MONITOR
+		fprintf(stderr, "\t<PerfMonitor> constructor is called. &my_rank=%p\n", my_rank);
+	#endif
+	}
 
     /// デストラクタ.
     ~PerfMonitor() {
