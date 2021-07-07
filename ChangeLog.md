@@ -3,7 +3,7 @@
 ## REVISION HISTORY
 
 ---
-- 2021-07-01 Version 8.2.0
+- 2021-07-02 Version 8.2.0
   - added APIs for C programm 
 
 ---
