@@ -35,7 +35,7 @@ program main
 
 	call f_pm_start ("Initial-section")
 	call subinit (msize,n,a,b,c)
-	call f_pm_stop ("Initial-section", dinit, 1)
+	call f_pm_stop_usermode ("Initial-section", dinit, 1)
 	call spacer (msize,n,a,b,c)
 
 	call f_pm_start ("Loop-section")
@@ -45,12 +45,12 @@ program main
 
 	call f_pm_start ("Kernel-Slow")
 	call slowmtxm (msize,n,dflop,a,b,c)
-	call f_pm_stop ("Kernel-Slow", dflop*4.0, 1)
+	call f_pm_stop_usermode ("Kernel-Slow", dflop*4.0, 1)
 	call spacer (msize,n,a,b,c)
 
 	call f_pm_start ("Kernel-Fast")
 	call submtxm (msize,n,dflop,a,b,c)
-	call f_pm_stop ("Kernel-Fast", dflop, 1)
+	call f_pm_stop_usermode ("Kernel-Fast", dflop, 1)
 	call spacer (msize,n,a,b,c)
 
 	!cx call f_pm_printprogress ("", "for checking", 0)
@@ -60,7 +60,7 @@ program main
 
 	end do
 
-	call f_pm_stop ("Loop-section", dflop*6.0, 1)
+	call f_pm_stop_usermode ("Loop-section", dflop*6.0, 1)
 
 !cx call f_pm_posttrace ()
 

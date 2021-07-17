@@ -19,6 +19,12 @@
 //! @brief  PerfWatch class
 
 // When compiling with USE_PAPI macro, openmp option should be enabled.
+#include <string>
+#include <cstdlib>
+#include <cstdio>
+#include <cmath>
+#include <algorithm>
+#include <iostream>
 
 #ifdef DISABLE_MPI
 #include "mpi_stubs.h"
@@ -27,13 +33,6 @@
 #endif
 
 #include "PerfWatch.h"
-#include <cmath>
-
-#include <iostream>
-#include <string>
-#include <cstdlib>
-#include <cstdio>
-#include <algorithm>
 
 extern void sortPapiCounterList ();
 extern void outputPapiCounterHeader (FILE*, std::string);
@@ -514,20 +513,15 @@ namespace pm_lib {
 
 	#ifdef DEBUG_PRINT_WATCH
 	if (my_rank == 0) {
-		fprintf(stderr, "<mergeMasterThread> [%s] merge step 1. address of my_papi=%p \n",
-					m_label.c_str(), &my_papi);
+		fprintf(stderr, "<mergeMasterThread> [%s] merge step 1. m_in_parallel=%s, &my_papi=%p \n",
+					m_label.c_str(), m_in_parallel?"true":"false", &my_papi);
 	}
 	#endif
-
 	if (m_started) {
-		// still active in the middle of start/stop pair
-		// This is somewhat questionable condition. Only printing a humble warning here.
-		if (my_rank == 0) {
-			fprintf(stderr, "\n\t *** warning <mergeMasterThread>  [%s] has not stopped.\n",
-				m_label.c_str());
-		}
-		//	return;
+		// still active in the middle of start/stop pair, which is somewhat questionable.
+		// However, we go ahead merging the thread data, anyway.
 	}
+
     int is_unit = statsSwitch();
 
 	// In the following steps, "papi" shared structureis used as a scratch space.
@@ -576,38 +570,26 @@ namespace pm_lib {
   #ifdef _OPENMP
 	if (m_threads_merged) return;
 
-	#ifdef DEBUG_PRINT_PAPI
-	if (my_rank == 0) {
-		fprintf(stderr, "<mergeParallelThread> [%s] merge step 2. my_thread=%d  address &my_papi=%p \n",
-					m_label.c_str(), my_thread, &my_papi);
-	}
-	#endif
-
-	if (m_started) {
-	// still active in the middle of start/stop pair
-	// This is somewhat questionable condition. Only printing a humble warning here.
-		if (my_rank == 0) {
-			fprintf(stderr, "\n\t*** PMlib warning <mergeParallelThread>  section [%s] thread [%d] is still active.",
-					m_label.c_str(), my_thread);
-		}
-		//	return;
-	}
-
-	// If the application calls PMlib from inside the parallel region, the PerfMonitor class must have
-	// been instantiated as threadprivate to preserve thread private my_papi.* memory storage, 
-	// and mergeParallelThread() must be called to aggregate such private my_papi.*
-	//
 	// Only the sections executed inside of parallel construct are merged.
 	// In Worksharing parallel structure, everything is in place and nothing is done here.
 	if ( !(m_in_parallel) ) return;
 
-	bool is_caller_parallel = omp_in_parallel();
-	if (is_caller_parallel) {
-		;	// good. move on.
-	} else {
-		fprintf(stderr, "\n*** PMlib error <mergeParallelThread> [%s] should be called from parallel region.",
-					m_label.c_str() );
-		return;
+	int i_thread;
+	i_thread = omp_get_thread_num();
+	#ifdef DEBUG_PRINT_WATCH
+	if (my_rank == 0) {
+		fprintf(stderr, "<mergeParallelThread> [%s] merge step 2. my_thread=%d, &my_papi=%p \n",
+					m_label.c_str(), my_thread, &my_papi);
+	}
+	#endif
+	if (i_thread != my_thread) {
+		fprintf(stderr, "\n\t*** PMlib error [%s] thread:%d does not match OpenMP thread ID:%d\n ",
+				m_label.c_str(), my_thread, i_thread);
+	}
+
+	if (m_started) {
+		// still active in the middle of start/stop pair, which is somewhat questionable.
+		// However, we go ahead merging the thread data, anyway.
 	}
 
 	// collection of thread values must be done by each thread instances
@@ -627,7 +609,7 @@ namespace pm_lib {
 
 	#ifdef DEBUG_PRINT_PAPI
 	if (my_rank == 0) {
-		fprintf(stderr, "<mergeParallelThread> [%s] my_thread=%d returns \n", m_label.c_str(), my_thread);
+		fprintf(stderr, "<mergeParallelThread> [%s] my_thread=%d data was merged \n", m_label.c_str(), my_thread);
 	#ifdef DEBUG_PRINT_PAPI_THREADS
 	#pragma omp critical
 	{
@@ -674,13 +656,8 @@ namespace pm_lib {
 	if (my_thread != 0) return;
 
 	if (m_started) {
-		// still active in the middle of start/stop pair
-		// This is somewhat questionable condition. Only printing a humble warning here.
-		if (my_rank == 0) {
-			fprintf(stderr, "\n\t *** warning <mergeMasterThread>  [%s] has not stopped.\n",
-				m_label.c_str());
-		}
-		//	return;
+		// still active in the middle of start/stop pair, which is somewhat questionable.
+		// However, we go ahead merging the thread data, anyway.
 	}
 
     int is_unit = statsSwitch();
@@ -797,7 +774,7 @@ namespace pm_lib {
   ///   @param[in] nTHREADs     並列スレッド数
   ///   @param[in] exclusive 排他測定フラグ
   ///
-  void PerfWatch::setProperties(const std::string& label, int id, int typeCalc, int nPEs, int my_rank_ID, int nTHREADs, bool exclusive)
+  void PerfWatch::setProperties(const std::string label, int id, int typeCalc, int nPEs, int my_rank_ID, int nTHREADs, bool exclusive)
   {
     m_label = label;
     m_id = id;
@@ -813,6 +790,12 @@ namespace pm_lib {
 	m_in_parallel = omp_in_parallel();
 	my_thread = omp_get_thread_num();
 	m_threads_merged = false;
+#endif
+#ifdef DEBUG_PRINT_WATCH
+	if (my_rank == 0) {
+		fprintf(stderr, "<PerfWatch::setProperties> is called. [%s] my_thread:%d \n",
+			label.c_str(), my_thread);
+	}
 #endif
 
 	if (!m_is_set) {
@@ -869,8 +852,9 @@ namespace pm_lib {
 #ifdef DEBUG_PRINT_WATCH
     //	print the master process
     if (my_rank == 0) {
-    fprintf(stderr, "<PerfWatch::setProperties> %d:[%s] thread:%d, typeCalc=%d, m_in_parallel=%s\n",
-			id, label.c_str(), my_thread, typeCalc, m_in_parallel?"true":"false");
+    	fprintf(stderr, "<PerfWatch::setProperties> %d:[%s] thread:%d, m_in_parallel=%s, m_is_set=%s\n",
+			id, label.c_str(), my_thread, m_in_parallel?"true":"false", m_is_set?"true":"false");
+
 	#ifdef DEBUG_PRINT_PAPI_THREADS
 	#pragma omp critical
 	{
@@ -885,6 +869,12 @@ namespace pm_lib {
 		}
 	}
 	#endif
+
+	#pragma omp barrier
+	#ifdef USE_POWER
+    fprintf(stderr, "\t\t my_power is initialized. [%s] thread:%d, &my_power=%p \n",
+			label.c_str(), my_thread, &my_power);
+	#endif
     }
 #endif
 
@@ -894,7 +884,9 @@ namespace pm_lib {
 
   /// initialize Power API interface
   ///
-  void PerfWatch::initializePOWER(void)
+  ///	@param[in] n  number of Power objects initialized by PerfMonitor class instance
+  ///
+  void PerfWatch::initializePowerWatch(int num_power)
   {
     m_is_POWER = 0;
 	power.num_power_stats = 0;
@@ -923,38 +915,24 @@ namespace pm_lib {
 	}
 
     if(m_is_POWER >  0) {
-		power.num_power_stats = my_power_bind_initialize () ;
+		power.num_power_stats = num_power;
 	}
-
-	#ifdef DEBUG_PRINT_MONITOR
-	if (my_rank == 0) { fprintf(stderr, "<PerfWatch::initializePOWER> m_is_POWER = %d\n", m_is_POWER); }
-	#endif
-
 #endif
   }
 
 
   /// finalize Power API interface
   ///
-  void PerfWatch::finalizePOWER(void)
+  void PerfWatch::finalizePowerWatch(void)
   {
 #ifdef USE_POWER
-	#ifdef DEBUG_PRINT_POWER_EXT
-	if (my_rank == 0) { fprintf(stderr, "<PerfWatch::finalizePOWER> m_is_POWER = %d\n", m_is_POWER); }
-	#endif
-
     if(m_is_POWER >  0) {
-        (void) my_power_bind_finalize () ;
-//
-// Fugaku local implementation
-//
 		double t_joule;
 		int iret;
-	
 		if ( num_process > 1 ) {
 			iret = MPI_Reduce (&my_power.w_accumu[Max_power_stats-1], &t_joule, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
 			if ( iret != 0 ) {
-				fprintf(stderr, "*** error. <finalizePOWER> MPI_Reduce failed. iret=%d\n", iret);
+				fprintf(stderr, "*** error. <%s> MPI_Reduce failed. iret=%d\n", __func__, iret);
 				t_joule = 0.0;
 			}
 		} else {
@@ -963,7 +941,6 @@ namespace pm_lib {
 		m_power_av = t_joule/num_process;
 	
 	}
-
 #endif
   }
 
@@ -1060,29 +1037,33 @@ namespace pm_lib {
   }
 
 
-  /// 測定区間スタート.
+  /// start measuring the section
   ///
   void PerfWatch::start()
   {
-    if (!m_is_healthy) return;
-
 #ifdef DEBUG_PRINT_WATCH
     if (my_rank == 0)
 		fprintf (stderr, "<PerfWatch::start> [%s] my_thread=%d\n", m_label.c_str(), my_thread);
 #endif
 
+    if (!m_is_healthy) {
+		fprintf (stderr, "\n\t *** PMlib warning <PerfWatch::start> [%s] rank=%d my_thread=%d is marked un_healthy. \n", m_label.c_str(), my_rank, my_thread);
+		//	return;
+	}
+
     if (m_started) {
-		fprintf (stderr, "\n\t *** warning. [%s] my_thread=%d is already marked started. Duplicated start is ignored. \n", m_label.c_str(), my_thread);
+		fprintf (stderr, "\n\t *** PMlib warning <PerfWatch::start> [%s] rank=%d my_thread=%d is already marked started. Duplicated start is ignored. \n", m_label.c_str(), my_rank, my_thread);
 		//	return;
     }
 	if (!m_is_set) {
-		fprintf (stderr, "\n\t *** internal error. [%s] my_thread=%d is marked m_is_set=FALSE. \n",
-			m_label.c_str(), my_thread);
+		fprintf (stderr, "\n\t *** PMlib internal error. [%s] rank=%d my_thread=%d is marked m_is_set=FALSE. \n",
+			m_label.c_str(), my_rank, my_thread);
 		//	m_is_healthy=false;
 		//	return;
 	}
     m_started = true;
     m_startTime = getTime();
+	m_threads_merged = false;
 
 	if ( m_in_parallel ) {
 		// The threads are active and running in parallel region
@@ -1092,11 +1073,6 @@ namespace pm_lib {
 		startSectionSerial();
 	}
 
-#ifdef USE_POWER
-	if (my_power.num_power_stats != 0) {
-		(void) my_power_bind_start(my_power.pa64timer, my_power.u_joule);
-	}
-#endif
 #ifdef USE_OTF
     if (m_is_OTF != 0) {
       int is_unit = statsSwitch();
@@ -1104,6 +1080,32 @@ namespace pm_lib {
 	}
 #endif
   }
+
+  /// start measuring the power of the section
+  ///
+  ///   @param[in] PWR_Cntxt pacntxt
+  ///   @param[in] PWR_Cntxt extcntxt
+  ///   @param[in] PWR_Obj obj_array
+  ///   @param[in] PWR_Obj obj_ext
+  ///
+  ///	@note the arguments are Power API objects and attributes
+  ///
+  void PerfWatch::power_start(PWR_Cntxt pacntxt, PWR_Cntxt extcntxt, PWR_Obj obj_array[], PWR_Obj obj_ext[])
+  {
+#ifdef USE_POWER
+	#ifdef DEBUG_PRINT_WATCH
+    if (my_rank == 0)
+		fprintf (stderr, "<PerfWatch::power_start> [%s] my_thread=%d\n",
+			m_label.c_str(), my_thread);
+	#endif
+
+	if (my_power.num_power_stats != 0) {
+		(void) my_power_bind_start (pacntxt, extcntxt, obj_array, obj_ext,
+					my_power.pa64timer, my_power.u_joule);
+	}
+#endif
+  }
+
 
 
 ///	Save the data for start/stop pair which is called from serial region
@@ -1253,20 +1255,6 @@ namespace pm_lib {
 		fprintf (stderr, "\t\t m_startTime=%f, m_stopTime=%f\n", m_startTime, m_stopTime);
 	}
 	#endif
-
-#ifdef USE_POWER
-	double uvJ, watt;
-	if (my_power.num_power_stats != 0) {
-		(void) my_power_bind_stop (my_power.pa64timer, my_power.v_joule);
-		// output in Joule : 1 Joule == 1 Newton x meter == 1 Watt x second
-		for (int i=0; i<my_power.num_power_stats; i++) {
-			uvJ = my_power.v_joule[i] - my_power.u_joule[i];
-			my_power.w_accumu[i] += uvJ;
-			watt = uvJ /(m_stopTime - m_startTime);
-			my_power.watt_max[i] = std::max (my_power.watt_max[i], watt);
-		}
-	}
-#endif
 #ifdef USE_OTF
     int is_unit = statsSwitch();
 	double w=0.0;
@@ -1306,6 +1294,52 @@ namespace pm_lib {
 	my_papi.th_v_sorted[my_thread][1] = m_time;
 	my_papi.th_v_sorted[my_thread][2] = m_flop;
   }
+
+
+  /// stop measuring the power of the section
+  ///
+  ///   @param[in] PWR_Cntxt pacntxt
+  ///   @param[in] PWR_Cntxt extcntxt
+  ///   @param[in] PWR_Obj obj_array
+  ///   @param[in] PWR_Obj obj_ext
+  ///
+  ///	@note the arguments are Power API objects and attributes
+  ///
+  void PerfWatch::power_stop(PWR_Cntxt pacntxt, PWR_Cntxt extcntxt, PWR_Obj obj_array[], PWR_Obj obj_ext[])
+  {
+#ifdef USE_POWER
+	#ifdef DEBUG_PRINT_WATCH
+    if (my_rank == 0)
+		fprintf (stderr, "<PerfWatch::power_stop> [%s] my_thread=%d\n",
+			m_label.c_str(), my_thread);
+	#endif
+
+	double uvJ, watt;
+	if (my_power.num_power_stats != 0) {
+		(void) my_power_bind_stop (pacntxt, extcntxt, obj_array, obj_ext,
+					my_power.pa64timer, my_power.u_joule);
+
+		// output in Joule : 1 Joule == 1 Newton x meter == 1 Watt x second
+		for (int i=0; i<my_power.num_power_stats; i++) {
+			uvJ = my_power.v_joule[i] - my_power.u_joule[i];
+			my_power.w_accumu[i] += uvJ;
+			watt = uvJ /(m_stopTime - m_startTime);
+			my_power.watt_max[i] = std::max (my_power.watt_max[i], watt);
+		}
+		#ifdef DEBUG_PRINT_POWER_EXT
+    	if (my_rank == 0) {
+		fprintf (stderr, "my_power.w_accumu[*] : [%s] my_thread=%d \n",
+				m_label.c_str(), my_thread);
+		for (int i=0; i<my_power.num_power_stats; i++) {
+			watt = (my_power.v_joule[i] - my_power.u_joule[i]) /(m_stopTime - m_startTime);
+			fprintf (stderr, "\t\t %10.2e\n", watt);
+		}
+		}
+		#endif
+	}
+#endif
+  }
+
 
 
 ///	Accumulate the data for start/stop pair, when they are called from serial region

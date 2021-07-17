@@ -20,6 +20,10 @@
 
 //! @file   PerfMonitor.h
 //! @brief  PerfMonitor class Header
+#include <cstdio>
+#include <cstdlib>
+#include <map>
+#include <list>
 
 #ifdef DISABLE_MPI
 #include "mpi_stubs.h"
@@ -28,12 +32,7 @@
 #endif
 
 #include "PerfWatch.h"
-#include <cstdio>
-#include <cstdlib>
 #include "pmVersion.h"
-#include <map>
-#include <list>
-
 
 namespace pm_lib {
 
@@ -49,7 +48,13 @@ namespace pm_lib {
       CALC,  ///< 演算
     };
 
-  private:
+	// type of PWR_Cntxt and PWR_Obj is defined in include/pmlib_power.h
+	PWR_Cntxt pm_pacntxt ;
+	PWR_Cntxt pm_extcntxt ;
+	PWR_Obj   pm_obj_array[Max_power_stats];
+	PWR_Obj   pm_obj_ext[Max_power_stats];
+
+  public:
     int num_process;           ///< 並列プロセス数
     int num_threads;           ///< 並列スレッド数
     int my_rank;               ///< 自ランク番号
@@ -57,6 +62,7 @@ namespace pm_lib {
     int m_nWatch;              ///< 測定区間数
     int init_nWatch;           ///< 初期に確保する測定区間数
     int reserved_nWatch;       ///< リザーブ済みの測定区間数
+  private:
 
     bool is_PMlib_enabled;     /*!< PMlibの動作を有効にするフラグ<br>
     	//	@note 環境変数BYPASS_PMLIBを定義（任意値）してアプリを実行すると
@@ -87,7 +93,7 @@ namespace pm_lib {
     /// コンストラクタ.
     PerfMonitor() : my_rank(-1), m_watchArray(0) {
 	#ifdef DEBUG_PRINT_MONITOR
-		fprintf(stderr, "\t<PerfMonitor> constructor is called. &my_rank=%p\n", my_rank);
+		fprintf(stderr, "\t<PerfMonitor> constructor is called. &my_rank=%p\n", &my_rank);
 	#endif
 	}
 
@@ -404,13 +410,19 @@ namespace pm_lib {
     int add_perf_label(std::string arg_st)
     {
 		int ip = m_nWatch;
+	#ifdef DEBUG_PRINT_LABEL
+    	fprintf(stderr, "<add_perf_label> [%s] <before> size=%lu, &array_of_symbols(%p), m_nWatch(@ %p)=%d, , ip(& %p)=%d\n",
+    		arg_st.c_str(),	array_of_symbols.size(), &array_of_symbols, &m_nWatch, m_nWatch, &ip, ip);
+	#endif
+
     	// perhaps it is better to return ip showing the insert status.
 		// sometime later...
     	array_of_symbols.insert( make_pair(arg_st, ip) );
-	#ifdef DEBUG_PRINT_LABEL
-    	fprintf(stderr, "<add_perf_label> [%s] &array_of_symbols(%p) [%d] \n",
-    		arg_st.c_str(), &array_of_symbols, ip);
-	#endif
+    #ifdef DEBUG_PRINT_LABEL
+        fprintf(stderr, "<add_perf_label> [%s] &array_of_symbols(%p) [%d] \n",
+            arg_st.c_str(), &array_of_symbols, ip);
+    #endif
+
     	return ip;
     }
 
@@ -427,7 +439,7 @@ namespace pm_lib {
     		p_id = array_of_symbols[arg_st] ;
     	}
 		#ifdef DEBUG_PRINT_LABEL
-    	//fprintf(stderr, "<find_perf_label> %s : %d\n", arg_st.c_str(), p_id);
+    	fprintf(stderr, "<find_perf_label> %s : %d\n", arg_st.c_str(), p_id);
 		#endif
     	return p_id;
     }
@@ -460,11 +472,16 @@ namespace pm_lib {
 	std::map<std::string, int>::const_iterator it;
 	std::string p_label;
 	int p_id;
-	fprintf(stderr, "\t<check_all_perf_label> map: label, value\n");
+	int n;
+	n = array_of_symbols.size();
+	fprintf(stderr, "<check_all_perf_label> map size=%lu \n", array_of_symbols.size());
+	if (n==0) return;
+	fprintf(stderr, "\t[map pair] : label, value, &(it->first), &(it->second)\n");
 	for(it = array_of_symbols.begin(); it != array_of_symbols.end(); ++it) {
 		p_label = it->first;
 		p_id = it->second;
-		fprintf(stderr, "\t\t <%s> : %d\n", p_label.c_str(), p_id);
+		fprintf(stderr, "\t <%s> : %d, %p, %p\n", p_label.c_str(), p_id, &(it->first), &(it->second));
+
 	}
     }
 
@@ -564,6 +581,34 @@ namespace pm_lib {
         va_end(ap);
       }
     }
+
+
+
+	/// initialize POWER API context and obtain the objects
+	/// default context and extended context
+	///
+	int initializePOWER (void);
+
+
+	/// finalize POWER API contexts
+	/// destroy the default context and extended context
+	///
+	int finalizePOWER (void);
+
+
+	/// read or update the Power Knob values via POWER API
+	///   @param[in] knob		power knob chooser
+	///   @param[in] operation	type of operation [0:read, 1:update]
+	///   @param[in/out] value	power knob value
+	///
+	int operatePowerKnob (int knob, int operation, int & value);
+
+
+
+    /// just as a record of DEBUG version
+    ///
+    void Obsolete_mergeThreads(void);
+
 
   }; // end of class PerfMonitor //
 

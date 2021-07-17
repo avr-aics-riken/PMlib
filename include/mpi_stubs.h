@@ -24,6 +24,9 @@
  * @author aics
  */
 
+#include <cstdlib>
+//	#include <cstdio>
+
 namespace pm_lib {
 
 #define MPI_COMM_WORLD 0
@@ -44,7 +47,11 @@ namespace pm_lib {
 
   inline bool MPI_Init(int* argc, char*** argv) { return true; }
 
-  inline int MPI_Abort(MPI_Comm comm, int ier) { std::exit(ier); }
+  inline int MPI_Abort(MPI_Comm comm, int ier)
+	{
+	std::exit(ier);
+	//	std::printf("*** MPI_Abort is called. error code %d ***\n", ier);
+	}
 
   inline int MPI_Comm_rank(MPI_Comm comm, int *rank)
   {
