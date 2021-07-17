@@ -30,12 +30,12 @@ call f_pm_setproperties ("Section-B", icalc, iexclusive)
 do i=1,2
 call f_pm_start ("Section-A")
 call check_thread(x)
-call f_pm_stop  ("Section-A", 111.0d0, 1)
+call f_pm_stop_usermode  ("Section-A", 111.0d0, 1)
 write(0,'(a,2i3,e12.2)') "Section-A rank, thread, x=", my_id, ip, x
 if(mod(my_id+ip,6).eq.1) then
     call f_pm_start ("Section-B")
     call check_thread(x)
-    call f_pm_stop  ("Section-B", 7.0d0, 1)
+    call f_pm_stop_usermode  ("Section-B", 7.0d0, 1)
     write(0,'(a,2i3,e12.2)') "Section-B rank, thread, x=", my_id, ip, x
 endif
 end do
@@ -46,7 +46,7 @@ call f_pm_mergethreads ()
 call f_pm_setproperties ("Section-C", icalc, iexclusive)
 call f_pm_start ("Section-C")
 call check_thread(x)
-call f_pm_stop  ("Section-C", 111.0d0, 1)
+call f_pm_stop_usermode  ("Section-C", 111.0d0, 1)
 
 call f_pm_print ("", "", "", 1)
 call f_pm_printdetail ("", 0, 1)

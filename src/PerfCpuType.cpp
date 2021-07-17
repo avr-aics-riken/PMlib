@@ -20,6 +20,11 @@
 
 // if USE_PAPI is defined, compile this file with openmp option
 
+#include <iostream>
+#include <string>
+#include <cstdlib>
+#include <cstdio>
+
 #ifdef DISABLE_MPI
 #include "mpi_stubs.h"
 #else
@@ -27,11 +32,6 @@
 #endif
 #include <cmath>
 #include "PerfWatch.h"
-
-#include <iostream>
-#include <string>
-#include <cstdlib>
-#include <cstdio>
 
 namespace pm_lib {
 

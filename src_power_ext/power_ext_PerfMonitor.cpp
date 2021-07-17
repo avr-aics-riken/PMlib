@@ -1,21 +1,41 @@
 
 /// Interface routine for Power API
 ///
-///	@file   power_ext.c
-///	@brief  PMlib C functions provide simple monitoring and controlling interface to Power API library
+///	@file   power_PerfMonitor.cpp
+///	@brief  PMlib C++  interface functions to simply monitor and controll the Power API library
 ///	@note   current implementation is validated on supercomputer Fugaku
 ///
 
 #include <string>
 #include <cstdio>
-#include "pwr.h"
+//	#include "pwr.h"
 #include <cstdlib>
 #include <cmath>
+
+#include "PerfMonitor.h"
 
 static void error_print(int , std::string , std::string);
 static void warning_print (std::string , std::string , std::string );
 static void warning_print (std::string , std::string , std::string , int);
 
+void error_print(int irc, std::string cstr1, std::string cstr2)
+{
+	fprintf(stderr, "*** PMlib Error. <power_ext::%s> failed. [%s] return code %d \n",
+		cstr1.c_str(), cstr2.c_str(), irc);
+	return;
+}
+void warning_print (std::string cstr1, std::string cstr2, std::string cstr3)
+{
+	fprintf(stderr, "*** PMlib Warning. <power_ext::%s> failed. [%s] %s \n",
+		cstr1.c_str(), cstr2.c_str(), cstr3.c_str());
+	return;
+}
+void warning_print (std::string cstr1, std::string cstr2, std::string cstr3, int value)
+{
+	fprintf(stderr, "*** PMlib Warning. <power_ext::%s> failed. [%s] %s : value %d \n",
+		cstr1.c_str(), cstr2.c_str(), cstr3.c_str(), value);
+	return;
+}
 // Objects supported by default context
 enum power_object_index
 	{
@@ -110,42 +130,41 @@ const int Max_measure_device=1;
 const int Max_power_leaf_parts=12;
 	// max. # of leaf parts in the object group, i.e. 12 cores in the CMG.
 
-static PWR_Cntxt pacntxt = NULL;				// typedef void* PWR_Cntxt
-static PWR_Cntxt extcntxt = NULL;
-static PWR_Obj p_obj_array[Max_power_object];		// typedef void* PWR_Obj
-static PWR_Obj p_obj_ext[Max_power_extended];
-static uint64_t u64array[Max_power_leaf_parts];
-static uint64_t u64;
 
+namespace pm_lib {
 
-int my_power_bind_initialize (void)
+int PerfMonitor::initializePOWER (void)
 {
 	#ifdef DEBUG_PRINT_POWER_EXT
-	fprintf(stderr, "<my_power_initialize> objects in default context\n");
+	fprintf(stderr, "<%s> start \n", __func__);
+	fprintf(stderr, "<%s> default objects. &pm_pacntxt=%p, &pm_obj_array=%p\n",
+		__func__, &pm_pacntxt, &pm_obj_array[0]);
 	#endif
 
+#ifdef USE_POWER
 	int irc;
 	int isum;
 
 	isum = 0;
-	isum += irc = PWR_CntxtInit (PWR_CNTXT_DEFAULT, PWR_ROLE_APP, "app", &pacntxt);
+	isum += irc = PWR_CntxtInit (PWR_CNTXT_DEFAULT, PWR_ROLE_APP, "app", &pm_pacntxt);
 	if (irc != PWR_RET_SUCCESS) error_print(irc, "PWR_CntxtInit", "default");
 
 	for (int i=0; i<Max_power_object; i++) {
-		isum += irc = PWR_CntxtGetObjByName (pacntxt, p_obj_name[i], &p_obj_array[i]);
+		isum += irc = PWR_CntxtGetObjByName (pm_pacntxt, p_obj_name[i], &pm_obj_array[i]);
 		if (irc != PWR_RET_SUCCESS)
 			{ warning_print ("CntxtGetObj", p_obj_name[i], "default"); continue;}
 	}
 
 	#ifdef DEBUG_PRINT_POWER_EXT
-	fprintf(stderr, "<my_power_initialize> objects in extended context\n");
+	fprintf(stderr, "<%s> extended objects. &pm_extcntxt=%p, &pm_obj_ext=%p\n",
+		__func__, &pm_extcntxt, &pm_obj_ext[0]);
 	#endif
 
-	isum += irc = PWR_CntxtInit (PWR_CNTXT_FX1000, PWR_ROLE_APP, "app", &extcntxt);
+	isum += irc = PWR_CntxtInit (PWR_CNTXT_FX1000, PWR_ROLE_APP, "app", &pm_extcntxt);
 	if (irc != PWR_RET_SUCCESS) error_print(irc, "PWR_CntxtInit", "extended");
 
 	for (int i=0; i<Max_power_extended; i++) {
-		isum += irc = PWR_CntxtGetObjByName (extcntxt, p_ext_name[i], &p_obj_ext[i]);
+		isum += irc = PWR_CntxtGetObjByName (pm_extcntxt, p_ext_name[i], &pm_obj_ext[i]);
 		if (irc != PWR_RET_SUCCESS)
 			{ warning_print ("CntxtGetObj", p_ext_name[i], "extended"); continue;}
 	}
@@ -155,11 +174,38 @@ int my_power_bind_initialize (void)
 	} else {
 		return(-1);
 	}
+
+#else
+	return (0);
+#endif
 }
 
 
-int my_power_bind_knobs (int knob, int operation, int & value)
+int PerfMonitor::finalizePOWER ()
 {
+	#ifdef DEBUG_PRINT_POWER_EXT
+	fprintf(stderr, "\t <%s> CntxtDestroy()\n", __func__);
+	#endif
+
+#ifdef USE_POWER
+	int irc;
+	irc = 0;
+	irc = PWR_CntxtDestroy(pm_pacntxt);
+	irc += PWR_CntxtDestroy(pm_extcntxt);
+
+	#ifdef DEBUG_PRINT_POWER_EXT
+	fprintf(stderr, "\t <%s> returns %d\n", __func__, irc);
+	#endif
+	return irc;
+#else
+	return (0);
+#endif
+}
+
+
+int PerfMonitor::operatePowerKnob (int knob, int operation, int & value)
+{
+#ifdef USE_POWER
 	//	knob and value combinations
 	//		knob=0 : I_knob_CPU    : cpu frequency (MHz)
 	//		knob=1 : I_knob_MEMORY : memory access throttling (%) : 100, 90, 80, .. , 10
@@ -169,6 +215,11 @@ int my_power_bind_knobs (int knob, int operation, int & value)
 	//		knob=5 : I_knob_RETENTION : retention state (mode) : 0, 1
 	//	operation : [0:read, 1:update]
 
+	PWR_Obj *p_obj_array = pm_obj_array;
+	PWR_Obj *p_obj_ext   = pm_obj_ext;
+	uint64_t u64array[Max_power_leaf_parts];
+	uint64_t u64;
+
 	PWR_Grp p_obj_grp = NULL;
 	int irc;
 	const int reading_operation=0;
@@ -177,12 +228,12 @@ int my_power_bind_knobs (int knob, int operation, int & value)
 		int j;
 
 	#ifdef DEBUG_PRINT_POWER_EXT
-	fprintf(stderr, "<my_power_bind_knobs> knob=%d, operation=%d, value=%d\n",
+	fprintf(stderr, "<operatePowerKnob> knob=%d, operation=%d, value=%d\n",
 		knob, operation, value);
 	#endif
 
 	if ( knob < 0 | knob >Max_power_knob ) {
-		error_print(knob, "my_power_bind_knobs", "invalid controler");
+		error_print(knob, "operatePowerKnob", "invalid controler");
 		return(-1);
 	}
 	if ( operation == update_operation ) {
@@ -309,120 +360,21 @@ int my_power_bind_knobs (int knob, int operation, int & value)
 	// RETENTION is disabled
 	} else
 	if ( knob == I_knob_RETENTION ) {
-		warning_print ("my_power_bind_knobs", "RETENTION", "user RETENTION control is not allowed");
+		warning_print ("operatePowerKnob", "RETENTION", "user RETENTION control is not allowed");
 		return(-1);
 	**/
 	} else {
 		//	should not reach here
-		error_print(knob, "my_power_bind_knobs", "internal error. knob="); return(-1);
+		error_print(knob, "operatePowerKnob", "internal error. knob="); return(-1);
 		;
 	}
 
 	return(0);
+
+#else
+	return (0);
+#endif
 }
 
-
-int my_power_bind_start (uint64_t pa64timer[], double w_joule[])
-{
-	int irc;
-
-	if ( (Max_power_object + Max_power_extended) == 0 ) {
-		return 0;
-	}
-	#ifdef DEBUG_PRINT_POWER_EXT
-	fprintf(stderr, "<my_power_bind_start> Max_power_object=%d, Max_power_extended=%d\n",
-			Max_power_object, Max_power_extended);
-	#endif
-
-	#ifdef DEBUG_PRINT_POWER_EXT
-	fprintf(stderr, "\t starting objects in default context\n");
-	#endif
-	for (int i=0; i<Max_power_object; i++) {
-		irc = PWR_ObjAttrGetValue (p_obj_array[i], PWR_ATTR_ENERGY, &w_joule[i], &pa64timer[i]);
-		if (irc != PWR_RET_SUCCESS)
-			{ warning_print ("my_power_bind_start", p_obj_name[i], "default GetValue"); }
-	}
-
-	#ifdef DEBUG_PRINT_POWER_EXT
-	fprintf(stderr, "\t starting objects in extended context\n");
-	#endif
-	int iadd=Max_power_object;
-	//	for (int i=0; i<Max_power_extended; i++) {
-	for (int i=0; i<Max_measure_device; i++) {
-		irc = PWR_ObjAttrGetValue (p_obj_ext[i], PWR_ATTR_MEASURED_ENERGY, &w_joule[i+iadd], &pa64timer[i+iadd]);
-		if (irc != PWR_RET_SUCCESS)
-			{ warning_print ("my_power_bind_start", p_ext_name[i], "extended GetValue"); }
-	}
-
-	return 0;
-}
-
-
-int my_power_bind_stop (uint64_t pa64timer[], double w_joule[])
-{
-	int irc;
-
-	if ( (Max_power_object + Max_power_extended) == 0 ) {
-		return 0;
-	}
-	#ifdef DEBUG_PRINT_POWER_EXT
-	fprintf(stderr, "\t <my_power_bind_stop> Max_power_object=%d, Max_power_extended=%d\n",
-			Max_power_object, Max_power_extended);
-	#endif
-
-	for (int i=0; i<Max_power_object; i++) {
-		irc = PWR_ObjAttrGetValue (p_obj_array[i], PWR_ATTR_ENERGY, &w_joule[i], &pa64timer[i]);
-		if (irc != PWR_RET_SUCCESS)
-			{ warning_print ("my_power_bind_stop", p_obj_name[i], "default GetValue"); }
-	}
-
-	int iadd=Max_power_object;
-	//	for (int i=0; i<Max_power_extended; i++) {
-	for (int i=0; i<Max_measure_device; i++) {
-		irc = PWR_ObjAttrGetValue (p_obj_ext[i], PWR_ATTR_MEASURED_ENERGY, &w_joule[i+iadd], &pa64timer[i+iadd]);
-		if (irc != PWR_RET_SUCCESS)
-			{ warning_print ("my_power_bind_stop", p_ext_name[i], "extended GetValue"); }
-	}
-
-	return 0;
-}
-
-
-int my_power_bind_finalize ()
-{
-	int irc;
-
-	#ifdef DEBUG_PRINT_POWER_EXT
-	fprintf(stderr, "\t <my_power_bind_finalize> skipping CntxtDestroy()\n");
-	return 0;
-	#endif
-
-
-	irc = 0;
-	irc = PWR_CntxtDestroy(pacntxt);
-	irc += PWR_CntxtDestroy(extcntxt);
-
-	#ifdef DEBUG_PRINT_POWER_EXT
-	fprintf(stderr, "\t <my_power_bind_finalize> returns %d\n", irc);
-	#endif
-
-	return irc;
-}
-
-
-void error_print(int irc, std::string cstr1, std::string cstr2)
-{
-	fprintf(stderr, "*** PMlib Error. <power_ext::%s> failed. [%s] return code %d \n", cstr1.c_str(), cstr2.c_str(), irc);
-	return;
-}
-void warning_print (std::string cstr1, std::string cstr2, std::string cstr3)
-{
-	fprintf(stderr, "*** PMlib Warning. <power_ext::%s> failed. [%s] %s \n", cstr1.c_str(), cstr2.c_str(), cstr3.c_str());
-	return;
-}
-void warning_print (std::string cstr1, std::string cstr2, std::string cstr3, int value)
-{
-	fprintf(stderr, "*** PMlib Warning. <power_ext::%s> failed. [%s] %s : value %d \n", cstr1.c_str(), cstr2.c_str(), cstr3.c_str(), value);
-	return;
-}
+}	// end of namespace pm_lib
 

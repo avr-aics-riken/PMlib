@@ -3,11 +3,6 @@
 ///
 /// @brief header file for calling Power API interface routines
 ///
-/// @li int my_power_bind_initialize (void);
-/// @li int my_power_bind_knobs (int knob, int operation, int & value);
-/// @li int my_power_bind_start (uint64_t pa64timer[], double w_joule[]);
-/// @li int my_power_bind_stop (uint64_t pa64timer[], double w_joule[]);
-/// @li int my_power_bind_finalize ();
 ///
 ///	@return initialize returns [n:number of reported items, negative:error]
 ///	@return other routines returns [0:success, non-zero:error]
@@ -37,12 +32,18 @@
 
 #ifdef USE_POWER
 #include "pwr.h"
-extern int my_power_bind_initialize (void);
-extern int my_power_bind_knobs (int knob, int operation, int & value);
-extern int my_power_bind_start (uint64_t pa64timer[], double w_joule[]);
-extern int my_power_bind_stop (uint64_t pa64timer[], double w_joule[]);
-extern int my_power_bind_finalize ();
+#else
+// all power object variables are typedef void*
+typedef void* PWR_Cntxt ;
+typedef void* PWR_Obj ;
 #endif
+
+extern int my_power_bind_start(PWR_Cntxt pacntxt, PWR_Cntxt extcntxt,
+		PWR_Obj obj_array[], PWR_Obj obj_ext[],
+		uint64_t pa64timer[], double w_joule[]);
+extern int my_power_bind_stop (PWR_Cntxt pacntxt, PWR_Cntxt extcntxt,
+		PWR_Obj obj_array[], PWR_Obj obj_ext[],
+		uint64_t pa64timer[], double w_joule[]);
 
 // The following constants and enumerated are defined in power_ext.cpp
 //	const int Max_measure_device=1;
@@ -53,6 +54,11 @@ const int Max_power_stats=20;	// Max_power_object + Max_measure_device
 
 struct pmlib_power_chooser
 {
+	PWR_Cntxt pacntxt ;
+	PWR_Cntxt extcntxt ;
+	PWR_Obj p_obj_array[Max_power_stats];
+	PWR_Obj p_obj_ext[Max_power_stats];
+
 	int num_power_stats;				// number of power measured parts
 	std::string s_name[Max_power_stats];	// symbols of the parts
 	uint64_t pa64timer[Max_power_stats];	// typedef uint64_t PWR_Time

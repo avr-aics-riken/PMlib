@@ -29,26 +29,47 @@
 #include <unistd.h>
 #include "PerfMonitor.h"
 
-
+#ifndef _OPENMP
 using namespace pm_lib;
 PerfMonitor PM;
 
-
-#ifdef _OPENMP
-// Worksharing parallel construct is generally supported.
-// Non-worksharing parallel construct is limited to Intel and PGI only.
+#else
+// compilers support OpenMP through different implementations
 
 #if defined (__INTEL_COMPILER)	|| \
-	defined (__GXX_ABI_VERSION)	|| \
-	defined (__CLANG_FUJITSU)	|| \
-	defined (__PGI)
+	defined (__CLANG_FUJITSU)
 
+	using namespace pm_lib;
+	PerfMonitor PM;
 	#pragma omp threadprivate(PM)
+
+#elif defined (__GXX_ABI_VERSION)
+	// GNU g++ is not fully compliant with OpenMP threadprivate class support
+	// this is a work around. https://gcc.gnu.org/bugzilla/show_bug.cgi?id=27557
+	using namespace pm_lib;
+	extern PerfMonitor PM;
+	#pragma omp threadprivate(PM)
+	PerfMonitor PM;
+
+#elif defined (__PGI)
+	using namespace pm_lib;
+	PerfMonitor PM;
+	#pragma omp threadprivate(PM)
+	// PGI's undocumented restrictions.
+	// PGI Fortran and C++ mixed OpenMP non-worksharing parallel construct
+	// needs this small main driver.
+	// This main driver handles threadprivate class member variables
+	// passed across Fortran and C++
+	#if defined (FORCE_CXX_MAIN)
+		extern "C" void fortmain_(void);
+		extern "C" void main(void);
+		void main(void) { (void) fortmain_(); }
+	#endif
 
 #else
 	// Other compilers to be tested
-	//	#elif defined (__FUJITSU)	# nop
-	//	#elif defined (__clang__)	# nop Naive Clang yet to support OpenMP
+	//	(__FUJITSU)	Fujitsu traditional C++ does not support threadprivate class
+	//	(__clang__)	Naive Clang yet to support OpenMP
 #endif
 
 #endif

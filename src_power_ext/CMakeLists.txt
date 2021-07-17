@@ -14,13 +14,15 @@
 ###################################################################################
 
 include_directories(${POWER_DIR}/include)
+include_directories(${PROJECT_BINARY_DIR}/include ${PROJECT_SOURCE_DIR}/include)
+
 link_directories(${POWER_DIR}/lib64)
 
-C99()
+#	C99()
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_GNU_SOURCE -DUSE_POWER")
 
-add_library(power_ext STATIC power_ext.cpp)
+add_library(power_ext STATIC power_ext_PerfWatch.cpp)
 
 set_target_properties(power_ext PROPERTIES LINKER_LANGUAGE CXX)
 target_link_libraries(power_ext ${CMAKE_CXX_IMPLICIT_LINK_LIBRARIES})

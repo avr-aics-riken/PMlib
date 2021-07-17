@@ -128,7 +128,19 @@ namespace pm_lib {
     /// コンストラクタ.
     PerfWatch() : m_time(0.0), m_flop(0.0), m_count(0), m_started(false),
       my_rank(-1), m_timeArray(0), m_flopArray(0), m_countArray(0),
-      m_sortedArrayHWPC(0), m_is_set(false), m_is_healthy(true) {}
+      m_sortedArrayHWPC(0), m_is_set(false), m_is_healthy(true) {
+	#ifdef DEBUG_PRINT_WATCH
+		int i_thread_constractor;
+		int PerfWatch::* p_m_id = &PerfWatch::m_id;
+		#ifdef _OPENMP
+		i_thread_constractor = omp_get_thread_num();
+		#else
+		i_thread_constractor = 0;
+		#endif
+		fprintf(stderr, "\t<PerfWatch> constructor : thread=%d, &m_id=%p, p_m_id=%p \n",
+			i_thread_constractor,  &m_id, p_m_id);
+	#endif
+	}
 
     /// デストラクタ.
     ~PerfWatch() {
@@ -155,19 +167,45 @@ namespace pm_lib {
     ///   @param[in] my_rank   自ランク番号
     ///   @param[in] exclusive 排他測定フラグ
     ///
-    void setProperties(const std::string& label, int id, int typeCalc, int nPEs, int my_rank, int num_threads, bool exclusive);
+    void setProperties(const std::string label, int id, int typeCalc, int nPEs, int my_rank, int num_threads, bool exclusive);
 
     /// HWPCイベントを初期化する
     ///
     void initializeHWPC(void);
 
-    /// initialize Power API interface
+    /// initialize Power API related variables
     ///
-    void initializePOWER(void);
+    void initializePowerWatch(int num);
 
-    /// finalize Power API interface
+    /// finalize Power API related variables
     ///
-    void finalizePOWER(void);
+	///   @param[in] num	number of Power objects initialized by PerfMonitor
+    ///
+    void finalizePowerWatch(void);
+
+	/// start measuring the power of the section
+	///
+	///   @param[in] PWR_Cntxt pacntxt
+	///   @param[in] PWR_Cntxt extcntxt
+	///   @param[in] PWR_Obj obj_array
+	///   @param[in] PWR_Obj obj_ext
+	///
+	///   @note the arguments are Power API objects and attributes
+	///
+	void power_start(PWR_Cntxt pacntxt, PWR_Cntxt extcntxt, PWR_Obj obj_array[], PWR_Obj obj_ext[]);
+	
+	
+	/// stop measuring the power of the section
+	///
+	///   @param[in] PWR_Cntxt pacntxt
+	///   @param[in] PWR_Cntxt extcntxt
+	///   @param[in] PWR_Obj obj_array
+	///   @param[in] PWR_Obj obj_ext
+	///
+	///   @note the arguments are Power API objects and attributes
+	///
+	void power_stop(PWR_Cntxt pacntxt, PWR_Cntxt extcntxt, PWR_Obj obj_array[], PWR_Obj obj_ext[]);
+
 
     /// OTF 用の初期化
     ///
@@ -368,7 +406,7 @@ namespace pm_lib {
     void stopSectionSerial(double flopPerTask, unsigned iterationCount);
     void stopSectionParallel(double flopPerTask, unsigned iterationCount);
 
-  private:
+	/// HWPC related internal functions
 	void identifyARMplatform (void);
 	void createPapiCounterList (void);
 	void sortPapiCounterList (void);
@@ -376,8 +414,19 @@ namespace pm_lib {
 	void outputPapiCounterList (FILE* fp);
 	void outputPapiCounterLegend (FILE* fp);
 	void outputPapiCounterGroup (FILE* fp, MPI_Group p_group, int* pp_ranks);
-  };
+
+	/// Power API related internal functions
+	int my_power_bind_start(PWR_Cntxt pacntxt, PWR_Cntxt extcntxt,
+		PWR_Obj obj_array[], PWR_Obj obj_ext[],
+		uint64_t pa64timer[], double w_joule[]);
+	int my_power_bind_stop (PWR_Cntxt pacntxt, PWR_Cntxt extcntxt,
+		PWR_Obj obj_array[], PWR_Obj obj_ext[],
+		uint64_t pa64timer[], double w_joule[]);
+
+
+  };	// end of class PerfWatch
 
 } /* namespace pm_lib */
 
 #endif // _PM_PERFWATCH_H_
+

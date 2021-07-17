@@ -19,8 +19,8 @@
 
 macro (AddOptimizeOption)
   if (TARGET_ARCH STREQUAL "FUGAKU")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Kfast -w")
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Kfast -w")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Kfast ")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Kfast ")
     set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -Cpp -Kfast -Knooptmsg")
     if(enable_PreciseTimer)
       SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Nfjcex")
