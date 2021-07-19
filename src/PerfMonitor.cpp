@@ -24,6 +24,7 @@
 #include <time.h>
 #include <unistd.h> // for gethostname() of FX10/K
 #include <cmath>
+#include "power_obj_menu.h"
 
 namespace pm_lib {
 
@@ -1001,7 +1002,7 @@ void PerfMonitor::printBasicPower(FILE* fp, int maxLabelLen, int op_sort)
 		n_parts = 11;
 		sorted_obj_name[0] = "  total ";
 		for (int i=1; i<5; i++) {
-			sorted_obj_name[i] = p_obj_shortname[i] + "L2";	// "CMG0+L2", "CMG1+L2", "CMG2+L2", "CMG3+L2"
+			sorted_obj_name[i] = p_obj_shortname[i] + "+L2";	// "CMG0+L2", "CMG1+L2", "CMG2+L2", "CMG3+L2"
 		}
 		for (int i=5; i<9; i++) {
 			sorted_obj_name[i] = p_obj_shortname[i+8];
@@ -1095,7 +1096,7 @@ void PerfMonitor::printBasicPower(FILE* fp, int maxLabelLen, int op_sort)
 		fprintf(fp, "%-*s:", maxLabelLen, p_label.c_str() );
 		// Watt value
 		for (int i=0; i<n_parts; i++) {
-			fprintf(fp, "%8.2f",  sorted_joule[i]/w.m_time_av);
+			fprintf(fp, "%8.1f",  sorted_joule[i]/w.m_time_av);
 		}
 		fprintf(fp, "  %8.2e",  sorted_joule[n_parts-1]/3600.0);
 		// measured Watt-Hour energy value
@@ -1953,133 +1954,30 @@ void PerfMonitor::printBasicPower(FILE* fp, int maxLabelLen, int op_sort)
 
 
 
-/// Extra Interface routine for Power API
-///
-///	@file   power_PerfMonitor.cpp
-///	@brief  PMlib C++  interface functions to simply monitor and controll the Power API library
-///	@note   current implementation is validated on supercomputer Fugaku
-///
-
-//	#include <string>
-//	#include <cmath>
-//	#include "PerfMonitor.h"
-
+// Extra Interface routine for Power API
+//
+//	PMlib C++  interface functions to simply monitor and controll the Power API library
+//	current implementation is validated on supercomputer Fugaku
+//
 static void error_print(int , std::string , std::string);
 static void warning_print (std::string , std::string , std::string );
 static void warning_print (std::string , std::string , std::string , int);
 
-void error_print(int irc, std::string cstr1, std::string cstr2)
-{
+void error_print(int irc, std::string cstr1, std::string cstr2) {
 	fprintf(stderr, "*** PMlib Error. <power_ext::%s> failed. [%s] return code %d \n",
 		cstr1.c_str(), cstr2.c_str(), irc);
 	return;
 }
-void warning_print (std::string cstr1, std::string cstr2, std::string cstr3)
-{
+void warning_print (std::string cstr1, std::string cstr2, std::string cstr3) {
 	fprintf(stderr, "*** PMlib Warning. <power_ext::%s> failed. [%s] %s \n",
 		cstr1.c_str(), cstr2.c_str(), cstr3.c_str());
 	return;
 }
-void warning_print (std::string cstr1, std::string cstr2, std::string cstr3, int value)
-{
+void warning_print (std::string cstr1, std::string cstr2, std::string cstr3, int value) {
 	fprintf(stderr, "*** PMlib Warning. <power_ext::%s> failed. [%s] %s : value %d \n",
 		cstr1.c_str(), cstr2.c_str(), cstr3.c_str(), value);
 	return;
 }
-// Objects supported by default context
-enum power_object_index
-	{
-		I_pobj_NODE=0,
-		I_pobj_CMG0CORES,
-		I_pobj_CMG1CORES,
-		I_pobj_CMG2CORES,
-		I_pobj_CMG3CORES,
-		I_pobj_CMG0L2CACHE,
-		I_pobj_CMG1L2CACHE,
-		I_pobj_CMG2L2CACHE,
-		I_pobj_CMG3L2CACHE,
-		I_pobj_ACORES0,
-		I_pobj_ACORES1,
-		I_pobj_TOFU,
-		I_pobj_UNCMG,
-		I_pobj_MEM0,
-		I_pobj_MEM1,
-		I_pobj_MEM2,
-		I_pobj_MEM3,
-		I_pobj_PCI,
-		I_pobj_TOFUOPT,
-		Max_power_object
-	};
-
-// Objects supported by Fugaku extended context
-static char p_obj_name[Max_power_object][30] =
-	{
-		"plat.node",
-		"plat.node.cpu.cmg0.cores",
-		"plat.node.cpu.cmg1.cores",
-		"plat.node.cpu.cmg2.cores",
-		"plat.node.cpu.cmg3.cores",
-		"plat.node.cpu.cmg0.l2cache",
-		"plat.node.cpu.cmg1.l2cache",
-		"plat.node.cpu.cmg2.l2cache",
-		"plat.node.cpu.cmg3.l2cache",
-		"plat.node.cpu.acores.core0",
-		"plat.node.cpu.acores.core1",
-		"plat.node.cpu.tofu",
-		"plat.node.cpu.uncmg",
-		"plat.node.mem0",
-		"plat.node.mem1",
-		"plat.node.mem2",
-		"plat.node.mem3",
-		"plat.node.pci",
-		"plat.node.tofuopt"
-	};
-enum power_extended_index
-	{
-		I_pext_NODE=0,
-		I_pext_CPU,
-		I_pext_CMG0CORES,
-		I_pext_CMG1CORES,
-		I_pext_CMG2CORES,
-		I_pext_CMG3CORES,
-		I_pext_MEM0,
-		I_pext_MEM1,
-		I_pext_MEM2,
-		I_pext_MEM3,
-		Max_power_extended
-	};
-// NODE is the only attribute available to get the measured value
-// other extended parts are defined to enable power knob controll
-static char p_ext_name[Max_power_extended][30] =
-	{
-		"plat.node",
-		"plat.node.cpu",	// valid both for default and exxtened context
-		"plat.node.cpu.cmg0.cores",	//	ditto.
-		"plat.node.cpu.cmg1.cores",	//	ditto.
-		"plat.node.cpu.cmg2.cores",	//	ditto.
-		"plat.node.cpu.cmg3.cores",	//	ditto.
-		"plat.node.mem0",	//  can set the value for the estimation
-		"plat.node.mem1",	//	ditto.
-		"plat.node.mem2",	//	ditto.
-		"plat.node.mem3"	//	ditto.
-	};
-
-enum power_knob_index
-	{
-		I_knob_CPU=0,
-		I_knob_MEMORY,
-		I_knob_ISSUE,
-		I_knob_PIPE,
-		I_knob_ECO,
-		//	I_knob_RETENTION,	// disabled
-		Max_power_knob
-	};
-
-const int Max_measure_device=1;
-	// NODE ("plat.node") is the only attribute to get the power meter measured value from
-const int Max_power_leaf_parts=12;
-	// max. # of leaf parts in the object group, i.e. 12 cores in the CMG.
-
 
 
 int PerfMonitor::initializePOWER (void)
