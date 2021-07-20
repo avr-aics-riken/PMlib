@@ -982,7 +982,7 @@ void PerfMonitor::printBasicPower(FILE* fp, int maxLabelLen, int op_sort)
 		"MEM3 ",	// 16
 		"PCI  ",	// 17
 		"TofuOpt ",	// 18
-		"P.meter"	// 19	//	reserved for the measured value
+		"P.meter"	// 19 : reserved for the measured device. we decided not to report this value.
 	};
 	static std::string sorted_obj_name[Max_power_stats];
 
@@ -990,16 +990,16 @@ void PerfMonitor::printBasicPower(FILE* fp, int maxLabelLen, int op_sort)
 
 	if (m_is_POWER == 1) {	// total, CMG+L2, MEMORY, TF+A+U, P.meter
 		p_label = "NODE";
-		n_parts = 5;
+		n_parts = 4;
 		sorted_obj_name[0] = "  total ";
 		sorted_obj_name[1] = " CMG+L2 ";
 		sorted_obj_name[2] = " MEMORY ";
 		sorted_obj_name[3] = " TF+A+U ";
-		sorted_obj_name[4] = " P.meter";
+		//	sorted_obj_name[4] = " P.meter";
 	} else
 	if (m_is_POWER == 2) {	// total, CMG0+L2, CMG1+L2, CMG2+L2, CMG3+L2, MEM0, MEM1, MEM2, MEM3, TF+A+U, P.meter
 		p_label = "NUMA";
-		n_parts = 11;
+		n_parts = 10;
 		sorted_obj_name[0] = "  total ";
 		for (int i=1; i<5; i++) {
 			sorted_obj_name[i] = p_obj_shortname[i] + "+L2";	// "CMG0+L2", "CMG1+L2", "CMG2+L2", "CMG3+L2"
@@ -1008,12 +1008,12 @@ void PerfMonitor::printBasicPower(FILE* fp, int maxLabelLen, int op_sort)
 			sorted_obj_name[i] = p_obj_shortname[i+8];
 		}
 		sorted_obj_name[9] = " TF+A+U ";					// TF+A+U
-		sorted_obj_name[10] = p_obj_shortname[19];
+		//	sorted_obj_name[10] = p_obj_shortname[19];
 
 	} else
 	if (m_is_POWER == 3) {
 		p_label = "PARTS";
-		n_parts = Max_power_stats;
+		n_parts = 19;
 		for (int i=0; i<n_parts; i++) {
 		sorted_obj_name[i] = p_obj_shortname[i];
 		}
@@ -1048,7 +1048,7 @@ void PerfMonitor::printBasicPower(FILE* fp, int maxLabelLen, int op_sort)
 		PerfWatch& w = m_watchArray[m];
 
 		if (m_is_POWER == 1) {	// total, CMG+L2, MEMORY, TF+A+U, P.meter
-			n_parts = 5;
+			//	n_parts = 5;
 			sorted_joule[0] = w.my_power.w_accumu[0];
 			sorted_joule[1] = 0.0;
 			for (int i=1; i<9; i++) {
@@ -1059,8 +1059,8 @@ void PerfMonitor::printBasicPower(FILE* fp, int maxLabelLen, int op_sort)
 				sorted_joule[2] += w.my_power.w_accumu[i];
 			}
 			sorted_joule[3] = w.my_power.w_accumu[9] + w.my_power.w_accumu[10] + w.my_power.w_accumu[11]
-				+ w.my_power.w_accumu[12] + w.my_power.w_accumu[17] + w.my_power.w_accumu[18] ;
-			sorted_joule[4] = w.my_power.w_accumu[19];
+					+ w.my_power.w_accumu[12] + w.my_power.w_accumu[17] + w.my_power.w_accumu[18] ;
+			//	sorted_joule[4] = w.my_power.w_accumu[19];
 	
 		} else
 		if (m_is_POWER == 2) {	// total, CMG0+L2, CMG1+L2, CMG2+L2, CMG3+L2, MEM0, MEM1, MEM2, MEM3, TF+A+U, P.meter
@@ -1077,13 +1077,13 @@ void PerfMonitor::printBasicPower(FILE* fp, int maxLabelLen, int op_sort)
 			}
 			// "Tofu+AC" == Acore0 +  Acore1 + Tofu + Uncmg + PCI + TofuOpt
 			sorted_joule[9] = w.my_power.w_accumu[9] + w.my_power.w_accumu[10] + w.my_power.w_accumu[11]
-						+ w.my_power.w_accumu[12] + w.my_power.w_accumu[17] + w.my_power.w_accumu[18] ;
+					+ w.my_power.w_accumu[12] + w.my_power.w_accumu[17] + w.my_power.w_accumu[18] ;
 			//Physically measured value by the power meter
-			sorted_joule[10] = w.my_power.w_accumu[19];
+			//	sorted_joule[10] = w.my_power.w_accumu[19];
 	
 		} else
 		if (m_is_POWER == 3) {
-			n_parts = Max_power_stats;
+			//	n_parts = Max_power_stats;
 			for (int i=0; i<n_parts; i++) {
 				sorted_joule[i] = w.my_power.w_accumu[i];
 			}
@@ -2017,7 +2017,7 @@ int PerfMonitor::initializePOWER (void)
 	}
 
 	if (isum == 0) {
-		return (Max_power_object + Max_measure_device);
+		return (Max_power_object + Max_measure_device);	// =19+1=20
 	} else {
 		return(-1);
 	}

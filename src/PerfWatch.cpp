@@ -886,6 +886,8 @@ namespace pm_lib {
   ///
   ///	@param[in] n  number of Power objects initialized by PerfMonitor class instance
   ///
+  ///	@note num_power is always 20 for Fugaku implementation
+  ///
   void PerfWatch::initializePowerWatch(int num_power)
   {
     m_is_POWER = 0;

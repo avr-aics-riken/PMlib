@@ -27,7 +27,7 @@ enum power_object_index
 		I_pobj_MEM3,
 		I_pobj_PCI,
 		I_pobj_TOFUOPT,
-		Max_power_object
+		Max_power_object		// =19
 	};
 
 // Object string supported by default context
