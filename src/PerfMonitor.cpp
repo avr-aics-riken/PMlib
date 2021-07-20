@@ -1032,8 +1032,10 @@ void PerfMonitor::printBasicPower(FILE* fp, int maxLabelLen, int op_sort)
 	for (int i=0; i<n_parts-1; i++) { fprintf(fp, "%8s", sorted_obj_name[i].c_str()); }
 	fprintf(fp, "|%8s| Energy[Wh] \n", sorted_obj_name[n_parts-1].c_str());
 
-    for (int i=0; i< maxLabelLen; i++) { fputc('-', fp); }	fputc('+', fp);
-    for (int i=0; i<(n_parts-1)*8; i++) { fputc('-', fp); }	fprintf(fp, "+--------+----------\n");
+    //	for (int i=0; i< maxLabelLen; i++) { fputc('-', fp); }	fputc('+', fp);
+    //	for (int i=0; i<(n_parts-1)*8; i++) { fputc('-', fp); }	fprintf(fp, "+--------+----------\n");
+    for (int i=0; i< maxLabelLen; i++) { fputc('-', fp); }	; fprintf(fp, "+--------+");
+    for (int i=0; i<n_parts*8; i++) { fputc('-', fp); }	; fprintf(fp, "+----------\n");
 
 	// actual records
     for (int j=0; j<m_nWatch; j++)
@@ -1047,8 +1049,7 @@ void PerfMonitor::printBasicPower(FILE* fp, int maxLabelLen, int op_sort)
 		if (m == 0) continue;
 		PerfWatch& w = m_watchArray[m];
 
-		if (m_is_POWER == 1) {	// total, CMG+L2, MEMORY, TF+A+U, P.meter
-			//	n_parts = 5;
+		if (m_is_POWER == 1) {	// total, CMG+L2, MEMORY, TF+A+U
 			sorted_joule[0] = w.my_power.w_accumu[0];
 			sorted_joule[1] = 0.0;
 			for (int i=1; i<9; i++) {
@@ -1060,11 +1061,9 @@ void PerfMonitor::printBasicPower(FILE* fp, int maxLabelLen, int op_sort)
 			}
 			sorted_joule[3] = w.my_power.w_accumu[9] + w.my_power.w_accumu[10] + w.my_power.w_accumu[11]
 					+ w.my_power.w_accumu[12] + w.my_power.w_accumu[17] + w.my_power.w_accumu[18] ;
-			//	sorted_joule[4] = w.my_power.w_accumu[19];
 	
 		} else
-		if (m_is_POWER == 2) {	// total, CMG0+L2, CMG1+L2, CMG2+L2, CMG3+L2, MEM0, MEM1, MEM2, MEM3, TF+A+U, P.meter
-			n_parts = 11;
+		if (m_is_POWER == 2) {	// total, CMG0+L2, CMG1+L2, CMG2+L2, CMG3+L2, MEM0, MEM1, MEM2, MEM3, TF+A+U
 			// total value
 			sorted_joule[0] = w.my_power.w_accumu[0];
 			// CMGn + L2$ value
@@ -1083,7 +1082,6 @@ void PerfMonitor::printBasicPower(FILE* fp, int maxLabelLen, int op_sort)
 	
 		} else
 		if (m_is_POWER == 3) {
-			//	n_parts = Max_power_stats;
 			for (int i=0; i<n_parts; i++) {
 				sorted_joule[i] = w.my_power.w_accumu[i];
 			}
@@ -1094,17 +1092,15 @@ void PerfMonitor::printBasicPower(FILE* fp, int maxLabelLen, int op_sort)
 			p_label = w.m_label + "(*)";
 		}
 		fprintf(fp, "%-*s:", maxLabelLen, p_label.c_str() );
-		// Watt value
 		for (int i=0; i<n_parts; i++) {
-			fprintf(fp, "%8.1f",  sorted_joule[i]/w.m_time_av);
+			fprintf(fp, "%7.1f ",  sorted_joule[i]/w.m_time_av);	// Watt value
 		}
-		fprintf(fp, "  %8.2e",  sorted_joule[n_parts-1]/3600.0);
-		// measured Watt-Hour energy value
+		fprintf(fp, "  %8.2e",  sorted_joule[0]/3600.0);			// Watt-Hour energy value
 		fprintf(fp, "\n");
 	}
 
-    for (int i=0; i< maxLabelLen; i++) { fputc('-', fp); }	fputc('+', fp);
-    for (int i=0; i<(n_parts-1)*8; i++) { fputc('-', fp); }	fprintf(fp, "+--------+----------\n");
+    for (int i=0; i< maxLabelLen; i++) { fputc('-', fp); }	; fprintf(fp, "+--------+");
+    for (int i=0; i<n_parts*8; i++) { fputc('-', fp); }	; fprintf(fp, "+----------\n");
 
 	double t_joule;
 	int nnodes;

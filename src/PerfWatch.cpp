@@ -932,13 +932,15 @@ namespace pm_lib {
 		double t_joule;
 		int iret;
 		if ( num_process > 1 ) {
-			iret = MPI_Reduce (&my_power.w_accumu[Max_power_stats-1], &t_joule, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+			//	iret = MPI_Reduce (&my_power.w_accumu[Max_power_stats-1], &t_joule, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+			iret = MPI_Reduce (&my_power.w_accumu[0], &t_joule, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
 			if ( iret != 0 ) {
 				fprintf(stderr, "*** error. <%s> MPI_Reduce failed. iret=%d\n", __func__, iret);
 				t_joule = 0.0;
 			}
 		} else {
-			t_joule = my_power.w_accumu[Max_power_stats-1];
+			//	t_joule = my_power.w_accumu[Max_power_stats-1];
+			t_joule = my_power.w_accumu[0];
 		}
 		m_power_av = t_joule/num_process;
 	
