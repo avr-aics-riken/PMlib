@@ -815,9 +815,7 @@ namespace pm_lib {
 #else
 	// Nop. This compiler does not support threadprivate C++ class.
 		if (my_rank == 0) {
-		printError("setProperties", "This C++ compiler does not support threadprivate class.\n
-		\tCalling [%s] from inside of parallel construct is not valid for this compiler. \n",
-		label.c_str());
+		printError("setProperties", "Calling [%s] from inside of parallel region is not supported by the C++ compiler which built PMlib.\n", label.c_str());
 		}
 		//	m_is_set = false;
 #endif

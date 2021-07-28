@@ -963,7 +963,7 @@ void PerfMonitor::printBasicPower(FILE* fp, int maxLabelLen, int op_sort)
 	static double sorted_joule[Max_power_stats];
 	static std::string p_obj_shortname[Max_power_stats] =
 	{
-		"total",	// 0
+		"  total ",	// 0
 		"CMG0",	// 1
 		"CMG1",	// 2
 		"CMG2",	// 3
@@ -992,8 +992,8 @@ void PerfMonitor::printBasicPower(FILE* fp, int maxLabelLen, int op_sort)
 		p_label = "NODE";
 		n_parts = 4;
 		sorted_obj_name[0] = "  total ";
-		sorted_obj_name[1] = " CMG+L2 ";
-		sorted_obj_name[2] = " MEMORY ";
+		sorted_obj_name[1] = "| CMG+L2";
+		sorted_obj_name[2] = "  MEMORY";
 		sorted_obj_name[3] = " TF+A+U ";
 		//	sorted_obj_name[4] = " P.meter";
 	} else
@@ -1001,8 +1001,9 @@ void PerfMonitor::printBasicPower(FILE* fp, int maxLabelLen, int op_sort)
 		p_label = "NUMA";
 		n_parts = 10;
 		sorted_obj_name[0] = "  total ";
-		for (int i=1; i<5; i++) {
-			sorted_obj_name[i] = p_obj_shortname[i] + "+L2";	// "CMG0+L2", "CMG1+L2", "CMG2+L2", "CMG3+L2"
+		sorted_obj_name[1] = "|" + p_obj_shortname[1] + "+L2";	// "|CMG0+L2"
+		for (int i=2; i<5; i++) {
+			sorted_obj_name[i] = p_obj_shortname[i] + "+L2";	// "CMG1+L2", "CMG2+L2", "CMG3+L2"
 		}
 		for (int i=5; i<9; i++) {
 			sorted_obj_name[i] = p_obj_shortname[i+8];
@@ -1014,9 +1015,11 @@ void PerfMonitor::printBasicPower(FILE* fp, int maxLabelLen, int op_sort)
 	if (m_is_POWER == 3) {
 		p_label = "PARTS";
 		n_parts = 19;
+
 		for (int i=0; i<n_parts; i++) {
 		sorted_obj_name[i] = p_obj_shortname[i];
 		}
+		sorted_obj_name[1] = "|   " + p_obj_shortname[1];	// trick to add "|"
 	}
 
 	fprintf(fp, "\n");
@@ -1030,12 +1033,10 @@ void PerfMonitor::printBasicPower(FILE* fp, int maxLabelLen, int op_sort)
 
 	fprintf(fp, "Section"); for (int i=7; i< maxLabelLen; i++) { fputc(' ', fp); }		fputc('|', fp);
 	for (int i=0; i<n_parts-1; i++) { fprintf(fp, "%8s", sorted_obj_name[i].c_str()); }
-	fprintf(fp, "|%8s| Energy[Wh] \n", sorted_obj_name[n_parts-1].c_str());
+	fprintf(fp, " %8s| Energy[Wh] \n", sorted_obj_name[n_parts-1].c_str());
 
-    //	for (int i=0; i< maxLabelLen; i++) { fputc('-', fp); }	fputc('+', fp);
-    //	for (int i=0; i<(n_parts-1)*8; i++) { fputc('-', fp); }	fprintf(fp, "+--------+----------\n");
     for (int i=0; i< maxLabelLen; i++) { fputc('-', fp); }	; fprintf(fp, "+--------+");
-    for (int i=0; i<n_parts*8; i++) { fputc('-', fp); }	; fprintf(fp, "+----------\n");
+    for (int i=0; i<(n_parts-1)*8; i++) { fputc('-', fp); }	 ; fprintf(fp, "+----------\n");
 
 	// actual records
     for (int j=0; j<m_nWatch; j++)
@@ -1100,7 +1101,7 @@ void PerfMonitor::printBasicPower(FILE* fp, int maxLabelLen, int op_sort)
 	}
 
     for (int i=0; i< maxLabelLen; i++) { fputc('-', fp); }	; fprintf(fp, "+--------+");
-    for (int i=0; i<n_parts*8; i++) { fputc('-', fp); }	; fprintf(fp, "+----------\n");
+    for (int i=0; i<(n_parts-1)*8; i++) { fputc('-', fp); }	 ; fprintf(fp, "+----------\n");
 
 	double t_joule;
 	int nnodes;
