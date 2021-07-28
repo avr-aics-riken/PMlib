@@ -48,6 +48,11 @@ PerfMonitor PM;
 	PerfMonitor PM;
 	#pragma omp threadprivate(PM)
 
+#elif defined (__FUJITSU)
+	//	Fujitsu traditional C++ without threadprivate class support
+	using namespace pm_lib;
+	PerfMonitor PM;
+
 #elif defined (__GXX_ABI_VERSION)
 	// GNU g++ is not fully compliant with OpenMP threadprivate class support
 	// this is a work around. https://gcc.gnu.org/bugzilla/show_bug.cgi?id=27557
@@ -60,21 +65,17 @@ PerfMonitor PM;
 	using namespace pm_lib;
 	PerfMonitor PM;
 	#pragma omp threadprivate(PM)
-	// PGI's undocumented restrictions.
-	// PGI Fortran and C++ mixed OpenMP non-worksharing parallel construct
-	// needs this small main driver.
-	// This main driver handles threadprivate class member variables
-	// passed across Fortran and C++
 	#if defined (FORCE_CXX_MAIN)
+		// A small C++ main driver to handle OpenMP threadprivate class variables across Fortran and C++
+		// PGI Fortran and C++ mixed non-worksharing parallel construct needs this C++ main driver
 		extern "C" void fortmain_(void);
 		extern "C" void main(void);
 		void main(void) { (void) fortmain_(); }
 	#endif
 
 #else
-	// Other compilers to be tested
-	//	(__FUJITSU)	Fujitsu traditional C++ does not support threadprivate class
 	//	(__clang__)	Naive Clang yet to support OpenMP
+	// Other compilers to be tested
 #endif
 
 #endif

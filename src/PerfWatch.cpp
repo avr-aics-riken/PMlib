@@ -815,9 +815,7 @@ namespace pm_lib {
 #else
 	// Nop. This compiler does not support threadprivate C++ class.
 		if (my_rank == 0) {
-		printError("setProperties", "This C++ compiler does not support threadprivate class.\n
-		\tCalling [%s] from inside of parallel construct is not valid for this compiler. \n",
-		label.c_str());
+		printError("setProperties", "Calling [%s] from inside of parallel region is not supported by the C++ compiler which built PMlib.\n", label.c_str());
 		}
 		//	m_is_set = false;
 #endif
@@ -886,6 +884,8 @@ namespace pm_lib {
   ///
   ///	@param[in] n  number of Power objects initialized by PerfMonitor class instance
   ///
+  ///	@note num_power is always 20 for Fugaku implementation
+  ///
   void PerfWatch::initializePowerWatch(int num_power)
   {
     m_is_POWER = 0;
@@ -930,13 +930,15 @@ namespace pm_lib {
 		double t_joule;
 		int iret;
 		if ( num_process > 1 ) {
-			iret = MPI_Reduce (&my_power.w_accumu[Max_power_stats-1], &t_joule, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+			//	iret = MPI_Reduce (&my_power.w_accumu[Max_power_stats-1], &t_joule, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+			iret = MPI_Reduce (&my_power.w_accumu[0], &t_joule, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
 			if ( iret != 0 ) {
 				fprintf(stderr, "*** error. <%s> MPI_Reduce failed. iret=%d\n", __func__, iret);
 				t_joule = 0.0;
 			}
 		} else {
-			t_joule = my_power.w_accumu[Max_power_stats-1];
+			//	t_joule = my_power.w_accumu[Max_power_stats-1];
+			t_joule = my_power.w_accumu[0];
 		}
 		m_power_av = t_joule/num_process;
 	
@@ -1093,16 +1095,23 @@ namespace pm_lib {
   void PerfWatch::power_start(PWR_Cntxt pacntxt, PWR_Cntxt extcntxt, PWR_Obj obj_array[], PWR_Obj obj_ext[])
   {
 #ifdef USE_POWER
-	#ifdef DEBUG_PRINT_WATCH
-    if (my_rank == 0)
-		fprintf (stderr, "<PerfWatch::power_start> [%s] my_thread=%d\n",
-			m_label.c_str(), my_thread);
-	#endif
 
 	if (my_power.num_power_stats != 0) {
 		(void) my_power_bind_start (pacntxt, extcntxt, obj_array, obj_ext,
 					my_power.pa64timer, my_power.u_joule);
 	}
+
+	#ifdef DEBUG_PRINT_POWER_EXT
+    if (my_rank == 0)
+	{
+		fprintf (stderr, "<PerfWatch::power_start> [%s] my_thread=%d\n",
+			m_label.c_str(), my_thread);
+		//	for (int i=0; i<my_power.num_power_stats; i++) {
+		for (int i=0; i<10; i++) {
+			fprintf (stderr, "\t %10.2e\n", my_power.u_joule[i]);
+		}
+	}
+	#endif
 #endif
   }
 
@@ -1308,31 +1317,32 @@ namespace pm_lib {
   void PerfWatch::power_stop(PWR_Cntxt pacntxt, PWR_Cntxt extcntxt, PWR_Obj obj_array[], PWR_Obj obj_ext[])
   {
 #ifdef USE_POWER
-	#ifdef DEBUG_PRINT_WATCH
-    if (my_rank == 0)
-		fprintf (stderr, "<PerfWatch::power_stop> [%s] my_thread=%d\n",
-			m_label.c_str(), my_thread);
-	#endif
 
-	double uvJ, watt;
+	double t, uvJ, watt;
 	if (my_power.num_power_stats != 0) {
 		(void) my_power_bind_stop (pacntxt, extcntxt, obj_array, obj_ext,
-					my_power.pa64timer, my_power.u_joule);
+					my_power.pa64timer, my_power.v_joule);
+
+		t = m_stopTime - m_startTime;
 
 		// output in Joule : 1 Joule == 1 Newton x meter == 1 Watt x second
 		for (int i=0; i<my_power.num_power_stats; i++) {
 			uvJ = my_power.v_joule[i] - my_power.u_joule[i];
 			my_power.w_accumu[i] += uvJ;
-			watt = uvJ /(m_stopTime - m_startTime);
+			watt = uvJ / t;
 			my_power.watt_max[i] = std::max (my_power.watt_max[i], watt);
 		}
 		#ifdef DEBUG_PRINT_POWER_EXT
     	if (my_rank == 0) {
-		fprintf (stderr, "my_power.w_accumu[*] : [%s] my_thread=%d \n",
-				m_label.c_str(), my_thread);
+		double u, v;
+		fprintf (stderr, "<PerfWatch::power_stop> [%s] my_thread=%d, t=%e\n\t\t\t u, v, uvJ, watt\n",
+			m_label.c_str(), my_thread, t);
 		for (int i=0; i<my_power.num_power_stats; i++) {
-			watt = (my_power.v_joule[i] - my_power.u_joule[i]) /(m_stopTime - m_startTime);
-			fprintf (stderr, "\t\t %10.2e\n", watt);
+			u = my_power.u_joule[i];
+			v = my_power.v_joule[i];
+			uvJ = v - u;
+			watt = uvJ / t;
+			fprintf (stderr, "\t\t %10.2e, %10.2e, %10.2e, %10.2e\n", u, v, uvJ, watt);
 		}
 		}
 		#endif
