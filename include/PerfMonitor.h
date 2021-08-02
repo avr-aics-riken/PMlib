@@ -401,89 +401,37 @@ namespace pm_lib {
 
   private:
 
-    std::map<std::string, int > array_of_symbols;
-
     /// 測定区間のラベルに対応する区間番号を追加作成する
+    /// Add a new entry in the section map (section name, section ID)
     ///
-    ///   @param[in] arg_st   測定区間のラベル
+    ///   @param[in] arg_st   the label of the newly created section
     ///
-    int add_perf_label(std::string arg_st)
-    {
-		int ip = m_nWatch;
-	#ifdef DEBUG_PRINT_LABEL
-    	fprintf(stderr, "<add_perf_label> [%s] <before> size=%lu, &array_of_symbols(%p), m_nWatch(@ %p)=%d, , ip(& %p)=%d\n",
-    		arg_st.c_str(),	array_of_symbols.size(), &array_of_symbols, &m_nWatch, m_nWatch, &ip, ip);
-	#endif
-
-    	// perhaps it is better to return ip showing the insert status.
-		// sometime later...
-    	array_of_symbols.insert( make_pair(arg_st, ip) );
-    #ifdef DEBUG_PRINT_LABEL
-        fprintf(stderr, "<add_perf_label> [%s] &array_of_symbols(%p) [%d] \n",
-            arg_st.c_str(), &array_of_symbols, ip);
-    #endif
-
-    	return ip;
-    }
+    ///	  @return the section ID
+    ///
+    int add_perf_label(std::string arg_st);
 
     /// 測定区間のラベルに対応する区間番号を取得
+    /// Search through the map and find section ID from the given label
     ///
-    ///   @param[in] arg_st   測定区間のラベル
+    ///   @param[in] arg_st   the label of the section
     ///
-    int find_perf_label(std::string arg_st)
-    {
-    	int p_id;
-    	if (array_of_symbols.find(arg_st) == array_of_symbols.end()) {
-    		p_id = -1;
-    	} else {
-    		p_id = array_of_symbols[arg_st] ;
-    	}
-		#ifdef DEBUG_PRINT_LABEL
-    	fprintf(stderr, "<find_perf_label> %s : %d\n", arg_st.c_str(), p_id);
-		#endif
-    	return p_id;
-    }
+    ///	  @return the section ID
+    ///
+    int find_perf_label(std::string arg_st);
 
     /// 測定区間の区間番号に対応するラベルを取得
+    /// Search the section ID in the map and return the label string
     ///
-    ///   @param[in] ip 測定区間の区間番号
-    ///   @param[in] p_label ラベルとなる文字列
+    ///   @param[in]  ip      the section ID
+    ///   @param[out] p_label the label string of the section
     ///
-    void loop_perf_label(const int ip, std::string& p_label)
-    {
-	std::map<std::string, int>::const_iterator it;
-	int p_id;
-
-	for(it = array_of_symbols.begin(); it != array_of_symbols.end(); ++it) {
-		p_label = it->first;
-		p_id = it->second;
-		if (p_id == ip) {
-			return;
-		}
-	}
-	// should not reach here
-	fprintf(stderr, "<loop_perf_label> p_label search failed. ip=%d\n", ip);
-    }
+    void loop_perf_label(const int ip, std::string& p_label);
 
     /// 全測定区間のラベルと番号を登録順で表示
+    /// Check print all the defined section IDs and labels
     ///
-    void check_all_perf_label(void)
-    {
-	std::map<std::string, int>::const_iterator it;
-	std::string p_label;
-	int p_id;
-	int n;
-	n = array_of_symbols.size();
-	fprintf(stderr, "<check_all_perf_label> map size=%lu \n", array_of_symbols.size());
-	if (n==0) return;
-	fprintf(stderr, "\t[map pair] : label, value, &(it->first), &(it->second)\n");
-	for(it = array_of_symbols.begin(); it != array_of_symbols.end(); ++it) {
-		p_label = it->first;
-		p_id = it->second;
-		fprintf(stderr, "\t <%s> : %d, %p, %p\n", p_label.c_str(), p_id, &(it->first), &(it->second));
+    void check_all_perf_label(void);
 
-	}
-    }
 
     /// 全プロセスの測定中経過情報を集約
     ///

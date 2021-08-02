@@ -510,6 +510,8 @@ namespace pm_lib {
   #ifdef _OPENMP
 	if (m_threads_merged) return;
 	if (my_thread != 0) return;
+	if (m_started) return; // still in the middle of active start/stop pair
+		// The thread stats should be merged after the thread has stopped.
 
 	#ifdef DEBUG_PRINT_WATCH
 	if (my_rank == 0) {
@@ -517,10 +519,6 @@ namespace pm_lib {
 					m_label.c_str(), m_in_parallel?"true":"false", &my_papi);
 	}
 	#endif
-	if (m_started) {
-		// still active in the middle of start/stop pair, which is somewhat questionable.
-		// However, we go ahead merging the thread data, anyway.
-	}
 
     int is_unit = statsSwitch();
 
@@ -569,6 +567,8 @@ namespace pm_lib {
   {
   #ifdef _OPENMP
 	if (m_threads_merged) return;
+	if (m_started) return; // still in the middle of active start/stop pair
+		// The thread stats should be merged after the thread has stopped.
 
 	// Only the sections executed inside of parallel construct are merged.
 	// In Worksharing parallel structure, everything is in place and nothing is done here.
@@ -587,11 +587,6 @@ namespace pm_lib {
 				m_label.c_str(), my_thread, i_thread);
 	}
 
-	if (m_started) {
-		// still active in the middle of start/stop pair, which is somewhat questionable.
-		// However, we go ahead merging the thread data, anyway.
-	}
-
 	// collection of thread values must be done by each thread instances
     int is_unit = statsSwitch();
 
@@ -607,10 +602,8 @@ namespace pm_lib {
 		}
 	}
 
-	#ifdef DEBUG_PRINT_PAPI
-	if (my_rank == 0) {
-		fprintf(stderr, "<mergeParallelThread> [%s] my_thread=%d data was merged \n", m_label.c_str(), my_thread);
 	#ifdef DEBUG_PRINT_PAPI_THREADS
+	if (my_rank == 0) {
 	#pragma omp critical
 	{
 		if ( is_unit >= 2) { // PMlib HWPC counter mode
@@ -628,7 +621,6 @@ namespace pm_lib {
 		}
 		fprintf (stderr, "\t m_count=%d, m_time=%e, m_flop=%e\n", m_count, m_time, m_flop);
 	}
-	#endif
     }
 	#endif
 
@@ -654,11 +646,8 @@ namespace pm_lib {
   #ifdef _OPENMP
 	if (m_threads_merged) return;
 	if (my_thread != 0) return;
-
-	if (m_started) {
-		// still active in the middle of start/stop pair, which is somewhat questionable.
-		// However, we go ahead merging the thread data, anyway.
-	}
+	if (m_started) return; // still in the middle of active start/stop pair
+		// The thread stats should be merged after the thread has stopped.
 
     int is_unit = statsSwitch();
 
@@ -721,8 +710,8 @@ namespace pm_lib {
 
 	#ifdef DEBUG_PRINT_PAPI_THREADS
     if (my_rank == 0) {
+    	fprintf(stderr, "<updateMergedThread> [%s] merge step 3. master thread:\n", m_label.c_str());
 		if ( is_unit >= 2) { // PMlib HWPC counter mode
-    		fprintf(stderr, "\t<mergeParallelThread> [%s] master thread:\n", m_label.c_str());
 			for (int i=0; i<my_papi.num_events; i++) {
 				fprintf(stderr, "\t [%s] : [%8s] my_papi.accumu[%d]=%llu \n",
 					m_label.c_str(), my_papi.s_name[i].c_str(), i, my_papi.accumu[i]);
@@ -731,7 +720,7 @@ namespace pm_lib {
 				}
 			}
 		} else {	// ( is_unit == 0 | is_unit == 1) : PMlib user counter mode
-    		fprintf(stderr, "\t<mergeParallelThread> [%s] user mode: my_thread=%d, m_flop=%e\n", m_label.c_str(), my_thread, m_flop);
+    		fprintf(stderr, "\t\t [%s] user mode: my_thread=%d, m_flop=%e\n", m_label.c_str(), my_thread, m_flop);
 			for (int j=0; j<num_threads; j++) {
 				fprintf (stderr, "\t my_papi.th_v_sorted[%d][0:2]: %e, %e, %e \n",
 					j, my_papi.th_v_sorted[j][0], my_papi.th_v_sorted[j][1], my_papi.th_v_sorted[j][2]);
