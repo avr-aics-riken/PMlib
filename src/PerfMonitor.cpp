@@ -65,6 +65,13 @@ namespace pm_lib {
 		(void) MPI_Abort(MPI_COMM_WORLD, -999);
 	}
 
+	#ifdef DEBUG_PRINT_MONITOR
+    if (my_rank == 0) {
+    	// all threadprivate copies should debug print
+		fprintf(stderr, "<PerfMonitor::initialize> starts.\n");
+	}
+	#endif
+
 	#ifdef _OPENMP
     is_OpenMP_enabled = true;
 	my_thread = omp_get_thread_num();		// a local variable
@@ -578,7 +585,7 @@ namespace pm_lib {
     if (!is_PMlib_enabled) return;
 
 	#ifdef DEBUG_PRINT_MONITOR
-    if (my_rank == 0) { fprintf(stderr, "/n<PerfMonitor::gather> starts\n"); }
+    if (my_rank == 0) { fprintf(stderr, "\n<PerfMonitor::gather> starts\n"); }
 	#endif
 
 // DEBUG from HERE 20210714
