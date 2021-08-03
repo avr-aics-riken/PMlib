@@ -576,14 +576,8 @@ namespace pm_lib {
 
 	int i_thread;
 	i_thread = omp_get_thread_num();
-	#ifdef DEBUG_PRINT_WATCH
-	if (my_rank == 0) {
-		fprintf(stderr, "<mergeParallelThread> [%s] merge step 2. my_thread=%d, &my_papi=%p \n",
-					m_label.c_str(), my_thread, &my_papi);
-	}
-	#endif
 	if (i_thread != my_thread) {
-		fprintf(stderr, "\n\t*** PMlib error [%s] thread:%d does not match OpenMP thread ID:%d\n ",
+		fprintf(stderr, "\n\t*** PMlib internal error <mergeParallelThread> [%s] my_thread:%d does not match OpenMP thread:%d\n ",
 				m_label.c_str(), my_thread, i_thread);
 	}
 
@@ -602,26 +596,31 @@ namespace pm_lib {
 		}
 	}
 
-	#ifdef DEBUG_PRINT_PAPI_THREADS
+	#ifdef DEBUG_PRINT_WATCH
 	if (my_rank == 0) {
-	#pragma omp critical
-	{
+		#pragma omp critical
+		{
+		fprintf(stderr, "<mergeParallelThread> [%s] merge step 2. my_thread=%d, &my_papi=%p \n",
+					m_label.c_str(), my_thread, &my_papi);
+
+		#ifdef DEBUG_PRINT_PAPI_THREADS
 		if ( is_unit >= 2) { // PMlib HWPC counter mode
-    		fprintf(stderr, "\t<mergeParallelThread> [%s] my_thread=%d\n", m_label.c_str(), my_thread);
+    		fprintf(stderr, "\t [%s] my_thread=%d\n", m_label.c_str(), my_thread);
 			for (int i=0; i<my_papi.num_events; i++) {
-				fprintf(stderr, "\t [%s] : [%8s]  my_papi.th_accumu[%d][%d]=%llu\n",
+				fprintf(stderr, "\t\t [%s] : [%8s]  my_papi.th_accumu[%d][%d]=%llu\n",
 					m_label.c_str(), my_papi.s_name[i].c_str(), i, my_thread, my_papi.th_accumu[my_thread][i]);
 			}
 		} else {	// ( is_unit == 0 | is_unit == 1) : PMlib user counter mode
-    		fprintf(stderr, "\t<mergeParallelThread> [%s] user mode: my_thread=%d, m_flop=%e\n", m_label.c_str(), my_thread, m_flop);
+    		fprintf(stderr, "\t [%s] user mode: my_thread=%d, m_flop=%e\n", m_label.c_str(), my_thread, m_flop);
 			for (int j=my_thread; j<my_thread+1; j++) {
-				fprintf (stderr, "\t my_papi.th_v_sorted[%d][0:2]: %e, %e, %e \n",
+				fprintf (stderr, "\t\t my_papi.th_v_sorted[%d][0:2]: %e, %e, %e \n",
 					j, my_papi.th_v_sorted[j][0], my_papi.th_v_sorted[j][1], my_papi.th_v_sorted[j][2]);
 			}
 		}
 		fprintf (stderr, "\t m_count=%d, m_time=%e, m_flop=%e\n", m_count, m_time, m_flop);
+		#endif
+		}
 	}
-    }
 	#endif
 
   #endif
@@ -710,6 +709,8 @@ namespace pm_lib {
 
 	#ifdef DEBUG_PRINT_PAPI_THREADS
     if (my_rank == 0) {
+		#pragma omp critical
+		{
     	fprintf(stderr, "<updateMergedThread> [%s] merge step 3. master thread:\n", m_label.c_str());
 		if ( is_unit >= 2) { // PMlib HWPC counter mode
 			for (int i=0; i<my_papi.num_events; i++) {
@@ -727,6 +728,7 @@ namespace pm_lib {
 			}
 		}
 		fprintf (stderr, "\t m_count=%d, m_time=%e, m_flop=%e\n", m_count, m_time, m_flop);
+		}
     }
 	#endif
 
@@ -918,15 +920,14 @@ namespace pm_lib {
     if(m_is_POWER >  0) {
 		double t_joule;
 		int iret;
+		//	Reduce(sum) the estimated total power consumption my_power.w_accumu[0] into t_joule
 		if ( num_process > 1 ) {
-			//	iret = MPI_Reduce (&my_power.w_accumu[Max_power_stats-1], &t_joule, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
 			iret = MPI_Reduce (&my_power.w_accumu[0], &t_joule, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
 			if ( iret != 0 ) {
 				fprintf(stderr, "*** error. <%s> MPI_Reduce failed. iret=%d\n", __func__, iret);
 				t_joule = 0.0;
 			}
 		} else {
-			//	t_joule = my_power.w_accumu[Max_power_stats-1];
 			t_joule = my_power.w_accumu[0];
 		}
 		m_power_av = t_joule/num_process;
