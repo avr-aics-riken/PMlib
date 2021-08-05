@@ -594,18 +594,6 @@ namespace pm_lib {
     if (my_rank == 0) { fprintf(stderr, "\n<PerfMonitor::gather> starts\n"); }
 	#endif
 
-// DEBUG from HERE 20210714
-// 以下のブロックは mergeThreads()の中へ移動して、必要であれば parallelの内側で行う？？？
-    if (is_Root_active) {
-    	m_watchArray[0].stop(0.0, 1);
-		#ifdef USE_POWER
-    	m_watchArray[0].power_stop( pm_pacntxt, pm_extcntxt, pm_obj_array, pm_obj_ext );
-		#endif
-    	is_Root_active = false;
-    	(void) finalizePOWER();
-    	m_watchArray[0].finalizePowerWatch();
-    }
-
     mergeThreads();
 
     gather_and_stats();
@@ -628,12 +616,53 @@ namespace pm_lib {
   void PerfMonitor::mergeThreads (void)
   {
     if (!is_PMlib_enabled) return;
+
+// DEBUG from HERE 20210803
+// moved the following block from gather() to here in mergeThreads()
+//
+//	Stop the Root section, which means the ending of PMlib stats recording.
+//
+    if (is_Root_active) {
+    	m_watchArray[0].stop(0.0, 1);
+		#ifdef USE_POWER
+    	m_watchArray[0].power_stop( pm_pacntxt, pm_extcntxt, pm_obj_array, pm_obj_ext );
+		#endif
+    	is_Root_active = false;
+    	(void) finalizePOWER();
+    	m_watchArray[0].finalizePowerWatch();
+    }
+
     if (!is_OpenMP_enabled) return;
+
 #ifdef _OPENMP
+
+	#pragma omp barrier
+	bool in_parallel;
+	in_parallel = omp_in_parallel();
 	#ifdef DEBUG_PRINT_MONITOR
-    if (my_rank == 0) { fprintf(stderr, "<PerfMonitor::mergeThreads> starts\n"); }
+    if (my_rank == 0) { fprintf(stderr, "<PerfMonitor::mergeThreads> is called in %s context. \n" , in_parallel?"PARALLEL":"SERIAL"); }
 	#endif
 
+	for (int i=0; i<m_nWatch; i++) {
+		m_watchArray[i].mergeMasterThread();
+		#pragma omp barrier
+		m_watchArray[i].mergeParallelThread();
+		#pragma omp barrier
+		m_watchArray[i].updateMergedThread();
+		#pragma omp barrier
+	}
+
+#endif
+  }
+
+
+  ///  Obsolete version, just as a record of DEBUG
+  ///
+  void PerfMonitor::Obsolete_mergeThreads (void)
+  {
+    if (!is_PMlib_enabled) return;
+    if (!is_OpenMP_enabled) return;
+#ifdef _OPENMP
 	for (int i=0; i<m_nWatch; i++) {
 		#pragma omp barrier
 		m_watchArray[i].mergeMasterThread();
@@ -644,30 +673,6 @@ namespace pm_lib {
 	}
 	#pragma omp barrier
 #endif
-  }
-
-  ///  Obsolete version, just as a record of DEBUG
-  ///
-  void PerfMonitor::Obsolete_mergeThreads (void)
-  {
-    if (!is_PMlib_enabled) return;
-    if (!is_OpenMP_enabled) return;
-	#ifdef DEBUG_PRINT_MONITOR
-    if (my_rank == 0) { fprintf(stderr, "<PerfMonitor::mergeThreads> starts\n"); }
-	#endif
-	for (int i=0; i<m_nWatch; i++) {
-		m_watchArray[i].mergeMasterThread();
-		#ifdef _OPENMP
-		#pragma omp parallel shared(i)
-		#endif
-		{
-			m_watchArray[i].mergeParallelThread();
-		}
-		#ifdef _OPENMP
-		#pragma omp barrier
-		#endif
-		m_watchArray[i].updateMergedThread();
-	}
   }
 
 
@@ -1992,13 +1997,15 @@ void warning_print (std::string cstr1, std::string cstr2, std::string cstr3, int
 
 int PerfMonitor::initializePOWER (void)
 {
+#ifdef USE_POWER
 	#ifdef DEBUG_PRINT_POWER_EXT
+    if (my_rank == 0) {
 	fprintf(stderr, "<%s> start \n", __func__);
 	fprintf(stderr, "<%s> default objects. &pm_pacntxt=%p, &pm_obj_array=%p\n",
 		__func__, &pm_pacntxt, &pm_obj_array[0]);
+	}
 	#endif
 
-#ifdef USE_POWER
 	int irc;
 	int isum;
 
@@ -2013,8 +2020,10 @@ int PerfMonitor::initializePOWER (void)
 	}
 
 	#ifdef DEBUG_PRINT_POWER_EXT
+    if (my_rank == 0) {
 	fprintf(stderr, "<%s> extended objects. &pm_extcntxt=%p, &pm_obj_ext=%p\n",
 		__func__, &pm_extcntxt, &pm_obj_ext[0]);
+	}
 	#endif
 
 	isum += irc = PWR_CntxtInit (PWR_CNTXT_FX1000, PWR_ROLE_APP, "app", &pm_extcntxt);
@@ -2040,18 +2049,18 @@ int PerfMonitor::initializePOWER (void)
 
 int PerfMonitor::finalizePOWER ()
 {
+#ifdef USE_POWER
 	#ifdef DEBUG_PRINT_POWER_EXT
-	fprintf(stderr, "\t <%s> CntxtDestroy()\n", __func__);
+    if (my_rank == 0) { fprintf(stderr, "\t <%s> CntxtDestroy()\n", __func__); }
 	#endif
 
-#ifdef USE_POWER
 	int irc;
 	irc = 0;
 	irc = PWR_CntxtDestroy(pm_pacntxt);
 	irc += PWR_CntxtDestroy(pm_extcntxt);
 
 	#ifdef DEBUG_PRINT_POWER_EXT
-	fprintf(stderr, "\t <%s> returns %d\n", __func__, irc);
+    if (my_rank == 0) { fprintf(stderr, "\t <%s> returns %d\n", __func__, irc); }
 	#endif
 	return irc;
 #else
