@@ -1209,8 +1209,9 @@ void PerfMonitor::printBasicPower(FILE* fp, int maxLabelLen, int op_sort)
           i = j; //	1:登録順で表示
         }
         if (i == 0) continue;
-		// report exclusive sections only
-        if (!m_watchArray[i].m_exclusive) continue;
+		// Policy change
+		// Both of exclusive sections and inclusive sections will be reported.
+        //	if (!m_watchArray[i].m_exclusive) continue;
         m_watchArray[i].printDetailRanks(fp, tot);
       }
 
@@ -1230,8 +1231,9 @@ void PerfMonitor::printBasicPower(FILE* fp, int maxLabelLen, int op_sort)
         } else {
           i = j; //	1:登録順で表示
         }
-		// report exclusive sections only
-        if (!m_watchArray[i].m_exclusive) continue;
+		// Policy change
+		// Both of exclusive sections and inclusive sections will be reported.
+        //	if (!m_watchArray[i].m_exclusive) continue;
         m_watchArray[i].printDetailHWPCsums(fp, m_watchArray[i].m_label);
     }
 
@@ -1275,7 +1277,9 @@ void PerfMonitor::printBasicPower(FILE* fp, int maxLabelLen, int op_sort)
           i = j; //	1:登録順で表示
       }
       if (i == 0) continue;	// 区間0 : Root区間は出力しない
-      if (!m_watchArray[i].m_exclusive) continue;
+		// Policy change
+		// Both of exclusive sections and inclusive sections will be reported.
+        //	if (!m_watchArray[i].m_exclusive) continue;
       if (!(m_watchArray[i].m_count_sum > 0)) continue;
 
       m_watchArray[i].printDetailThreads(fp, rank_ID);
