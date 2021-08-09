@@ -1580,7 +1580,7 @@ void PerfWatch::outputPapiCounterLegend (FILE* fp)
 	}
 	fprintf(fp, "\t\t Total_FP:  total floating point operations\n");
 	fprintf(fp, "\t\t [Flops]:   floating point operations per second \n");
-	fprintf(fp, "\t\t [%Peak]:   sustained performance over peak performance\n");
+	fprintf(fp, "\t\t [%%Peak]:   sustained performance over peak performance\n");
 
 // BANDWIDTH
 	fprintf(fp, "\t HWPC_CHOOSER=BANDWIDTH:\n");
@@ -1632,7 +1632,7 @@ void PerfWatch::outputPapiCounterLegend (FILE* fp)
 	fprintf(fp, "\t\t DP_AVXW:    double precision f.p. 512-bit AVX instructions\n");
 	fprintf(fp, "\t\t Total_FP:   total floating point operations \n");
 	fprintf(fp, "\t\t Vector_FP:  floating point operations by vector instructions\n");
-	fprintf(fp, "\t\t [Vector %]: percentage of vectorized f.p. operations\n");
+	fprintf(fp, "\t\t [Vector %%]: percentage of vectorized f.p. operations\n");
 		} else {
 	fprintf(fp, "\t\t Haswell processor does not have floating point operation counters,\n");
 	fprintf(fp, "\t\t so PMlib does not produce full HWPC report for FLOPS and VECTOR groups.\n");
@@ -1655,7 +1655,7 @@ void PerfWatch::outputPapiCounterLegend (FILE* fp)
 		}
 	fprintf(fp, "\t\t Total_FP:   total floating point operations \n");
 	fprintf(fp, "\t\t Vector_FP:  floating point operations by vector instructions\n");
-	fprintf(fp, "\t\t [Vector %]: percentage of vectorized f.p. operations\n");
+	fprintf(fp, "\t\t [Vector %%]: percentage of vectorized f.p. operations\n");
 	} else
 
 	if (hwpc_group.platform == "A64FX" ) {
@@ -1665,7 +1665,7 @@ void PerfWatch::outputPapiCounterLegend (FILE* fp)
 	fprintf(fp, "\t\t SP_FIX_op:  single precision f.p. ops by scalar/armv8 instructions\n");
 	fprintf(fp, "\t\t Total_FP:   total floating point operations \n");
 	fprintf(fp, "\t\t Vector_FP:  floating point operations by vector instructions\n");
-	fprintf(fp, "\t\t [Vector %]: percentage of vectorized f.p. operations\n");
+	fprintf(fp, "\t\t [Vector %%]: percentage of vectorized f.p. operations\n");
 	}
 
 // CACHE
@@ -1678,9 +1678,9 @@ void PerfWatch::outputPapiCounterLegend (FILE* fp)
 	fprintf(fp, "\t\t L1_TCM:     L1 data cache activities leading to line replacements\n");
 	fprintf(fp, "\t\t L2_TCM:     L2 cache demand access misses\n");
 	//	fprintf(fp, "\t\t L3_TCM: level 3 total cache misses by demand\n");
-	fprintf(fp, "\t\t [L1$ hit%]: data access hit(%) in L1 data cache and Line Fill Buffer\n");
-	fprintf(fp, "\t\t [L2$ hit%]: data access hit(%) in L2 cache\n");
-	fprintf(fp, "\t\t [L*$ hit%]: sum of hit(%) in L1 and L2 cache\n");
+	fprintf(fp, "\t\t [L1$ hit%%]: data access hit(%%) in L1 data cache and Line Fill Buffer\n");
+	fprintf(fp, "\t\t [L2$ hit%%]: data access hit(%%) in L2 cache\n");
+	fprintf(fp, "\t\t [L*$ hit%%]: sum of hit(%%) in L1 and L2 cache\n");
 	} else
 
 	if (hwpc_group.platform == "SPARC64" ) {
@@ -1689,9 +1689,9 @@ void PerfWatch::outputPapiCounterLegend (FILE* fp)
 	fprintf(fp, "\t\t 4SIMD:LDST: memory load/store extended SIMD instructions(4SIMD)\n");
 	fprintf(fp, "\t\t L1_TCM:     L1 cache misses (by demand and by prefetch)\n");
 	fprintf(fp, "\t\t L2_TCM:     L2 cache misses (by demand and by prefetch)\n");
-	fprintf(fp, "\t\t [L1$ hit%]: data access hit(%) in L1 cache \n");
-	fprintf(fp, "\t\t [L2$ hit%]: data access hit(%) in L2 cache\n");
-	fprintf(fp, "\t\t [L*$ hit%]: sum of hit(%) in L1 and L2 cache\n");
+	fprintf(fp, "\t\t [L1$ hit%%]: data access hit(%%) in L1 cache \n");
+	fprintf(fp, "\t\t [L2$ hit%%]: data access hit(%%) in L2 cache\n");
+	fprintf(fp, "\t\t [L*$ hit%%]: sum of hit(%%) in L1 and L2 cache\n");
 	} else
 
 	if (hwpc_group.platform == "A64FX" ) {
@@ -1700,9 +1700,9 @@ void PerfWatch::outputPapiCounterLegend (FILE* fp)
 	fprintf(fp, "\t\t L1_HIT:     L1 data cache hits\n");
 	fprintf(fp, "\t\t L1_TCM:     L1 data cache misses\n");
 	fprintf(fp, "\t\t L2_TCM:     L2 cache misses\n");
-	fprintf(fp, "\t\t [L1$ hit%]: data access hit(%) in L1 cache \n");
-	fprintf(fp, "\t\t [L2$ hit%]: data access hit(%) in L2 cache\n");
-	fprintf(fp, "\t\t [L*$ hit%]: sum of hit(%) in L1 and L2 cache\n");
+	fprintf(fp, "\t\t [L1$ hit%%]: data access hit(%%) in L1 cache \n");
+	fprintf(fp, "\t\t [L2$ hit%%]: data access hit(%%) in L2 cache\n");
+	fprintf(fp, "\t\t [L*$ hit%%]: sum of hit(%%) in L1 and L2 cache\n");
 	}
 
 
@@ -1715,7 +1715,7 @@ void PerfWatch::outputPapiCounterLegend (FILE* fp)
 	fprintf(fp, "\t\t WBACK_MEM:  memory write via cache writeback store\n");
 	fprintf(fp, "\t\t STRMS_MEM:  memory write via streaming store, i.e. nontemporal store \n");
 		}
-	fprintf(fp, "\t\t [Vector %]: the measurement of this column is not available on Xeon processors.\n"); 
+	fprintf(fp, "\t\t [Vector %%]: the measurement of this column is not available on Xeon processors.\n"); 
 	} else
 
 	if (hwpc_group.platform == "SPARC64" ) {
@@ -1728,7 +1728,7 @@ void PerfWatch::outputPapiCounterLegend (FILE* fp)
 	fprintf(fp, "\t\t 2SIMD:LDST: memory load/store SIMD instructions(2SIMD)\n");
 	fprintf(fp, "\t\t 4SIMD:LDST: memory load/store extended SIMD instructions(4SIMD)\n");
 		}
-	fprintf(fp, "\t\t [Vector %]: percentage of SIMD load/store instructions over all load/store instructions.\n");
+	fprintf(fp, "\t\t [Vector %%]: percentage of SIMD load/store instructions over all load/store instructions.\n");
 	} else
 
 	if (hwpc_group.platform == "A64FX" ) {
@@ -1740,7 +1740,7 @@ void PerfWatch::outputPapiCounterLegend (FILE* fp)
 	fprintf(fp, "\t\t SVE_SMV_ST: memory write by SVE and Advanced SIMD multiple vector contiguous structure store instructions.\n");
 	fprintf(fp, "\t\t GATHER_LD:  memory read by SVE non-contiguous gather-load instructions.\n");
 	fprintf(fp, "\t\t SCATTER_ST: memory write by SVE non-contiguous scatter-store instructions.\n");
-	fprintf(fp, "\t\t [Vector %]: percentage of SVE load/store instructions over all load/store instructions.\n");
+	fprintf(fp, "\t\t [Vector %%]: percentage of SVE load/store instructions over all load/store instructions.\n");
 	}
 
 // CYCLES
@@ -1750,7 +1750,7 @@ void PerfWatch::outputPapiCounterLegend (FILE* fp)
 	if (hwpc_group.platform == "A64FX" ) {
 	fprintf(fp, "\t\t FP_inst:   floating point instructions\n");
 	fprintf(fp, "\t\t FMA_inst:  fused multiply+add instructions\n");
-	fprintf(fp, "\t\t [FMA_ins%]: percentage of FMA instructions over all f.p. instructions\n");
+	fprintf(fp, "\t\t [FMA_ins%%]: percentage of FMA instructions over all f.p. instructions\n");
 	}
 	fprintf(fp, "\t\t [Ins/cyc]: performed instructions per machine clock cycle\n");
 
@@ -1788,7 +1788,7 @@ void PerfWatch::outputPapiCounterLegend (FILE* fp)
 
 	if (hwpc_group.platform == "A64FX" ) {
 	fprintf(fp, "\t Special remarks for A64FX VECTOR report.\n");
-	fprintf(fp, "\t\t [FMA_ops %] is a roughly approximated number using the following assumption. \n");
+	fprintf(fp, "\t\t [FMA_ops %%] is a roughly approximated number using the following assumption. \n");
 	fprintf(fp, "\t\t\t (FMA vector OPS)/(vector OPS) = (FMA scalar OPS)/(scalar OPS) for both DP and SP \n");
 	fprintf(fp, "\t Special remarks for A64FX BANDWIDTH report.\n");
 	fprintf(fp, "\t\t CMG_bus_RD and CMG_bus_WR both count the CMG aggregated values, not core.\n");

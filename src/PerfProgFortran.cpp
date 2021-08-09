@@ -233,7 +233,7 @@ void f_pm_stop_usermode_ (char* fc, double& fpt, unsigned& tic, int fc_size)
 ///			do not have to explicitly give it when calling from Fortran programs.
 ///			for example, call f_pm_print_ ("") is good enough for most use cases.
 ///
-void f_pm_report_ (char* fc, int fc_size)
+void f_pm_report_top_ (char* fc, int fc_size)
 {
 	FILE *fp;
 	std::string s=std::string(fc,fc_size);
@@ -710,17 +710,62 @@ void f_pm_gather_ (void)
 
 
 /// PMlib Fortran interface
-///  OpenMP parallel region内のマージ処理
-///  OpenMPスレッド並列処理された測定区間のうち、 parallel regionの内側から
-///  区間を測定した場合（測定区間の外側にparallel 構文がある場合）に限って
-///  呼び出しが必要な関数。
-///  parallel region内で呼び出された全測定区間のスレッド情報を
-///  マスタースレッドに集約する。
-///  parallel regionが全て測定区間の内側にある場合は呼び出し不要。
+///  Count the number of shared sections
 ///
-void f_pm_mergethreads_ (void)
+///   @param[out] nSections		 	number of shared sections
+///
+void f_pm_sections_ (int &nSections)
 {
-	PM.mergeThreads();
+
+	PM.countSections(nSections);
+
+#ifdef DEBUG_PRINT_MONITOR
+	fprintf(stderr, "<f_pm_sections_> nSections=%d \n", nSections);
+#endif
+	return;
+}
+
+
+/// PMlib Fortran interface
+///  Check if the section has been called inside of parallel region
+///
+///   @param[in] id		 	shared section number
+///   @param[out] mid		class private section number
+///   @param[out] inside	 0/1 (0:serial region / 1:parallel region)
+///
+///
+void f_pm_serial_parallel_ (int &id, int &mid, int &inside)
+{
+#ifdef DEBUG_PRINT_MONITOR
+	fprintf(stderr, "<f_pm_serial_parallel_> id=%d \n", id);
+#endif
+	PM.SerialParallelRegion(id, mid, inside);
+	return;
+}
+
+
+/// PMlib Fortran interface
+///  Stop the Root section, which means the ending of PMlib stats recording
+///
+void f_pm_stop_root_ (void)
+{
+	PM.stopRoot();
+	return;
+}
+
+
+/// PMlib Fortran interface
+///  OpenMP parallel region内のマージ処理
+///  呼び出された測定区間のスレッド情報をマスタースレッドに集約する。
+/// 
+///   @param[in] id		 	shared section number
+/// 
+///   @note  通常このAPIはPMlib内部で自動的に実行され、利用者が呼び出す必要はない。
+///   @note この測定区間の番号はスレッドプライベートな番号ではなく、共通番号であることに注意。
+///
+void f_pm_mergethreads_ (int &id)
+{
+	PM.mergeThreads(id);
 	return;
 }
 

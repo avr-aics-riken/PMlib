@@ -65,6 +65,11 @@ namespace pm_lib {
     int m_id;             ///< 測定区間のラベルに対応する番号
     int m_typeCalc;        ///< 測定対象タイプ (0:通信, 1:計算)
     bool m_exclusive;      ///< 測定区間の排他性フラグ (false, true)
+    bool m_in_parallel;    /// 測定区間が並列領域の内部にあるか(false, true)
+
+    /// MPI並列時の並列プロセス数と自ランク番号
+    int num_process;
+    int my_rank;
 
     // 測定値の積算量
     long m_count;          ///< 測定回数 (プロセス内の全スレッドの最大値)
@@ -81,7 +86,9 @@ namespace pm_lib {
     double m_flop_sd;    ///< 浮動小数点演算量or通信量の標準偏差
     double m_time_comm;  ///< 通信部分の最大値
 
-    int m_is_OTF;	     ///< OTF tracing 出力のフラグ 0(no), 1(yes), 2(full)
+    int level_POWER;	///< 電力情報レベル 0(no), 1(NODE), 2(NUMA), 3(PARTS)
+    double m_power_av;    ///< average value of power consumption meter reading
+    int level_OTF;	     ///< OTF tracing 出力レベル 0(no), 1(yes), 2(full)
     std::string otf_filename;    ///< OTF filename headings
                         //	master 		: otf_filename + .otf
                         //	definition	: otf_filename + .mdID + .def
@@ -90,13 +97,7 @@ namespace pm_lib {
 
 	struct pmlib_papi_chooser my_papi;
 
-    int m_is_POWER;	     ///< 消費電力情報 出力のフラグ 0(no), 1(NODE), 2(NUMA), 3(PARTS)
 	struct pmlib_power_chooser my_power;
-    double m_power_av;    ///< average value of power consumption meter reading
-
-    /// MPI並列時の並列プロセス数と自ランク番号
-    int num_process;
-    int my_rank;
 
   private:
     /// OpenMP並列時のスレッド数と自スレッド番号
@@ -116,7 +117,6 @@ namespace pm_lib {
     /// 測定区間に関する各種の判定フラグ ：  bool値(true|false)
     bool m_is_set;         /// 測定区間がプロパティ設定済みかどうか
     bool m_is_healthy;     /// 測定区間に排他性・非排他性の矛盾がないか
-    bool m_in_parallel;    /// 測定区間が並列領域内部のスレッドであるかどうか
     bool m_threads_merged; /// 全スレッドの情報をマスタースレッドに集約済みか
     bool m_gathered;       /// 全プロセスの結果をランク0に集計済みかどうか
     bool m_started;        /// 測定区間がstart済みかどうか
@@ -128,7 +128,8 @@ namespace pm_lib {
     /// コンストラクタ.
     PerfWatch() : m_time(0.0), m_flop(0.0), m_count(0), m_started(false),
       my_rank(-1), m_timeArray(0), m_flopArray(0), m_countArray(0),
-      m_sortedArrayHWPC(0), m_is_set(false), m_is_healthy(true) {
+      m_sortedArrayHWPC(0), m_is_set(false), m_is_healthy(true),
+      m_in_parallel(false) {
 	#ifdef DEBUG_PRINT_WATCH
 		int i_thread_constractor;
 		int PerfWatch::* p_m_id = &PerfWatch::m_id;
@@ -177,35 +178,6 @@ namespace pm_lib {
     ///
     void initializePowerWatch(int num);
 
-    /// finalize Power API related variables
-    ///
-	///   @param[in] num	number of Power objects initialized by PerfMonitor
-    ///
-    void finalizePowerWatch(void);
-
-	/// start measuring the power of the section
-	///
-	///   @param[in] PWR_Cntxt pacntxt
-	///   @param[in] PWR_Cntxt extcntxt
-	///   @param[in] PWR_Obj obj_array
-	///   @param[in] PWR_Obj obj_ext
-	///
-	///   @note the arguments are Power API objects and attributes
-	///
-	void power_start(PWR_Cntxt pacntxt, PWR_Cntxt extcntxt, PWR_Obj obj_array[], PWR_Obj obj_ext[]);
-	
-	
-	/// stop measuring the power of the section
-	///
-	///   @param[in] PWR_Cntxt pacntxt
-	///   @param[in] PWR_Cntxt extcntxt
-	///   @param[in] PWR_Obj obj_array
-	///   @param[in] PWR_Obj obj_ext
-	///
-	///   @note the arguments are Power API objects and attributes
-	///
-	void power_stop(PWR_Cntxt pacntxt, PWR_Cntxt extcntxt, PWR_Obj obj_array[], PWR_Obj obj_ext[]);
-
 
     /// OTF 用の初期化
     ///
@@ -243,6 +215,32 @@ namespace pm_lib {
     /// HWPCにより測定したスレッドレベルのイベントカウンター測定値を収集する
     ///
     void gatherThreadHWPC(void);
+
+	/// start measuring the power of the section
+	///
+	///   @param[in] PWR_Cntxt pacntxt
+	///   @param[in] PWR_Cntxt extcntxt
+	///   @param[in] PWR_Obj obj_array
+	///   @param[in] PWR_Obj obj_ext
+	///
+	///   @note the arguments are Power API objects and attributes
+	///
+	void power_start(PWR_Cntxt pacntxt, PWR_Cntxt extcntxt, PWR_Obj obj_array[], PWR_Obj obj_ext[]);
+	
+	/// stop measuring the power of the section
+	///
+	///   @param[in] PWR_Cntxt pacntxt
+	///   @param[in] PWR_Cntxt extcntxt
+	///   @param[in] PWR_Obj obj_array
+	///   @param[in] PWR_Obj obj_ext
+	///
+	///   @note the arguments are Power API objects and attributes
+	///
+	void power_stop(PWR_Cntxt pacntxt, PWR_Cntxt extcntxt, PWR_Obj obj_array[], PWR_Obj obj_ext[]);
+
+    /// gather the estimated power consumption of all processes
+    ///
+    void gatherPOWER(void);
 
     /// 測定結果の平均値・標準偏差などの基礎的な統計計算
     ///

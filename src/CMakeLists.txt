@@ -19,7 +19,8 @@ set(pm_files
        PerfMonitor.cpp
        PerfWatch.cpp
        PerfProgFortran.cpp
-       PerfProgC.cpp)
+       PerfProgC.cpp
+       SupportReportFortran.F90)
 
 if(NOT with_MPI)
   add_library(PM STATIC ${pm_files})

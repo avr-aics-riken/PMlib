@@ -28,10 +28,9 @@
 
 namespace pm_lib {
 
-  //
-  // global section name map variable inside of namespace
-  //
-  std::map<std::string, int > array_of_symbols;
+    /// shared map of section name and ID
+    std::map<std::string, int > shared_map_sections;
+
 
 
   /// 初期化.
@@ -184,22 +183,22 @@ namespace pm_lib {
 
 	#ifdef DEBUG_PRINT_MONITOR
     if (my_rank == 0) {
-		fprintf(stderr, "\t [%s] All threads should pass this point. my_rank=%d, my_thread=%d\n",
-			label.c_str(), my_rank, my_thread);
-		#pragma omp barrier
-    	check_all_perf_label();
+		fprintf(stderr, "\t <initialize> map of my_rank=%d, my_thread=%d\n", my_rank, my_thread);
+		#pragma omp critical
+    	check_all_section_object();
+		// end critical does not exist for C++
     }
 	#endif
 
+//	increment the section map object
     int id;
-	//	#pragma omp barrier
-	//	#pragma omp critical
-	//	{
-    id = add_perf_label(label);	// id for "Root Section" should be 0
-	//	}
+    id = add_section_object(label);	// id for "Root Section" should be 0
+
+//	increment the shared sections as well
+    int id_shared;
+    id_shared = add_shared_section(label);
 
     m_nWatch++;
-
     m_watchArray[0].setProperties(label, id, CALC, num_process, my_rank, num_threads, false);
 
 // initialize OTF manager
@@ -249,9 +248,6 @@ namespace pm_lib {
   void PerfMonitor::setProperties(const std::string& label, Type type, bool exclusive)
   {
 
-	//	int i_thread;
-	bool in_parallel;
-
     if (!is_PMlib_enabled) return;
 
     if (label.empty()) {
@@ -261,38 +257,32 @@ namespace pm_lib {
 
 	#ifdef _OPENMP
 	my_thread = omp_get_thread_num();
-	in_parallel = omp_in_parallel();
 	#else
 	my_thread = 0;
-	in_parallel = false;
 	#endif
 
 
     #ifdef DEBUG_PRINT_MONITOR
     if (my_rank == 0) {
-		fprintf(stderr, "<setProperties> [%s] my_rank=%d, my_thread=%d \n",
-			label.c_str(), my_rank, my_thread);	//	bool is_PMlib_enabled?"true":"false"
+		fprintf(stderr, "<setProperties> [%s] my_thread=%d \n",
+			label.c_str(), my_thread);	//	bool is_PMlib_enabled?"true":"false"
 	}
 	#endif
 
-    int id;
-	#ifdef _OPENMP
-	#pragma omp critical
-	#endif
-	{
-    id = find_perf_label(label);
+    int id, id_shared;
+    id = find_section_object(label);
 	if (id < 0) {
-    	id = add_perf_label(label);
+    	id = add_section_object(label);
+   		id_shared = add_shared_section(label);
+
     	#ifdef DEBUG_PRINT_MONITOR
-		fprintf(stderr, "<setProperties> [%s] my_thread=%d NEW label id=%d is created.\n", label.c_str(), my_thread, id);
+		fprintf(stderr, "<setProperties> [%s] NEW section created by my_thread=%d as [%d] \n", label.c_str(), my_thread, id);
 		#endif
 	} else {
     	#ifdef DEBUG_PRINT_MONITOR
-		fprintf(stderr, "<setProperties> [%s] my_thread=%d label exists. id=%d\n", label.c_str(), my_thread, id);
+		fprintf(stderr, "<setProperties> [%s] section exists. my_thread=%d as [%d] \n", label.c_str(), my_thread, id);
 		#endif
 	}
-	}
-	// remark. end critical does not exist. its only for fortran !$omp.
 
 //
 // If short of memory, allocate new space
@@ -374,14 +364,16 @@ namespace pm_lib {
 
 	#ifdef USE_POWER
 	int iret;
-	if (m_watchArray[0].m_is_POWER == 0) {
-		fprintf(stderr, "<getPowerKnob> is ignored because POWER_CHOOSER environment variable is set OFF.\n");
+	if (level_POWER == 0) {
+    	if (my_rank == 0) {
+			fprintf(stderr, "*** Error PMlib. Set POWER_CHOOSER to activate <getPowerKnob> \n");
+		}
 	} else {
 		iret = operatePowerKnob (knob, 0, value);
 		if (iret != 0) fprintf(stderr, "warning <getPowerKnob> error code=%d\n", iret);
 	}
 	#else
-	fprintf(stderr, "<PerfMonitor::getPowerKnob> is not supported for this system.\n");
+	fprintf(stderr, "*** Warning PMlib. Power API is not included. <getPowerKnob> is ignored.\n");
     #endif
   }
 
@@ -401,14 +393,16 @@ namespace pm_lib {
 
 	#ifdef USE_POWER
 	int iret;
-	if (m_watchArray[0].m_is_POWER == 0) {
-		fprintf(stderr, "<setPowerKnob> is ignored because POWER_CHOOSER environment variable is set OFF.\n");
+	if (level_POWER == 0) {
+    	if (my_rank == 0) {
+			fprintf(stderr, "*** Error PMlib. Set POWER_CHOOSER to activate <setPowerKnob> \n");
+		}
 	} else {
 		iret = operatePowerKnob (knob, 1, value);
 		if (iret != 0) fprintf(stderr, "warning <setPowerKnob> error code=%d\n", iret);
 	}
 	#else
-	fprintf(stderr, "<PerfMonitor::setPowerKnob> is not supported for this system.\n");
+	fprintf(stderr, "*** Warning PMlib. Power API is not included. <setPowerKnob> is ignored.\n");
     #endif
   }
 
@@ -428,7 +422,7 @@ namespace pm_lib {
       printDiag("start()",  "label is blank. Ignored the call.\n");
       return;
     }
-    id = find_perf_label(label);
+    id = find_section_object(label);
 
 	#ifdef DEBUG_PRINT_MONITOR
 	int i_thread;
@@ -449,10 +443,10 @@ namespace pm_lib {
 	#endif
 
     if (id < 0) {
-      // Create the property for this section
-      //	PerfMonitor::setProperties(std::string& label, Type type=CALC, bool exclusive=true);
+      // Create and set the property for this section
       PerfMonitor::setProperties(label);
-      id = find_perf_label(label);
+
+      id = find_section_object(label);
       #ifdef DEBUG_PRINT_MONITOR
       if (my_rank == 0) {
         fprintf(stderr, "<start> created property for [%s] at class address %p\n",
@@ -493,7 +487,7 @@ namespace pm_lib {
       printDiag("stop()",  "label is blank. Ignored the call.\n");
       return;
     }
-    id = find_perf_label(label);
+    id = find_section_object(label);
     if (id < 0) {
       printDiag("stop()",  "label [%s] is undefined. This may lead to incorrect measurement.\n",
 				label.c_str());
@@ -531,7 +525,7 @@ namespace pm_lib {
       printDiag("reset()",  "label is blank. Ignored the call.\n");
       return;
     }
-    id = find_perf_label(label);
+    id = find_section_object(label);
     if (id < 0) {
       printDiag("reset()",  "label [%s] is undefined. This may lead to incorrect measurement.\n",
 				label.c_str());
@@ -577,6 +571,165 @@ namespace pm_lib {
   }
 
 
+  ///	Stop the Root section, which means the ending of PMlib stats recording.
+  ///
+  ///
+  void PerfMonitor::stopRoot (void)
+  {
+    if (!is_PMlib_enabled) return;
+
+    if (is_Root_active) {
+    	m_watchArray[0].stop(0.0, 1);
+
+    	m_watchArray[0].power_stop( pm_pacntxt, pm_extcntxt, pm_obj_array, pm_obj_ext );
+    	(void) finalizePOWER();
+
+    	is_Root_active = false;
+    }
+  }
+
+  /// Count the number of shared measured sections
+  ///
+  ///   @param[out] nSections     number of shared measured sections
+  ///
+  void PerfMonitor::countSections (int &nSections)
+  {
+	#ifdef DEBUG_PRINT_MONITOR
+	check_all_shared_sections();
+	#endif
+
+	//	nSections = m_nWatch;	// the local value, i.e. local to each thread class object
+
+	nSections = shared_map_sections.size();	// this is the shared value for all threads
+
+	#ifdef DEBUG_PRINT_MONITOR
+    if (my_rank == 0) { fprintf(stderr, "<countSections> nSections=%d \n" , nSections); }
+	#endif
+  }
+
+
+  ///  Check if the section has been called inside of parallel region
+  ///
+  ///   @param[in] id         shared section number
+  ///   @param[out] mid       class private section number
+  ///   @param[out] inside     0/1 (0:serial region / 1:parallel region)
+  ///
+  void PerfMonitor::SerialParallelRegion (int &id, int &mid, int &inside)
+  {
+	#ifdef DEBUG_PRINT_MONITOR
+    if (my_rank == 0) { fprintf(stderr, "<SerialParallelRegion> section id=%d start \n" , id); }
+	#endif
+
+    if (!is_PMlib_enabled) return;
+
+	int n_shared_sections = shared_map_sections.size();
+
+    if ((id<0) || (n_shared_sections<=id)) {
+		fprintf(stderr, "*** PMlib internal Error <SerialParallelRegion> section id=%d is out of range\n", id);
+		inside=-1;
+		return;
+	}
+
+	std::string s;
+
+	mid=-1;
+	for (auto it=shared_map_sections.begin(); it != shared_map_sections.end(); ++it)
+	{
+    	if (it->second == id) {
+			s = it->first;
+			mid = find_section_object(s);
+			break;
+		}
+	}
+	if ( (mid<0) || (mid>=n_shared_sections) ) {
+		fprintf(stderr, "*** PMlib internal Error <SerialParallelRegion> section id=%d was not found\n", id);
+		inside=-1;
+		return;
+	}
+
+	if (m_watchArray[mid].m_in_parallel) {
+		inside=1;
+	} else {
+		inside=0;
+	}
+
+	#ifdef DEBUG_PRINT_MONITOR
+    if (my_rank == 0) {
+		fprintf(stderr, "<SerialParallelRegion> id=%d [%s] is in %s region. mid=%d \n" , id, s.c_str(), m_watchArray[mid].m_in_parallel?"PARALLEL":"SERIAL", mid); }
+	#endif
+	return;
+  }
+
+
+
+  ///  Merge the parallel thread data into the master thread in three steps. 
+  ///
+  ///   @param[in] id    shared section number
+  ///
+  /// @note
+  /// If the application calls PMlib from inside the parallel region,
+  /// the PerfMonitor class must have been instantiated as threadprivate
+  /// to preserve thread private my_papi.* memory storage.
+  /// and mergeThreads() must be called from paralel region before calling report()
+  ///
+  void PerfMonitor::mergeThreads (int id)
+  {
+    if (!is_PMlib_enabled) return;
+#ifdef _OPENMP
+	int mid;
+	bool in_parallel;
+	in_parallel = omp_in_parallel();
+	std::string s;
+
+	for (auto it=shared_map_sections.begin(); it != shared_map_sections.end(); ++it)
+	{
+    	if (it->second == id) {
+			s = it->first;
+			mid = find_section_object(s);
+			break;
+		}
+	}
+
+	#ifdef DEBUG_PRINT_MONITOR
+    if (my_rank == 0) {
+		fprintf(stderr, "<mergeThreads> id=%d [%s] mid=%d in %s region. \n" , id, s.c_str(), mid, in_parallel?"PARALLEL":"SERIAL");
+	}
+	#endif
+
+
+	#pragma omp barrier
+	m_watchArray[mid].mergeMasterThread();
+	#pragma omp barrier
+	m_watchArray[mid].mergeParallelThread();
+	#pragma omp barrier
+	m_watchArray[mid].updateMergedThread();
+	#pragma omp barrier
+
+#endif
+  }
+
+
+  ///  Merge the parallel thread data of all sections
+  ///  This function is obsolete and should not be necessary. Just leave here as a history
+  ///
+  void PerfMonitor::Obsolete_mergeThreads (void)
+  {
+    if (!is_PMlib_enabled) return;
+#ifdef _OPENMP
+	for (int i=0; i<m_nWatch; i++) {
+		#pragma omp barrier
+		m_watchArray[i].mergeMasterThread();
+		#pragma omp barrier
+		m_watchArray[i].mergeParallelThread();
+		#pragma omp barrier
+		m_watchArray[i].updateMergedThread();
+	}
+	#pragma omp barrier
+#endif
+  }
+
+
+
   /// 全プロセスの測定結果、全スレッドの測定結果を集約
   ///
   /// @note  以下の処理を行う。
@@ -594,8 +747,6 @@ namespace pm_lib {
     if (my_rank == 0) { fprintf(stderr, "\n<PerfMonitor::gather> starts\n"); }
 	#endif
 
-    mergeThreads();
-
     gather_and_stats();
 
     sort_m_order();
@@ -604,77 +755,6 @@ namespace pm_lib {
     if (my_rank == 0) { fprintf(stderr, "<PerfMonitor::gather> finishes\n"); }
 	#endif
   }
-
-
-  ///  Merge the parallel thread data into the master thread in three steps. 
-  ///
-  /// If the application calls PMlib from inside the parallel region,
-  /// the PerfMonitor class must have been instantiated as threadprivate
-  /// to preserve thread private my_papi.* memory storage.
-  /// and mergeThreads() must be called from paralel region before calling report()
-  ///
-  void PerfMonitor::mergeThreads (void)
-  {
-    if (!is_PMlib_enabled) return;
-
-// DEBUG from HERE 20210803
-// moved the following block from gather() to here in mergeThreads()
-//
-//	Stop the Root section, which means the ending of PMlib stats recording.
-//
-    if (is_Root_active) {
-    	m_watchArray[0].stop(0.0, 1);
-		#ifdef USE_POWER
-    	m_watchArray[0].power_stop( pm_pacntxt, pm_extcntxt, pm_obj_array, pm_obj_ext );
-		#endif
-    	is_Root_active = false;
-    	(void) finalizePOWER();
-    	m_watchArray[0].finalizePowerWatch();
-    }
-
-    if (!is_OpenMP_enabled) return;
-
-#ifdef _OPENMP
-
-	#pragma omp barrier
-	bool in_parallel;
-	in_parallel = omp_in_parallel();
-	#ifdef DEBUG_PRINT_MONITOR
-    if (my_rank == 0) { fprintf(stderr, "<PerfMonitor::mergeThreads> is called in %s context. \n" , in_parallel?"PARALLEL":"SERIAL"); }
-	#endif
-
-	for (int i=0; i<m_nWatch; i++) {
-		m_watchArray[i].mergeMasterThread();
-		#pragma omp barrier
-		m_watchArray[i].mergeParallelThread();
-		#pragma omp barrier
-		m_watchArray[i].updateMergedThread();
-		#pragma omp barrier
-	}
-
-#endif
-  }
-
-
-  ///  Obsolete version, just as a record of DEBUG
-  ///
-  void PerfMonitor::Obsolete_mergeThreads (void)
-  {
-    if (!is_PMlib_enabled) return;
-    if (!is_OpenMP_enabled) return;
-#ifdef _OPENMP
-	for (int i=0; i<m_nWatch; i++) {
-		#pragma omp barrier
-		m_watchArray[i].mergeMasterThread();
-		#pragma omp barrier
-		m_watchArray[i].mergeParallelThread();
-		#pragma omp barrier
-		m_watchArray[i].updateMergedThread();
-	}
-	#pragma omp barrier
-#endif
-  }
-
 
 
   /// 全プロセスの測定中経過情報を集約
@@ -709,6 +789,9 @@ namespace pm_lib {
     for (int i = 0; i < m_nWatch; i++) {
       m_watchArray[i].statsAverage();
     }
+
+	//  summary stats of the estimated power consumption. Only the Root section does this.
+    m_watchArray[0].gatherPOWER();
 
   }
 
@@ -967,13 +1050,11 @@ void PerfMonitor::printBasicPower(FILE* fp, int maxLabelLen, int op_sort)
 //
 // Fugaku local implementation
 //
-	int m_is_POWER;
 	int n_parts;
     std::string p_label;
 
 
-	m_is_POWER = m_watchArray[0].m_is_POWER;
-	if (m_is_POWER == 0) return;
+	if (level_POWER == 0) return;
 
 	//original power object array i.e. std::string p_obj_name[Max_power_stats] =
 	// power.num_power_stats == Max_power_stats == 20
@@ -1006,7 +1087,7 @@ void PerfMonitor::printBasicPower(FILE* fp, int maxLabelLen, int op_sort)
 
 	n_parts = 0;
 
-	if (m_is_POWER == 1) {	// total, CMG+L2, MEMORY, TF+A+U, P.meter
+	if (level_POWER == 1) {	// total, CMG+L2, MEMORY, TF+A+U, P.meter
 		p_label = "NODE";
 		n_parts = 4;
 		sorted_obj_name[0] = "  total ";
@@ -1015,7 +1096,7 @@ void PerfMonitor::printBasicPower(FILE* fp, int maxLabelLen, int op_sort)
 		sorted_obj_name[3] = " TF+A+U ";
 		//	sorted_obj_name[4] = " P.meter";
 	} else
-	if (m_is_POWER == 2) {	// total, CMG0+L2, CMG1+L2, CMG2+L2, CMG3+L2, MEM0, MEM1, MEM2, MEM3, TF+A+U, P.meter
+	if (level_POWER == 2) {	// total, CMG0+L2, CMG1+L2, CMG2+L2, CMG3+L2, MEM0, MEM1, MEM2, MEM3, TF+A+U, P.meter
 		p_label = "NUMA";
 		n_parts = 10;
 		sorted_obj_name[0] = "  total ";
@@ -1030,7 +1111,7 @@ void PerfMonitor::printBasicPower(FILE* fp, int maxLabelLen, int op_sort)
 		//	sorted_obj_name[10] = p_obj_shortname[19];
 
 	} else
-	if (m_is_POWER == 3) {
+	if (level_POWER == 3) {
 		p_label = "PARTS";
 		n_parts = 19;
 
@@ -1068,7 +1149,7 @@ void PerfMonitor::printBasicPower(FILE* fp, int maxLabelLen, int op_sort)
 		if (m == 0) continue;
 		PerfWatch& w = m_watchArray[m];
 
-		if (m_is_POWER == 1) {	// total, CMG+L2, MEMORY, TF+A+U
+		if (level_POWER == 1) {	// total, CMG+L2, MEMORY, TF+A+U
 			sorted_joule[0] = w.my_power.w_accumu[0];
 			sorted_joule[1] = 0.0;
 			for (int i=1; i<9; i++) {
@@ -1082,7 +1163,7 @@ void PerfMonitor::printBasicPower(FILE* fp, int maxLabelLen, int op_sort)
 					+ w.my_power.w_accumu[12] + w.my_power.w_accumu[17] + w.my_power.w_accumu[18] ;
 	
 		} else
-		if (m_is_POWER == 2) {	// total, CMG0+L2, CMG1+L2, CMG2+L2, CMG3+L2, MEM0, MEM1, MEM2, MEM3, TF+A+U
+		if (level_POWER == 2) {	// total, CMG0+L2, CMG1+L2, CMG2+L2, CMG3+L2, MEM0, MEM1, MEM2, MEM3, TF+A+U
 			// total value
 			sorted_joule[0] = w.my_power.w_accumu[0];
 			// CMGn + L2$ value
@@ -1100,7 +1181,7 @@ void PerfMonitor::printBasicPower(FILE* fp, int maxLabelLen, int op_sort)
 			//	sorted_joule[10] = w.my_power.w_accumu[19];
 	
 		} else
-		if (m_is_POWER == 3) {
+		if (level_POWER == 3) {
 			for (int i=0; i<n_parts; i++) {
 				sorted_joule[i] = w.my_power.w_accumu[i];
 			}
@@ -1574,7 +1655,7 @@ void PerfMonitor::printBasicPower(FILE* fp, int maxLabelLen, int op_sort)
     if (is_OTF_enabled) {
       std::string label;
       for (int i=0; i<m_nWatch; i++) {
-        loop_perf_label(i, label);
+        loop_section_object(i, label);
         m_watchArray[i].labelOTF (label, i);
       }
       m_watchArray[0].finalizeOTF();
@@ -2002,9 +2083,37 @@ void warning_print (std::string cstr1, std::string cstr2, std::string cstr3, int
 int PerfMonitor::initializePOWER (void)
 {
 #ifdef USE_POWER
+
+// Parse the Environment Variable POWER_CHOOSER
+    level_POWER = 0;
+	std::string s_chooser;
+	char* cp_env = std::getenv("POWER_CHOOSER");
+	if (cp_env == NULL) {
+		;
+	} else {
+		s_chooser = cp_env;
+		if (s_chooser == "OFF" || s_chooser == "NO" ) {
+			level_POWER = 0;
+		} else
+		if (s_chooser == "NODE") {
+			level_POWER = 1;
+		} else
+		if (s_chooser == "NUMA") {
+			level_POWER = 2;
+		} else
+		if (s_chooser == "PARTS") {
+			level_POWER = 3;
+		}
+	}
 	#ifdef DEBUG_PRINT_POWER_EXT
     if (my_rank == 0) {
-	fprintf(stderr, "<%s> start \n", __func__);
+		fprintf(stderr, "<%s> POWER_CHOOSER=%s  level_POWER=%d \n", __func__, cp_env, level_POWER);
+	}
+	#endif
+    if (level_POWER == 0) return(0);
+
+	#ifdef DEBUG_PRINT_POWER_EXT
+    if (my_rank == 0) {
 	fprintf(stderr, "<%s> default objects. &pm_pacntxt=%p, &pm_obj_array=%p\n",
 		__func__, &pm_pacntxt, &pm_obj_array[0]);
 	}
@@ -2054,6 +2163,8 @@ int PerfMonitor::initializePOWER (void)
 int PerfMonitor::finalizePOWER ()
 {
 #ifdef USE_POWER
+    if (level_POWER == 0) return(0);
+
 	#ifdef DEBUG_PRINT_POWER_EXT
     if (my_rank == 0) { fprintf(stderr, "\t <%s> CntxtDestroy()\n", __func__); }
 	#endif
@@ -2076,6 +2187,13 @@ int PerfMonitor::finalizePOWER ()
 int PerfMonitor::operatePowerKnob (int knob, int operation, int & value)
 {
 #ifdef USE_POWER
+    if (level_POWER == 0) {
+    	if (my_rank == 0) {
+			fprintf(stderr, "*** Warning PMlib <%s> is ignored. Set POWER_CHOOSER to activate it. \n", __func__);
+		}
+		return(0);
+	}
+
 	//	knob and value combinations
 	//		knob=0 : I_knob_CPU    : cpu frequency (MHz)
 	//		knob=1 : I_knob_MEMORY : memory access throttling (%) : 100, 90, 80, .. , 10
@@ -2252,15 +2370,15 @@ int PerfMonitor::operatePowerKnob (int knob, int operation, int & value)
   ///
   ///   @param[in] arg_st   the label of the newly created section
   ///
-int PerfMonitor::add_perf_label(std::string arg_st)
+int PerfMonitor::add_section_object(std::string arg_st)
 {
 	int ip;
 	ip = m_nWatch;
-   	array_of_symbols.insert( make_pair(arg_st, ip) );
+   	m_map_sections.insert( make_pair(arg_st, ip) );
 
     #ifdef DEBUG_PRINT_LABEL
-	fprintf(stderr, "<add_perf_label> [%s] &array_of_symbols(%p) [%d] \n",
-		arg_st.c_str(), &array_of_symbols, ip);
+	fprintf(stderr, "<add_section_object> [%s] &m_map_sections(%p) [%d] \n",
+		arg_st.c_str(), &m_map_sections, ip);
     #endif
    	// we may better return the insert status...?
 	return ip;
@@ -2271,16 +2389,16 @@ int PerfMonitor::add_perf_label(std::string arg_st)
   ///
   ///   @param[in] arg_st   the label of the section
   ///
-int PerfMonitor::find_perf_label(std::string arg_st)
+int PerfMonitor::find_section_object(std::string arg_st)
 {
    	int p_id;
-   	if (array_of_symbols.find(arg_st) == array_of_symbols.end()) {
+   	if (m_map_sections.find(arg_st) == m_map_sections.end()) {
    		p_id = -1;
    	} else {
-   		p_id = array_of_symbols[arg_st] ;
+   		p_id = m_map_sections[arg_st] ;
    	}
 	#ifdef DEBUG_PRINT_LABEL
-   	fprintf(stderr, "<find_perf_label> %s : %d\n", arg_st.c_str(), p_id);
+   	fprintf(stderr, "<find_section_object> %s : %d\n", arg_st.c_str(), p_id);
 	#endif
    	return p_id;
 }
@@ -2291,12 +2409,12 @@ int PerfMonitor::find_perf_label(std::string arg_st)
   ///   @param[in]  ip   	the section ID
   ///   @param[out] p_label   the label string of the section
   ///
-void PerfMonitor::loop_perf_label(const int ip, std::string& p_label)
+void PerfMonitor::loop_section_object(const int ip, std::string& p_label)
 {
 	std::map<std::string, int>::const_iterator it;
 	int p_id;
 
-	for(it = array_of_symbols.begin(); it != array_of_symbols.end(); ++it) {
+	for(it = m_map_sections.begin(); it != m_map_sections.end(); ++it) {
 		p_label = it->first;
 		p_id = it->second;
 		if (p_id == ip) {
@@ -2304,26 +2422,70 @@ void PerfMonitor::loop_perf_label(const int ip, std::string& p_label)
 		}
 	}
 	// should not reach here
-	fprintf(stderr, "*** Error PMlib <loop_perf_label> section ID %d was not found. my_rank=%d, my_thread=%d \n", ip, my_rank, my_thread);
+	fprintf(stderr, "*** Error PMlib <loop_section_object> section ID %d was not found. my_rank=%d, my_thread=%d \n", ip, my_rank, my_thread);
 }
 
   /// 全測定区間のラベルと番号を登録順で表示
   /// Check print all the defined section IDs and labels
   ///
-void PerfMonitor::check_all_perf_label(void)
+void PerfMonitor::check_all_section_object(void)
 {
 	std::map<std::string, int>::const_iterator it;
 	std::string p_label;
 	int p_id;
 	int n;
-	n = array_of_symbols.size();
-	fprintf(stderr, "<check_all_perf_label> map size=%lu \n", array_of_symbols.size());
+	n = m_map_sections.size();
+	fprintf(stderr, "<check_all_section_object> map size=%d \n", n);
 	if (n==0) return;
 	fprintf(stderr, "\t[map pair] : label, value, &(it->first), &(it->second)\n");
-	for(it = array_of_symbols.begin(); it != array_of_symbols.end(); ++it) {
+	for(it = m_map_sections.begin(); it != m_map_sections.end(); ++it) {
 		p_label = it->first;
 		p_id = it->second;
 		fprintf(stderr, "\t <%s> : %d, %p, %p\n", p_label.c_str(), p_id, &(it->first), &(it->second));
+
+	}
+}
+
+  /// Add a new entry in the shared section map (section name, section ID)
+  ///
+  ///   @param[in] arg_st   the label of the newly created shared section
+  ///
+  ///	@note The shared map is accessible from all threads inside or outside of parallel construct
+  ///
+int PerfMonitor::add_shared_section(std::string arg_st)
+{
+	int ip;
+	ip = m_nWatch;
+	#ifdef _OPENMP
+	#pragma omp critical
+	// remark. end critical does not exist for C++. its only for fortran !$omp.
+	#endif
+	{
+   	shared_map_sections.insert( make_pair(arg_st, ip) );
+	}
+
+    #ifdef DEBUG_PRINT_LABEL
+	fprintf(stderr, "<add_shared_section> [%s] [%d] \n", arg_st.c_str(), ip);
+    #endif
+	return ip;
+}
+
+  /// Print all the shared section IDs and labels 
+  ///
+void PerfMonitor::check_all_shared_sections(void)
+{
+	std::map<std::string, int>::const_iterator it;
+	std::string p_label;
+	int p_id;
+	int n_shared_sections = shared_map_sections.size();
+	fprintf(stderr, "<check_all_shared_sections> shared map size=%d \n", n_shared_sections);
+	if (n_shared_sections==0) return;
+
+	fprintf(stderr, "\t[map pair] : label, value, &(it->first), &(it->second)\n");
+	for(it = shared_map_sections.begin(); it != shared_map_sections.end(); ++it) {
+		p_label = it->first;
+		p_id = it->second;
+		fprintf(stderr, "\t [%s] : %d, %p, %p\n", p_label.c_str(), p_id, &(it->first), &(it->second));
 
 	}
 }

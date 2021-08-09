@@ -63,7 +63,6 @@ namespace pm_lib {
     int init_nWatch;           ///< 初期に確保する測定区間数
     int reserved_nWatch;       ///< リザーブ済みの測定区間数
   private:
-
     bool is_PMlib_enabled;     /*!< PMlibの動作を有効にするフラグ<br>
     	//	@note 環境変数BYPASS_PMLIBを定義（任意値）してアプリを実行すると
 		//	PMlibを無効化した動作となり、性能統計処理を行わない */
@@ -74,6 +73,7 @@ namespace pm_lib {
     bool is_OTF_enabled;       ///< PMlibの対応動作可能フラグ:OTF tracing 出力
     bool is_Root_active;       ///< 背景区間(Root区間)の動作フラグ
     bool is_exclusive_construct; ///< 測定区間の重なり状態検出フラグ
+    int level_POWER;   ///< 電力制御のレベル 0(no), 1(NODE), 2(NUMA), 3(PARTS)
 
     std::string parallel_mode; /*!< 並列動作モード
       // {Serial| OpenMP| FlatMPI| Hybrid} */
@@ -88,6 +88,9 @@ namespace pm_lib {
       // m_watchArray[1 .. m_nWatch] :ユーザーが定義する各区間 */
 
     unsigned* m_order;         ///< 測定区間ソート用のリスト m_order[m_nWatch]
+
+    std::map<std::string, int > m_map_sections; /// map of section name and ID
+
 
   public:
     /// コンストラクタ.
@@ -245,13 +248,40 @@ namespace pm_lib {
     void gather(void);
 
 
+    /// Root区間をstop
+    ///	@note
+    ///		Stop the Root section, which means the end of PMlib stats recording
+    ///
+    void stopRoot (void);
+
+
+    /// Count the number of shared measured sections
+    ///
+    ///   @param[out] nSections     number of shared measured sections
+    ///
+    void countSections (int &nSections);
+
+
+    /// Check if the section was defined in serial or parallel region
+    ///
+    ///   @param[in]  id         shared section number
+    ///   @param[out] mid        class private section number
+    ///   @param[out] inside     0/1 (0:serial region / 1:parallel region)
+    ///
+    void SerialParallelRegion (int &id, int &mid, int &inside);
+
+
     ///  OpenMP並列処理されたPMlibスレッド測定区間のうち parallel regionから
     ///  呼び出された測定区間のスレッド測定情報をマスタースレッドに集約する。
+    ///
+    ///	 @param[in] id  section number
+    ///
+    ///   @note この測定区間の番号はスレッドプライベートな番号ではなく、
+    ///		共通番号であることに注意。
+    ///   @note  
     ///  通常このAPIはPMlib内部で自動的に実行され、利用者が呼び出す必要はない。
     ///
-    ///   @note  内部で全測定区間をcheckして該当する測定区間を選択する。
-    ///
-    void mergeThreads(void);
+    void mergeThreads(int id);
 
 
     /// 測定結果の統計レポートを標準出力に表示する。
@@ -380,6 +410,7 @@ namespace pm_lib {
     ///
     void setParallelMode(const std::string& p_mode, const int n_thread, const int n_proc);
 
+
     /// 旧バージョンとの互換維持用(ランク番号の通知)
     /// 利用者は通常このAPIを呼び出す必要はない。
     ///
@@ -408,7 +439,7 @@ namespace pm_lib {
     ///
     ///	  @return the section ID
     ///
-    int add_perf_label(std::string arg_st);
+    int add_section_object(std::string arg_st);
 
     /// 測定区間のラベルに対応する区間番号を取得
     /// Search through the map and find section ID from the given label
@@ -417,7 +448,7 @@ namespace pm_lib {
     ///
     ///	  @return the section ID
     ///
-    int find_perf_label(std::string arg_st);
+    int find_section_object(std::string arg_st);
 
     /// 測定区間の区間番号に対応するラベルを取得
     /// Search the section ID in the map and return the label string
@@ -425,12 +456,25 @@ namespace pm_lib {
     ///   @param[in]  ip      the section ID
     ///   @param[out] p_label the label string of the section
     ///
-    void loop_perf_label(const int ip, std::string& p_label);
+    void loop_section_object(const int ip, std::string& p_label);
 
     /// 全測定区間のラベルと番号を登録順で表示
     /// Check print all the defined section IDs and labels
     ///
-    void check_all_perf_label(void);
+    void check_all_section_object(void);
+
+    /// Add a new entry in the shared section map (section name, section ID)
+    ///
+    ///   @param[in] arg_st   the label of the newly created shared section
+    ///
+    ///	  @return the section ID
+    ///
+    int add_shared_section(std::string arg_st);
+
+    /// Print all the shared section IDs and labels 
+    ///
+    void check_all_shared_sections(void);
+
 
 
     /// 全プロセスの測定中経過情報を集約

@@ -210,7 +210,7 @@ void C_pm_stop_usermode (char* fc, double fpt, unsigned tic)
 ///
 ///   @param[in] char* fc         output file name(character array). if "" , stdout is chosen.
 ///
-void C_pm_report (char* fc)
+void C_pm_report_top (char* fc)
 {
 	FILE *fp;
 	std::string s;
@@ -219,7 +219,7 @@ void C_pm_report (char* fc)
 	char hostname[512];
 
 #ifdef DEBUG_PRINT_MONITOR
-	fprintf(stderr, "<C_pm_report> fc=%s \n", s.c_str());
+	fprintf(stderr, "<C_pm_report_top> fc=%s \n", s.c_str());
 #endif
 	if (s == "") { // if filename is null, report to stdout
 		fp=stdout;
@@ -644,17 +644,41 @@ void C_pm_gather (void)
 
 
 /// PMlib C interface
-///  OpenMP parallel region内のマージ処理
-///  OpenMPスレッド並列処理された測定区間のうち、 parallel regionの内側から
-///  区間を測定した場合（測定区間の外側にparallel 構文がある場合）に限って
-///  呼び出しが必要な関数。
-///  parallel region内で呼び出された全測定区間のスレッド情報を
-///  マスタースレッドに集約する。
-///  parallel regionが全て測定区間の内側にある場合は呼び出し不要。
+/// Check if the section has been called inside of parallel region
 ///
-void C_pm_mergethreads (void)
+///   @param[in] id         shared section number
+///   @param[out] mid       class private section number
+///   @param[out] inside     0/1 (0:serial region / 1:parallel region)
+///
+void C_pm_serial_parallel (int id, int &mid, int &inside)
 {
-	PM.mergeThreads();
+	PM.SerialParallelRegion(id, mid, inside);
+	return;
+}
+
+
+/// PMlib C interface
+///  Stop the Root section, which means the ending of PMlib stats recording
+///
+void C_pm_stop_Root (void)
+{
+    PM.stopRoot();
+    return;
+}
+
+
+
+/// PMlib C interface
+///  OpenMP parallel region内のマージ処理
+///  呼び出された測定区間のスレッド情報をマスタースレッドに集約する。
+///
+///		@param[in] id      測定区間の番号
+///
+///		@note  通常このAPIはPMlib内部で自動的に実行され、利用者が呼び出す必要はない。
+///
+void C_pm_mergethreads (int id)
+{
+	PM.mergeThreads(id);
 	return;
 }
 
