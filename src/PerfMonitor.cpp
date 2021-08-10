@@ -46,7 +46,8 @@ namespace pm_lib {
     char* cp_env;
 	int iret;
 
-	int my_thread;	// Note this my_thread is just a local variable
+	//	commenting the line below means "my_thread is defined as class varibale rather than local"
+	//	int my_thread;	// Note this my_thread is just a local variable
 
 	is_PMlib_enabled = true;
     cp_env = std::getenv("BYPASS_PMLIB");
@@ -78,12 +79,12 @@ namespace pm_lib {
 
 	#ifdef _OPENMP
     is_OpenMP_enabled = true;
-	my_thread = omp_get_thread_num();		// a local variable
-    num_threads = omp_get_max_threads();	// class variable
+	my_thread = omp_get_thread_num();
+    num_threads = omp_get_max_threads();
 	#else
     is_OpenMP_enabled = false;
-	my_thread = 0;		// a local variable
-    num_threads = 1;	// class variable
+	my_thread = 0;
+    num_threads = 1;
 	#endif
 
 	// Preserve the parallel mode information while PMlib is being made.
@@ -2372,16 +2373,17 @@ int PerfMonitor::operatePowerKnob (int knob, int operation, int & value)
   ///
 int PerfMonitor::add_section_object(std::string arg_st)
 {
-	int ip;
-	ip = m_nWatch;
-   	m_map_sections.insert( make_pair(arg_st, ip) );
+	int mid;
+	mid = m_nWatch;
+   	m_map_sections.insert( make_pair(arg_st, mid) );
 
     #ifdef DEBUG_PRINT_LABEL
-	fprintf(stderr, "<add_section_object> [%s] &m_map_sections(%p) [%d] \n",
-		arg_st.c_str(), &m_map_sections, ip);
+	if (my_rank==0) {
+	fprintf(stderr, "<add_section_object> [%s] [%d] my_thread=%d \n", arg_st.c_str(), mid, my_thread);
+	}
     #endif
    	// we may better return the insert status...?
-	return ip;
+	return mid;
 }
 
   /// 測定区間のラベルに対応する区間番号を取得
@@ -2391,38 +2393,44 @@ int PerfMonitor::add_section_object(std::string arg_st)
   ///
 int PerfMonitor::find_section_object(std::string arg_st)
 {
-   	int p_id;
+   	int mid;
    	if (m_map_sections.find(arg_st) == m_map_sections.end()) {
-   		p_id = -1;
+   		mid = -1;
    	} else {
-   		p_id = m_map_sections[arg_st] ;
+   		mid = m_map_sections[arg_st] ;
    	}
 	#ifdef DEBUG_PRINT_LABEL
-   	fprintf(stderr, "<find_section_object> %s : %d\n", arg_st.c_str(), p_id);
+	if (my_rank==0) {
+   	fprintf(stderr, "<find_section_object> %s : mid=%d my_thread=%d \n", arg_st.c_str(), mid, my_thread);
+	}
 	#endif
-   	return p_id;
+   	return mid;
 }
 
   /// 測定区間の区間番号に対応するラベルを取得
   /// Search the section ID in the map and return the label string
   ///
-  ///   @param[in]  ip   	the section ID
+  ///   @param[in]  mid   	the section ID
   ///   @param[out] p_label   the label string of the section
   ///
-void PerfMonitor::loop_section_object(const int ip, std::string& p_label)
+void PerfMonitor::loop_section_object(const int mid, std::string& p_label)
 {
 	std::map<std::string, int>::const_iterator it;
 	int p_id;
 
 	for(it = m_map_sections.begin(); it != m_map_sections.end(); ++it) {
-		p_label = it->first;
-		p_id = it->second;
-		if (p_id == ip) {
+		if (it->second == mid) {
+			p_label = it->first;
+			#ifdef DEBUG_PRINT_LABEL
+			if (my_rank==0) {
+			fprintf(stderr, "<loop_section_object> mid=%d my_thread=%d matched to [%s] \n", mid, my_thread, p_label.c_str() );
+			}
+			#endif
 			return;
 		}
 	}
 	// should not reach here
-	fprintf(stderr, "*** Error PMlib <loop_section_object> section ID %d was not found. my_rank=%d, my_thread=%d \n", ip, my_rank, my_thread);
+	fprintf(stderr, "*** Error PMlib <loop_section_object> section ID %d was not found. my_rank=%d, my_thread=%d \n", mid, my_rank, my_thread);
 }
 
   /// 全測定区間のラベルと番号を登録順で表示
@@ -2454,20 +2462,24 @@ void PerfMonitor::check_all_section_object(void)
   ///
 int PerfMonitor::add_shared_section(std::string arg_st)
 {
-	int ip;
-	ip = m_nWatch;
+   	int n_shared_sections;
+	int n = shared_map_sections.size();
+		//	int ip = m_nWatch; // was a BUG
 	#ifdef _OPENMP
 	#pragma omp critical
 	// remark. end critical does not exist for C++. its only for fortran !$omp.
 	#endif
 	{
-   	shared_map_sections.insert( make_pair(arg_st, ip) );
-	}
+   		shared_map_sections.insert( make_pair(arg_st, n) );
+   		n_shared_sections = shared_map_sections[arg_st] ;
 
-    #ifdef DEBUG_PRINT_LABEL
-	fprintf(stderr, "<add_shared_section> [%s] [%d] \n", arg_st.c_str(), ip);
-    #endif
-	return ip;
+    	#ifdef DEBUG_PRINT_LABEL
+		if (my_rank==0) {
+		fprintf(stderr, "<add_shared_section> [%s] [%d] my_thread=%d \n", arg_st.c_str(), n_shared_sections, my_thread);
+		}
+    	#endif
+	}
+	return n_shared_sections;
 }
 
   /// Print all the shared section IDs and labels 
