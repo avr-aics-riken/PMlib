@@ -16,10 +16,10 @@ extern void C_pm_reset (char* fc);
 extern void C_pm_resetall (void);
 extern void C_pm_setproperties (char* fc, int f_type, int f_exclusive);
 extern void C_pm_gather (void);
-extern void C_pm_sections (int *nSections)
-extern void C_pm_serial_parallel (int id, int *mid, int *inside)
-extern void C_pm_stop_Root (void)
-extern void C_pm_mergethreads (int id)
+extern void C_pm_sections (int *nSections);
+extern void C_pm_serial_parallel (int id, int *mid, int *inside);
+extern void C_pm_stop_Root (void);
+extern void C_pm_mergethreads (int id);
 extern void C_pm_getpowerknob (int knob, int* value);
 extern void C_pm_setpowerknob (int knob, int value);
 #if defined  (MORE_MPI_MEMBERS)

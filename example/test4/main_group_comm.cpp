@@ -102,9 +102,7 @@ int main (int argc, char *argv[])
 	PM.stop ("2nd section");
 
 
-	PM.gather();
-	PM.print(stdout, "", "Mr. Bean");
-	PM.printDetail(stdout);
+	PM.report(stdout);
 	PM.printGroup(stdout, new_group1, new_comm1, p1_my_id, 1);
 	PM.printGroup(stdout, new_group2, new_comm2, p2_my_id, 2, 1);
 

@@ -24,19 +24,10 @@ program main
 	call MPI_Comm_rank( MPI_COMM_WORLD, myid, ierr )
 	call MPI_Comm_size( MPI_COMM_WORLD, ncpus, ierr )
 #endif
-	write(6,'(a,i3,a)') "fortran <test4_main> started process:", myid
+	write(6,'(a,i3,a)') "fortran <main> started process:", myid
 	n=msize
 	nWatch=4
 	call f_pm_initialize (nWatch)
-
-	icalc=1
-	icomm=0
-	iexclusive=1
-	iinclusive=0    !cx i.e. not exclusive
-	call f_pm_setproperties ("Initial-section", icalc, iexclusive)
-	call f_pm_setproperties ("Loop-section", icalc, iinclusive)
-	call f_pm_setproperties ("Kernel-Slow", icalc, iexclusive)
-	call f_pm_setproperties ("Kernel-Fast", icalc, iexclusive)
 
 	dinit=(n**2)*4.0
 	dflop=(n**3)*4.0
@@ -44,7 +35,7 @@ program main
 
 	call f_pm_start ("Initial-section")
 	call subinit (msize,n,a,b,c)
-	call f_pm_stop_usermode ("Initial-section", dinit, 1)
+	call f_pm_stop ("Initial-section")
 	call spacer (msize,n,a,b,c)
 
 	call f_pm_start ("Loop-section")
@@ -54,37 +45,25 @@ program main
 
 	call f_pm_start ("Kernel-Slow")
 	call slowmtxm (msize,n,dflop,a,b,c)
-	call f_pm_stop_usermode ("Kernel-Slow", dflop*4.0, 1)
+	call f_pm_stop ("Kernel-Slow")
 	call spacer (msize,n,a,b,c)
 
 	call f_pm_start ("Kernel-Fast")
 	call submtxm (msize,n,dflop,a,b,c)
-	call f_pm_stop_usermode ("Kernel-Fast", dflop, 1)
+	call f_pm_stop ("Kernel-Fast")
 	call spacer (msize,n,a,b,c)
-
-	!cx call f_pm_printprogress ("", "for checking", 0)
-	!cx if(i.eq.4) then
-	!cx call f_pm_resetall ()
-	!cx endif
 
 	end do
 
-	call f_pm_stop_usermode ("Loop-section", dflop*6.0, 1)
+	call f_pm_stop ("Loop-section")
 
-!cx call f_pm_posttrace ()
-
-	call f_pm_print ("", "", "", 0)
-	call f_pm_printdetail ("", 0, 0)
-    call f_pm_printthreads ("", 0, 0)
-    call f_pm_printlegend ("")
+	call f_pm_report ("")
 #if defined(DISABLE_MPI)
 #else
 	call MPI_Finalize( ierr )
 #endif
-	write(6,'(a,i3,a)') "fortran <test4_main> finished process:", myid
+	write(6,'(a,i3,a)') "fortran <main> finished process:", myid
 
-	!cx	return
-	!cx	end program
 end
 
 subroutine subinit (msize,n,a,b,c)

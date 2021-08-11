@@ -9,7 +9,7 @@
 void C_pm_report (char *filename);
 extern void C_pm_serial_parallel (int id, int *mid, int *inside);
 extern void C_pm_stop_Root (void);
-extern void C_pm_f_pm_sections (int *nSections);
+extern void C_pm_sections (int *nSections);
 extern void C_pm_mergethreads (int id);
 extern void C_pm_report_top (char *filename);
 
@@ -36,7 +36,7 @@ void C_pm_report (char *filename)
 
 //	count the number of SHARED sections
 
-	C_pm_f_pm_sections (&nSections);
+	C_pm_sections (&nSections);
 
 //	merge thread data into the master thread 
 

@@ -1,5 +1,4 @@
 #include <PerfMonitor.h>
-//	#include <mpi.h>
 #ifdef _OPENMP
 #include <omp.h>
 #endif
@@ -55,7 +54,6 @@ int main (int argc, char *argv[])
 		fprintf(stderr, "\t<main> starts. npes=%d, MATSIZE=%d max_threads=%d\n",
 			npes, MATSIZE, num_threads);
 	}
-	//	fprintf(stderr, "\t\tstarting process:%d\n", my_id);
 
 	PM.initialize();
 
@@ -66,6 +64,7 @@ int main (int argc, char *argv[])
 	//	PM.setProperties("Loop-section", PerfMonitor::COMM, false);
 	//	PM.setProperties("Kernel-Slow", PerfMonitor::CALC);
 	//	PM.setProperties("Kernel-Fast", PerfMonitor::CALC);
+	PM.setProperties("Loop-section", PerfMonitor::COMM);
 
 // checking exclusive section
 	PM.start("Initial-section");

@@ -52,7 +52,9 @@ if(OPT_OTF)
 endif()
 
 
-### Test 3 and 5 are only for MPI environment. Others are for both serial and MPI.
+### Example programs
+### Test 1, 2, 3 can be built for both serial program and MPI program.
+### Test 4 and 5 are only for MPI environment.
 
 #### Test1 : C++
 
@@ -97,109 +99,116 @@ endif()
 
 
 
-### Test2 : C++ and C
+### Test 2 : Fortran
 
-add_executable(example2
-               ./test2/main_kernel.cpp
-               ./test2/sub_kernel.c
-)
+if(enable_Fortran)
+  add_executable(example2 ./test2/f_main.f90)
 
-if(with_MPI)
-  target_link_libraries(example2 -lPMmpi)
-else()
-  target_link_libraries(example2 -lPM)
-endif()
-
-if(OPT_PAPI)
-  if(TARGET_ARCH STREQUAL "FUGAKU")
-    target_link_libraries(example2 -lpapi_ext -lpapi -lpfm -Nnofjprof)
-  elseif(TARGET_ARCH STREQUAL "FX100")
-    target_link_libraries(example2 -lpapi_ext -Wl,'-lpapi,-lpfm')
+  if(CMAKE_CXX_COMPILER_ID STREQUAL "Intel")
+  elseif(CMAKE_Fortran_COMPILER_ID STREQUAL "PGI")
+    set_target_properties(example2 PROPERTIES LINKER_LANGUAGE Fortran)
+    target_link_libraries(example2 -pgf90libs)
   else()
-    target_link_libraries(example2 -lpapi_ext -Wl,'-Bstatic,-lpapi,-lpfm,-Bdynamic')
+    set_target_properties(example2 PROPERTIES LINKER_LANGUAGE CXX)
   endif()
-endif()
 
-if(OPT_POWER)
-  if(TARGET_ARCH STREQUAL "FUGAKU")
-    target_link_libraries(example2 -lpower_ext -lpwr )
+  if(with_MPI)
+    target_link_libraries(example2 -lPMmpi)
+  else()
+    target_link_libraries(example2 -lPM)
   endif()
-endif()
-
-if(OPT_OTF)
-  target_link_libraries(example2 -lotf_ext -lopen-trace-format)
-endif()
-
-set_target_properties(example2 PROPERTIES LINKER_LANGUAGE CXX)
-#	On vsh, CMAKE_CXX_IMPLICIT_LINK_LIBRARIES contains -lmpi -lmpigf -lmpigi, etc
-#	They are not threaded and result in link errors on vsh if OpenMP is enabled.
-#	Temporary sotution is to exclude them.
-# target_link_libraries(example2 ${CMAKE_CXX_IMPLICIT_LINK_LIBRARIES})
-
-if(with_MPI)
-  set (test_parameters -np 2 "example2")
-  add_test(NAME TEST_2 COMMAND "mpirun" ${test_parameters})
-else()
-  add_test(TEST_2 example2)
-endif()
-
-
-### Test 3 : Process group
-
-if(with_MPI)
-  add_executable(example3
-                 ./test3/main_group_comm.cpp
-                 ./test3/sub_copy.c
-                 ./test3/sub_kernel.c
-  )
-  target_link_libraries(example3 -lPMmpi)
 
   if(OPT_PAPI)
     if(TARGET_ARCH STREQUAL "FUGAKU")
-      target_link_libraries(example3 -lpapi_ext -lpapi -lpfm -Nnofjprof)
+      target_link_libraries(example2 -lpapi_ext -lpapi -lpfm -Nnofjprof)
     elseif(TARGET_ARCH STREQUAL "FX100")
-      target_link_libraries(example3 -lpapi_ext -Wl,'-lpapi,-lpfm')
+      target_link_libraries(example2 -lpapi_ext -Wl,'-lpapi,-lpfm')
     else()
-      target_link_libraries(example3 -lpapi_ext -Wl,'-Bstatic,-lpapi,-lpfm,-Bdynamic')
+      target_link_libraries(example2 -lpapi_ext -Wl,'-Bstatic,-lpapi,-lpfm,-Bdynamic')
     endif()
   endif()
 
   if(OPT_POWER)
     if(TARGET_ARCH STREQUAL "FUGAKU")
-      target_link_libraries(example3 -lpower_ext -lpwr )
+      target_link_libraries(example2 -lpower_ext -lpwr )
     endif()
   endif()
 
   if(OPT_OTF)
-    target_link_libraries(example3 -lotf_ext -lopen-trace-format)
+    target_link_libraries(example2 -lotf_ext -lopen-trace-format)
   endif()
 
-set_target_properties(example3 PROPERTIES LINKER_LANGUAGE CXX)
-# target_link_libraries(example3 ${CMAKE_CXX_IMPLICIT_LINK_LIBRARIES})
-
-  set (test_parameters -np 2 "example3")
-  add_test(NAME TEST_3 COMMAND "mpirun" ${test_parameters})
-endif()
-
-
-### Test 4 : Fortran
-
-if(enable_Fortran)
-  add_executable(example4 ./test4/f_main.f90)
-
-  if(CMAKE_CXX_COMPILER_ID STREQUAL "Intel")
-  elseif(CMAKE_Fortran_COMPILER_ID STREQUAL "PGI")
-    set_target_properties(example4 PROPERTIES LINKER_LANGUAGE Fortran)
-    target_link_libraries(example4 -pgf90libs)
+  # Fujitsuの場合　--linkfortranは必須
+  if(USE_F_TCS STREQUAL "YES")
+    target_link_libraries(example2 ${CMAKE_CXX_IMPLICIT_LINK_LIBRARIES} "--linkfortran")
   else()
-    set_target_properties(example4 PROPERTIES LINKER_LANGUAGE CXX)
+#   target_link_libraries(example2 ${CMAKE_CXX_IMPLICIT_LINK_LIBRARIES})
+    target_link_libraries(example2 -lstdc++ )
   endif()
 
   if(with_MPI)
-    target_link_libraries(example4 -lPMmpi)
+    set (test_parameters -np 2 "example2")
+    add_test(NAME TEST_2 COMMAND "mpirun" ${test_parameters})
   else()
-    target_link_libraries(example4 -lPM)
+    add_test(TEST_2 example2)
   endif()
+
+endif()
+
+
+
+### Test3 : C
+
+add_executable(example3
+               ./test3/main_kernel.c
+               ./test3/sub_kernel.c
+)
+
+if(with_MPI)
+  target_link_libraries(example3 -lPMmpi)
+else()
+  target_link_libraries(example3 -lPM)
+endif()
+
+if(OPT_PAPI)
+  if(TARGET_ARCH STREQUAL "FUGAKU")
+    target_link_libraries(example3 -lpapi_ext -lpapi -lpfm -Nnofjprof)
+  elseif(TARGET_ARCH STREQUAL "FX100")
+    target_link_libraries(example3 -lpapi_ext -Wl,'-lpapi,-lpfm')
+  else()
+    target_link_libraries(example3 -lpapi_ext -Wl,'-Bstatic,-lpapi,-lpfm,-Bdynamic')
+  endif()
+endif()
+
+if(OPT_POWER)
+  if(TARGET_ARCH STREQUAL "FUGAKU")
+    target_link_libraries(example3 -lpower_ext -lpwr )
+  endif()
+endif()
+
+if(OPT_OTF)
+  target_link_libraries(example3 -lotf_ext -lopen-trace-format)
+endif()
+
+set_target_properties(example3 PROPERTIES LINKER_LANGUAGE CXX)
+
+if(with_MPI)
+  set (test_parameters -np 2 "example3")
+  add_test(NAME TEST_3 COMMAND "mpirun" ${test_parameters})
+else()
+  add_test(TEST_3 example3)
+endif()
+
+
+### Test 4 : Process group
+
+if(with_MPI)
+  add_executable(example4
+                 ./test4/main_group_comm.cpp
+                 ./test4/sub_copy.c
+                 ./test4/sub_kernel.c
+  )
+  target_link_libraries(example4 -lPMmpi)
 
   if(OPT_PAPI)
     if(TARGET_ARCH STREQUAL "FUGAKU")
@@ -221,21 +230,11 @@ if(enable_Fortran)
     target_link_libraries(example4 -lotf_ext -lopen-trace-format)
   endif()
 
-  # Fujitsuの場合　--linkfortranは必須
-  if(USE_F_TCS STREQUAL "YES")
-    target_link_libraries(example4 ${CMAKE_CXX_IMPLICIT_LINK_LIBRARIES} "--linkfortran")
-  else()
-#   target_link_libraries(example4 ${CMAKE_CXX_IMPLICIT_LINK_LIBRARIES})
-    target_link_libraries(example4 -lstdc++ )
-  endif()
+set_target_properties(example4 PROPERTIES LINKER_LANGUAGE CXX)
+# target_link_libraries(example4 ${CMAKE_CXX_IMPLICIT_LINK_LIBRARIES})
 
-  if(with_MPI)
-    set (test_parameters -np 2 "example4")
-    add_test(NAME TEST_4 COMMAND "mpirun" ${test_parameters})
-  else()
-    add_test(TEST_4 example4)
-  endif()
-
+  set (test_parameters -np 2 "example4")
+  add_test(NAME TEST_4 COMMAND "mpirun" ${test_parameters})
 endif()
 
 
