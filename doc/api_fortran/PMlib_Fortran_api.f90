@@ -12,6 +12,13 @@
 !!			(char* fc, int fc_size)
 !! @note  呼び出すFortranプログラムからこの追加引数fc_sizeを意識する必要はない。
 !!
+!! @note  利用者が最低限呼び出す必要があるのは、以下の４つだけである。
+!!	- f_pm_initialize (nWatch)
+!!	- f_pm_start (fc)
+!!	- f_pm_stop (fc)
+!!	- f_pm_report (fc)
+!!  他のAPIはより進んだ利用方法を行いたい場合にだけ呼び出せば良い。
+!!
 program f_fortran_api_general
 end program
 
@@ -137,16 +144,47 @@ subroutine f_pm_gather ()
 end subroutine
 
 
+!>  PMlib Fortran Count the number of shared sections
+!!
+!!   @param[out] nSections		 	number of shared sections
+!!
+subroutine f_pm_sections (int &nSections)
+end subroutine
+
+
+!>  PMlib Fortran Check if the section has been called inside of parallel region
+!!
+!!   @param[in] id		 	shared section number
+!!   @param[out] mid		class private section number
+!!   @param[out] inside	 0/1 (0:serial region / 1:parallel region)
+!!
+!!
+subroutine f_pm_serial_parallel (int &id, int &mid, int &inside)
+end subroutine
+
+
+!>  PMlib Fortran Stop the Root section
+!!
+!! @ note stopping the Root section means the ending of PMlib stats recording
+!!
+subroutine f_pm_stop_root (void)
+end subroutine
+
+
 !> PMlib Fortran   OpenMP parallel region内のマージ処理
 !!
+!!   @param[in] id     shared section number
+!!
+!!  @note 測定区間番号idはスレッドプライベートな番号ではなく、共通番号であることに注意。
+!!  @note 通常このAPIはPMlib内部で自動的に実行され、利用者が呼び出す必要はない。
 !!  @note \n
 !!  OpenMPスレッド並列処理された測定区間のうち、 parallel regionの内側から
-!!  区間を測定した場合、（測定区間の外側にparallel 構文がある場合）
-!!  に限って呼び出しが必要な関数。
-!!  parallel region内で呼び出された全測定区間のスレッド情報をマスタースレッドに集約する。
-!!  parallel regionが全て測定区間の内側にある場合は呼び出し不要。
+!!  区間を測定した場合、（parallel 構文が測定区間の外側にある場合）と、
+!!  parallel regionの外側から呼び出しがある場合に、
+!!  測定区間のスレッド情報をマスタースレッドに集約する方法を変える必要がある。
+!!  その集約方法を切り替えるための関数。
 !!
-subroutine f_pm_mergethreads ()
+subroutine f_pm_mergethreads (id)
 end subroutine
 
 
