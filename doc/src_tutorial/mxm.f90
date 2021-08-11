@@ -6,22 +6,20 @@ program main
 	if (istat.ne.0) then
 	    stop "*** Allocate() failed."
 	endif
-	
-    !!	nWatch=10
-    !!	call f_pm_initialize (nWatch)
-	
 	n=msize
+	
+    !!	ninit=10
+    !!	call f_pm_initialize (ninit)
+	
     !!	call f_pm_start ("A:subinit2d")
 	call subinit2d (msize,n,a,b,c)
-    !!	call f_pm_stop ("A:subinit2d", 0.0, 0)
+    !!	call f_pm_stop ("A:subinit2d")
 	
     !!	call f_pm_start ("B:submxm2d")
 	call submxm2d (msize,n,dflop,a,b,c)
-    !!	call f_pm_stop ("B:submxm2d", 0.0, 0)
+    !!	call f_pm_stop ("B:submxm2d")
 	
-    !!	call f_pm_print ("","","",0)
-    !!	call f_pm_printdetail ("",1,0)
-    !!	call f_pm_printthreads ("",0,0)
+    !!	call f_pm_report ("")
 	write(*,*)  'something was computed', c(msize,msize)
 	
 	stop

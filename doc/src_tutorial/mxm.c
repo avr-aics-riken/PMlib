@@ -16,8 +16,8 @@ struct matrix {
 
 int main (int argc, char *argv[])
 {
-	int nsection=3;
-	//	C_pm_initialize(nsection);
+	//	int ninit=3;
+	//	C_pm_initialize(ninit);
 	//	C_pm_start("A:init2d");
 	init2d();
 	//	C_pm_stop ("A:init2d");
