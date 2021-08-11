@@ -644,6 +644,22 @@ void C_pm_gather (void)
 
 
 /// PMlib C interface
+/// Count the number of shared sections
+///
+///   @param[out] nSections		number of shared sections
+///
+void C_pm_sections (int &nSections)
+{
+	PM.countSections(nSections);
+
+#ifdef DEBUG_PRINT_MONITOR
+    fprintf(stderr, "<C_pm_sections> nSections=%d \n", nSections);
+#endif
+	return;
+}
+
+
+/// PMlib C interface
 /// Check if the section has been called inside of parallel region
 ///
 ///   @param[in] id         shared section number
@@ -653,6 +669,9 @@ void C_pm_gather (void)
 void C_pm_serial_parallel (int id, int &mid, int &inside)
 {
 	PM.SerialParallelRegion(id, mid, inside);
+#ifdef DEBUG_PRINT_MONITOR
+	fprintf(stderr, "<C_pm_serial_parallel> id=%d mid=%d inside=%d \n", id, mid, inside);
+#endif
 	return;
 }
 
@@ -675,6 +694,7 @@ void C_pm_stop_Root (void)
 ///		@param[in] id      測定区間の番号
 ///
 ///		@note  通常このAPIはPMlib内部で自動的に実行され、利用者が呼び出す必要はない。
+///		@note この測定区間の番号はスレッドプライベートな番号ではなく、共通番号であることに注意。
 ///
 void C_pm_mergethreads (int id)
 {

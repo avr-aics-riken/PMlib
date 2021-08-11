@@ -25,14 +25,9 @@
 #endif
 #include <stdio.h>
 #include <string>
-#include <PerfMonitor.h>
-
 #include "stdlib.h"
-
-#if !defined(_WIN32) && !defined(WIN32)
-#include <unistd.h> // for gethostname() of FX10/K
-#endif
-
+#include <unistd.h>
+#include <PerfMonitor.h>
 
 #ifndef _OPENMP
 using namespace pm_lib;
@@ -736,10 +731,12 @@ void f_pm_sections_ (int &nSections)
 ///
 void f_pm_serial_parallel_ (int &id, int &mid, int &inside)
 {
-#ifdef DEBUG_PRINT_MONITOR
-	fprintf(stderr, "<f_pm_serial_parallel_> id=%d \n", id);
-#endif
+
 	PM.SerialParallelRegion(id, mid, inside);
+
+#ifdef DEBUG_PRINT_MONITOR
+	fprintf(stderr, "<f_pm_serial_parallel_> id=%d mid=%d inside=%d \n", id, mid, inside);
+#endif
 	return;
 }
 

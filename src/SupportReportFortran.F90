@@ -1,3 +1,6 @@
+
+!cx support routine <f_pm_report> to merge thread serial/parallel sections
+
 subroutine f_pm_report (filename)
 character(*) filename
 integer id, mid, inside, nSections
