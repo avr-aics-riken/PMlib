@@ -95,20 +95,25 @@ namespace pm_lib {
   public:
     /// コンストラクタ.
     PerfMonitor() : my_rank(-1), m_watchArray(0) {
-	#ifdef DEBUG_PRINT_MONITOR
-		fprintf(stderr, "\t<PerfMonitor> constructor is called. &my_rank=%p\n", &my_rank);
-	#endif
+		#ifdef DEBUG_PRINT_MONITOR
+		//	if (my_rank == 0) {
+		fprintf(stderr, "<PerfMonitor> constructor \n");
+		// }
+		#endif
 	}
 
-    /// デストラクタ.
+/***
+    /// We should let the default destructor handle the clean up
     ~PerfMonitor() {
-	#ifdef DEBUG_PRINT_MONITOR
-		fprintf(stderr, "\t <PerfMonitor> rank %d destructor\n", my_rank);
-		fprintf(stderr, "\t\t the number of sections is %d\n", m_nWatch);
-	#endif
 		if (m_watchArray) delete[] m_watchArray;
 		if (m_order) delete[] m_order;
+		#ifdef DEBUG_PRINT_MONITOR
+		//	if (my_rank == 0) {
+		fprintf(stderr, "<PerfMonitor> destructor rank %d thread %d deleted %d sections\n", my_rank, my_thread, m_nWatch);
+		// }
+		#endif
 	}
+ ***/
 
 
     /// PMlibの内部初期化

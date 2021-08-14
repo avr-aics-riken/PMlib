@@ -132,29 +132,30 @@ namespace pm_lib {
       m_in_parallel(false) {
 	#ifdef DEBUG_PRINT_WATCH
 		int i_thread_constractor;
-		int PerfWatch::* p_m_id = &PerfWatch::m_id;
 		#ifdef _OPENMP
 		i_thread_constractor = omp_get_thread_num();
 		#else
 		i_thread_constractor = 0;
 		#endif
-		fprintf(stderr, "\t<PerfWatch> constructor : thread=%d, &m_id=%p, p_m_id=%p \n",
-			i_thread_constractor,  &m_id, p_m_id);
+		fprintf(stderr, "\t<PerfWatch> constructor : thread=%d, &m_id=%p \n",
+			i_thread_constractor,  &m_id);
 	#endif
 	}
 
-    /// デストラクタ.
+/***
+    /// We should let the default destructor handle the clean up
     ~PerfWatch() {
-	#ifdef DEBUG_PRINT_WATCH
-		if (my_rank == 0) {
-    	fprintf(stderr, "\t <PerfWatch> rank %d destructor for [%s]\n", my_rank, m_label.c_str() );
-		}
-	#endif
       if (m_timeArray != NULL)  delete[] m_timeArray;
       if (m_flopArray != NULL)  delete[] m_flopArray;
       if (m_countArray != NULL) delete[] m_countArray;
       if (m_sortedArrayHWPC != NULL) delete[] m_sortedArrayHWPC;
+		#ifdef DEBUG_PRINT_WATCH
+		//	if (my_rank == 0) {
+    	fprintf(stderr, "\t <PerfWatch> destructor rank %d thread %d for [%s]\n", my_rank, my_thread, m_label.c_str() );
+		//	}
+		#endif
     }
+ ***/
 
     /// 測定モードを返す
     int get_typeCalc(void) { return m_typeCalc; }

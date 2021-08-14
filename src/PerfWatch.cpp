@@ -782,12 +782,6 @@ namespace pm_lib {
 	my_thread = omp_get_thread_num();
 	m_threads_merged = false;
 #endif
-#ifdef DEBUG_PRINT_WATCH
-	if (my_rank == 0) {
-		fprintf(stderr, "<PerfWatch::setProperties> is called. [%s] my_thread:%d \n",
-			label.c_str(), my_thread);
-	}
-#endif
 
 	if (!m_is_set) {
 		my_papi = papi;
@@ -841,30 +835,29 @@ namespace pm_lib {
 #ifdef DEBUG_PRINT_WATCH
     //	print the master process
     if (my_rank == 0) {
-    	fprintf(stderr, "<PerfWatch::setProperties> %d:[%s] thread:%d, m_in_parallel=%s, m_is_set=%s\n",
-			id, label.c_str(), my_thread, m_in_parallel?"true":"false", m_is_set?"true":"false");
+		// id is numbered per thread, i.e. each thread may have different value for this section id.
+    	fprintf(stderr, "<PerfWatch::setProperties> [%s] thread:%d, id:%d, m_in_parallel=%s \n",
+			label.c_str(), my_thread, id, m_in_parallel?"true":"false" );
 
-	#ifdef DEBUG_PRINT_PAPI_THREADS
-	#pragma omp critical
-	{
-    	fprintf(stderr, "<PerfWatch::setProperties> [%s] thread:%d, &thread=%p, &my_rank=%p, &(papi)=%p, &(my_papi)=%p\n",
+		#pragma omp critical
+		{
+		#ifdef DEBUG_PRINT_PAPI_THREADS
+    	fprintf(stderr, "\t\t [%s] address check thread:%d, &thread=%p, &my_rank=%p, &(papi)=%p, &(my_papi)=%p\n",
 			label.c_str(), my_thread, &my_thread, &my_rank, &papi, &my_papi);
-			//	label.c_str(), my_thread, &papi.num_events, &my_papi.num_events);
 		for (int j=0; j<num_threads; j++) {
 			fprintf (stderr, "\tmy_papi.th_accumu[%d][*]:", j);
 			for (int i=0; i<my_papi.num_events; i++) {
 				fprintf (stderr, "%llu, ", my_papi.th_accumu[j][i]);
 			};	fprintf (stderr, "\n");
 		}
-	}
-	#endif
-
-	#pragma omp barrier
-	#ifdef USE_POWER
-    fprintf(stderr, "\t\t my_power is initialized. [%s] thread:%d, &my_power=%p \n",
+		#endif
+		#ifdef USE_POWER
+    	fprintf(stderr, "\t\t my_power is initialized. [%s] thread:%d, &my_power=%p \n",
 			label.c_str(), my_thread, &my_power);
-	#endif
-    }
+		#endif
+    	}
+		// end of #pragma omp critical
+	}
 #endif
 
   }
@@ -1145,8 +1138,8 @@ namespace pm_lib {
 			my_papi.th_values[i_thread][i] = th_papi.values[i];
 		}
 	}	// end of #pragma omp parallel region
+
 	#ifdef DEBUG_PRINT_PAPI_THREADS
-		#pragma omp barrier
 		if (my_rank == 0) {
 			for (int j=0; j<num_threads; j++) {
 				fprintf (stderr, "\t<startSectionSerial> [%s] my_papi.th_values[%d][*]:", m_label.c_str(), j);
