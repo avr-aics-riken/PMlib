@@ -128,6 +128,7 @@ namespace pm_lib {
     }
 
 // Parse the Environment Variable HWPC_CHOOSER
+	// If given, the value should be one of {FLOPS| BANDWIDTH| VECTOR| CACHE| CYCLE| LOADSTORE| USER}
 	std::string s_chooser;
 	std::string s_default = "USER";
 
@@ -873,7 +874,78 @@ namespace pm_lib {
   }
   
 
-  /// 測定結果の統計レポートを標準出力に表示する。
+  //> PMlib report controll routine
+  ///	@brief
+  /// - [1] stop the Root section
+  /// - [2] merge thread serial/parallel sections
+  /// - [3] select the type of the report and start producing the report
+  ///
+  /// @param[in] FILE* fc     output file pointer
+  ///
+  ///   @note Most likely, this routine is called as report(stdout);
+  ///
+  void PerfMonitor::report(FILE* fp)
+  {
+    if (!is_PMlib_enabled) return;
+	#ifdef DEBUG_PRINT_MONITOR
+    if (my_rank==0) fprintf(stderr, "\n<PerfMonitor::report> start \n");
+	#endif
+
+	int id, mid, inside;
+	int nSections;
+
+//	stop the Root section before report
+
+	id = 0;
+	SerialParallelRegion (id, mid, inside);
+
+	if (inside==0) {
+		stopRoot ();
+	} else if (inside==1) {
+		#pragma omp parallel
+		stopRoot ();
+	} else {
+		;
+	}
+
+//	count the number of SHARED sections
+
+	countSections (nSections);
+
+//	merge thread data into the master thread 
+
+	for (id=0; id<nSections; id++) {
+	SerialParallelRegion (id, mid, inside);
+
+	if (inside==0) {
+		// The section is defined outside of parallel context
+		mergeThreads (id);
+
+	} else if (inside==1) {
+		// The section is defined inside parallel context
+		// If an OpenMP parallel region is started by a Fortran routine,
+		// the merge operation must be triggered by a Fortran routine,
+		// i.e. C or C++ parallel context does not match that of Fortran.
+		// The followng OpenMP parallel block profives such merging support.
+		#pragma omp parallel
+		mergeThreads (id);
+	} else {
+		;
+	}
+	}	// end of for loop
+
+//	now start reporting the PMlib stats
+	selectReport (fp);
+	return;
+  }
+
+
+
+
+  /// 出力する性能統計レポートの種類を選択し、ファイルへの出力を開始する。
+  ///
+  ///   @param[in] fp       出力ファイルポインタ
+  ///
   ///   @note
   ///   基本統計レポート、MPIランク別詳細レポート、HWPC統計情報の詳細レポート、
   ///   スレッド別詳細レポートをまとめて出力する。
@@ -883,44 +955,36 @@ namespace pm_lib {
   ///   PMLIB_REPORT=FULL： BASICとDETAILのレポートに加えて、
   ///		各MPIランクが生成した各並列スレッド毎にHWPC統計情報の詳細レポートを出力する。
   ///
-  ///   @param[in] fp       出力ファイルポインタ
-  ///
-  void PerfMonitor::report(FILE* fp)
+  void PerfMonitor::selectReport(FILE* fp)
   {
 	int iret;
     if (!is_PMlib_enabled) return;
 	#ifdef DEBUG_PRINT_MONITOR
     if (my_rank==0) {
-    	fprintf(stderr, "<PerfMonitor::report> start \n");
+    	fprintf(stderr, "<PerfMonitor::selectReport> start \n");
 	}
 	#endif
-
 
 	// BASIC report is always generated.
 	PerfMonitor::print(fp, "", "", 0);
 
 	// env_str_report should be one of {"BASIC" || "DETAIL" || "FULL"}
+	// DETAIL report per MPI ranks
 	if (env_str_report == "DETAIL" || env_str_report == "FULL") {
 		PerfMonitor::printDetail(fp, 0, 0);
 	}
 
+	// FULL report per each parallel thread
 	if (env_str_report == "FULL" ) {
     	for (int i = 0; i < num_process; i++) {
 		PerfMonitor::printThreads(fp, i, 0);
 		}
 	}
 
-	#ifdef DEBUG_PRINT_MONITOR
-    fprintf(stderr, "<PerfMonitor::report> my_rank=%d reaching Barrier() \n", my_rank);
-	iret = MPI_Barrier(MPI_COMM_WORLD);
-	#endif
-
-	// env_str_hwpc should be one of
-	// {FLOPS| BANDWIDTH| VECTOR| CACHE| CYCLE| LOADSTORE| USER}
+	// print all symbols used in the report, aka Legends.
 	if (env_str_hwpc != "USER" ) {
 		PerfMonitor::printLegend(fp);
 	}
-
   }
 
 
@@ -2088,6 +2152,8 @@ int PerfMonitor::initializePOWER (void)
 // Parse the Environment Variable POWER_CHOOSER
     level_POWER = 0;
 	std::string s_chooser;
+	std::string s_default = "OFF";
+
 	char* cp_env = std::getenv("POWER_CHOOSER");
 	if (cp_env == NULL) {
 		;
@@ -2104,6 +2170,9 @@ int PerfMonitor::initializePOWER (void)
 		} else
 		if (s_chooser == "PARTS") {
 			level_POWER = 3;
+		} else {
+			printDiag("initialize()",  "unknown POWER_CHOOSER value [%s]. the default value [%s] is set.\n", cp_env, s_default.c_str());
+			s_chooser = s_default;
 		}
 	}
 	#ifdef DEBUG_PRINT_POWER_EXT

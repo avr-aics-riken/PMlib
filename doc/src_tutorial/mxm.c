@@ -35,7 +35,7 @@ void init2d()
 	int i, j, nsize;
 	matrix.nsize = MATSIZE;
 	nsize = matrix.nsize;
-	//	//	#pragma omp parallel for private(i,j)
+	//	#pragma omp parallel for private(i,j)
 	for (i=0; i<nsize; i++){
 	for (j=0; j<nsize; j++){
 	matrix.a2[i][j] = sin((float)j/(float)nsize);
@@ -50,7 +50,7 @@ void mxm2d()
 	int i, j, k, nsize;
 	float c1,c2,c3;
 	nsize = matrix.nsize;
-	//	//	#pragma omp parallel for private(i,j,k,c1)
+	//	#pragma omp parallel for private(i,j,k,c1)
 	for (i=0; i<nsize; i++){
 	for (j=0; j<nsize; j++){
 		c1=0.0;

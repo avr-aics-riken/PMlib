@@ -34,7 +34,7 @@ int main (int argc, char *argv[])
 	sub_kernel();
 	C_pm_stop ("Second location");
 
-	C_pm_report(stdout);
+	C_pm_report("");	// report to stdout by default
 
 	//	MPI_Finalize();
 	return 0;

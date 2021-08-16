@@ -3,6 +3,7 @@
 #include <stdio.h>
 void init2d();
 void mxm2d();
+	//	#define DISABLE_MPI	// if the program does not use MPI
 	//	#include <PerfMonitor.h>
 	//	using namespace pm_lib;
 	//	PerfMonitor PM;

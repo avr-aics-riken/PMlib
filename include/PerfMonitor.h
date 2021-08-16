@@ -289,7 +289,23 @@ namespace pm_lib {
     void mergeThreads(int id);
 
 
-    /// 測定結果の統計レポートを標準出力に表示する。
+    /// PMlibレポートの出力をコントロールする汎用ルーチン
+    ///   @brief
+    /// - [1] stop the Root section
+    /// - [2] merge thread serial/parallel sections
+    /// - [3] select the type of the report and start producing the report
+    ///
+    /// @param[in] FILE* fc     output file pointer
+    ///
+    ///   @note fcが"" (NULL)の場合は標準出力に出力される
+    ///
+    void report(FILE* fp);
+
+
+    /// 出力する性能統計レポートの種類を選択し、ファイルへの出力を開始する。
+    ///
+    ///   @param[in] fp       出力ファイルポインタ
+    ///
     ///   @note
     ///   基本統計レポート、MPIランク別詳細レポート、HWPC統計情報の詳細レポート、
     ///   スレッド別詳細レポートをまとめて出力する。
@@ -298,10 +314,10 @@ namespace pm_lib {
 	///   PMLIB_REPORT=DETAIL: MPIランク別に経過時間、頻度、HWPC統計情報の詳細レポートを出力する。
 	///   PMLIB_REPORT=FULL： BASICとDETAILのレポートに加えて、
 	///		各MPIランクが生成した各並列スレッド毎にHWPC統計情報の詳細レポートを出力する。
+    ///   @note  
+    ///  通常このAPIはPMlib内部で自動的に実行され、利用者が呼び出す必要はない。
     ///
-    ///   @param[in] fp       出力ファイルポインタ
-    ///
-    void report(FILE* fp);
+    void selectReport(FILE* fp);
 
 
     /// 測定結果の基本統計レポートを出力。

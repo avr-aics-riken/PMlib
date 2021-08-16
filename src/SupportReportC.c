@@ -1,6 +1,12 @@
-
-// support routine <C_pm_report> to merge thread serial/parallel sections
-
+/// PMlib report controll routine for C program
+/// - [1] stop the Root section
+/// - [2] merge thread serial/parallel sections
+/// - [3] select the type of the report and start producing the report
+///
+///	@param[in] char* fc		output file name
+///
+///	@note	if fc is NULL ("") , stdout is chosen.
+///
 #include <stdio.h>
 #include <unistd.h>
 #include <stdbool.h>
@@ -11,7 +17,7 @@ extern void C_pm_serial_parallel (int id, int *mid, int *inside);
 extern void C_pm_stop_Root (void);
 extern void C_pm_sections (int *nSections);
 extern void C_pm_mergethreads (int id);
-extern void C_pm_report_top (char *filename);
+extern void C_pm_select_report (char *filename);
 
 void C_pm_report (char *filename)
 {
@@ -62,6 +68,6 @@ void C_pm_report (char *filename)
 	}	// end of for loop
 
 //	now start reporting the PMlib stats
-	C_pm_report_top (filename);
+	C_pm_select_report (filename);
 	return;
 }

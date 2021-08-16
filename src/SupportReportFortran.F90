@@ -1,6 +1,8 @@
-
-!cx support routine <f_pm_report> to merge thread serial/parallel sections
-
+!> PMlib report controll routine
+!! - [1] stop the Root section
+!! - [2] merge thread serial/parallel sections
+!! - [3] select the type of the report and start producing the report
+!!
 subroutine f_pm_report (filename)
 character(*) filename
 integer id, mid, inside, nSections
@@ -47,7 +49,7 @@ end do
 
 !cx now start reporting the PMlib stats
 
-call f_pm_report_top (filename)
+call f_pm_select_report (filename)
 
 return
 end

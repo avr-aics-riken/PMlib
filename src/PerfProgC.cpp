@@ -206,11 +206,15 @@ void C_pm_stop_usermode (char* fc, double fpt, unsigned tic)
 
 
 /// PMlib C interface
-/// generic routine to controll and output the various report of the measured statistics
+/// @attention
+///	Users should not call this routine directly.
+///	Instead, the generic controll routine "C_pm_report" should be called.
+///	See C_pm_report in the manual viewer
+///	This is an internal routine to simply interface the C++ select routine.
 ///
 ///   @param[in] char* fc         output file name(character array). if "" , stdout is chosen.
 ///
-void C_pm_report_top (char* fc)
+void C_pm_select_report (char *fc)
 {
 	FILE *fp;
 	std::string s;
@@ -219,15 +223,14 @@ void C_pm_report_top (char* fc)
 	char hostname[512];
 
 #ifdef DEBUG_PRINT_MONITOR
-	fprintf(stderr, "<C_pm_report_top> fc=%s \n", s.c_str());
+	fprintf(stderr, "<C_pm_select_report> fc=%s \n", s.c_str());
 #endif
-	if (s == "") { // if filename is null, report to stdout
+	if (s == "") { // if filename is "" (NULL), report to stdout
 		fp=stdout;
 		user_file=0;
 	} else {
 		fp=fopen(fc,"a");
 		if (fp == NULL) {
-			//	fprintf(stderr, "*** warning <C_pm_report> can not open: %s\n", fc);
 			fp=stdout;
 			user_file=0;
 		} else {
@@ -235,7 +238,7 @@ void C_pm_report_top (char* fc)
 		}
 	}
 
-	PM.report(fp);
+	PM.selectReport (fp);
 
 	if (user_file == 1) {
 		fclose(fp);

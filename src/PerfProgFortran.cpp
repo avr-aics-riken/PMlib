@@ -218,8 +218,12 @@ void f_pm_stop_usermode_ (char* fc, double& fpt, unsigned& tic, int fc_size)
 }
 
 
-/// PMlib Fortran interface
-/// generic routine to controll and output the various report of the measured statistics
+//> PMlib Fortran interface
+/// @attention
+/// Users should not call this routine directly.
+/// Instead, the generic controll routine "f_pm_report" should be called.
+/// See f_pm_report in the manual viewer.
+/// This is an internal routine to simply interface the C++ select routine.
 ///
 ///   @param[in] char* fc         output file name(character array). if "" , stdout is chosen.
 ///   @param[in] int fc_size      the number of characters in fc
@@ -228,23 +232,26 @@ void f_pm_stop_usermode_ (char* fc, double& fpt, unsigned& tic, int fc_size)
 ///			do not have to explicitly give it when calling from Fortran programs.
 ///			for example, call f_pm_print_ ("") is good enough for most use cases.
 ///
-void f_pm_report_top_ (char* fc, int fc_size)
+void f_pm_select_report_ (char* fc, int fc_size)
 {
 	FILE *fp;
-	std::string s=std::string(fc,fc_size);
+	std::string s;
 	int user_file;
-	char hostname[512];
+	char fn[512];
+
+	// argument fc may contain some garbage characters in tail. so cut them off.
+	strncpy (fn, fc, fc_size);
+	s=fn;
 
 #ifdef DEBUG_PRINT_MONITOR
-	fprintf(stderr, "<f_pm_report_> fc=%s, fc_size=%d\n", s.c_str(), fc_size);
+	fprintf(stderr, "<f_pm_select_report_> fn=%s, fc_size=%d\n", fn, fc_size);
 #endif
 	if (s == "" || fc_size == 0) { // if filename is null, report to stdout
 		fp=stdout;
 		user_file=0;
 	} else {
-		fp=fopen(fc,"a");
+		fp=fopen(fn,"a");
 		if (fp == NULL) {
-			//	fprintf(stderr, "*** warning <f_pm_report_> can not open: %s\n", fc);
 			fp=stdout;
 			user_file=0;
 		} else {
@@ -252,7 +259,7 @@ void f_pm_report_top_ (char* fc, int fc_size)
 		}
 	}
 
-	PM.report(fp);
+	PM.selectReport(fp);
 
 	if (user_file == 1) {
 		fclose(fp);
@@ -261,7 +268,7 @@ void f_pm_report_top_ (char* fc, int fc_size)
 }
 
 
-/// PMlib Fortran interface
+//> PMlib Fortran interface
 /// output BASIC report of the measured statistics
 ///
 ///   @param[in] char* fc 出力ファイル名(character文字列. ""の場合はstdoutへ出力する)

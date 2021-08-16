@@ -6,6 +6,7 @@ extern void C_pm_start (char* fc);
 extern void C_pm_stop (char* fc);
 extern void C_pm_stop_usermode (char* fc, double fpt, unsigned tic);
 extern void C_pm_report (char* fc);
+extern void C_pm_select_report (char* fc);
 extern void C_pm_print (char* fc, char* fh, char* fcmt, int fp_sort);
 extern void C_pm_printdetail (char* fc, int legend, int fp_sort);
 extern void C_pm_printthreads (char* fc, int rank_ID, int fp_sort);
