@@ -178,10 +178,9 @@ namespace pm_lib {
     m_watchArray[0].initializeHWPC();
 
 // initialize Power API binding contexts
-	int n = PerfMonitor::initializePOWER() ;
+	num_power = PerfMonitor::initializePOWER() ;
 
-    m_watchArray[0].initializePowerWatch(n);
-
+    m_watchArray[0].initializePowerWatch (num_power, level_POWER);
 
 	#ifdef DEBUG_PRINT_MONITOR
     if (my_rank == 0) {
@@ -319,12 +318,6 @@ namespace pm_lib {
     is_exclusive_construct = exclusive;
     m_nWatch++;
     m_watchArray[id].setProperties(label, id, type, num_process, my_rank, num_threads, exclusive);
-
-    #ifdef DEBUG_PRINT_MONITOR
-    if (my_rank == 0) {
-		fprintf(stderr, "Finishing <setProperties> [%s] id=%d my_rank=%d, my_thread=%d\n", label.c_str(), id, my_rank, my_thread);
-    }
-    #endif
 
   }
 
@@ -497,6 +490,9 @@ namespace pm_lib {
     }
     m_watchArray[id].stop(flopPerTask, iterationCount);
 	#ifdef USE_POWER
+    	#ifdef DEBUG_PRINT_MONITOR
+    	if (my_rank == 0) fprintf(stderr, "*** Are you really calling power_stop? \n");
+    	#endif
     m_watchArray[id].power_stop( pm_pacntxt, pm_extcntxt, pm_obj_array, pm_obj_ext);
 	#endif
 
@@ -579,6 +575,13 @@ namespace pm_lib {
   void PerfMonitor::stopRoot (void)
   {
     if (!is_PMlib_enabled) return;
+
+    #ifdef DEBUG_PRINT_MONITOR
+    if (my_rank == 0) {
+		int i_th = omp_get_thread_num();
+      fprintf(stderr, "<stopRoot> my_thread=%d i_th=%d, is_Root_active=%s\n", my_thread, i_th, is_Root_active?"true":"false");
+    }
+    #endif
 
     if (is_Root_active) {
     	m_watchArray[0].stop(0.0, 1);
@@ -903,7 +906,14 @@ namespace pm_lib {
 		stopRoot ();
 	} else if (inside==1) {
 		#pragma omp parallel
+		{
+		#ifdef DEBUG_PRINT_MONITOR
+		int i_th = omp_get_thread_num();
+		fprintf(stderr, "<report> calling <stopRoot> my_thread=%d i_th=%d \n", my_thread, i_th);
+		#endif
+
 		stopRoot ();
+		}
 	} else {
 		;
 	}
@@ -2218,11 +2228,20 @@ int PerfMonitor::initializePOWER (void)
 			{ warning_print ("CntxtGetObj", p_ext_name[i], "extended"); continue;}
 	}
 
-	if (isum == 0) {
-		return (Max_power_object + Max_measure_device);	// =19+1=20
-	} else {
-		return(-1);
+	if (isum != 0) {
+		warning_print ("initializePOWER", "some object", "continues");
 	}
+	// Even if there was an error, we continue the measuring
+
+	num_power = Max_power_object + Max_measure_device;	// =19+1=20
+
+	#ifdef DEBUG_PRINT_POWER_EXT
+    if (my_rank == 0) {
+	fprintf(stderr, "<%s> %d objects were initialized.\n", __func__, num_power);
+	}
+	#endif
+
+	return (num_power);
 
 #else
 	return (0);

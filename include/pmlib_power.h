@@ -1,3 +1,4 @@
+
 ///
 /// @file pmlib_power.h
 ///
@@ -60,6 +61,7 @@ struct pmlib_power_chooser
 	PWR_Obj p_obj_ext[Max_power_stats];
 
 	int num_power_stats;				// number of power measured parts
+	int level_report;					// level of details in power report
 	std::string s_name[Max_power_stats];	// symbols of the parts
 	uint64_t pa64timer[Max_power_stats];	// typedef uint64_t PWR_Time
 	double u_joule[Max_power_stats];	// temporary Power value (J) at start

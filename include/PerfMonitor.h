@@ -48,12 +48,6 @@ namespace pm_lib {
       CALC,  ///< 演算
     };
 
-	// type of PWR_Cntxt and PWR_Obj is defined in include/pmlib_power.h
-	PWR_Cntxt pm_pacntxt ;
-	PWR_Cntxt pm_extcntxt ;
-	PWR_Obj   pm_obj_array[Max_power_stats];
-	PWR_Obj   pm_obj_ext[Max_power_stats];
-
   public:
     int num_process;           ///< 並列プロセス数
     int num_threads;           ///< 並列スレッド数
@@ -62,6 +56,15 @@ namespace pm_lib {
     int m_nWatch;              ///< 測定区間数
     int init_nWatch;           ///< 初期に確保する測定区間数
     int reserved_nWatch;       ///< リザーブ済みの測定区間数
+
+    int level_POWER;   ///< 電力制御のレベル 0(no), 1(NODE), 2(NUMA), 3(PARTS)
+    int num_power;     ///< 電力測定オブジェクトの総数
+	// type of PWR_Cntxt and PWR_Obj is defined in include/pmlib_power.h
+	PWR_Cntxt pm_pacntxt ;
+	PWR_Cntxt pm_extcntxt ;
+	PWR_Obj   pm_obj_array[Max_power_stats];
+	PWR_Obj   pm_obj_ext[Max_power_stats];
+
   private:
     bool is_PMlib_enabled;     /*!< PMlibの動作を有効にするフラグ<br>
     	//	@note 環境変数BYPASS_PMLIBを定義（任意値）してアプリを実行すると
@@ -73,7 +76,6 @@ namespace pm_lib {
     bool is_OTF_enabled;       ///< PMlibの対応動作可能フラグ:OTF tracing 出力
     bool is_Root_active;       ///< 背景区間(Root区間)の動作フラグ
     bool is_exclusive_construct; ///< 測定区間の重なり状態検出フラグ
-    int level_POWER;   ///< 電力制御のレベル 0(no), 1(NODE), 2(NUMA), 3(PARTS)
 
     std::string parallel_mode; /*!< 並列動作モード
       // {Serial| OpenMP| FlatMPI| Hybrid} */

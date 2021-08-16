@@ -177,7 +177,7 @@ namespace pm_lib {
 
     /// initialize Power API related variables
     ///
-    void initializePowerWatch(int num);
+    void initializePowerWatch(int num, int level);
 
 
     /// OTF 用の初期化

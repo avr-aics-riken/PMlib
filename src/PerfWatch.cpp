@@ -787,6 +787,7 @@ namespace pm_lib {
 		my_papi = papi;
 #ifdef USE_POWER
 		my_power = power;
+		level_POWER = power.level_report;
 #endif
 		m_is_set = true;
 	}
@@ -867,40 +868,24 @@ namespace pm_lib {
   /// initialize Power API interface
   ///
   ///	@param[in] n  number of Power objects initialized by PerfMonitor class instance
+  ///	@param[in] n  level of detail for power report [0..3]
   ///
   ///	@note num_power is always 20 for Fugaku implementation
   ///
-  void PerfWatch::initializePowerWatch(int num_power)
+  void PerfWatch::initializePowerWatch(int num, int level)
   {
-    level_POWER = 0;
-	power.num_power_stats = 0;
 #ifdef USE_POWER
-
-	level_POWER = 1;
-// Parse the Environment Variable POWER_CHOOSER
-	std::string s_chooser;
-	char* cp_env = std::getenv("POWER_CHOOSER");
-	if (cp_env == NULL) {
-		;
-	} else {
-		s_chooser = cp_env;
-		if (s_chooser == "OFF" || s_chooser == "NO" ) {
-			level_POWER = 0;
-		} else
-		if (s_chooser == "NODE") {
-			level_POWER = 1;
-		} else
-		if (s_chooser == "NUMA") {
-			level_POWER = 2;
-		} else
-		if (s_chooser == "PARTS") {
-			level_POWER = 3;
-		}
+	power.num_power_stats = 0;
+	power.level_report = level;
+    if(power.level_report >  0) {
+		power.num_power_stats = num;
 	}
-
-    if(level_POWER >  0) {
-		power.num_power_stats = num_power;
+	#ifdef DEBUG_PRINT_WATCH
+    if (my_rank == 0) {
+    	fprintf(stderr, "<PerfWatch::initializePowerWatch> [%s] level_report=%d num_power_stats=%d \n",
+		m_label.c_str(), power.level_report, power.num_power_stats);
 	}
+	#endif
 #endif
   }
 
@@ -1095,8 +1080,8 @@ namespace pm_lib {
 	{
 		fprintf (stderr, "<PerfWatch::power_start> [%s] my_thread=%d\n",
 			m_label.c_str(), my_thread);
-		//	for (int i=0; i<my_power.num_power_stats; i++) {
-		for (int i=0; i<10; i++) {
+		for (int i=0; i<my_power.num_power_stats; i++) {
+		//	for (int i=0; i<10; i++) {
 			fprintf (stderr, "\t %10.2e\n", my_power.u_joule[i]);
 		}
 	}

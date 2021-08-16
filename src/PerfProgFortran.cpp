@@ -148,9 +148,9 @@ void f_pm_start_ (char* fc, int fc_size)
 {
 	std::string s=std::string(fc,fc_size);
 
-#ifdef DEBUG_PRINT_MONITOR
-	fprintf(stderr, "<f_pm_start_> fc=%s, fc_size=%d\n", s.c_str(), fc_size);
-#endif
+	#ifdef DEBUG_PRINT_MONITOR
+	// fprintf(stderr, "<f_pm_start_> fc=%s, fc_size=%d\n", s.c_str(), fc_size);
+	#endif
 	if (s == "") {
 		fprintf(stderr, "<f_pm_start_> argument fc is empty(null)\n");
 		return;
@@ -178,9 +178,9 @@ void f_pm_stop_ (char* fc, int fc_size)
 {
 	std::string s=std::string(fc,fc_size);
 
-#ifdef DEBUG_PRINT_MONITOR
-	fprintf(stderr, "<f_pm_stop_> fc=%s, fc_size=%d\n", s.c_str(), fc_size);
-#endif
+	#ifdef DEBUG_PRINT_MONITOR
+	//	fprintf(stderr, "<f_pm_stop_> fc=%s, fc_size=%d\n", s.c_str(), fc_size);
+	#endif
 	if (s == "") {
 		;	// section label argument is empty. stdout will be used.
 	}
@@ -207,9 +207,6 @@ void f_pm_stop_usermode_ (char* fc, double& fpt, unsigned& tic, int fc_size)
 {
 	std::string s=std::string(fc,fc_size);
 
-#ifdef DEBUG_PRINT_MONITOR
-	fprintf(stderr, "<f_pm_stop_usermode_> fc=%s, fpt=%8.0lf, tic=%d, fc_size=%d\n", s.c_str(), fpt, tic, fc_size);
-#endif
 	if (s == "") {
 		;	// section label argument is empty. stdout will be used.
 	}
@@ -243,9 +240,6 @@ void f_pm_select_report_ (char* fc, int fc_size)
 	strncpy (fn, fc, fc_size);
 	s=fn;
 
-#ifdef DEBUG_PRINT_MONITOR
-	fprintf(stderr, "<f_pm_select_report_> fn=%s, fc_size=%d\n", fn, fc_size);
-#endif
 	if (s == "" || fc_size == 0) { // if filename is null, report to stdout
 		fp=stdout;
 		user_file=0;
@@ -346,9 +340,6 @@ void f_pm_printdetail_ (char* fc, int& legend, int &fp_sort, int fc_size)
 {
 	FILE *fp;
 	std::string s=std::string(fc,fc_size);
-#ifdef DEBUG_PRINT_MONITOR
-	//	fprintf(stderr, "<f_pm_printdetail_> fc=%s, legend=%d, fp_sort=%d, fc_size=%d \n", s.c_str(), legend, fp_sort, fc_size);
-#endif
 
 	int user_file;
 	if (s == "" || fc_size == 0) { // if filename is null, report to stdout
@@ -390,12 +381,6 @@ void f_pm_printthreads_ (char* fc, int &rank_ID, int &fp_sort, int fc_size)
 {
 	FILE *fp;
 	std::string s=std::string(fc,fc_size);
-#ifdef DEBUG_PRINT_MONITOR
-    int my_rank;
-    MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
-	fprintf(stderr, "<f_pm_printThreads_> fc=%s, rank_ID=%d, fp_sort=%d, my_rank=%d, fc_size=%d \n",
-		s.c_str(), rank_ID, fp_sort, my_rank, fc_size);
-#endif
 
 	int user_file;
 	if (s == "" || fc_size == 0) { // if filename is null, report to stdout
@@ -482,10 +467,10 @@ void f_pm_printgroup_ (char* fc, MPI_Group p_group, MPI_Comm p_comm, int* pp_ran
 {
 	FILE *fp;
 	std::string s=std::string(fc,fc_size);
-#ifdef DEBUG_PRINT_MONITOR
+	#ifdef DEBUG_PRINT_MONITOR
 	//	fprintf(stderr, "<f_pm_printgroup_> fc=%s, group=%d, legend=%d, fp_sort=%d, fc_size=%d \n",
 	//				s.c_str(), group, legend, fp_sort, fc_size);
-#endif
+	#endif
 
 	if (s == "" || fc_size == 0) {
 		// filename is null. PMlib report is merged to stdout
@@ -525,10 +510,10 @@ void f_pm_printcomm_ (char* fc, MPI_Comm new_comm, int& icolor, int& key, int& l
 {
 	FILE *fp;
 	std::string s=std::string(fc,fc_size);
-#ifdef DEBUG_PRINT_MONITOR
+	#ifdef DEBUG_PRINT_MONITOR
 	//	fprintf(stderr, "<f_pm_printcomm_> fc=%s, new_comm=%d, icolor=%d, key=%d, legend=%d, fp_sort=%d, fc_size=%d \n",
 	//		s.c_str(), new_comm, icolor, key, legend, fp_sort, fc_size);
-#endif
+	#endif
 
 	if (s == "" || fc_size == 0) {
 		fp=stdout;
@@ -563,10 +548,10 @@ void f_pm_printprogress_ (char* fc, char* comments, int& fp_sort, int fc_size, i
 {
 	FILE *fp;
 	std::string s=std::string(fc,fc_size);
-#ifdef DEBUG_PRINT_MONITOR
+	#ifdef DEBUG_PRINT_MONITOR
 	//	fprintf(stderr, "<f_pm_printprogress_> fc=%s, comments=%s, fp_sort=%d, fc_size=%d, comments_size=%d \n",
 	//		s.c_str(), comments, fp_sort, fc_size, comments_size);
-#endif
+	#endif
 
 	if (s == "" || fc_size == 0) {
 		fp=stdout;
@@ -591,9 +576,6 @@ void f_pm_printprogress_ (char* fc, char* comments, int& fp_sort, int fc_size, i
 ///
 void f_pm_posttrace_ (void)
 {
-#ifdef DEBUG_PRINT_MONITOR
-	//	fprintf(stderr, "<f_pm_posttrace_> \n");
-#endif
 
 	PM.postTrace ();
 
@@ -614,9 +596,6 @@ void f_pm_reset_ (char* fc, int fc_size)
 {
 	std::string s=std::string(fc,fc_size);
 
-#ifdef DEBUG_PRINT_MONITOR
-	//	fprintf(stderr, "<f_pm_reset_> fc=%s, fc_size=%d\n", s.c_str(), fc_size);
-#endif
 	if (s == "") {
 		fprintf(stderr, "<f_pm_reset_> argument fc is empty(null)\n");
 		return;
@@ -636,9 +615,6 @@ void f_pm_reset_ (char* fc, int fc_size)
 ///
 void f_pm_resetall_ (void)
 {
-#ifdef DEBUG_PRINT_MONITOR
-	//	fprintf(stderr, "<f_pm_resetall_> \n");
-#endif
 	PM.resetAll();
 	return;
 }
@@ -669,9 +645,9 @@ void f_pm_setproperties_ (char* fc, int& f_type, int& f_exclusive, int fc_size)
 	bool exclusive;
     PerfMonitor::Type arg_type; /// 測定対象タイプ from PerfMonitor.h
 
-#ifdef DEBUG_PRINT_MONITOR
+	#ifdef DEBUG_PRINT_MONITOR
 	//	fprintf(stderr, "<f_pm_setproperties_> fc=%s, f_type=%d, f_exclusive=%d, fc_size=%d\n", s.c_str(), f_type, f_exclusive, fc_size);
-#endif
+	#endif
 	if (s == "" || fc_size == 0) {
 		fprintf(stderr, "<f_pm_setproperties> label argument fc is (null). The call is ignored.\n");
 		return;
@@ -703,9 +679,6 @@ void f_pm_setproperties_ (char* fc, int& f_type, int& f_exclusive, int fc_size)
 ///
 void f_pm_gather_ (void)
 {
-#ifdef DEBUG_PRINT_MONITOR
-	//	fprintf(stderr, "<f_pm_gather_> \n");
-#endif
 	PM.gather();
 	return;
 }
@@ -721,9 +694,6 @@ void f_pm_sections_ (int &nSections)
 
 	PM.countSections(nSections);
 
-#ifdef DEBUG_PRINT_MONITOR
-	fprintf(stderr, "<f_pm_sections_> nSections=%d \n", nSections);
-#endif
 	return;
 }
 
@@ -741,9 +711,6 @@ void f_pm_serial_parallel_ (int &id, int &mid, int &inside)
 
 	PM.SerialParallelRegion(id, mid, inside);
 
-#ifdef DEBUG_PRINT_MONITOR
-	fprintf(stderr, "<f_pm_serial_parallel_> id=%d mid=%d inside=%d \n", id, mid, inside);
-#endif
 	return;
 }
 
