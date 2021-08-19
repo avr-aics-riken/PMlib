@@ -153,6 +153,10 @@ if(enable_Fortran)
     add_test(TEST_2 example2)
   endif()
 
+  if(TARGET_ARCH STREQUAL "FUGAKU")
+    target_link_libraries(example2 --linkfortran )
+  endif()
+
 endif()
 
 

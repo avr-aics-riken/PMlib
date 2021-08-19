@@ -42,7 +42,8 @@ set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
 set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
 
 set(TARGET_ARCH "FUGAKU")
-set(USE_F_TCS "YES")
+# removed USE_F_TCS because it adds extra libraries that cause error on Fugaku
+#	set(USE_F_TCS "YES")
 
 # libpapi.so and libpfm.so are under /opt/FJSVxos/devkit/aarch64/rfs/usr/lib64
 

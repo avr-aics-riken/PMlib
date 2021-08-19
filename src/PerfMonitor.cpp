@@ -874,15 +874,17 @@ namespace pm_lib {
   }
   
 
-  //> PMlib report controll routine
+  //> PMlib report controll routine for outside parallel regions
   ///	@brief
+  /// This is a controll routine for reporting the stats outside parallel regions.
+  /// For reporting the stats inside of parallel regions, call alternative routine
+  /// PerfReport::report defined in SupportReportCPP.cpp
+  /// 
   /// - [1] stop the Root section
   /// - [2] merge thread serial/parallel sections
   /// - [3] select the type of the report and start producing the report
   ///
-  /// @param[in] FILE* fc     output file pointer
-  ///
-  ///   @note Most likely, this routine is called as report(stdout);
+  /// @param[in] FILE* fc     output file pointer, most likely stdout
   ///
   void PerfMonitor::report(FILE* fp)
   {
@@ -902,15 +904,13 @@ namespace pm_lib {
 	if (inside==0) {
 		stopRoot ();
 	} else if (inside==1) {
-		#pragma omp parallel
-		{
-		#ifdef DEBUG_PRINT_MONITOR
-		int i_th = omp_get_thread_num();
-		fprintf(stderr, "<report> calling <stopRoot> my_thread=%d i_th=%d \n", my_thread, i_th);
-		#endif
+    	if (my_rank==0) 
+		fprintf(stderr, "\n*** PMlib warning. wrong usage *** \n");
+		fprintf(stderr, "To report the stats including the sections inside of parallel region,\n");
+		fprintf(stderr, "PerfReport::report() must be called instead of PerfMonitor::report() \n");
+		fprintf(stderr, "The following report is not correct. \n\n");
 
 		stopRoot ();
-		}
 	} else {
 		;
 	}
@@ -930,11 +930,10 @@ namespace pm_lib {
 
 	} else if (inside==1) {
 		// The section is defined inside parallel context
-		// If an OpenMP parallel region is started by a Fortran routine,
-		// the merge operation must be triggered by a Fortran routine,
-		// i.e. C or C++ parallel context does not match that of Fortran.
-		// The followng OpenMP parallel block profives such merging support.
-		#pragma omp parallel
+		// If an OpenMP parallel region is started by a user C++ routine,
+		// the merge operation must be triggered by a user C++ routine,
+		// which is outside of PMlib C++ class parallel context.
+		// In that case, call PerfReport::report() as explained above.
 		mergeThreads (id);
 	} else {
 		;

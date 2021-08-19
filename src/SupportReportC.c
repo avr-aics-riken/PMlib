@@ -55,9 +55,9 @@ void C_pm_report (char *filename)
 
 	} else if (inside==1) {
 		// The section is defined inside parallel context
-		// If an OpenMP parallel region is started by a Fortran routine,
-		// the merge operation must be triggered by a Fortran routine,
-		// i.e. C or C++ parallel context does not match that of Fortran.
+		// If an OpenMP parallel region is started by a C routine,
+		// the merge operation must be triggered by a C routine,
+		// which is outside of PMlib C++ class parallel context
 		// The followng OpenMP parallel block profives such merging support.
 		#pragma omp parallel
 		C_pm_mergethreads (id);

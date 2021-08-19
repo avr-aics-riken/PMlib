@@ -12,7 +12,8 @@ program main
 	real(kind=8), allocatable :: a(:,:),b(:,:),c(:,:)
 	real(kind=8) :: dinit, dflop, dbyte
 	integer nWatch
-	allocate (a(msize,msize), b(msize,msize), c(msize,msize), stat=istat)
+	n=msize
+	allocate (a(n,n), b(n,n), c(n,n), stat=istat)
 	if (istat.ne.0) then
 		write(*,*) "*** Allocate() failed."
 		stop
@@ -25,7 +26,6 @@ program main
 	call MPI_Comm_size( MPI_COMM_WORLD, ncpus, ierr )
 #endif
 	write(6,'(a,i3,a)') "fortran <main> started process:", myid
-	n=msize
 	nWatch=4
 	call f_pm_initialize (nWatch)
 
@@ -34,9 +34,9 @@ program main
 	dbyte=(n**3)*4.0*3.0
 
 	call f_pm_start ("Initial-section")
-	call subinit (msize,n,a,b,c)
+	call subinit (n,n,a,b,c)
 	call f_pm_stop ("Initial-section")
-	call spacer (msize,n,a,b,c)
+	call spacer (n,n,a,b,c)
 
 	call f_pm_start ("Loop-section")
 
@@ -44,14 +44,12 @@ program main
 	if(myid.eq.0) write(1,'(a,i3,a)') "loop: i=",i
 
 	call f_pm_start ("Kernel-Slow")
-	call slowmtxm (msize,n,dflop,a,b,c)
+	call slowmtxm (n,n,dflop,a,b,c)
 	call f_pm_stop ("Kernel-Slow")
-	call spacer (msize,n,a,b,c)
 
 	call f_pm_start ("Kernel-Fast")
-	call submtxm (msize,n,dflop,a,b,c)
+	call submtxm (n,n,dflop,a,b,c)
 	call f_pm_stop ("Kernel-Fast")
-	call spacer (msize,n,a,b,c)
 
 	end do
 

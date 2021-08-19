@@ -37,7 +37,7 @@ else if(inside.eq.1) then
     !cx The section is defined inside parallel context
     !cx If an OpenMP parallel region is started by a Fortran routine,
     !cx the merge operation must be triggered by a Fortran routine,
-    !cx i.e. C or C++ parallel context does not match that of Fortran.
+    !cx which is outside of PMlib C++ class parallel context
     !cx The followng OpenMP parallel block profives such merging support.
     !$omp parallel shared(id)
     call f_pm_mergethreads (id)

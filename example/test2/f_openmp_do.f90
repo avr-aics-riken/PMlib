@@ -16,7 +16,9 @@ program main
 	real(kind=8), allocatable :: a(:,:),b(:,:),c(:,:)
 	real(kind=8) :: dinit, dflop, dbyte
 	integer nWatch
-	allocate (a(msize,msize), b(msize,msize), c(msize,msize), stat=istat)
+
+	n=msize
+	allocate (a(n,n), b(n,n), c(n,n), stat=istat)
 	if (istat.ne.0) then
 		write(*,*) "*** Allocate() failed."
 		stop
@@ -29,7 +31,6 @@ program main
 	call MPI_Comm_size( MPI_COMM_WORLD, ncpus, ierr )
 #endif
 	write(6,'(a,i3,a)') "fortran <_main> started process:", myid
-	n=msize
 	nWatch=4
 	call f_pm_initialize (nWatch)
 
