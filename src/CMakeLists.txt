@@ -21,6 +21,7 @@ set(pm_files
        PerfProgFortran.cpp
        PerfProgC.cpp
        SupportReportFortran.F90
+       SupportReportCPP.cpp
        SupportReportC.c)
 
 if(NOT with_MPI)

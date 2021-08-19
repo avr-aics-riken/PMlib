@@ -1,22 +1,26 @@
-
-#ifdef DISABLE_MPI
-#include "mpi_stubs.h"
-#else
-#include <mpi.h>
-#endif
-#ifdef _OPENMP
-#include <omp.h>
-#endif
 #include <stdio.h>
 #include <string>
-#include "stdlib.h"
+#include <cstdlib>
 #include <unistd.h>
 #include <PerfMonitor.h>
 
-
-	extern pm_lib::PerfMonitor PM;
+extern pm_lib::PerfMonitor PM;
+#ifdef _OPENMP
+	#if defined (__INTEL_COMPILER)  || \
+	defined (__GXX_ABI_VERSION) || \
+	defined (__CLANG_FUJITSU)   || \
+	defined (__PGI)
+	// the measurement inside and/or outside of parallel region is supported
 	#pragma omp threadprivate(PM)
 
+	#else
+	// Only the  measurement outside of parallel region is supported
+	#endif
+#endif
+
+
+
+namespace pm_lib {
 
   //> PMlib report controll routine
   ///	@brief
@@ -28,10 +32,11 @@
   ///
   ///   @note Most likely, this routine is called as report(stdout);
   ///
-  void merge_and_report(FILE* fp)
+  void PerfReport::report(FILE* fp)
+  //	void merge_and_report(FILE* fp)
   {
 	#ifdef DEBUG_PRINT_MONITOR
-    if (my_rank==0) fprintf(stderr, "\n<PerfMonitor::report> start \n");
+    if (PM.my_rank==0) fprintf(stderr, "\n<PerfMonitor::report> start \n");
 	#endif
 
 	int id, mid, inside;
@@ -45,12 +50,10 @@
 	if (inside==0) {
 		PM.stopRoot ();
 	} else if (inside==1) {
+		#ifdef _OPENMP
 		#pragma omp parallel
-		{
-		#ifdef DEBUG_PRINT_MONITOR
-		int i_th = omp_get_thread_num();
-		fprintf(stderr, "<report> calling <stopRoot> my_thread=%d i_th=%d \n", my_thread, i_th);
 		#endif
+		{
 
 		PM.stopRoot ();
 		}
@@ -66,6 +69,9 @@
 
 	for (id=0; id<nSections; id++) {
 	PM.SerialParallelRegion (id, mid, inside);
+		#ifdef DEBUG_PRINT_MONITOR
+		printf("section %d is %s \n", id, (inside==0)?"outside":"inside");
+		#endif
 
 	if (inside==0) {
 		// The section is defined outside of parallel context
@@ -77,7 +83,9 @@
 		// the merge operation must be triggered by a Fortran routine,
 		// i.e. C or C++ parallel context does not match that of Fortran.
 		// The followng OpenMP parallel block profives such merging support.
+		#ifdef _OPENMP
 		#pragma omp parallel
+		#endif
 		PM.mergeThreads (id);
 	} else {
 		;
@@ -88,4 +96,6 @@
 	PM.selectReport (fp);
 	return;
   }
+
+} // end of namespace
 

@@ -627,6 +627,26 @@ namespace pm_lib {
 
   }; // end of class PerfMonitor //
 
+  /**
+   * additional class to integrate serial/threaded report
+   */
+  class PerfReport {
+  public:
+
+    /// PMlibレポートの出力をコントロールする汎用ルーチン
+    ///   @brief
+    /// - [1] stop the Root section
+    /// - [2] merge thread serial/parallel sections
+    /// - [3] select the type of the report and start producing the report
+    ///
+    /// @param[in] FILE* fc     output file pointer
+    ///
+    ///   @note fcが"" (NULL)の場合は標準出力に出力される
+    ///
+    void report(FILE* fp);
+
+  }; // end of class PerfReport //
+
 } /* namespace pm_lib */
 
 #endif // _PM_PERFMONITOR_H_

@@ -490,9 +490,6 @@ namespace pm_lib {
     }
     m_watchArray[id].stop(flopPerTask, iterationCount);
 	#ifdef USE_POWER
-    	#ifdef DEBUG_PRINT_MONITOR
-    	if (my_rank == 0) fprintf(stderr, "*** Are you really calling power_stop? \n");
-    	#endif
     m_watchArray[id].power_stop( pm_pacntxt, pm_extcntxt, pm_obj_array, pm_obj_ext);
 	#endif
 

@@ -617,7 +617,7 @@ namespace pm_lib {
 					j, my_papi.th_v_sorted[j][0], my_papi.th_v_sorted[j][1], my_papi.th_v_sorted[j][2]);
 			}
 		}
-		fprintf (stderr, "\t m_count=%d, m_time=%e, m_flop=%e\n", m_count, m_time, m_flop);
+		fprintf (stderr, "\t m_count=%ld, m_time=%e, m_flop=%e\n", m_count, m_time, m_flop);
 		#endif
 		}
 	}
@@ -727,7 +727,7 @@ namespace pm_lib {
 					j, my_papi.th_v_sorted[j][0], my_papi.th_v_sorted[j][1], my_papi.th_v_sorted[j][2]);
 			}
 		}
-		fprintf (stderr, "\t m_count=%d, m_time=%e, m_flop=%e\n", m_count, m_time, m_flop);
+		fprintf (stderr, "\t m_count=%ld, m_time=%e, m_flop=%e\n", m_count, m_time, m_flop);
 		}
     }
 	#endif

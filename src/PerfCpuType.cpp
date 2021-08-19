@@ -1502,7 +1502,7 @@ void PerfWatch::outputPapiCounterGroup (FILE* fp, MPI_Group p_group, int* pp_ran
 	iret =
 	MPI_Group_size(p_group, &g_np);
 	if (iret != MPI_SUCCESS) {
-			fprintf (fp, "  *** <outputPapiCounterGroup> MPI_Group_size failed. %x \n", p_group);
+			fprintf (fp, "  *** <outputPapiCounterGroup> MPI_Group_size failed. iret=%d \n", iret);
 			//	PM_Exit(0);
 			return;
 	}
