@@ -1,0 +1,935 @@
+Currently Loaded Modulefiles:
+ 1) lang/tcsds-1.2.31(default)  
++ date
+Fri Aug 20 00:05:29 JST 2021
++ hostname
+e33-5210s
++ xospastop
++ DIR_MPI=/home/ra000009/a04288/pmlib/PMlib-develop/BUILD_CLANG_MPI/example
++ HERE=/home/ra000009/a04288/pmlib/PMlib-develop/BUILD_CLANG_MPI/example
++ cd /home/ra000009/a04288/pmlib/PMlib-develop/BUILD_CLANG_MPI/example
++ '[' 0 '!=' 0 ']'
++ export PMLIB_REPORT=DETAIL
++ PMLIB_REPORT=DETAIL
++ export POWER_CHOOSER=NUMA
++ POWER_CHOOSER=NUMA
++ NPROCS=4
++ export OMP_NUM_THREADS=12
++ OMP_NUM_THREADS=12
++ rm 'stdout.*.txt'
+rm: cannot remove 'stdout.*.txt': No such file or directory
++ for i in FLOPS
++ export HWPC_CHOOSER=FLOPS
++ HWPC_CHOOSER=FLOPS
++ for j in 1 2 3 4 5
++ mpiexec -std stdout.FLOPS.txt -np 4 /home/ra000009/a04288/pmlib/PMlib-develop/BUILD_CLANG_MPI/example/example1
++ cat stdout.FLOPS.txt
+	<main> starts. npes=4, MATSIZE=1000 max_threads=12
+
+# PMlib Basic Report ------------------------------------------------------------- #
+
+	Performance Statistics Report from PMlib version 8.2.0
+	Linked PMlib supports: MPI, OpenMP, HWPC, PowerAPI, no-OTF on this system
+	Host name : e33-5210s
+	Date      : 2021/08/20 : 00:07:47
+	
+	Parallel Mode:   Hybrid (4 processes x 12 threads)
+	The following cotroll variables are provided to PMlib as environment variable.
+		HWPC_CHOOSER=FLOPS 
+		POWER_CHOOSER=NUMA 
+		PMLIB_REPORT=DETAIL 
+	Active PMlib elapse time (from initialize to report/print) = 1.346e+02 [sec]
+	Exclusive sections and inclusive sections are reported below.
+	Inclusive sections, marked with (*), are not added in the statistics total.
+
+Section         | number of|  averaged process execution time [sec] | hardware counted floating point ops.
+Label           |   calls  |   total    [%]   total/call     sdv    |  f.p.ops      sdv    performance
+----------------+----------+----------------------------------------+--------------------------------
+Loop-section(*) :        1   1.123e+02  83.43  1.123e+02  5.97e-01    6.521e+10  1.06e+08 580.92 Mflops(*)
+Kernel-Fast     :        3   6.323e+01  46.99  2.108e+01  6.11e-01    1.177e+10  9.79e+07 186.23 Mflops
+Kernel-Slow     :        3   2.458e+01  18.27  8.194e+00  4.30e-05    1.201e+10  0.00e+00 488.38 Mflops
+Initial-section :        1   4.488e-02   0.03  4.488e-02  1.32e-04    5.350e+08  0.00e+00  11.92 Gflops
+----------------+----------+----------------------------------------+--------------------------------
+All sections combined        8.786e+01     -Exclusive HWPC sections-  2.432e+10           276.77 Mflops
+----------------+----------+----------------------------------------+--------------------------------
+Total of all processes       8.786e+01     -Exclusive HWPC sections-  9.726e+10             1.11 Gflops
+
+
+# PMlib hardware performance counter (HWPC) report of the averaged process ------- #
+
+	Report for option HWPC_CHOOSER=FLOPS is generated.
+
+Section         |     SP_OPS     DP_OPS   Total_FP   [Flops]    [%Peak] 
+----------------+-------------------------------------------------------
+Loop-section(*) :  3.745e+10  2.776e+10  6.521e+10  5.809e+08  7.564e-02
+Kernel-Fast     :  0.000e+00  1.177e+10  1.177e+10  1.862e+08  2.425e-02
+Kernel-Slow     :  0.000e+00  1.201e+10  1.201e+10  4.884e+08  6.359e-02
+Initial-section :  5.350e+08  1.390e+02  5.350e+08  1.192e+10  1.552e+00
+----------------+-------------------------------------------------------
+
+# PMlib Power Consumption report per node basis ---------------------------------- #
+
+	Report of the master node is generated for POWER_CHOOSER=NUMA option.
+
+                   Estimated power inside node [W]
+Section         |  total |CMG0+L2 CMG1+L2 CMG2+L2 CMG3+L2   MEM0    MEM1    MEM2    MEM3   TF+A+U | Energy[Wh] 
+----------------+--------+------------------------------------------------------------------------+----------
+Loop-section(*) :  116.4    25.9    25.9    25.9    25.9     1.8     1.8     1.8     1.8    12.7   3.63e+00
+Kernel-Fast     :  117.0    26.0    26.1    26.1    26.0     1.8     1.8     1.8     1.8    12.8   2.05e+00
+Kernel-Slow     :  116.0    26.0    25.9    25.9    25.9     1.8     1.8     1.8     1.8    12.6   7.92e-01
+Initial-section :  114.8    25.2    25.2    25.2    27.1     1.7     1.7     1.7     1.7    12.4   1.43e-03
+----------------+--------+------------------------------------------------------------------------+----------
+
+	 The aggregate power consumption of 4 processes on 1 nodes =  1.55e+04 [J] ==   4.32e+00 [Wh]
+
+## PMlib Process Report --- Elapsed time for individual MPI ranks ------
+
+Section Label : Loop-section(*)
+MPI rankID :     call   time[s] time[%]  t_wait[s]  t[s]/call   
+Rank     0 :        1  1.131e+02   84.1  0.000e+00  1.131e+02  
+Rank     1 :        1  1.119e+02   83.2  1.188e+00  1.119e+02  
+Rank     2 :        1  1.121e+02   83.3  9.923e-01  1.121e+02  
+Rank     3 :        1  1.118e+02   83.1  1.313e+00  1.118e+02  
+Section Label : Kernel-Fast
+MPI rankID :     call   time[s] time[%]  t_wait[s]  t[s]/call   
+Rank     0 :        3  6.414e+01   47.7  0.000e+00  2.138e+01  
+Rank     1 :        3  6.283e+01   46.7  1.301e+00  2.094e+01  
+Rank     2 :        3  6.291e+01   46.8  1.228e+00  2.097e+01  
+Rank     3 :        3  6.303e+01   46.8  1.102e+00  2.101e+01  
+Section Label : Kernel-Slow
+MPI rankID :     call   time[s] time[%]  t_wait[s]  t[s]/call   
+Rank     0 :        3  2.458e+01   18.3  9.513e-05  8.194e+00  
+Rank     1 :        3  2.458e+01   18.3  7.010e-05  8.194e+00  
+Rank     2 :        3  2.458e+01   18.3  0.000e+00  8.194e+00  
+Rank     3 :        3  2.458e+01   18.3  2.503e-05  8.194e+00  
+Section Label : Initial-section
+MPI rankID :     call   time[s] time[%]  t_wait[s]  t[s]/call   
+Rank     0 :        1  4.469e-02    0.0  3.037e-04  4.469e-02  
+Rank     1 :        1  4.499e-02    0.0  0.000e+00  4.499e-02  
+Rank     2 :        1  4.494e-02    0.0  5.603e-05  4.494e-02  
+Rank     3 :        1  4.488e-02    0.0  1.121e-04  4.488e-02  
+
+## PMlib hardware performance counter (HWPC) report for individual MPI ranks ---------
+
+	The HWPC stats report for HWPC_CHOOSER=FLOPS is generated.
+
+Section Label : Kernel-Fast
+MPI rankID :     SP_OPS     DP_OPS   Total_FP   [Flops]    [%Peak] 
+Rank     0 :  0.000e+00  1.192e+10  1.192e+10  1.859e+08  2.420e-02
+Rank     1 :  0.000e+00  1.173e+10  1.173e+10  1.866e+08  2.430e-02
+Rank     2 :  0.000e+00  1.171e+10  1.171e+10  1.862e+08  2.425e-02
+Rank     3 :  0.000e+00  1.174e+10  1.174e+10  1.862e+08  2.425e-02
+Section Label : Kernel-Slow
+MPI rankID :     SP_OPS     DP_OPS   Total_FP   [Flops]    [%Peak] 
+Rank     0 :  0.000e+00  1.201e+10  1.201e+10  4.884e+08  6.359e-02
+Rank     1 :  0.000e+00  1.201e+10  1.201e+10  4.884e+08  6.359e-02
+Rank     2 :  0.000e+00  1.201e+10  1.201e+10  4.884e+08  6.359e-02
+Rank     3 :  0.000e+00  1.201e+10  1.201e+10  4.884e+08  6.359e-02
+Section Label : Initial-section
+MPI rankID :     SP_OPS     DP_OPS   Total_FP   [Flops]    [%Peak] 
+Rank     0 :  5.350e+08  1.390e+02  5.350e+08  1.197e+10  1.559e+00
+Rank     1 :  5.350e+08  1.390e+02  5.350e+08  1.189e+10  1.548e+00
+Rank     2 :  5.350e+08  1.390e+02  5.350e+08  1.191e+10  1.550e+00
+Rank     3 :  5.350e+08  1.390e+02  5.350e+08  1.192e+10  1.552e+00
+
+# PMlib Legend - the symbols used in the reports  ----------------------
+
+	 Symbols in hardware performance counter (HWPC) report:
+
+	 Detected CPU architecture: Fugaku A64FX 
+	 The available HWPC_CHOOSER values and their HWPC events for this CPU are shown below.
+
+	 HWPC_CHOOSER=FLOPS:
+		 SP_OPS:    single precision floating point operations
+		 DP_OPS:    double precision floating point operations
+		 Total_FP:  total floating point operations
+		 [Flops]:   floating point operations per second 
+		 [%Peak]:   sustained performance over peak performance
+	 HWPC_CHOOSER=BANDWIDTH:
+		 CMG_bus_RD:  CMG local memory read counts
+		 CMG_bus_WR:  CMG local memory write counts
+		 RD [Bytes]:  CMG local memory read bytes
+		 CMG_bus_WR:  CMG local memory write bytes
+		 Mem [B/s]:  CMG local memory read&write bandwidth 
+		 [Bytes]  :  CMG local memory read&write bytes
+	 HWPC_CHOOSER=VECTOR:
+		 DP_SVE_op:  double precision f.p. ops by SVE instructions
+		 DP_FIX_op:  double precision f.p. ops by scalar/armv8 instructions
+		 SP_SVE_op:  single precision f.p. ops by SVE instructions
+		 SP_FIX_op:  single precision f.p. ops by scalar/armv8 instructions
+		 Total_FP:   total floating point operations 
+		 Vector_FP:  floating point operations by vector instructions
+		 [Vector %]: percentage of vectorized f.p. operations
+	 HWPC_CHOOSER=CACHE:
+		 LOAD_INS:   memory load instructions
+		 STORE_INS:  memory store instructions
+		 L1_HIT:     L1 data cache hits
+		 L1_TCM:     L1 data cache misses
+		 L2_TCM:     L2 cache misses
+		 [L1$ hit%]: data access hit(%) in L1 cache 
+		 [L2$ hit%]: data access hit(%) in L2 cache
+		 [L*$ hit%]: sum of hit(%) in L1 and L2 cache
+	 HWPC_CHOOSER=LOADSTORE:
+		 LOAD_INS:   memory load instructions
+		 STORE_INS:  memory store instructions
+		 SVE_LOAD:   memory read by SVE and Advanced SIMD load instructions.
+		 SVE_STORE:  memory write by SVE and Advanced SIMD store instructions.
+		 SVE_SMV_LD: memory read by SVE and Advanced SIMD multiple vector contiguous structure load instructions.
+		 SVE_SMV_ST: memory write by SVE and Advanced SIMD multiple vector contiguous structure store instructions.
+		 GATHER_LD:  memory read by SVE non-contiguous gather-load instructions.
+		 SCATTER_ST: memory write by SVE non-contiguous scatter-store instructions.
+		 [Vector %]: percentage of SVE load/store instructions over all load/store instructions.
+	 HWPC_CHOOSER=CYCLE:
+		 TOT_CYC:   total cycles
+		 TOT_INS:   total instructions
+		 FP_inst:   floating point instructions
+		 FMA_inst:  fused multiply+add instructions
+		 [FMA_ins%]: percentage of FMA instructions over all f.p. instructions
+		 [Ins/cyc]: performed instructions per machine clock cycle
+	 HWPC_CHOOSER=USER:
+		 User provided argument values (Arithmetic Workload) are accumulated and reported.
+
+	 Remarks.
+		 Symbols represent HWPC (hardware performance counter) native and derived events
+		 Symbols in [] are frequently used performance metrics which are calculated from these events.
+		 The values in the Basic Report section shows the arithmetic mean value of the processes. 
+		 The values in the Process Report section shows the sum of threads generated by the process. 
+		 The values in the Thread Report section shows the precise thread level statistics. 
+	 Special remarks for A64FX VECTOR report.
+		 [FMA_ops %] is a roughly approximated number using the following assumption. 
+			 (FMA vector OPS)/(vector OPS) = (FMA scalar OPS)/(scalar OPS) for both DP and SP 
+	 Special remarks for A64FX BANDWIDTH report.
+		 CMG_bus_RD and CMG_bus_WR both count the CMG aggregated values, not core.
+		 So, Thread Report statistics shows the values in redundant manner.
+		 Basic Report and Process Report statistics both show the measured value.
+
+	 Symbols in power consumption report: 
+		The available POWER_CHOOSER values and their output data are shown below.
+
+	 POWER_CHOOSER=NODE:
+		 total     : Total of all parts. (CMG + MEMORY + TF+A+U) 
+		 CMG+L2    : All compute cores and L2 cache memory in all 4 CMGs 
+		 MEMORY    : Main memory (HBM)
+		 TF+A+U    : TofuD interface & router + Assistant cores + other UnCMG parts 
+		 P.meter   : Physically measured power comsumption measured by power meter 
+	 POWER_CHOOSER=NUMA:
+		 total     : Total of all parts. (CMG[0-3] + MEM[0-3] + TF+A+U)
+		 CMG0+L2   : compute cores and L2 cache memory in CMG0. ditto for CMG[1-3]+L2. 
+		 MEM[0-3]  : Main memory (HBM) attached to CMG0[1,2,3]
+		 TF+A+U    : TofuD interface & router + Assistant cores + other UnCMG parts 
+		 P.meter   : Physically measured power comsumption measured by power meter 
+	 POWER_CHOOSER=PARTS:
+		 total     : Total of all parts. 
+		 CMG[0-3]  : compute cores in CMG0, CMG1, CMG2, CMG3 
+		 L2CMG[0-3]: L2 cache memory in CMG0, CMG1, CMG2, CMG3 
+		 Acore0    : Assistant core 0. 
+		 Acore1    : Assistant core 1. 
+		 TofuD     : TofuD interface & router 
+		 UnCMG     : Other CPU parts (those excluding compute cores, assistant cores or TofuD) 
+		 PCI       : PCI express interface 
+		 TofuOpt   : Tofu optical modules 
+		 P.meter   : Physically measured power comsumption measured by power meter 
+
++ rm stdout.FLOPS.txt
++ for j in 1 2 3 4 5
++ mpiexec -std stdout.FLOPS.txt -np 4 /home/ra000009/a04288/pmlib/PMlib-develop/BUILD_CLANG_MPI/example/example2
++ cat stdout.FLOPS.txt
+fortran <main> started process:  3
+fortran <main> started process:  1
+fortran <main> started process:  0
+fortran <main> started process:  2
+
+# PMlib Basic Report ------------------------------------------------------------- #
+
+	Performance Statistics Report from PMlib version 8.2.0
+	Linked PMlib supports: MPI, OpenMP, HWPC, PowerAPI, no-OTF on this system
+	Host name : e33-5210s
+	Date      : 2021/08/20 : 00:07:49
+	
+	Parallel Mode:   Hybrid (4 processes x 12 threads)
+	The following cotroll variables are provided to PMlib as environment variable.
+		HWPC_CHOOSER=FLOPS 
+		POWER_CHOOSER=NUMA 
+		PMLIB_REPORT=DETAIL 
+	Active PMlib elapse time (from initialize to report/print) = 2.448e-01 [sec]
+	Exclusive sections and inclusive sections are reported below.
+	Inclusive sections, marked with (*), are not added in the statistics total.
+
+Section         | number of|  averaged process execution time [sec] | hardware counted floating point ops.
+Label           |   calls  |   total    [%]   total/call     sdv    |  f.p.ops      sdv    performance
+----------------+----------+----------------------------------------+--------------------------------
+Loop-section(*) :        1   2.382e-01  97.30  2.382e-01  1.42e-03    5.125e+09  0.00e+00  21.52 Gflops(*)
+Kernel-Slow     :        5   2.161e-01  88.26  4.321e-02  4.62e-05    2.503e+09  0.00e+00  11.58 Gflops
+Kernel-Fast     :        5   1.967e-02   8.03  3.934e-03  9.01e-05    2.623e+09  0.00e+00 133.33 Gflops
+Initial-section :        1   2.198e-04   0.09  2.198e-04  3.32e-06    1.714e+07  0.00e+00  77.96 Gflops
+----------------+----------+----------------------------------------+--------------------------------
+All sections combined        2.360e-01     -Exclusive HWPC sections-  5.142e+09            21.79 Gflops
+----------------+----------+----------------------------------------+--------------------------------
+Total of all processes       2.360e-01     -Exclusive HWPC sections-  2.057e+10            87.17 Gflops
+
+
+# PMlib hardware performance counter (HWPC) report of the averaged process ------- #
+
+	Report for option HWPC_CHOOSER=FLOPS is generated.
+
+Section         |     SP_OPS     DP_OPS   Total_FP   [Flops]    [%Peak] 
+----------------+-------------------------------------------------------
+Loop-section(*) :  0.000e+00  5.125e+09  5.125e+09  2.152e+10  2.802e+00
+Kernel-Slow     :  0.000e+00  2.503e+09  2.503e+09  1.158e+10  1.508e+00
+Kernel-Fast     :  0.000e+00  2.623e+09  2.623e+09  1.333e+11  1.736e+01
+Initial-section :  1.714e+07  1.390e+02  1.714e+07  7.797e+10  1.015e+01
+----------------+-------------------------------------------------------
+
+# PMlib Power Consumption report per node basis ---------------------------------- #
+
+	Report of the master node is generated for POWER_CHOOSER=NUMA option.
+
+                   Estimated power inside node [W]
+Section         |  total |CMG0+L2 CMG1+L2 CMG2+L2 CMG3+L2   MEM0    MEM1    MEM2    MEM3   TF+A+U | Energy[Wh] 
+----------------+--------+------------------------------------------------------------------------+----------
+Loop-section(*) :  125.0    28.0    28.0    28.1    28.0     1.8     1.8     1.8     1.8    12.7   8.27e-03
+Kernel-Slow     :  123.3    27.3    27.8    27.9    27.5     1.8     1.7     1.7     1.7    12.6   7.40e-03
+Kernel-Fast     :  127.2    31.8    28.3    28.2    31.0     1.8     1.8     1.8     1.8    12.8   6.95e-04
+Initial-section :  568.6   132.2   123.7   124.8   131.9     8.0     8.0     8.0     8.0    59.1   3.47e-05
+----------------+--------+------------------------------------------------------------------------+----------
+
+	 The aggregate power consumption of 4 processes on 1 nodes =  3.03e+01 [J] ==   8.42e-03 [Wh]
+
+## PMlib Process Report --- Elapsed time for individual MPI ranks ------
+
+Section Label : Loop-section(*)
+MPI rankID :     call   time[s] time[%]  t_wait[s]  t[s]/call   
+Rank     0 :        1  2.403e-01   98.2  0.000e+00  2.403e-01  
+Rank     1 :        1  2.374e-01   97.0  2.888e-03  2.374e-01  
+Rank     2 :        1  2.374e-01   97.0  2.902e-03  2.374e-01  
+Rank     3 :        1  2.376e-01   97.0  2.736e-03  2.376e-01  
+Section Label : Kernel-Slow
+MPI rankID :     call   time[s] time[%]  t_wait[s]  t[s]/call   
+Rank     0 :        5  2.160e-01   88.2  1.032e-04  4.320e-02  
+Rank     1 :        5  2.161e-01   88.3  0.000e+00  4.322e-02  
+Rank     2 :        5  2.161e-01   88.3  2.313e-05  4.322e-02  
+Rank     3 :        5  2.161e-01   88.3  1.550e-05  4.322e-02  
+Section Label : Kernel-Fast
+MPI rankID :     call   time[s] time[%]  t_wait[s]  t[s]/call   
+Rank     0 :        5  1.960e-02    8.0  1.981e-04  3.919e-03  
+Rank     1 :        5  1.967e-02    8.0  1.230e-04  3.934e-03  
+Rank     2 :        5  1.961e-02    8.0  1.831e-04  3.922e-03  
+Rank     3 :        5  1.980e-02    8.1  0.000e+00  3.959e-03  
+Section Label : Initial-section
+MPI rankID :     call   time[s] time[%]  t_wait[s]  t[s]/call   
+Rank     0 :        1  2.220e-04    0.1  1.192e-06  2.220e-04  
+Rank     1 :        1  2.160e-04    0.1  7.153e-06  2.160e-04  
+Rank     2 :        1  2.182e-04    0.1  5.007e-06  2.182e-04  
+Rank     3 :        1  2.232e-04    0.1  0.000e+00  2.232e-04  
+
+## PMlib hardware performance counter (HWPC) report for individual MPI ranks ---------
+
+	The HWPC stats report for HWPC_CHOOSER=FLOPS is generated.
+
+Section Label : Kernel-Slow
+MPI rankID :     SP_OPS     DP_OPS   Total_FP   [Flops]    [%Peak] 
+Rank     0 :  0.000e+00  2.503e+09  2.503e+09  1.159e+10  1.509e+00
+Rank     1 :  0.000e+00  2.503e+09  2.503e+09  1.158e+10  1.508e+00
+Rank     2 :  0.000e+00  2.503e+09  2.503e+09  1.158e+10  1.508e+00
+Rank     3 :  0.000e+00  2.503e+09  2.503e+09  1.158e+10  1.508e+00
+Section Label : Kernel-Fast
+MPI rankID :     SP_OPS     DP_OPS   Total_FP   [Flops]    [%Peak] 
+Rank     0 :  0.000e+00  2.623e+09  2.623e+09  1.338e+11  1.742e+01
+Rank     1 :  0.000e+00  2.623e+09  2.623e+09  1.333e+11  1.736e+01
+Rank     2 :  0.000e+00  2.623e+09  2.623e+09  1.337e+11  1.741e+01
+Rank     3 :  0.000e+00  2.623e+09  2.623e+09  1.325e+11  1.725e+01
+Section Label : Initial-section
+MPI rankID :     SP_OPS     DP_OPS   Total_FP   [Flops]    [%Peak] 
+Rank     0 :  1.714e+07  1.390e+02  1.714e+07  7.720e+10  1.005e+01
+Rank     1 :  1.714e+07  1.390e+02  1.714e+07  7.933e+10  1.033e+01
+Rank     2 :  1.714e+07  1.390e+02  1.714e+07  7.855e+10  1.023e+01
+Rank     3 :  1.714e+07  1.390e+02  1.714e+07  7.679e+10  9.999e+00
+
+# PMlib Legend - the symbols used in the reports  ----------------------
+
+	 Symbols in hardware performance counter (HWPC) report:
+
+	 Detected CPU architecture: Fugaku A64FX 
+	 The available HWPC_CHOOSER values and their HWPC events for this CPU are shown below.
+
+	 HWPC_CHOOSER=FLOPS:
+		 SP_OPS:    single precision floating point operations
+		 DP_OPS:    double precision floating point operations
+		 Total_FP:  total floating point operations
+		 [Flops]:   floating point operations per second 
+		 [%Peak]:   sustained performance over peak performance
+	 HWPC_CHOOSER=BANDWIDTH:
+		 CMG_bus_RD:  CMG local memory read counts
+		 CMG_bus_WR:  CMG local memory write counts
+		 RD [Bytes]:  CMG local memory read bytes
+		 CMG_bus_WR:  CMG local memory write bytes
+		 Mem [B/s]:  CMG local memory read&write bandwidth 
+		 [Bytes]  :  CMG local memory read&write bytes
+	 HWPC_CHOOSER=VECTOR:
+		 DP_SVE_op:  double precision f.p. ops by SVE instructions
+		 DP_FIX_op:  double precision f.p. ops by scalar/armv8 instructions
+		 SP_SVE_op:  single precision f.p. ops by SVE instructions
+		 SP_FIX_op:  single precision f.p. ops by scalar/armv8 instructions
+		 Total_FP:   total floating point operations 
+		 Vector_FP:  floating point operations by vector instructions
+		 [Vector %]: percentage of vectorized f.p. operations
+	 HWPC_CHOOSER=CACHE:
+		 LOAD_INS:   memory load instructions
+		 STORE_INS:  memory store instructions
+		 L1_HIT:     L1 data cache hits
+		 L1_TCM:     L1 data cache misses
+		 L2_TCM:     L2 cache misses
+		 [L1$ hit%]: data access hit(%) in L1 cache 
+		 [L2$ hit%]: data access hit(%) in L2 cache
+		 [L*$ hit%]: sum of hit(%) in L1 and L2 cache
+	 HWPC_CHOOSER=LOADSTORE:
+		 LOAD_INS:   memory load instructions
+		 STORE_INS:  memory store instructions
+		 SVE_LOAD:   memory read by SVE and Advanced SIMD load instructions.
+		 SVE_STORE:  memory write by SVE and Advanced SIMD store instructions.
+		 SVE_SMV_LD: memory read by SVE and Advanced SIMD multiple vector contiguous structure load instructions.
+		 SVE_SMV_ST: memory write by SVE and Advanced SIMD multiple vector contiguous structure store instructions.
+		 GATHER_LD:  memory read by SVE non-contiguous gather-load instructions.
+		 SCATTER_ST: memory write by SVE non-contiguous scatter-store instructions.
+		 [Vector %]: percentage of SVE load/store instructions over all load/store instructions.
+	 HWPC_CHOOSER=CYCLE:
+		 TOT_CYC:   total cycles
+		 TOT_INS:   total instructions
+		 FP_inst:   floating point instructions
+		 FMA_inst:  fused multiply+add instructions
+		 [FMA_ins%]: percentage of FMA instructions over all f.p. instructions
+		 [Ins/cyc]: performed instructions per machine clock cycle
+	 HWPC_CHOOSER=USER:
+		 User provided argument values (Arithmetic Workload) are accumulated and reported.
+
+	 Remarks.
+		 Symbols represent HWPC (hardware performance counter) native and derived events
+		 Symbols in [] are frequently used performance metrics which are calculated from these events.
+		 The values in the Basic Report section shows the arithmetic mean value of the processes. 
+		 The values in the Process Report section shows the sum of threads generated by the process. 
+		 The values in the Thread Report section shows the precise thread level statistics. 
+	 Special remarks for A64FX VECTOR report.
+		 [FMA_ops %] is a roughly approximated number using the following assumption. 
+			 (FMA vector OPS)/(vector OPS) = (FMA scalar OPS)/(scalar OPS) for both DP and SP 
+	 Special remarks for A64FX BANDWIDTH report.
+		 CMG_bus_RD and CMG_bus_WR both count the CMG aggregated values, not core.
+		 So, Thread Report statistics shows the values in redundant manner.
+		 Basic Report and Process Report statistics both show the measured value.
+
+	 Symbols in power consumption report: 
+		The available POWER_CHOOSER values and their output data are shown below.
+
+	 POWER_CHOOSER=NODE:
+		 total     : Total of all parts. (CMG + MEMORY + TF+A+U) 
+		 CMG+L2    : All compute cores and L2 cache memory in all 4 CMGs 
+		 MEMORY    : Main memory (HBM)
+		 TF+A+U    : TofuD interface & router + Assistant cores + other UnCMG parts 
+		 P.meter   : Physically measured power comsumption measured by power meter 
+	 POWER_CHOOSER=NUMA:
+		 total     : Total of all parts. (CMG[0-3] + MEM[0-3] + TF+A+U)
+		 CMG0+L2   : compute cores and L2 cache memory in CMG0. ditto for CMG[1-3]+L2. 
+		 MEM[0-3]  : Main memory (HBM) attached to CMG0[1,2,3]
+		 TF+A+U    : TofuD interface & router + Assistant cores + other UnCMG parts 
+		 P.meter   : Physically measured power comsumption measured by power meter 
+	 POWER_CHOOSER=PARTS:
+		 total     : Total of all parts. 
+		 CMG[0-3]  : compute cores in CMG0, CMG1, CMG2, CMG3 
+		 L2CMG[0-3]: L2 cache memory in CMG0, CMG1, CMG2, CMG3 
+		 Acore0    : Assistant core 0. 
+		 Acore1    : Assistant core 1. 
+		 TofuD     : TofuD interface & router 
+		 UnCMG     : Other CPU parts (those excluding compute cores, assistant cores or TofuD) 
+		 PCI       : PCI express interface 
+		 TofuOpt   : Tofu optical modules 
+		 P.meter   : Physically measured power comsumption measured by power meter 
+
+fortran <main> finished process:  0
+fortran <main> finished process:  2
+fortran <main> finished process:  3
+fortran <main> finished process:  1
++ rm stdout.FLOPS.txt
++ for j in 1 2 3 4 5
++ mpiexec -std stdout.FLOPS.txt -np 4 /home/ra000009/a04288/pmlib/PMlib-develop/BUILD_CLANG_MPI/example/example3
+[WARN] PLE 0610 plexec The process terminated with the signal.(rank=1)(nid=0x29d20002)(sig=11)
++ cat stdout.FLOPS.txt
++ rm stdout.FLOPS.txt
++ for j in 1 2 3 4 5
++ mpiexec -std stdout.FLOPS.txt -np 4 /home/ra000009/a04288/pmlib/PMlib-develop/BUILD_CLANG_MPI/example/example4
++ cat stdout.FLOPS.txt
+<main> starting the WORLD (default) communicator.
+Modified STREAM COPY, num_threads=12, array size= 50000000
+Function    Rate (MB/s)   Avg time     Min time     Max time
+Copy:    138479.1837       0.0058       0.0058       0.0058
+
+# PMlib Basic Report ------------------------------------------------------------- #
+
+	Performance Statistics Report from PMlib version 8.2.0
+	Linked PMlib supports: MPI, OpenMP, HWPC, PowerAPI, no-OTF on this system
+	Host name : e33-5210s
+	Date      : 2021/08/20 : 00:08:16
+	
+	Parallel Mode:   Hybrid (4 processes x 12 threads)
+	The following cotroll variables are provided to PMlib as environment variable.
+		HWPC_CHOOSER=FLOPS 
+		POWER_CHOOSER=NUMA 
+		PMLIB_REPORT=DETAIL 
+	Active PMlib elapse time (from initialize to report/print) = 2.246e+01 [sec]
+	Exclusive sections and inclusive sections are reported below.
+	Inclusive sections, marked with (*), are not added in the statistics total.
+
+Section         | number of|  averaged process execution time [sec] | hardware counted floating point ops.
+Label           |   calls  |   total    [%]   total/call     sdv    |  f.p.ops      sdv    performance
+----------------+----------+----------------------------------------+--------------------------------
+1st section     :        1   2.232e+01  99.37  2.232e+01  2.16e-01    4.948e+09  4.50e+07 221.67 Mflops
+2nd section     :        1   7.989e-02   0.36  7.989e-02  1.17e-02    5.000e+08  5.77e+08   6.26 Gflops
+----------------+----------+----------------------------------------+--------------------------------
+All sections combined        2.240e+01     -Exclusive HWPC sections-  5.448e+09           243.20 Mflops
+----------------+----------+----------------------------------------+--------------------------------
+Total of all processes       2.240e+01     -Exclusive HWPC sections-  2.179e+10           972.78 Mflops
+
+
+# PMlib hardware performance counter (HWPC) report of the averaged process ------- #
+
+	Report for option HWPC_CHOOSER=FLOPS is generated.
+
+Section         |     SP_OPS     DP_OPS   Total_FP   [Flops]    [%Peak] 
+----------------+-------------------------------------------------------
+1st section     :  4.948e+09  1.390e+02  4.948e+09  2.217e+08  2.886e-02
+2nd section     :  0.000e+00  5.000e+08  5.000e+08  5.554e+09  7.231e-01
+----------------+-------------------------------------------------------
+
+# PMlib Power Consumption report per node basis ---------------------------------- #
+
+	Report of the master node is generated for POWER_CHOOSER=NUMA option.
+
+                   Estimated power inside node [W]
+Section         |  total |CMG0+L2 CMG1+L2 CMG2+L2 CMG3+L2   MEM0    MEM1    MEM2    MEM3   TF+A+U | Energy[Wh] 
+----------------+--------+------------------------------------------------------------------------+----------
+1st section     :  113.7    25.2    25.2    25.2    25.2     1.8     1.8     1.8     1.8    12.7   7.05e-01
+2nd section     :  119.6    24.2    25.9    23.2    26.1    10.8     1.5     1.5     1.5    11.0   2.66e-03
+----------------+--------+------------------------------------------------------------------------+----------
+
+	 The aggregate power consumption of 4 processes on 1 nodes =  2.53e+03 [J] ==   7.03e-01 [Wh]
+
+## PMlib Process Report --- Elapsed time for individual MPI ranks ------
+
+Section Label : 1st section
+MPI rankID :     call   time[s] time[%]  t_wait[s]  t[s]/call   
+Rank     0 :        1  2.252e+01  100.3  0.000e+00  2.252e+01  
+Rank     1 :        1  2.235e+01   99.5  1.660e-01  2.235e+01  
+Rank     2 :        1  2.201e+01   98.0  5.051e-01  2.201e+01  
+Rank     3 :        1  2.240e+01   99.7  1.213e-01  2.240e+01  
+Section Label : 2nd section
+MPI rankID :     call   time[s] time[%]  t_wait[s]  t[s]/call   
+Rank     0 :        1  6.976e-02    0.3  2.036e-02  6.976e-02  
+Rank     1 :        1  6.975e-02    0.3  2.037e-02  6.975e-02  
+Rank     2 :        1  9.012e-02    0.4  0.000e+00  9.012e-02  
+Rank     3 :        1  8.994e-02    0.4  1.771e-04  8.994e-02  
+
+## PMlib hardware performance counter (HWPC) report for individual MPI ranks ---------
+
+	The HWPC stats report for HWPC_CHOOSER=FLOPS is generated.
+
+Section Label : 1st section
+MPI rankID :     SP_OPS     DP_OPS   Total_FP   [Flops]    [%Peak] 
+Rank     0 :  4.987e+09  1.390e+02  4.987e+09  2.215e+08  2.884e-02
+Rank     1 :  4.956e+09  1.390e+02  4.956e+09  2.217e+08  2.887e-02
+Rank     2 :  4.883e+09  1.390e+02  4.883e+09  2.218e+08  2.888e-02
+Rank     3 :  4.965e+09  1.390e+02  4.965e+09  2.217e+08  2.887e-02
+Section Label : 2nd section
+MPI rankID :     SP_OPS     DP_OPS   Total_FP   [Flops]    [%Peak] 
+Rank     0 :  0.000e+00  2.110e+02  2.110e+02  3.025e+03  3.939e-07
+Rank     1 :  0.000e+00  2.110e+02  2.110e+02  3.025e+03  3.939e-07
+Rank     2 :  0.000e+00  1.000e+09  1.000e+09  1.110e+10  1.445e+00
+Rank     3 :  0.000e+00  1.000e+09  1.000e+09  1.112e+10  1.448e+00
+
+# PMlib Legend - the symbols used in the reports  ----------------------
+
+	 Symbols in hardware performance counter (HWPC) report:
+
+	 Detected CPU architecture: Fugaku A64FX 
+	 The available HWPC_CHOOSER values and their HWPC events for this CPU are shown below.
+
+	 HWPC_CHOOSER=FLOPS:
+		 SP_OPS:    single precision floating point operations
+		 DP_OPS:    double precision floating point operations
+		 Total_FP:  total floating point operations
+		 [Flops]:   floating point operations per second 
+		 [%Peak]:   sustained performance over peak performance
+	 HWPC_CHOOSER=BANDWIDTH:
+		 CMG_bus_RD:  CMG local memory read counts
+		 CMG_bus_WR:  CMG local memory write counts
+		 RD [Bytes]:  CMG local memory read bytes
+		 CMG_bus_WR:  CMG local memory write bytes
+		 Mem [B/s]:  CMG local memory read&write bandwidth 
+		 [Bytes]  :  CMG local memory read&write bytes
+	 HWPC_CHOOSER=VECTOR:
+		 DP_SVE_op:  double precision f.p. ops by SVE instructions
+		 DP_FIX_op:  double precision f.p. ops by scalar/armv8 instructions
+		 SP_SVE_op:  single precision f.p. ops by SVE instructions
+		 SP_FIX_op:  single precision f.p. ops by scalar/armv8 instructions
+		 Total_FP:   total floating point operations 
+		 Vector_FP:  floating point operations by vector instructions
+		 [Vector %]: percentage of vectorized f.p. operations
+	 HWPC_CHOOSER=CACHE:
+		 LOAD_INS:   memory load instructions
+		 STORE_INS:  memory store instructions
+		 L1_HIT:     L1 data cache hits
+		 L1_TCM:     L1 data cache misses
+		 L2_TCM:     L2 cache misses
+		 [L1$ hit%]: data access hit(%) in L1 cache 
+		 [L2$ hit%]: data access hit(%) in L2 cache
+		 [L*$ hit%]: sum of hit(%) in L1 and L2 cache
+	 HWPC_CHOOSER=LOADSTORE:
+		 LOAD_INS:   memory load instructions
+		 STORE_INS:  memory store instructions
+		 SVE_LOAD:   memory read by SVE and Advanced SIMD load instructions.
+		 SVE_STORE:  memory write by SVE and Advanced SIMD store instructions.
+		 SVE_SMV_LD: memory read by SVE and Advanced SIMD multiple vector contiguous structure load instructions.
+		 SVE_SMV_ST: memory write by SVE and Advanced SIMD multiple vector contiguous structure store instructions.
+		 GATHER_LD:  memory read by SVE non-contiguous gather-load instructions.
+		 SCATTER_ST: memory write by SVE non-contiguous scatter-store instructions.
+		 [Vector %]: percentage of SVE load/store instructions over all load/store instructions.
+	 HWPC_CHOOSER=CYCLE:
+		 TOT_CYC:   total cycles
+		 TOT_INS:   total instructions
+		 FP_inst:   floating point instructions
+		 FMA_inst:  fused multiply+add instructions
+		 [FMA_ins%]: percentage of FMA instructions over all f.p. instructions
+		 [Ins/cyc]: performed instructions per machine clock cycle
+	 HWPC_CHOOSER=USER:
+		 User provided argument values (Arithmetic Workload) are accumulated and reported.
+
+	 Remarks.
+		 Symbols represent HWPC (hardware performance counter) native and derived events
+		 Symbols in [] are frequently used performance metrics which are calculated from these events.
+		 The values in the Basic Report section shows the arithmetic mean value of the processes. 
+		 The values in the Process Report section shows the sum of threads generated by the process. 
+		 The values in the Thread Report section shows the precise thread level statistics. 
+	 Special remarks for A64FX VECTOR report.
+		 [FMA_ops %] is a roughly approximated number using the following assumption. 
+			 (FMA vector OPS)/(vector OPS) = (FMA scalar OPS)/(scalar OPS) for both DP and SP 
+	 Special remarks for A64FX BANDWIDTH report.
+		 CMG_bus_RD and CMG_bus_WR both count the CMG aggregated values, not core.
+		 So, Thread Report statistics shows the values in redundant manner.
+		 Basic Report and Process Report statistics both show the measured value.
+
+	 Symbols in power consumption report: 
+		The available POWER_CHOOSER values and their output data are shown below.
+
+	 POWER_CHOOSER=NODE:
+		 total     : Total of all parts. (CMG + MEMORY + TF+A+U) 
+		 CMG+L2    : All compute cores and L2 cache memory in all 4 CMGs 
+		 MEMORY    : Main memory (HBM)
+		 TF+A+U    : TofuD interface & router + Assistant cores + other UnCMG parts 
+		 P.meter   : Physically measured power comsumption measured by power meter 
+	 POWER_CHOOSER=NUMA:
+		 total     : Total of all parts. (CMG[0-3] + MEM[0-3] + TF+A+U)
+		 CMG0+L2   : compute cores and L2 cache memory in CMG0. ditto for CMG[1-3]+L2. 
+		 MEM[0-3]  : Main memory (HBM) attached to CMG0[1,2,3]
+		 TF+A+U    : TofuD interface & router + Assistant cores + other UnCMG parts 
+		 P.meter   : Physically measured power comsumption measured by power meter 
+	 POWER_CHOOSER=PARTS:
+		 total     : Total of all parts. 
+		 CMG[0-3]  : compute cores in CMG0, CMG1, CMG2, CMG3 
+		 L2CMG[0-3]: L2 cache memory in CMG0, CMG1, CMG2, CMG3 
+		 Acore0    : Assistant core 0. 
+		 Acore1    : Assistant core 1. 
+		 TofuD     : TofuD interface & router 
+		 UnCMG     : Other CPU parts (those excluding compute cores, assistant cores or TofuD) 
+		 PCI       : PCI express interface 
+		 TofuOpt   : Tofu optical modules 
+		 P.meter   : Physically measured power comsumption measured by power meter 
+
+
+## PMlib Process Group [    1] Elapsed time for individual MPI ranks --------
+
+Section Label : 1st section
+MPI rankID :     call   time[s] time[%]  t_wait[s]  t[s]/call   
+Rank     0 :        1  2.252e+01  100.3  0.000e+00  2.252e+01  
+Rank     1 :        1  2.235e+01   99.5  1.660e-01  2.235e+01  
+Section Label : 2nd section
+MPI rankID :     call   time[s] time[%]  t_wait[s]  t[s]/call   
+Rank     0 :        1  6.976e-02    0.3  0.000e+00  6.976e-02  
+Rank     1 :        1  6.975e-02    0.3  5.007e-06  6.975e-02  
+
+## PMlib Process Group [    1] hardware performance counter (HWPC) Report ---
+Section Label : 1st section
+MPI rankID :     SP_OPS     DP_OPS   Total_FP   [Flops]    [%Peak] 
+Rank     0 :  4.987e+09  1.390e+02  4.987e+09  2.215e+08  2.884e-02
+Rank     1 :  4.956e+09  1.390e+02  4.956e+09  2.217e+08  2.887e-02
+Section Label : 2nd section
+MPI rankID :     SP_OPS     DP_OPS   Total_FP   [Flops]    [%Peak] 
+Rank     0 :  0.000e+00  2.110e+02  2.110e+02  3.025e+03  3.939e-07
+Rank     1 :  0.000e+00  2.110e+02  2.110e+02  3.025e+03  3.939e-07
+
+## PMlib Process Group [    2] Elapsed time for individual MPI ranks --------
+
+Section Label : 1st section
+MPI rankID :     call   time[s] time[%]  t_wait[s]  t[s]/call   
+Rank     2 :        1  2.201e+01   98.0  3.838e-01  2.201e+01  
+Rank     3 :        1  2.240e+01   99.7  0.000e+00  2.240e+01  
+Section Label : 2nd section
+MPI rankID :     call   time[s] time[%]  t_wait[s]  t[s]/call   
+Rank     2 :        1  9.012e-02    0.4  0.000e+00  9.012e-02  
+Rank     3 :        1  8.994e-02    0.4  1.771e-04  8.994e-02  
+
+## PMlib Process Group [    2] hardware performance counter (HWPC) Report ---
+Section Label : 1st section
+MPI rankID :     SP_OPS     DP_OPS   Total_FP   [Flops]    [%Peak] 
+Rank     2 :  4.883e+09  1.390e+02  4.883e+09  2.218e+08  2.888e-02
+Rank     3 :  4.965e+09  1.390e+02  4.965e+09  2.217e+08  2.887e-02
+Section Label : 2nd section
+MPI rankID :     SP_OPS     DP_OPS   Total_FP   [Flops]    [%Peak] 
+Rank     2 :  0.000e+00  1.000e+09  1.000e+09  1.110e+10  1.445e+00
+Rank     3 :  0.000e+00  1.000e+09  1.000e+09  1.112e+10  1.448e+00
+Modified STREAM COPY, num_threads=12, array size= 50000000
+Function    Rate (MB/s)   Avg time     Min time     Max time
+Copy:    138552.2822       0.0058       0.0058       0.0058
+Modified STREAM TRIAD, num_threads=12, array size= 50000000
+Function      Rate (MB/s)   Avg time     Min time     Max time
+Triad:   154121.3513       0.0078       0.0078       0.0079
+Modified STREAM TRIAD, num_threads=12, array size= 50000000
+Function      Rate (MB/s)   Avg time     Min time     Max time
+Triad:   154501.2623       0.0078       0.0078       0.0079
++ rm stdout.FLOPS.txt
++ for j in 1 2 3 4 5
++ mpiexec -std stdout.FLOPS.txt -np 4 /home/ra000009/a04288/pmlib/PMlib-develop/BUILD_CLANG_MPI/example/example5
++ cat stdout.FLOPS.txt
+testing MPI_Comm_split. ncolors=2
+Modified STREAM TRIAD, num_threads=12, array size= 50000000
+Function      Rate (MB/s)   Avg time     Min time     Max time
+Triad:   155041.0949       0.0078       0.0077       0.0078
+
+# PMlib Basic Report ------------------------------------------------------------- #
+
+	Performance Statistics Report from PMlib version 8.2.0
+	Linked PMlib supports: MPI, OpenMP, HWPC, PowerAPI, no-OTF on this system
+	Host name : e33-5210s
+	Date      : 2021/08/20 : 00:08:19
+	
+	Parallel Mode:   Hybrid (4 processes x 12 threads)
+	The following cotroll variables are provided to PMlib as environment variable.
+		HWPC_CHOOSER=FLOPS 
+		POWER_CHOOSER=NUMA 
+		PMLIB_REPORT=DETAIL 
+	Active PMlib elapse time (from initialize to report/print) = 1.391e-01 [sec]
+	Exclusive sections and inclusive sections are reported below.
+	Inclusive sections, marked with (*), are not added in the statistics total.
+
+Section         | number of|  averaged process execution time [sec] | hardware counted floating point ops.
+Label           |   calls  |   total    [%]   total/call     sdv    |  f.p.ops      sdv    performance
+----------------+----------+----------------------------------------+--------------------------------
+section-2       :        1   7.991e-02  57.46  7.991e-02  1.16e-02    5.000e+08  5.77e+08   6.26 Gflops
+section-1       :        1   5.630e-02  40.48  5.630e-02  3.53e-05    3.670e+08  0.00e+00   6.52 Gflops
+----------------+----------+----------------------------------------+--------------------------------
+All sections combined        1.362e-01     -Exclusive HWPC sections-  8.670e+08             6.37 Gflops
+----------------+----------+----------------------------------------+--------------------------------
+Total of all processes       1.362e-01     -Exclusive HWPC sections-  3.468e+09            25.46 Gflops
+
+
+# PMlib hardware performance counter (HWPC) report of the averaged process ------- #
+
+	Report for option HWPC_CHOOSER=FLOPS is generated.
+
+Section         |     SP_OPS     DP_OPS   Total_FP   [Flops]    [%Peak] 
+----------------+-------------------------------------------------------
+section-2       :  0.000e+00  5.000e+08  5.000e+08  5.557e+09  7.236e-01
+section-1       :  7.000e+06  3.600e+08  3.670e+08  6.519e+09  8.488e-01
+----------------+-------------------------------------------------------
+
+# PMlib Power Consumption report per node basis ---------------------------------- #
+
+	Report of the master node is generated for POWER_CHOOSER=NUMA option.
+
+                   Estimated power inside node [W]
+Section         |  total |CMG0+L2 CMG1+L2 CMG2+L2 CMG3+L2   MEM0    MEM1    MEM2    MEM3   TF+A+U | Energy[Wh] 
+----------------+--------+------------------------------------------------------------------------+----------
+section-2       :  186.3    33.0    33.1    31.6    31.5    14.1    14.1    11.3    11.3    14.2   4.14e-03
+section-1       :  116.7    26.0    26.0    26.0    26.0     1.8     1.8     1.8     1.8    12.8   1.83e-03
+----------------+--------+------------------------------------------------------------------------+----------
+
+	 The aggregate power consumption of 4 processes on 1 nodes =  2.02e+01 [J] ==   5.62e-03 [Wh]
+
+## PMlib Process Report --- Elapsed time for individual MPI ranks ------
+
+Section Label : section-2
+MPI rankID :     call   time[s] time[%]  t_wait[s]  t[s]/call   
+Rank     0 :        1  8.998e-02   64.7  0.000e+00  8.998e-02  
+Rank     1 :        1  8.996e-02   64.7  1.788e-05  8.996e-02  
+Rank     2 :        1  6.978e-02   50.2  2.020e-02  6.978e-02  
+Rank     3 :        1  6.993e-02   50.3  2.005e-02  6.993e-02  
+Section Label : section-1
+MPI rankID :     call   time[s] time[%]  t_wait[s]  t[s]/call   
+Rank     0 :        1  5.627e-02   40.5  7.915e-05  5.627e-02  
+Rank     1 :        1  5.628e-02   40.5  6.890e-05  5.628e-02  
+Rank     2 :        1  5.635e-02   40.5  0.000e+00  5.635e-02  
+Rank     3 :        1  5.629e-02   40.5  5.603e-05  5.629e-02  
+
+## PMlib hardware performance counter (HWPC) report for individual MPI ranks ---------
+
+	The HWPC stats report for HWPC_CHOOSER=FLOPS is generated.
+
+Section Label : section-2
+MPI rankID :     SP_OPS     DP_OPS   Total_FP   [Flops]    [%Peak] 
+Rank     0 :  0.000e+00  1.000e+09  1.000e+09  1.111e+10  1.447e+00
+Rank     1 :  0.000e+00  1.000e+09  1.000e+09  1.112e+10  1.447e+00
+Rank     2 :  0.000e+00  2.110e+02  2.110e+02  3.024e+03  3.937e-07
+Rank     3 :  0.000e+00  2.110e+02  2.110e+02  3.017e+03  3.929e-07
+Section Label : section-1
+MPI rankID :     SP_OPS     DP_OPS   Total_FP   [Flops]    [%Peak] 
+Rank     0 :  7.000e+06  3.600e+08  3.670e+08  6.522e+09  8.492e-01
+Rank     1 :  7.000e+06  3.600e+08  3.670e+08  6.521e+09  8.491e-01
+Rank     2 :  7.000e+06  3.600e+08  3.670e+08  6.513e+09  8.480e-01
+Rank     3 :  7.000e+06  3.600e+08  3.670e+08  6.519e+09  8.489e-01
+
+# PMlib Legend - the symbols used in the reports  ----------------------
+
+	 Symbols in hardware performance counter (HWPC) report:
+
+	 Detected CPU architecture: Fugaku A64FX 
+	 The available HWPC_CHOOSER values and their HWPC events for this CPU are shown below.
+
+	 HWPC_CHOOSER=FLOPS:
+		 SP_OPS:    single precision floating point operations
+		 DP_OPS:    double precision floating point operations
+		 Total_FP:  total floating point operations
+		 [Flops]:   floating point operations per second 
+		 [%Peak]:   sustained performance over peak performance
+	 HWPC_CHOOSER=BANDWIDTH:
+		 CMG_bus_RD:  CMG local memory read counts
+		 CMG_bus_WR:  CMG local memory write counts
+		 RD [Bytes]:  CMG local memory read bytes
+		 CMG_bus_WR:  CMG local memory write bytes
+		 Mem [B/s]:  CMG local memory read&write bandwidth 
+		 [Bytes]  :  CMG local memory read&write bytes
+	 HWPC_CHOOSER=VECTOR:
+		 DP_SVE_op:  double precision f.p. ops by SVE instructions
+		 DP_FIX_op:  double precision f.p. ops by scalar/armv8 instructions
+		 SP_SVE_op:  single precision f.p. ops by SVE instructions
+		 SP_FIX_op:  single precision f.p. ops by scalar/armv8 instructions
+		 Total_FP:   total floating point operations 
+		 Vector_FP:  floating point operations by vector instructions
+		 [Vector %]: percentage of vectorized f.p. operations
+	 HWPC_CHOOSER=CACHE:
+		 LOAD_INS:   memory load instructions
+		 STORE_INS:  memory store instructions
+		 L1_HIT:     L1 data cache hits
+		 L1_TCM:     L1 data cache misses
+		 L2_TCM:     L2 cache misses
+		 [L1$ hit%]: data access hit(%) in L1 cache 
+		 [L2$ hit%]: data access hit(%) in L2 cache
+		 [L*$ hit%]: sum of hit(%) in L1 and L2 cache
+	 HWPC_CHOOSER=LOADSTORE:
+		 LOAD_INS:   memory load instructions
+		 STORE_INS:  memory store instructions
+		 SVE_LOAD:   memory read by SVE and Advanced SIMD load instructions.
+		 SVE_STORE:  memory write by SVE and Advanced SIMD store instructions.
+		 SVE_SMV_LD: memory read by SVE and Advanced SIMD multiple vector contiguous structure load instructions.
+		 SVE_SMV_ST: memory write by SVE and Advanced SIMD multiple vector contiguous structure store instructions.
+		 GATHER_LD:  memory read by SVE non-contiguous gather-load instructions.
+		 SCATTER_ST: memory write by SVE non-contiguous scatter-store instructions.
+		 [Vector %]: percentage of SVE load/store instructions over all load/store instructions.
+	 HWPC_CHOOSER=CYCLE:
+		 TOT_CYC:   total cycles
+		 TOT_INS:   total instructions
+		 FP_inst:   floating point instructions
+		 FMA_inst:  fused multiply+add instructions
+		 [FMA_ins%]: percentage of FMA instructions over all f.p. instructions
+		 [Ins/cyc]: performed instructions per machine clock cycle
+	 HWPC_CHOOSER=USER:
+		 User provided argument values (Arithmetic Workload) are accumulated and reported.
+
+	 Remarks.
+		 Symbols represent HWPC (hardware performance counter) native and derived events
+		 Symbols in [] are frequently used performance metrics which are calculated from these events.
+		 The values in the Basic Report section shows the arithmetic mean value of the processes. 
+		 The values in the Process Report section shows the sum of threads generated by the process. 
+		 The values in the Thread Report section shows the precise thread level statistics. 
+	 Special remarks for A64FX VECTOR report.
+		 [FMA_ops %] is a roughly approximated number using the following assuModified STREAM COPY, num_threads=12, array size= 50000000
+Function    Rate (MB/s)   Avg time     Min time     Max time
+Copy:    138599.4556       0.0058       0.0058       0.0058
+Modified STREAM COPY, num_threads=12, array size= 50000000
+Function    Rate (MB/s)   Avg time     Min time     Max time
+Copy:    138359.4336       0.0058       0.0058       0.0058
+Modified STREAM TRIAD, num_threads=12, array size= 50000000
+Function      Rate (MB/s)   Avg time     Min time     Max time
+Triad:   154580.7661       0.0078       0.0078       0.0078
+mption. 
+			 (FMA vector OPS)/(vector OPS) = (FMA scalar OPS)/(scalar OPS) for both DP and SP 
+	 Special remarks for A64FX BANDWIDTH report.
+		 CMG_bus_RD and CMG_bus_WR both count the CMG aggregated values, not core.
+		 So, Thread Report statistics shows the values in redundant manner.
+		 Basic Report and Process Report statistics both show the measured value.
+
+	 Symbols in power consumption report: 
+		The available POWER_CHOOSER values and their output data are shown below.
+
+	 POWER_CHOOSER=NODE:
+		 total     : Total of all parts. (CMG + MEMORY + TF+A+U) 
+		 CMG+L2    : All compute cores and L2 cache memory in all 4 CMGs 
+		 MEMORY    : Main memory (HBM)
+		 TF+A+U    : TofuD interface & router + Assistant cores + other UnCMG parts 
+		 P.meter   : Physically measured power comsumption measured by power meter 
+	 POWER_CHOOSER=NUMA:
+		 total     : Total of all parts. (CMG[0-3] + MEM[0-3] + TF+A+U)
+		 CMG0+L2   : compute cores and L2 cache memory in CMG0. ditto for CMG[1-3]+L2. 
+		 MEM[0-3]  : Main memory (HBM) attached to CMG0[1,2,3]
+		 TF+A+U    : TofuD interface & router + Assistant cores + other UnCMG parts 
+		 P.meter   : Physically measured power comsumption measured by power meter 
+	 POWER_CHOOSER=PARTS:
+		 total     : Total of all parts. 
+		 CMG[0-3]  : compute cores in CMG0, CMG1, CMG2, CMG3 
+		 L2CMG[0-3]: L2 cache memory in CMG0, CMG1, CMG2, CMG3 
+		 Acore0    : Assistant core 0. 
+		 Acore1    : Assistant core 1. 
+		 TofuD     : TofuD interface & router 
+		 UnCMG     : Other CPU parts (those excluding compute cores, assistant cores or TofuD) 
+		 PCI       : PCI express interface 
+		 TofuOpt   : Tofu optical modules 
+		 P.meter   : Physically measured power comsumption measured by power meter 
+
+
+## PMlib Process Group [    0] Elapsed time for individual MPI ranks --------
+
+Section Label : section-2
+MPI rankID :     call   time[s] time[%]  t_wait[s]  t[s]/call   
+Rank     0 :        1  8.998e-02   64.7  0.000e+00  8.998e-02  
+Rank     1 :        1  8.996e-02   64.7  1.788e-05  8.996e-02  
+Section Label : section-1
+MPI rankID :     call   time[s] time[%]  t_wait[s]  t[s]/call   
+Rank     0 :        1  5.627e-02   40.5  1.025e-05  5.627e-02  
+Rank     1 :        1  5.628e-02   40.5  0.000e+00  5.628e-02  
+
+## PMlib Process Group [    0] hardware performance counter (HWPC) Report ---
+Section Label : section-2
+MPI rankID :     SP_OPS     DP_OPS   Total_FP   [Flops]    [%Peak] 
+Rank     0 :  0.000e+00  1.000e+09  1.000e+09  1.111e+10  1.447e+00
+Rank     1 :  0.000e+00  1.000e+09  1.000e+09  1.112e+10  1.447e+00
+Section Label : section-1
+MPI rankID :     SP_OPS     DP_OPS   Total_FP   [Flops]    [%Peak] 
+Rank     0 :  7.000e+06  3.600e+08  3.670e+08  6.522e+09  8.492e-01
+Rank     1 :  7.000e+06  3.600e+08  3.670e+08  6.521e+09  8.491e-01
+
+## PMlib Process Group [    1] Elapsed time for individual MPI ranks --------
+
+Section Label : section-2
+MPI rankID :     call   time[s] time[%]  t_wait[s]  t[s]/call   
+Rank     2 :        1  6.978e-02   50.2  1.559e-04  6.978e-02  
+Rank     3 :        1  6.993e-02   50.3  0.000e+00  6.993e-02  
+Section Label : section-1
+MPI rankID :     call   time[s] time[%]  t_wait[s]  t[s]/call   
+Rank     2 :        1  5.635e-02   40.5  0.000e+00  5.635e-02  
+Rank     3 :        1  5.629e-02   40.5  5.603e-05  5.629e-02  
+
+## PMlib Process Group [    1] hardware performance counter (HWPC) Report ---
+Section Label : section-2
+MPI rankID :     SP_OPS     DP_OPS   Total_FP   [Flops]    [%Peak] 
+Rank     2 :  0.000e+00  2.110e+02  2.110e+02  3.024e+03  3.937e-07
+Rank     3 :  0.000e+00  2.110e+02  2.110e+02  3.017e+03  3.929e-07
+Section Label : section-1
+MPI rankID :     SP_OPS     DP_OPS   Total_FP   [Flops]    [%Peak] 
+Rank     2 :  7.000e+06  3.600e+08  3.670e+08  6.513e+09  8.480e-01
+Rank     3 :  7.000e+06  3.600e+08  3.670e+08  6.519e+09  8.489e-01
++ rm stdout.FLOPS.txt
