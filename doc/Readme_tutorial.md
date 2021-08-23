@@ -31,14 +31,14 @@ and for running PMlib applications on the named platform.
 	installation. See Readme.md in the top directory.
 
 	test1/	C++ MPI program
-	test2/	C++ program with user C routines
-	test4/	fortran MPI program
-	test3/	MPI program managing multiple MPI groups
+	test2/	fortran MPI program, and some variation programs
+	test3/	C MPI program
+	test4/	MPI program managing multiple MPI groups
 	test5/	MPI program with split communicators.
 
 src_tutorial/
 
-	additional example program with coase grain parallel thread structure.
+	example program with coase grain parallel thread structure.
 
 
 ## Brief explanation
@@ -48,9 +48,9 @@ and to produce the PMlib report from the job.
 See the material in the turorial/ subdirectory for extended explanation
 regarding installation/running/reporting.
 
-### Running PMlib instrumented applications
+### Running PMlib instrumented applications and obtaining the performance report
 
-### obtaining the performance report
+See example shell scripts under scripts/\*/
 
 ### useful environment variables
 

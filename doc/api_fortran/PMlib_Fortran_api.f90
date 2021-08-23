@@ -1,5 +1,6 @@
 
 !> PMlib Fortran インタフェイス一般の注意
+!> @name PMlib Fortran_API
 !!
 !! @note  PMlib Fortran インタフェイスでは引数を省略する事はできない。
 !!			またFortran とC++のデータタイプの違いなどにより、
@@ -17,10 +18,10 @@
 !!	- f_pm_start (fc)
 !!	- f_pm_stop (fc)
 !!	- f_pm_report (fc)
-!!  他のAPIはより進んだ利用方法を行いたい場合にだけ呼び出せば良い。
+!! @note 上記４ルーチン以外のAPIは、より進んだ利用方法を行いたい場合にだけ
+!!  呼び出せば良い。
 !!
-program f_fortran_api_general
-end program
+
 
 
 !> PMlib Fortran インタフェイスの初期化

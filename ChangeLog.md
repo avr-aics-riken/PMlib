@@ -3,6 +3,12 @@
 ## REVISION HISTORY
 
 ---
+- 2021-08-23 Version 8.3.0
+  - enhanced report routine to handle stats for both of outside and inside of parallel regions
+  - added advanced example programs in Fortran/C/C++ under doc/src\_advanced/
+  - updated cmake for Fugaku
+
+---
 - 2021-07-02 Version 8.2.0
   - added APIs for C programm 
 

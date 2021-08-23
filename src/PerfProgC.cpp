@@ -80,6 +80,23 @@ PerfMonitor PM;
 extern "C" {
 
 
+/// General comments regarding PMlib C interface functions
+/// @name PMlib C API
+///
+/// @note  In most cases, users will have to call only 4 types of PMlib APIs
+///  - f_pm_initialize (nWatch)
+///  - f_pm_start (fc)
+///  - f_pm_stop (fc)
+///  - f_pm_report (fc)
+///
+/// @note Other routines are optional. Other routines listed in this document 
+///		can be called in combination with the above 4 routines.
+///		Such usage is for advanced users.
+///
+/// @note Unlike C++ API, the arguments for PMlib C API can not be ommitted.
+///
+
+
 /// PMlib C interface
 /// PMlib initialization
 ///

@@ -37,18 +37,36 @@
 namespace pm_lib {
 
   /**
-   * 計算性能測定管理クラス.
+   * PerfMonitor クラス 計算性能測定を行うクラス関数と変数
    */
   class PerfMonitor {
+
+   //< General comments regarding PMlib C++ interface functions
+   /// @name PMlib C++ API
+   ///
+   /// @note  In most cases, users will have to call only 4 types of PMlib APIs
+   ///  - intialize (nWatch)
+   ///  - start (label)
+   ///  - stop (label)
+   ///  - report (file)
+   ///
+   /// @note Other routines are optional. Other routines listed in this document 
+   ///     can be called in combination with the above 4 routines.
+   ///     Such usage is for advanced users.
+   ///
+   /// @note All the functions are in PerfMonitor class. However, in the caes of
+   ///		C++ user application which defines PMlib start/stop sections inside of
+   ///		OpenMP parallel region should call PerfReport call report().
+   ///		See doc/src_advanced/parallel_thread.cpp
+   ///
+
   public:
 
-    /// 測定計算量のタイプ
     enum Type {
-      COMM,  ///< データ移動
-      CALC,  ///< 演算
+      COMM,  ///< 測定量のタイプenumerate：データ移動
+      CALC,  ///< 測定量のタイプenumerate：演算
     };
 
-  public:
     int num_process;           ///< 並列プロセス数
     int num_threads;           ///< 並列スレッド数
     int my_rank;               ///< 自ランク番号
@@ -301,7 +319,13 @@ namespace pm_lib {
     ///
     ///   @note fcが"" (NULL)の場合は標準出力に出力される
     ///
+    /// @note
+    /// C++ プログラムで OpenMPパラレル構文の内側で測定区間を定義した場合は、
+    /// PerfMonitorクラスのreport()ではなく、
+    /// PerfReportクラスのreport()を呼び出す必要がある。
+    ///
     void report(FILE* fp);
+
 
 
     /// 出力する性能統計レポートの種類を選択し、ファイルへの出力を開始する。
@@ -628,20 +652,25 @@ namespace pm_lib {
   }; // end of class PerfMonitor //
 
   /**
-   * additional class to integrate serial/threaded report
+   * additional class to integrate serial/threaded report for C++ user code
    */
   class PerfReport {
   public:
 
-    /// PMlibレポートの出力をコントロールする汎用ルーチン
+    /// PMlibレポートの出力をコントロールする汎用ルーチン。
     ///   @brief
     /// - [1] stop the Root section
     /// - [2] merge thread serial/parallel sections
     /// - [3] select the type of the report and start producing the report
     ///
-    /// @param[in] FILE* fc     output file pointer
+    /// @param[in] FILE* fc     output file pointer. if fc is "" (NULL), then stdout is selected.
     ///
-    ///   @note fcが"" (NULL)の場合は標準出力に出力される
+    /// @note
+    /// C++ プログラムからPMlibを呼び出す場合についてだけ必要となることがある。
+    /// @note
+    /// C++ プログラムで、OpenMPパラレル構文の内側で測定区間を定義した場合は、
+    /// PerfMonitorクラスのreport()ではなく、
+    /// こちらのPerfReportクラスのreport()を呼び出す必要がある。
     ///
     void report(FILE* fp);
 

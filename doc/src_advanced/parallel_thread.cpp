@@ -25,6 +25,7 @@ void spacer();
 extern	void merge_and_report(FILE* fp);
 int my_id, npes, num_threads;
 PerfMonitor PM;
+PerfReport  PR;
 #pragma omp threadprivate(PM)
 
 int main (int argc, char *argv[])
@@ -33,18 +34,13 @@ int main (int argc, char *argv[])
 	double t1, t2;
 	float x;
 	int i, j;
-	int icomm=0, icalc=1;
-	int i_thread;
 
-	//	my_id=0;
-	//	npes=1;
     MPI_Init(&argc, &argv);
 	MPI_Comm_rank(MPI_COMM_WORLD, &my_id);
 	MPI_Comm_size(MPI_COMM_WORLD, &npes);
 	MPI_Barrier(MPI_COMM_WORLD);
 
 	// initialize should be called inside parallel region
-	//	PM.initialize(5);
 
 #pragma omp parallel private(x)
 {
@@ -63,12 +59,10 @@ int main (int argc, char *argv[])
 	PM.stop ("Section-B");
 
 	//	PM.report(stdout);
-	//	pm_lib::merge_and_report(stdout);
-	merge_and_report(stdout);
+	PR.report(stdout);
 
 	MPI_Finalize();
 	return 0;
-	//	exit(0);
 }
 
 

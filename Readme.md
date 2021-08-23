@@ -26,8 +26,9 @@ Readme.md         This document, including the description of build
 cmake/            Modules of cmake
 doc/              Document
   Doxyfile        Configuration file to generate a doxygen file
-  PMlib.pdf       User's manual (in Japanese)
   scripts/        Shell script collections for installation/execution
+  src_advanced/   Advanced example programs calling PMlib APIs
+  src_tutorial/   Example tutorial programs for beginners
   tutorial/       Tutorial documents
 example/          Example source codes
 include/          Header files
