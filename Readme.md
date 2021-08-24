@@ -26,13 +26,15 @@ Readme.md         This document, including the description of build
 cmake/            Modules of cmake
 doc/              Document
   Doxyfile        Configuration file to generate a doxygen file
-  PMlib.pdf       User's manual (in Japanese)
   scripts/        Shell script collections for installation/execution
+  src_advanced/   Advanced example programs calling PMlib APIs
+  src_tutorial/   Example tutorial programs for beginners
   tutorial/       Tutorial documents
 example/          Example source codes
 include/          Header files
 src/              Source codes
 src_papi_ext/     Extension of PAPI interface
+src_power_ext/    Extension of Power API interface
 src_otf_ext/      Extension of Open Tracer Format interface
 ~~~
 
@@ -88,6 +90,10 @@ $ sudo make install
 
 >  If you use PAPI library, specify this option with PAPI_DIR value pointing to the PAPI library installed directory. In cross-compile installation, there can be multiple PAPI libraries on the system, one for the current platform and another for the target platform. See examples in 4. INSTALLATION EXAMPLES section. In many cases, `-Dwith_PAPI="yes"` can detect the correct path.
 
+`-D with_POWER=` {no | yes | installed_directory}
+
+>  This option is exclusively available on supercomputer Fugaku and on FX1000 systems. Power API developed by Sandia National Laboratory is integrated into PMlib.  Specifying `-Dwith_POWER="yes"` should detect the correct path.
+
 `-D with_OTF=` {no | installed_directory}
 
 >  If you use OTF library, specify this option `with_OTF` value pointing to the OTF library installed directory.
@@ -107,6 +113,7 @@ enable_Fortran = OFF
 with_MPI = OFF
 enable_OPENMP = OFF
 with_PAPI = OFF
+with_POWER = OFF
 with_OTF = OFF
 enable_PreciseTimer = ON
 ~~~
@@ -291,7 +298,15 @@ doc/PMlib.pdf                               : detail user guide (outdated)
 When running applications linked with PMlib, the following
 environment variables can be set to the shell.
 
-`HWPC_CHOOSER=(FLOPS|BANDWIDTH|VECTOR|CACHE|CYCLE)`
+`PMLIB_REPORT=(BASIC|DETAIL|FULL)`
+
+This environment variable controlls the level of details in the PMlib performance statistics report.
+The value BASIC will provide the summary report of the averaged values of the all processes.
+The value DETAIL will provide the statistics report for all the processes.
+The value FULL will provide the statistics report for all the threads of all the processes.
+Note that the amount of the report is decided by the number of processes, the number of threads, the choice of HWPC_CHOOSER.
+
+`HWPC_CHOOSER=(FLOPS|BANDWIDTH|VECTOR|LOADSTORE|CACHE|CYCLE)`
 
 If this environment variable is set, PMlib automatically detects the PAPI based hardware counters. If this environment variable is not set, the HWPC counters are not reported.
 

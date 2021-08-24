@@ -3,6 +3,31 @@
 ## REVISION HISTORY
 
 ---
+- 2021-08-23 Version 8.3.0
+  - enhanced report routine to handle stats for both of outside and inside of parallel regions
+  - added advanced example programs in Fortran/C/C++ under doc/src\_advanced/
+  - updated cmake for Fugaku
+
+---
+- 2021-07-02 Version 8.2.0
+  - added APIs for C programm 
+
+---
+- 2021-06-30 Version 8.1.0
+  - worksharing parallel constract and non-worksharing parallel construct are both available for
+    Intel compiler, Fujitsu Clang mode compiler, PGI compiler.
+    worksharing parallel constract is available for GNU compiler, Fujitsu Trad mode compiler.
+
+---
+- 2021-06-11 Version 8.0.0
+  - new routine "PerfMonitor::report" to controll all types of the reports via environment variable.
+  - BASIC report now includes the average HWPC stats for the master node.
+  - new feature to produce power consumption report on the systems that embeds Sandia's Power API.
+    Currently, Fugaku is known to embed Sandia's Power API, and PMlib BASIC report can include the
+    power consumption summary stats for the master node.
+    new routines "getPowerKnob/setPowerKnob" are also added to support the power knob controll.
+
+---
 - 2020-10-15 Version 7.0.4
   - update BANDWIDTH event choice for Fugaku and FX700
 

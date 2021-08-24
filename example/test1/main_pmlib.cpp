@@ -1,5 +1,4 @@
 #include <PerfMonitor.h>
-//	#include <mpi.h>
 #ifdef _OPENMP
 #include <omp.h>
 #endif
@@ -55,14 +54,17 @@ int main (int argc, char *argv[])
 		fprintf(stderr, "\t<main> starts. npes=%d, MATSIZE=%d max_threads=%d\n",
 			npes, MATSIZE, num_threads);
 	}
-	//	fprintf(stderr, "\t\tstarting process:%d\n", my_id);
 
 	PM.initialize();
 
-	PM.setProperties("Initial-section", PerfMonitor::CALC);
-	PM.setProperties("Loop-section", PerfMonitor::COMM, false);
-	PM.setProperties("Kernel-Slow", PerfMonitor::CALC);
-	PM.setProperties("Kernel-Fast", PerfMonitor::CALC);
+	//
+	//	calling setProperties() is optional
+	//
+	//	PM.setProperties("Initial-section", PerfMonitor::CALC);
+	//	PM.setProperties("Loop-section", PerfMonitor::COMM, false);
+	//	PM.setProperties("Kernel-Slow", PerfMonitor::CALC);
+	//	PM.setProperties("Kernel-Fast", PerfMonitor::CALC);
+	PM.setProperties("Loop-section", PerfMonitor::COMM);
 
 // checking exclusive section
 	PM.start("Initial-section");
@@ -103,10 +105,15 @@ int main (int argc, char *argv[])
 	PM.stop("Loop-section", byte_count*(2*3), 1);
 	spacer();
 
-	PM.print(stdout, "", "Mrs. Kobe", 0);
-	PM.printDetail(stdout, 0);
-	PM.printThreads(stdout, 0);
-	PM.printLegend(stdout);
+	PM.report(stdout);
+
+	//
+	//	report() is equivalent to the following series of APIs
+	//
+	//	PM.print(stdout, "", "Mrs. Kobe", 0);
+	//	PM.printDetail(stdout, 0);
+	//	PM.printThreads(stdout, 0);
+	//	PM.printLegend(stdout);
 
 	MPI_Finalize();
 	return 0;
@@ -158,22 +165,16 @@ int i, j, k, nsize;
 double c1,c2,c3;
 nsize = matrix.nsize;
 
-#pragma loop serial
 	for (i=0; i<nsize; i++){
-#pragma novector
-#pragma nounroll
-#pragma loop novector
-#pragma loop nosimd
-#pragma loop noswp
-#pragma loop nounroll
 	for (j=0; j<nsize; j++){
 		c1=0.0;
+	// some stupid directives to run the loop slower ...
+#pragma loop serial
 #pragma novector
 #pragma nounroll
 #pragma loop novector
 #pragma loop nosimd
 #pragma loop noswp
-#pragma loop nounroll
 		for (k=0; k<nsize; k++){
 		//	cx	c2=matrix.a2[i][k] * matrix.a2[j][k];
 		//	cx	c3=matrix.b2[i][k] * matrix.b2[j][k];

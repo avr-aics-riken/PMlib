@@ -24,6 +24,9 @@
  * @author aics
  */
 
+#include <cstdlib>
+//	#include <cstdio>
+
 namespace pm_lib {
 
 #define MPI_COMM_WORLD 0
@@ -43,6 +46,12 @@ namespace pm_lib {
 
 
   inline bool MPI_Init(int* argc, char*** argv) { return true; }
+
+  inline int MPI_Abort(MPI_Comm comm, int ier)
+	{
+	std::exit(ier);
+	//	std::printf("*** MPI_Abort is called. error code %d ***\n", ier);
+	}
 
   inline int MPI_Comm_rank(MPI_Comm comm, int *rank)
   {
@@ -66,6 +75,12 @@ namespace pm_lib {
   inline int MPI_Gather(void *sendbuf, int sendcnt, MPI_Datatype sendtype,
                         void *recvbuf, int recvcnt, MPI_Datatype recvtype,
                         int root, MPI_Comm comm)
+  {
+    return 0;
+  }
+
+  inline int MPI_Reduce(void *sendbuf, void *recvbuf, int count,
+                  MPI_Datatype datatype, MPI_Op op, int root, MPI_Comm comm)
   {
     return 0;
   }
@@ -114,3 +129,4 @@ namespace pm_lib {
 }
 
 #endif /* _PM_MPI_STUBS_H_ */
+

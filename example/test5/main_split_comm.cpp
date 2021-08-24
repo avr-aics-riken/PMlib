@@ -88,11 +88,8 @@ int main (int argc, char *argv[])
 	}
 	PM.stop ("section-2");
 
-	PM.print(stdout, "", "");
-	PM.printDetail(stdout);
+	PM.report(stdout);
 	PM.printComm (stdout, new_comm, icolor, key);
-	//	PM.print(stdout, "", "", 1);
-	//	PM.printDetail(stdout, 0, 1);
 	//	PM.printComm (stdout, new_comm, icolor, key, 0, 1);
 
 	MPI_Finalize();

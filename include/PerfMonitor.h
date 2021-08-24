@@ -20,7 +20,10 @@
 
 //! @file   PerfMonitor.h
 //! @brief  PerfMonitor class Header
-//! @version rev.6.3
+#include <cstdio>
+#include <cstdlib>
+#include <map>
+#include <list>
 
 #ifdef DISABLE_MPI
 #include "mpi_stubs.h"
@@ -29,66 +32,108 @@
 #endif
 
 #include "PerfWatch.h"
-#include <cstdio>
-#include <cstdlib>
 #include "pmVersion.h"
-#include <map>
-#include <list>
-
 
 namespace pm_lib {
 
   /**
-   * 計算性能測定管理クラス.
+   * PerfMonitor クラス 計算性能測定を行うクラス関数と変数
    */
   class PerfMonitor {
+
+   //< General comments regarding PMlib C++ interface functions
+   /// @name PMlib C++ API
+   ///
+   /// @note  In most cases, users will have to call only 4 types of PMlib APIs
+   ///  - intialize (nWatch)
+   ///  - start (label)
+   ///  - stop (label)
+   ///  - report (file)
+   ///
+   /// @note Other routines are optional. Other routines listed in this document 
+   ///     can be called in combination with the above 4 routines.
+   ///     Such usage is for advanced users.
+   ///
+   /// @note All the functions are in PerfMonitor class. However, in the caes of
+   ///		C++ user application which defines PMlib start/stop sections inside of
+   ///		OpenMP parallel region should call PerfReport call report().
+   ///		See doc/src_advanced/parallel_thread.cpp
+   ///
+
   public:
 
-    /// 測定計算量のタイプ
     enum Type {
-      COMM,  ///< 通信（あるいはメモリ転送）
-      CALC,  ///< 演算
+      COMM,  ///< 測定量のタイプenumerate：データ移動
+      CALC,  ///< 測定量のタイプenumerate：演算
     };
 
-  private:
     int num_process;           ///< 並列プロセス数
     int num_threads;           ///< 並列スレッド数
     int my_rank;               ///< 自ランク番号
+    int my_thread;             ///< thread number
     int m_nWatch;              ///< 測定区間数
     int init_nWatch;           ///< 初期に確保する測定区間数
     int reserved_nWatch;       ///< リザーブ済みの測定区間数
 
+    int level_POWER;   ///< 電力制御のレベル 0(no), 1(NODE), 2(NUMA), 3(PARTS)
+    int num_power;     ///< 電力測定オブジェクトの総数
+	// type of PWR_Cntxt and PWR_Obj is defined in include/pmlib_power.h
+	PWR_Cntxt pm_pacntxt ;
+	PWR_Cntxt pm_extcntxt ;
+	PWR_Obj   pm_obj_array[Max_power_stats];
+	PWR_Obj   pm_obj_ext[Max_power_stats];
+
+  private:
+    bool is_PMlib_enabled;     /*!< PMlibの動作を有効にするフラグ<br>
+    	//	@note 環境変数BYPASS_PMLIBを定義（任意値）してアプリを実行すると
+		//	PMlibを無効化した動作となり、性能統計処理を行わない */
     bool is_MPI_enabled;       ///< PMlibの対応動作可能フラグ:MPI
     bool is_OpenMP_enabled;	   ///< PMlibの対応動作可能フラグ:OpenMP
     bool is_PAPI_enabled;      ///< PMlibの対応動作可能フラグ:PAPI
-    bool is_OTF_enabled;       ///< 対応動作可能フラグ:OTF tracing 出力
-    bool is_PMlib_enabled;     ///< PMlibの動作を有効にするフラグ
+    bool is_POWER_enabled;     ///< PMlibの対応動作可能フラグ:Power API
+    bool is_OTF_enabled;       ///< PMlibの対応動作可能フラグ:OTF tracing 出力
     bool is_Root_active;       ///< 背景区間(Root区間)の動作フラグ
     bool is_exclusive_construct; ///< 測定区間の重なり状態検出フラグ
 
-    std::string parallel_mode; ///< 並列動作モード
-      // {"Serial", "OpenMP", "FlatMPI", "Hybrid"}
-    std::string env_str_hwpc;  ///< 環境変数HWPC_CHOOSERの値
-      // "USER" or one of the followings
-      // "FLOPS", "BANDWIDTH", "VECTOR", "CACHE", "CYCLE", "WRITEBACK"
-    PerfWatch* m_watchArray;   ///< 測定区間の配列
-      // PerfWatchのインスタンスは全部で m_nWatch 生成され、その番号対応は以下
-      // m_watchArray[0]  :PMlibが定義するRoot区間
-      // m_watchArray[1 .. m_nWatch] :ユーザーが定義する各区間
-    unsigned* m_order;         ///< 測定区間ソート用のリストm_order[m_nWatch]
+    std::string parallel_mode; /*!< 並列動作モード
+      // {Serial| OpenMP| FlatMPI| Hybrid} */
+    std::string env_str_hwpc;  /*!< 環境変数 HWPC_CHOOSERの値
+      // {FLOPS| BANDWIDTH| VECTOR| CACHE| CYCLE| LOADSTORE| USER} */
+    std::string env_str_report;  /*!< 環境変数 PMLIB_REPORTの値
+      // {BASIC| DETAIL| FULL} */
+
+    PerfWatch* m_watchArray;   /*!< 測定区間の配列
+      // @note PerfWatchのインスタンスは全部で m_nWatch 生成される。<br>
+      // m_watchArray[0] :PMlibが定義するRoot区間、<br>
+      // m_watchArray[1 .. m_nWatch] :ユーザーが定義する各区間 */
+
+    unsigned* m_order;         ///< 測定区間ソート用のリスト m_order[m_nWatch]
+
+    std::map<std::string, int > m_map_sections; /// map of section name and ID
+
 
   public:
     /// コンストラクタ.
-    PerfMonitor() : m_watchArray(0) {}
+    PerfMonitor() : my_rank(-1), m_watchArray(0) {
+		#ifdef DEBUG_PRINT_MONITOR
+		//	if (my_rank == 0) {
+		fprintf(stderr, "<PerfMonitor> constructor \n");
+		// }
+		#endif
+	}
 
-    /// デストラクタ.
+/***
+    /// We should let the default destructor handle the clean up
     ~PerfMonitor() {
-	#ifdef DEBUG_PRINT_MONITOR
-		fprintf(stderr, "\t <PerfMonitor> rank %d destructor is called\n", my_rank);
-	#endif
 		if (m_watchArray) delete[] m_watchArray;
 		if (m_order) delete[] m_order;
+		#ifdef DEBUG_PRINT_MONITOR
+		//	if (my_rank == 0) {
+		fprintf(stderr, "<PerfMonitor> destructor rank %d thread %d deleted %d sections\n", my_rank, my_thread, m_nWatch);
+		// }
+		#endif
 	}
+ ***/
 
 
     /// PMlibの内部初期化
@@ -108,9 +153,9 @@ namespace pm_lib {
     /// 測定区間とそのプロパティを設定.
     ///
     ///   @param[in] label 測定区間に与える名前の文字列
-    ///   @param[in] type  測定計算量のタイプ(COMM:通信, CALC:演算)
+    ///   @param[in] type  測定計算量のタイプ(COMM:データ移動, CALC:演算)
     ///   @param[in] exclusive 排他測定フラグ。bool型(省略時true)、
-    ///                        Fortran仕様は整数型(0:false, 1:true)
+    ///                    FortranおよびCでの引数仕様は整数型(0:false, 1:true)
     ///
     ///   @note labelラベル文字列は測定区間を識別するために用いる。
     ///   各ラベル毎に対応した区間番号を内部で自動生成する
@@ -121,10 +166,51 @@ namespace pm_lib {
     void setProperties(const std::string& label, Type type=CALC, bool exclusive=true);
 
 
+    /// Read the current value for the given power control knob
+    ///
+    ///   @param[in] knob  : power knob chooser 電力制御用ノブの種類
+    ///   @param[out] value : current value for the knob  現在の値
+	///
+    /// @note the knob and its value combination must be chosen from the following table
+	///	@verbatim
+    /// knob : value : object description
+    ///  0   : 2200, 2000 : CPU frequency in MHz
+    ///  1   : 100, 90, 80, .. , 10 : MEMORY access throttling percentage
+    ///  2   : 2, 4    : ISSUE instruction issue rate per cycle
+    ///  3   : 1, 2    : PIPE number of concurrent execution pipelines 
+    ///  4   : 0, 1, 2 : ECO mode state
+    ///  5   : 0, 1    : RETENTION mode state DISABLED as of May 2021
+	///	@endverbatim
+	///
+    void getPowerKnob(int knob, int & value);
+
+
+    /// Set the new value for the given power control knob
+    ///
+    ///   @param[in] knob  : power knob chooser 電力制御用ノブの種類
+    ///   @param[in] value : new value for the knob  指定する設定値
+	///
+    /// @note the knob and its value combination must be chosen from the following table
+	///	@verbatim
+    /// knob : value : object description
+    ///  0   : 2200, 2000 : CPU frequency in MHz
+    ///  1   : 100, 90, 80, .. , 10 : MEMORY access throttling percentage
+    ///  2   : 2, 4    : ISSUE instruction issue rate per cycle
+    ///  3   : 1, 2    : PIPE number of concurrent execution pipelines 
+    ///  4   : 0, 1, 2 : ECO mode state
+    ///  5   : 0, 1    : RETENTION mode state DISABLED as of May 2021
+	///	@endverbatim
+	///
+    void setPowerKnob(int knob, int value);
+
+
     /// 測定区間スタート
     ///
     ///   @param[in] label ラベル文字列。測定区間を識別するために用いる。
     ///
+    ///   @note a section can be called either from serial construct or from
+	///		parallel construc. But a section can not be called from 
+	///		both of serial construc and parallel construct.
     ///
     void start (const std::string& label);
 
@@ -135,7 +221,7 @@ namespace pm_lib {
     ///   @param[in] flopPerTask 測定区間の計算量(演算量Flopまたは通信量Byte) :省略値0
     ///   @param[in] iterationCount  計算量の乗数（反復回数）:省略値1
     ///
-    ///   @note  引数はユーザ申告モードの場合にのみ利用される。 \n
+    ///   @note  第２、第３引数はユーザ申告モードの場合にのみ利用される。 \n
     ///   @note  測定区間の計算量は次のように算出される。 \n
     ///          (A) ユーザ申告モードの場合は １区間１回あたりで flopPerTask*iterationCount \n
     ///          (B) HWPCによる自動算出モードの場合は引数とは関係なくHWPC内部値を利用\n
@@ -150,24 +236,10 @@ namespace pm_lib {
         (1) setProperties(区間名, type, exclusive)の第2引数typeが計算量のタイプを指定する。
         (2) stop (区間名, fPT, iC)の第2引数fPTは計算量（浮動小数点演算、データ移動)を指定する。
       - ユーザ申告モードで 計算量の引数が省略された場合は時間のみレポート出力する。
-
     (B) HWPCによる自動算出モード
       - HWPC/PAPIが利用可能なプラットフォームで利用できる
-      - 環境変数HWPC_CHOOSERの値により測定情報を選択する。(FLOPS| BANDWIDTH| VECTOR| CACHE| CYCLE| WRITEBACK)
-
-    ユーザ申告モードかHWPC自動算出モードかは、内部的に下記表の組み合わせで決定される。
-
-    環境変数     setProperties()  stop()
-    HWPC_CHOOSER   type引数      fP引数      基本・詳細レポート出力      HWPC詳細レポート出力
-    -----------------------------------------------------------------------------------------
-    USER (無指定)   CALC         指定値      時間、fP引数によるFlops     なし
-    USER (無指定)   COMM         指定値      時間、fP引数によるByte/s    なし
-    FLOPS           無視         無視        時間、HWPC自動計測Flops     FLOPSに関連するHWPC統計情報
-    VECTOR          無視         無視        時間、HWPC自動計測SIMD率    VECTORに関連するHWPC統計情報
-    BANDWIDTH       無視         無視        時間、HWPC自動計測Byte/s    BANDWIDTHに関連するHWPC統計情報
-    CACHE           無視         無視        時間、HWPC自動計測L1$,L2$   CACHEに関連するHWPC統計情報
-    CYCLE           無視         無視        時間、HWPC自動計測cycle     CYCLEに関連するHWPC統計情報
-    WRITEBACK       無視         無視        時間、HWPC自動計測Byte/s    MEM(WRITE)に関するHWPC統計情報
+      - 環境変数HWPC_CHOOSERの値により測定情報を選択する。(FLOPS| BANDWIDTH| VECTOR| CACHE| CYCLE| LOADSTORE)
+        環境変数HWPC_CHOOSERが指定された場合（USER以外の値を指定した場合）は自動的にHWPCが利用される。
      **/
     ///   @endverbatim
     ///
@@ -201,13 +273,77 @@ namespace pm_lib {
     void gather(void);
 
 
+    /// Root区間をstop
+    ///	@note
+    ///		Stop the Root section, which means the end of PMlib stats recording
+    ///
+    void stopRoot (void);
+
+
+    /// Count the number of shared measured sections
+    ///
+    ///   @param[out] nSections     number of shared measured sections
+    ///
+    void countSections (int &nSections);
+
+
+    /// Check if the section was defined in serial or parallel region
+    ///
+    ///   @param[in]  id         shared section number
+    ///   @param[out] mid        class private section number
+    ///   @param[out] inside     0/1 (0:serial region / 1:parallel region)
+    ///
+    void SerialParallelRegion (int &id, int &mid, int &inside);
+
+
     ///  OpenMP並列処理されたPMlibスレッド測定区間のうち parallel regionから
     ///  呼び出された測定区間のスレッド測定情報をマスタースレッドに集約する。
+    ///
+    ///	 @param[in] id  section number
+    ///
+    ///   @note この測定区間の番号はスレッドプライベートな番号ではなく、
+    ///		共通番号であることに注意。
+    ///   @note  
     ///  通常このAPIはPMlib内部で自動的に実行され、利用者が呼び出す必要はない。
     ///
-    ///   @note  内部で全測定区間をcheckして該当する測定区間を選択する。
+    void mergeThreads(int id);
+
+
+    /// PMlibレポートの出力をコントロールする汎用ルーチン
+    ///   @brief
+    /// - [1] stop the Root section
+    /// - [2] merge thread serial/parallel sections
+    /// - [3] select the type of the report and start producing the report
     ///
-    void mergeThreads(void);
+    /// @param[in] FILE* fc     output file pointer
+    ///
+    ///   @note fcが"" (NULL)の場合は標準出力に出力される
+    ///
+    /// @note
+    /// C++ プログラムで OpenMPパラレル構文の内側で測定区間を定義した場合は、
+    /// PerfMonitorクラスのreport()ではなく、
+    /// PerfReportクラスのreport()を呼び出す必要がある。
+    ///
+    void report(FILE* fp);
+
+
+
+    /// 出力する性能統計レポートの種類を選択し、ファイルへの出力を開始する。
+    ///
+    ///   @param[in] fp       出力ファイルポインタ
+    ///
+    ///   @note
+    ///   基本統計レポート、MPIランク別詳細レポート、HWPC統計情報の詳細レポート、
+    ///   スレッド別詳細レポートをまとめて出力する。
+	///   出力する内容は環境変数 PMLIB_REPORTの指定によってコントロールする。
+	///   PMLIB_REPORT=BASIC : 基本統計レポートを出力する。
+	///   PMLIB_REPORT=DETAIL: MPIランク別に経過時間、頻度、HWPC統計情報の詳細レポートを出力する。
+	///   PMLIB_REPORT=FULL： BASICとDETAILのレポートに加えて、
+	///		各MPIランクが生成した各並列スレッド毎にHWPC統計情報の詳細レポートを出力する。
+    ///   @note  
+    ///  通常このAPIはPMlib内部で自動的に実行され、利用者が呼び出す必要はない。
+    ///
+    void selectReport(FILE* fp);
 
 
     /// 測定結果の基本統計レポートを出力。
@@ -300,6 +436,7 @@ namespace pm_lib {
     void printProgress(FILE* fp, const std::string comments, int op_sort=0);
 
 
+
     /// ポスト処理用traceファイルの出力
     ///
     /// @note プログラム実行中一回のみポスト処理用traceファイルを出力できる
@@ -319,6 +456,7 @@ namespace pm_lib {
     ///       利用者は通常このAPIを呼び出す必要はない。
     ///
     void setParallelMode(const std::string& p_mode, const int n_thread, const int n_proc);
+
 
     /// 旧バージョンとの互換維持用(ランク番号の通知)
     /// 利用者は通常このAPIを呼び出す必要はない。
@@ -341,78 +479,50 @@ namespace pm_lib {
 
   private:
 
-    std::map<std::string, int > array_of_symbols;
-
     /// 測定区間のラベルに対応する区間番号を追加作成する
+    /// Add a new entry in the section map (section name, section ID)
     ///
-    ///   @param[in] arg_st   測定区間のラベル
+    ///   @param[in] arg_st   the label of the newly created section
     ///
-    int add_perf_label(std::string arg_st)
-    {
-		int ip = m_nWatch;
-    	// perhaps it is better to return ip showing the insert status.
-		// sometime later...
-    	array_of_symbols.insert( make_pair(arg_st, ip) );
-	#ifdef DEBUG_PRINT_LABEL
-    	fprintf(stderr, "<add_perf_label> [%s] &array_of_symbols(%p) [%d] \n",
-    		arg_st.c_str(), &array_of_symbols, ip);
-	#endif
-    	return ip;
-    }
+    ///	  @return the section ID
+    ///
+    int add_section_object(std::string arg_st);
 
     /// 測定区間のラベルに対応する区間番号を取得
+    /// Search through the map and find section ID from the given label
     ///
-    ///   @param[in] arg_st   測定区間のラベル
+    ///   @param[in] arg_st   the label of the section
     ///
-    int find_perf_label(std::string arg_st)
-    {
-    	int p_id;
-    	if (array_of_symbols.find(arg_st) == array_of_symbols.end()) {
-    		p_id = -1;
-    	} else {
-    		p_id = array_of_symbols[arg_st] ;
-    	}
-		#ifdef DEBUG_PRINT_LABEL
-    	//fprintf(stderr, "<find_perf_label> %s : %d\n", arg_st.c_str(), p_id);
-		#endif
-    	return p_id;
-    }
+    ///	  @return the section ID
+    ///
+    int find_section_object(std::string arg_st);
 
     /// 測定区間の区間番号に対応するラベルを取得
+    /// Search the section ID in the map and return the label string
     ///
-    ///   @param[in] ip 測定区間の区間番号
-    ///   @param[in] p_label ラベルとなる文字列
+    ///   @param[in]  ip      the section ID
+    ///   @param[out] p_label the label string of the section
     ///
-    void loop_perf_label(const int ip, std::string& p_label)
-    {
-	std::map<std::string, int>::const_iterator it;
-	int p_id;
-
-	for(it = array_of_symbols.begin(); it != array_of_symbols.end(); ++it) {
-		p_label = it->first;
-		p_id = it->second;
-		if (p_id == ip) {
-			return;
-		}
-	}
-	// should not reach here
-	fprintf(stderr, "<loop_perf_label> p_label search failed. ip=%d\n", ip);
-    }
+    void loop_section_object(const int ip, std::string& p_label);
 
     /// 全測定区間のラベルと番号を登録順で表示
+    /// Check print all the defined section IDs and labels
     ///
-    void check_all_perf_label(void)
-    {
-	std::map<std::string, int>::const_iterator it;
-	std::string p_label;
-	int p_id;
-	fprintf(stderr, "\t<check_all_perf_label> map: label, value\n");
-	for(it = array_of_symbols.begin(); it != array_of_symbols.end(); ++it) {
-		p_label = it->first;
-		p_id = it->second;
-		fprintf(stderr, "\t\t <%s> : %d\n", p_label.c_str(), p_id);
-	}
-    }
+    void check_all_section_object(void);
+
+    /// Add a new entry in the shared section map (section name, section ID)
+    ///
+    ///   @param[in] arg_st   the label of the newly created shared section
+    ///
+    ///	  @return the section ID
+    ///
+    int add_shared_section(std::string arg_st);
+
+    /// Print all the shared section IDs and labels 
+    ///
+    void check_all_shared_sections(void);
+
+
 
     /// 全プロセスの測定中経過情報を集約
     ///
@@ -474,6 +584,27 @@ namespace pm_lib {
               double sum_time_flop, double sum_time_comm, double sum_time_other,
               const std::string unit);
 
+
+	/// Report the BASIC HWPC statistics for the master process
+	///
+	///   @param[in] fp       	report file pointer
+	///   @param[in] maxLabelLen    maximum label string field length
+	///   @param[in] op_sort 	sorting option (0:sorted by seconds, 1:listed order)
+	///
+	void printBasicHWPC (FILE* fp, int maxLabelLen, int op_sort=0);
+
+
+	/// Report the BASIC power consumption statistics of the master node
+	///
+	///   @param[in] fp         report file pointer
+	///   @param[in] maxLabelLen    maximum label field string length
+    ///   @param[in] op_sort     sorting option (0:sorted by seconds, 1:listed order)
+	///
+	///		@note	remark that power consumption is reported per node, not per process
+	///
+	void printBasicPower(FILE* fp, int maxLabelLen, int op_sort=0);
+
+
     /// PerfMonitorクラス用エラーメッセージ出力
     ///
     ///   @param[in] func  関数名
@@ -482,7 +613,7 @@ namespace pm_lib {
     void printDiag(const char* func, const char* fmt, ...)
     {
       if (my_rank == 0) {
-        fprintf(stderr, "*** PMlib message. PerfMonitor::%s: ", func );
+        fprintf(stderr, "\n\n*** PMlib message. PerfMonitor::%s: ", func );
         va_list ap;
         va_start(ap, fmt);
         vfprintf(stderr, fmt, ap);
@@ -490,7 +621,60 @@ namespace pm_lib {
       }
     }
 
+
+
+	/// initialize POWER API context and obtain the objects
+	/// default context and extended context
+	///
+	int initializePOWER (void);
+
+
+	/// finalize POWER API contexts
+	/// destroy the default context and extended context
+	///
+	int finalizePOWER (void);
+
+
+	/// read or update the Power Knob values via POWER API
+	///   @param[in] knob		power knob chooser
+	///   @param[in] operation	type of operation [0:read, 1:update]
+	///   @param[in/out] value	power knob value
+	///
+	int operatePowerKnob (int knob, int operation, int & value);
+
+
+
+    /// just as a record of DEBUG version
+    ///
+    void Obsolete_mergeThreads(void);
+
+
   }; // end of class PerfMonitor //
+
+  /**
+   * additional class to integrate serial/threaded report for C++ user code
+   */
+  class PerfReport {
+  public:
+
+    /// PMlibレポートの出力をコントロールする汎用ルーチン。
+    ///   @brief
+    /// - [1] stop the Root section
+    /// - [2] merge thread serial/parallel sections
+    /// - [3] select the type of the report and start producing the report
+    ///
+    /// @param[in] FILE* fc     output file pointer. if fc is "" (NULL), then stdout is selected.
+    ///
+    /// @note
+    /// C++ プログラムからPMlibを呼び出す場合についてだけ必要となることがある。
+    /// @note
+    /// C++ プログラムで、OpenMPパラレル構文の内側で測定区間を定義した場合は、
+    /// PerfMonitorクラスのreport()ではなく、
+    /// こちらのPerfReportクラスのreport()を呼び出す必要がある。
+    ///
+    void report(FILE* fp);
+
+  }; // end of class PerfReport //
 
 } /* namespace pm_lib */
 

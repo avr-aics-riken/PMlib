@@ -3,6 +3,7 @@
 #include <stdio.h>
 void init2d();
 void mxm2d();
+	//	#define DISABLE_MPI	// if the program does not use MPI
 	//	#include <PerfMonitor.h>
 	//	using namespace pm_lib;
 	//	PerfMonitor PM;
@@ -18,16 +19,15 @@ struct matrix {
 
 int main (int argc, char *argv[])
 {
-	//	PM.initialize();
+	//	int ninit=5;
+	//	PM.initialize(ninit);
 	//	PM.start("A:init2d");
 	init2d();
 	//	PM.stop ("A:init2d");
 	//	PM.start("B:mxm2d");
 	mxm2d();
 	//	PM.stop ("B:mxm2d");
-	//	PM.print(stdout, "", "", 0);
-	//	PM.printDetail(stdout);
-	//	PM.printThreads(stdout, 0, 0);
+	//	PM.report(stdout);
 	printf("something was computed... %f\n",matrix.c2[0][0]);
 	return 0;
 }

@@ -18,13 +18,13 @@ set(CMAKE_SYSTEM_NAME Linux)
 include(CMakeForceCompiler)
 
 if(with_MPI)
-  CMAKE_FORCE_C_COMPILER(mpifccpx GNU)
-  CMAKE_FORCE_CXX_COMPILER(mpiFCCpx GNU)
-  CMAKE_FORCE_Fortran_COMPILER(mpifrtpx GNU)
+	set(CMAKE_C_COMPILER mpifccpx)
+	set(CMAKE_CXX_COMPILER mpiFCCpx)
+	set(CMAKE_Fortran_COMPILER mpifrtpx)
 else()
-  CMAKE_FORCE_C_COMPILER(fccpx GNU)
-  CMAKE_FORCE_CXX_COMPILER(FCCpx GNU)
-  CMAKE_FORCE_Fortran_COMPILER(frtpx GNU)
+	set(CMAKE_C_COMPILER fccpx)
+	set(CMAKE_CXX_COMPILER FCCpx)
+	set(CMAKE_Fortran_COMPILER frtpx)
 endif()
 
 # compiler location
@@ -42,7 +42,8 @@ set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
 set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
 
 set(TARGET_ARCH "FUGAKU")
-set(USE_F_TCS "YES")
+# removed USE_F_TCS because it adds extra libraries that cause error on Fugaku
+#	set(USE_F_TCS "YES")
 
 # libpapi.so and libpfm.so are under /opt/FJSVxos/devkit/aarch64/rfs/usr/lib64
 

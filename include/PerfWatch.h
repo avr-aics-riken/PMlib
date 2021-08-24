@@ -28,27 +28,20 @@
 #include <cstdarg>
 #include <string>
 #include <cstdlib>
+#include <string.h>
 
 #ifdef _OPENMP
 	#include <omp.h>
 #endif
 
-//	#ifdef USE_PAPI
 #include "pmlib_papi.h"
-//	#endif
-
-#ifdef USE_OTF
+#include "pmlib_power.h"
 #include "pmlib_otf.h"
-#endif
 
 #ifndef _WIN32
 #include <sys/time.h>
 #else
 #include "sph_win32_util.h"   // for Windows win32 GetSystemTimeAsFileTime API?
-#endif
-
-#if defined(__x86_64__)
-#include <string.h>
 #endif
 
 namespace pm_lib {
@@ -72,6 +65,11 @@ namespace pm_lib {
     int m_id;             ///< 測定区間のラベルに対応する番号
     int m_typeCalc;        ///< 測定対象タイプ (0:通信, 1:計算)
     bool m_exclusive;      ///< 測定区間の排他性フラグ (false, true)
+    bool m_in_parallel;    /// 測定区間が並列領域の内部にあるか(false, true)
+
+    /// MPI並列時の並列プロセス数と自ランク番号
+    int num_process;
+    int my_rank;
 
     // 測定値の積算量
     long m_count;          ///< 測定回数 (プロセス内の全スレッドの最大値)
@@ -88,7 +86,9 @@ namespace pm_lib {
     double m_flop_sd;    ///< 浮動小数点演算量or通信量の標準偏差
     double m_time_comm;  ///< 通信部分の最大値
 
-    int m_is_OTF;	     ///< OTF tracing 出力のフラグ 0(no), 1(yes), 2(full)
+    int level_POWER;	///< 電力情報レベル 0(no), 1(NODE), 2(NUMA), 3(PARTS)
+    double m_power_av;    ///< average value of power consumption meter reading
+    int level_OTF;	     ///< OTF tracing 出力レベル 0(no), 1(yes), 2(full)
     std::string otf_filename;    ///< OTF filename headings
                         //	master 		: otf_filename + .otf
                         //	definition	: otf_filename + .mdID + .def
@@ -97,9 +97,7 @@ namespace pm_lib {
 
 	struct pmlib_papi_chooser my_papi;
 
-    /// MPI並列時の並列プロセス数と自ランク番号
-    int num_process;
-    int my_rank;
+	struct pmlib_power_chooser my_power;
 
   private:
     /// OpenMP並列時のスレッド数と自スレッド番号
@@ -119,30 +117,45 @@ namespace pm_lib {
     /// 測定区間に関する各種の判定フラグ ：  bool値(true|false)
     bool m_is_set;         /// 測定区間がプロパティ設定済みかどうか
     bool m_is_healthy;     /// 測定区間に排他性・非排他性の矛盾がないか
-    bool m_in_parallel;    /// 測定区間が並列領域内部のスレッドであるかどうか
     bool m_threads_merged; /// 全スレッドの情報をマスタースレッドに集約済みか
     bool m_gathered;       /// 全プロセスの結果をランク0に集計済みかどうか
     bool m_started;        /// 測定区間がstart済みかどうか
+		/// Remark m_started is usefule for serial construct only.
+		///        in parallel construct
 
 
   public:
     /// コンストラクタ.
     PerfWatch() : m_time(0.0), m_flop(0.0), m_count(0), m_started(false),
       my_rank(-1), m_timeArray(0), m_flopArray(0), m_countArray(0),
-      m_sortedArrayHWPC(0), m_is_set(false), m_is_healthy(true) {}
-
-    /// デストラクタ.
-    ~PerfWatch() {
+      m_sortedArrayHWPC(0), m_is_set(false), m_is_healthy(true),
+      m_in_parallel(false) {
 	#ifdef DEBUG_PRINT_WATCH
-		if (my_rank == 0) {
-    	fprintf(stderr, "\t\t rank %d destructor is called for [%s]\n", my_rank, m_label.c_str() );
-		}
+		int i_thread_constractor;
+		#ifdef _OPENMP
+		i_thread_constractor = omp_get_thread_num();
+		#else
+		i_thread_constractor = 0;
+		#endif
+		fprintf(stderr, "\t<PerfWatch> constructor : thread=%d, &m_id=%p \n",
+			i_thread_constractor,  &m_id);
 	#endif
+	}
+
+/***
+    /// We should let the default destructor handle the clean up
+    ~PerfWatch() {
       if (m_timeArray != NULL)  delete[] m_timeArray;
       if (m_flopArray != NULL)  delete[] m_flopArray;
       if (m_countArray != NULL) delete[] m_countArray;
       if (m_sortedArrayHWPC != NULL) delete[] m_sortedArrayHWPC;
+		#ifdef DEBUG_PRINT_WATCH
+		//	if (my_rank == 0) {
+    	fprintf(stderr, "\t <PerfWatch> destructor rank %d thread %d for [%s]\n", my_rank, my_thread, m_label.c_str() );
+		//	}
+		#endif
     }
+ ***/
 
     /// 測定モードを返す
     int get_typeCalc(void) { return m_typeCalc; }
@@ -156,11 +169,16 @@ namespace pm_lib {
     ///   @param[in] my_rank   自ランク番号
     ///   @param[in] exclusive 排他測定フラグ
     ///
-    void setProperties(const std::string& label, int id, int typeCalc, int nPEs, int my_rank, int num_threads, bool exclusive);
+    void setProperties(const std::string label, int id, int typeCalc, int nPEs, int my_rank, int num_threads, bool exclusive);
 
     /// HWPCイベントを初期化する
     ///
     void initializeHWPC(void);
+
+    /// initialize Power API related variables
+    ///
+    void initializePowerWatch(int num, int level);
+
 
     /// OTF 用の初期化
     ///
@@ -198,6 +216,32 @@ namespace pm_lib {
     /// HWPCにより測定したスレッドレベルのイベントカウンター測定値を収集する
     ///
     void gatherThreadHWPC(void);
+
+	/// start measuring the power of the section
+	///
+	///   @param[in] PWR_Cntxt pacntxt
+	///   @param[in] PWR_Cntxt extcntxt
+	///   @param[in] PWR_Obj obj_array
+	///   @param[in] PWR_Obj obj_ext
+	///
+	///   @note the arguments are Power API objects and attributes
+	///
+	void power_start(PWR_Cntxt pacntxt, PWR_Cntxt extcntxt, PWR_Obj obj_array[], PWR_Obj obj_ext[]);
+	
+	/// stop measuring the power of the section
+	///
+	///   @param[in] PWR_Cntxt pacntxt
+	///   @param[in] PWR_Cntxt extcntxt
+	///   @param[in] PWR_Obj obj_array
+	///   @param[in] PWR_Obj obj_ext
+	///
+	///   @note the arguments are Power API objects and attributes
+	///
+	void power_stop(PWR_Cntxt pacntxt, PWR_Cntxt extcntxt, PWR_Obj obj_array[], PWR_Obj obj_ext[]);
+
+    /// gather the estimated power consumption of all processes
+    ///
+    void gatherPOWER(void);
 
     /// 測定結果の平均値・標準偏差などの基礎的な統計計算
     ///
@@ -262,19 +306,15 @@ namespace pm_lib {
     ///
     void printGroupRanks(FILE* fp, double totalTime, MPI_Group p_group, int* pp_ranks);
 
-    /// HWPCヘッダーを出力.
+    /// Show the PMlib related environment variables
     ///
-    ///   @param[in] fp 出力ファイルポインタ
+    ///   @param[in] fp report file pointer
     ///
-    ///   @note ランク0プロセスからのみ呼び出し可能
-    ///
-    void printHWPCHeader(FILE* fp);
+    void printEnvVars(FILE* fp);
 
     /// HWPCレジェンドを出力.
     ///
     ///   @param[in] fp 出力ファイルポインタ
-    ///
-    ///   @note ランク0プロセスからのみ呼び出し可能
     ///
     void printHWPCLegend(FILE* fp);
 
@@ -284,6 +324,22 @@ namespace pm_lib {
     ///   @param[in] rank_ID      出力対象ランク番号を指定する
     ///
     void printDetailThreads(FILE* fp, int rank_ID);
+
+    /// Show the header line for the averaged HWPC statistics in the Basic report
+    ///
+    ///   @param[in] fp         report file pointer
+    ///   @param[in] maxLabelLen    maximum label field string length
+    ///
+    void printBasicHWPCHeader(FILE* fp, int maxLabelLen);
+
+    /// Report the averaged HWPC statistics as the Basic report
+    ///
+    ///   @param[in] fp         report file pointer
+    ///   @param[in] maxLabelLen    maximum label field string length
+    ///
+    ///     @note   remark that power consumption is reported per node, not per process
+    ///
+    void printBasicHWPCsums(FILE* fp, int maxLabelLen);
 
     /// HWPCイベントの測定結果と統計値を出力.
     ///
@@ -319,8 +375,18 @@ namespace pm_lib {
     ///
     void read_cpu_clock_freq();
 
+    ///	copy in HWPC values from master thread to shared "papi" struct
     ///
-    void mergeAllThreads(void);
+    void mergeMasterThread(void);
+
+    ///	merge private HWPC values from the parallel threads to the master
+    ///
+    void mergeParallelThread(void);
+
+    ///	re-calculate the aggregate HWPC values from all threads
+    ///
+    void updateMergedThread(void);
+
     ///
     void selectPerfSingleThread(int i_thread);
 
@@ -339,7 +405,7 @@ namespace pm_lib {
     void stopSectionSerial(double flopPerTask, unsigned iterationCount);
     void stopSectionParallel(double flopPerTask, unsigned iterationCount);
 
-  private:
+	/// HWPC related internal functions
 	void identifyARMplatform (void);
 	void createPapiCounterList (void);
 	void sortPapiCounterList (void);
@@ -347,8 +413,19 @@ namespace pm_lib {
 	void outputPapiCounterList (FILE* fp);
 	void outputPapiCounterLegend (FILE* fp);
 	void outputPapiCounterGroup (FILE* fp, MPI_Group p_group, int* pp_ranks);
-  };
+
+	/// Power API related internal functions
+	int my_power_bind_start(PWR_Cntxt pacntxt, PWR_Cntxt extcntxt,
+		PWR_Obj obj_array[], PWR_Obj obj_ext[],
+		uint64_t pa64timer[], double w_joule[]);
+	int my_power_bind_stop (PWR_Cntxt pacntxt, PWR_Cntxt extcntxt,
+		PWR_Obj obj_array[], PWR_Obj obj_ext[],
+		uint64_t pa64timer[], double w_joule[]);
+
+
+  };	// end of class PerfWatch
 
 } /* namespace pm_lib */
 
 #endif // _PM_PERFWATCH_H_
+

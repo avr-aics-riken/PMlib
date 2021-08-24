@@ -20,6 +20,11 @@
 
 // if USE_PAPI is defined, compile this file with openmp option
 
+#include <iostream>
+#include <string>
+#include <cstdlib>
+#include <cstdio>
+
 #ifdef DISABLE_MPI
 #include "mpi_stubs.h"
 #else
@@ -27,11 +32,6 @@
 #endif
 #include <cmath>
 #include "PerfWatch.h"
-
-#include <iostream>
-#include <string>
-#include <cstdlib>
-#include <cstdio>
 
 namespace pm_lib {
 
@@ -41,9 +41,21 @@ namespace pm_lib {
 
   /// HWPC interface initialization
   ///
-  /// @note  PMlib - HWPC PAPI interface class
+  /// @brief  PMlib - HWPC PAPI interface class
   /// PAPI library is used to interface HWPC events
   /// this routine is called directly by PerfMonitor class instance
+  ///
+  /// @note
+  ///	Extern variables in thread parallel call.
+  ///	When called from inside the parallel region, all threads
+  ///	share the same address for external "papi" structure.
+  ///	So, the variables such as papi.num_events show the same value.
+  ///	The local variable have different address.
+  ///
+  /// @note
+  ///	Class variables in thread parallel call.
+  ///	If a class member is called from inside parallel region,
+  ///	the variables of the class are given different addresses.
   ///
 void PerfWatch::initializeHWPC ()
 {
@@ -56,6 +68,12 @@ void PerfWatch::initializeHWPC ()
 	#ifdef _OPENMP
 	root_in_parallel = omp_in_parallel();
 	root_thread = omp_get_thread_num();
+	#endif
+
+	#ifdef DEBUG_PRINT_PAPI
+	if (my_rank == 0) {
+		fprintf(stderr, "<initializeHWPC> master process thread %d, address of papi=%p, my_papi=%p\n", root_thread, &papi, &my_papi);
+	}
 	#endif
 
 	if (root_thread == 0)
@@ -104,9 +122,6 @@ void PerfWatch::initializeHWPC ()
 	hwpc_group.env_str_hwpc = s_chooser;
 
 	read_cpu_clock_freq(); /// API for reading processor clock frequency.
-
-// DEBUG from HERE.
-// 2020/7/27
 
 	if (hwpc_group.env_str_hwpc == "USER" ) return;	// Is this a correct return?
 
@@ -202,12 +217,14 @@ void PerfWatch::createPapiCounterList ()
 // 1. Identify the CPU architecture
 
 	// Verified on the following platform
-	//	star:	: Intel(R) Core(TM)2 Duo CPU     E7500  @ 2.93GHz, has sse4
+	//	corot:	: Intel(R) Core(TM) i5-3470S CPU @ 2.90GHz	# Ivybridge	2012 model
+	//	star:	: Intel(R) Core(TM)2 Duo CPU     E7500  @ 2.93GHz, has sse4	# 2009 model
 	// vsh-vsp	: Intel(R) Xeon(R) CPU E5-2670 0 @ 2.60GHz	# Sandybridge
 	//	eagles:	: Intel(R) Xeon(R) CPU E5-2650 v2 @ 2.60GHz	# SandyBridge
 	//	uv01:	: Intel(R) Xeon(R) CPU E5-4620 v2 @ 2.60GHz	# Ivybridge
 	//	c01:	: Intel(R) Xeon(R) CPU E5-2640 v3 @ 2.60GHz	# Haswell
 	// chicago:	: Intel(R) Xeon(R) CPU E3-1220 v5 @ 3.00GHz (94)# Skylake
+	//  ito:	: Intel(R) Xeon(R) Gold 6154 CPU @ 3.00GHz	# Skylake
 	// ito-fep:	: Intel(R) Xeon(R) CPU E7-8880 v4 @ 2.20GHz	# Broadwell
 	// water:	: Intel(R) Xeon(R) Gold 6148 CPU @ 2.40GHz	# Skylake
 	// fugaku:	: Fujitsu A64FX based on ARM SVE edition @ 2.0 GHz base frequency
@@ -267,8 +284,13 @@ void PerfWatch::createPapiCounterList ()
 
 		} else
 		if (s_model_string.find( "Core(TM)" ) != string::npos ) {
-			hwpc_group.platform = "Xeon" ;
-			hwpc_group.i_platform = 1;	// Minimal support. only two FLOPS types
+			if (s_model_string.find( "i5-" ) != string::npos ) {
+				hwpc_group.platform = "Xeon" ;
+				hwpc_group.i_platform = 2;	// Ivybridge
+    		} else {
+				hwpc_group.platform = "Xeon" ;
+				hwpc_group.i_platform = 1;	// Minimal support. only two FLOPS types
+			}
 		}
     	else {
 			hwpc_group.i_platform = 0;	// un-supported Xeon type
@@ -461,8 +483,8 @@ void PerfWatch::createPapiCounterList ()
 				my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); ip++;
 			papi.s_name[ip] = "L2_WB_PF";
 				my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); ip++;
-		} else
 
+		} else
 		if (hwpc_group.platform == "A64FX" ) {
 			if (hwpc_group.i_platform == 21 ) {
 			// On A64FX, we use native events BUS_READ_TOTAL_MEM and BUS_WRITE_TOTAL_MEM
@@ -471,15 +493,6 @@ void PerfWatch::createPapiCounterList ()
 			my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "CMG_bus_RD"; ip++;
 			papi.s_name[ip] = "BUS_WRITE_TOTAL_MEM";
 			my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "CMG_bus_WR"; ip++;
-
-			// updated 2020/10/15
-			// The following assumption was wrong
-			//		L2 cache access = "L2D_CACHE"
-			//		L2 cache miss (PAPI_L2_DCM) = "L2D_CACHE_REFILL" - "L2D_SWAP_DM" - "L2D_CACHE_MIBMCH_PRF"
-			//		L2 cache hit = L2 cache access - L2 cache miss
-			//		"L2D_CACHE_REFILL"  as "L2D_REFILL";
-			//		"L2D_SWAP_DM"       as "L2D_HRFB1";
-			//		"L2D_CACHE_MIBMCH_PRF" as "L2D_HRFB2";
 
 			}
 		}
@@ -858,7 +871,7 @@ void PerfWatch::sortPapiCounterList (void)
 			counts += my_papi.v_sorted[jp] = my_papi.accumu[ip] ;
 			ip++;jp++;
 		}
-		my_papi.s_sorted[jp] = "Total_FP ";
+		my_papi.s_sorted[jp] = "Total_FP";
 		my_papi.v_sorted[jp] = counts;
 		jp++;
 
@@ -961,22 +974,21 @@ void PerfWatch::sortPapiCounterList (void)
 			jp++;
 
 		} else
-
     	if (hwpc_group.platform == "A64FX" ) {
 			if (hwpc_group.i_platform == 21 ) {
 
-			//
-			// updated 2020/10/15
-			//
-				for(int jp=0; jp<hwpc_group.number[I_bandwidth]; jp++)
-				{
-					my_papi.v_sorted[jp] = my_papi.accumu[jp + hwpc_group.index[I_bandwidth]] / num_threads;
-				}
+			// updated 2020/11/06
+			// See the remarks in outputPapiCounterLegend()
+
+				//	for(int jp=0; jp<hwpc_group.number[I_bandwidth]; jp++)
+				//	{
+				//		my_papi.v_sorted[jp] = my_papi.accumu[jp + hwpc_group.index[I_bandwidth]] ;
+				//	}
 
 				// Fugaku has 256 Byte $ line
 				cache_size = 256.0;
-				d_Bytes_RD = my_papi.accumu[ip+0] * cache_size / num_threads ;	// averaging for thread stats
-				d_Bytes_WR = my_papi.accumu[ip+1] * cache_size / num_threads ;	// averaging for thread stats
+				d_Bytes_RD = my_papi.accumu[ip+0] * cache_size ;
+				d_Bytes_WR = my_papi.accumu[ip+1] * cache_size ;
 
 				my_papi.s_sorted[jp] = "RD [Bytes]" ;
 				my_papi.v_sorted[jp] = d_Bytes_RD ;
@@ -1162,10 +1174,10 @@ void PerfWatch::sortPapiCounterList (void)
 			}
 		}
 
-		my_papi.s_sorted[jp] = "Total_FP " ;
+		my_papi.s_sorted[jp] = "Total_FP" ;
 		my_papi.v_sorted[jp] = fp_total;
 		jp++;
-		my_papi.s_sorted[jp] = "Vector_FP " ;
+		my_papi.s_sorted[jp] = "Vector_FP" ;
 		my_papi.v_sorted[jp] = fp_vector;
 		jp++;
 		my_papi.s_sorted[jp] = "[Vector %]" ;
@@ -1404,7 +1416,7 @@ void PerfWatch::sortPapiCounterList (void)
 // count the number of reported events and derived matrices
 	my_papi.num_sorted = jp;
 
-#ifdef DEBUG_PRINT_PAPI
+#ifdef DEBUG_PRINT_PAPI_THREADS
 	#pragma omp barrier
 	#pragma omp critical
 	{
@@ -1424,22 +1436,21 @@ void PerfWatch::sortPapiCounterList (void)
 
 
 
-  /// Display the HWPC header lines
+  /// print the HWPC report Section Label string line, and the header line with event names
   ///
   ///   @param[in] fp 出力ファイルポインタ
   ///   @param[in] s_label ラベル
   ///
-  // print the Label string line, and the header line with event names
-  //
 void PerfWatch::outputPapiCounterHeader (FILE* fp, std::string s_label)
 {
 #ifdef USE_PAPI
 
-	fprintf(fp, "Label   %s%s\n", m_exclusive ? "" : "*", s_label.c_str());
+	fprintf(fp, "Section Label : %s%s\n", s_label.c_str(), m_exclusive ? "" : "(*)" );
 
 	std::string s;
 	int ip, jp, kp;
-	fprintf (fp, "Header  ID :");
+	//	fprintf (fp, "Header  ID :");
+	fprintf (fp, "MPI rankID :");
 	for(int i=0; i<my_papi.num_sorted; i++) {
 		kp = my_papi.s_sorted[i].find_last_of(':');
 		if ( kp < 0) {
@@ -1491,7 +1502,7 @@ void PerfWatch::outputPapiCounterGroup (FILE* fp, MPI_Group p_group, int* pp_ran
 	iret =
 	MPI_Group_size(p_group, &g_np);
 	if (iret != MPI_SUCCESS) {
-			fprintf (fp, "  *** <outputPapiCounterGroup> MPI_Group_size failed. %x \n", p_group);
+			fprintf (fp, "  *** <outputPapiCounterGroup> MPI_Group_size failed. iret=%d \n", iret);
 			//	PM_Exit(0);
 			return;
 	}
@@ -1509,7 +1520,6 @@ void PerfWatch::outputPapiCounterGroup (FILE* fp, MPI_Group p_group, int* pp_ran
 }
 
 
-
   /// Display the HWPC legend
   ///
   ///   @param[in] fp 出力ファイルポインタ
@@ -1525,6 +1535,7 @@ void PerfWatch::outputPapiCounterLegend (FILE* fp)
 	std::string s_vendor_string;
 	using namespace std;
 
+	fprintf(fp, "\n\t Symbols in hardware performance counter (HWPC) report:\n\n" );
 	hwinfo = PAPI_get_hardware_info();
 	if (hwinfo == NULL) {
 		//	fprintf (fp, "\n\t<PAPI_get_hardware_info> failed. \n" );
@@ -1542,9 +1553,9 @@ void PerfWatch::outputPapiCounterLegend (FILE* fp)
 	} else {
 		s_model_string = hwinfo->model_string;
 	}
-	fprintf(fp, "\n\tDetected CPU architecture:\n" );
-	fprintf(fp, "\t\t%s\n", s_model_string.c_str());
-	fprintf(fp, "\t\tThe available HWPC_CHOOSER values and their HWPC events for this CPU are shown below.\n");
+	fprintf(fp, "\t Detected CPU architecture: %s \n", s_model_string.c_str());
+
+	fprintf(fp, "\t The available HWPC_CHOOSER values and their HWPC events for this CPU are shown below.\n");
 	fprintf(fp, "\n");
 
 // FLOPS
@@ -1569,7 +1580,7 @@ void PerfWatch::outputPapiCounterLegend (FILE* fp)
 	}
 	fprintf(fp, "\t\t Total_FP:  total floating point operations\n");
 	fprintf(fp, "\t\t [Flops]:   floating point operations per second \n");
-	fprintf(fp, "\t\t [%Peak]:   sustained performance over peak performance\n");
+	fprintf(fp, "\t\t [%%Peak]:   sustained performance over peak performance\n");
 
 // BANDWIDTH
 	fprintf(fp, "\t HWPC_CHOOSER=BANDWIDTH:\n");
@@ -1621,7 +1632,7 @@ void PerfWatch::outputPapiCounterLegend (FILE* fp)
 	fprintf(fp, "\t\t DP_AVXW:    double precision f.p. 512-bit AVX instructions\n");
 	fprintf(fp, "\t\t Total_FP:   total floating point operations \n");
 	fprintf(fp, "\t\t Vector_FP:  floating point operations by vector instructions\n");
-	fprintf(fp, "\t\t [Vector %]: percentage of vectorized f.p. operations\n");
+	fprintf(fp, "\t\t [Vector %%]: percentage of vectorized f.p. operations\n");
 		} else {
 	fprintf(fp, "\t\t Haswell processor does not have floating point operation counters,\n");
 	fprintf(fp, "\t\t so PMlib does not produce full HWPC report for FLOPS and VECTOR groups.\n");
@@ -1644,7 +1655,7 @@ void PerfWatch::outputPapiCounterLegend (FILE* fp)
 		}
 	fprintf(fp, "\t\t Total_FP:   total floating point operations \n");
 	fprintf(fp, "\t\t Vector_FP:  floating point operations by vector instructions\n");
-	fprintf(fp, "\t\t [Vector %]: percentage of vectorized f.p. operations\n");
+	fprintf(fp, "\t\t [Vector %%]: percentage of vectorized f.p. operations\n");
 	} else
 
 	if (hwpc_group.platform == "A64FX" ) {
@@ -1654,7 +1665,7 @@ void PerfWatch::outputPapiCounterLegend (FILE* fp)
 	fprintf(fp, "\t\t SP_FIX_op:  single precision f.p. ops by scalar/armv8 instructions\n");
 	fprintf(fp, "\t\t Total_FP:   total floating point operations \n");
 	fprintf(fp, "\t\t Vector_FP:  floating point operations by vector instructions\n");
-	fprintf(fp, "\t\t [Vector %]: percentage of vectorized f.p. operations\n");
+	fprintf(fp, "\t\t [Vector %%]: percentage of vectorized f.p. operations\n");
 	}
 
 // CACHE
@@ -1667,9 +1678,9 @@ void PerfWatch::outputPapiCounterLegend (FILE* fp)
 	fprintf(fp, "\t\t L1_TCM:     L1 data cache activities leading to line replacements\n");
 	fprintf(fp, "\t\t L2_TCM:     L2 cache demand access misses\n");
 	//	fprintf(fp, "\t\t L3_TCM: level 3 total cache misses by demand\n");
-	fprintf(fp, "\t\t [L1$ hit%]: data access hit(%) in L1 data cache and Line Fill Buffer\n");
-	fprintf(fp, "\t\t [L2$ hit%]: data access hit(%) in L2 cache\n");
-	fprintf(fp, "\t\t [L*$ hit%]: sum of hit(%) in L1 and L2 cache\n");
+	fprintf(fp, "\t\t [L1$ hit%%]: data access hit(%%) in L1 data cache and Line Fill Buffer\n");
+	fprintf(fp, "\t\t [L2$ hit%%]: data access hit(%%) in L2 cache\n");
+	fprintf(fp, "\t\t [L*$ hit%%]: sum of hit(%%) in L1 and L2 cache\n");
 	} else
 
 	if (hwpc_group.platform == "SPARC64" ) {
@@ -1678,9 +1689,9 @@ void PerfWatch::outputPapiCounterLegend (FILE* fp)
 	fprintf(fp, "\t\t 4SIMD:LDST: memory load/store extended SIMD instructions(4SIMD)\n");
 	fprintf(fp, "\t\t L1_TCM:     L1 cache misses (by demand and by prefetch)\n");
 	fprintf(fp, "\t\t L2_TCM:     L2 cache misses (by demand and by prefetch)\n");
-	fprintf(fp, "\t\t [L1$ hit%]: data access hit(%) in L1 cache \n");
-	fprintf(fp, "\t\t [L2$ hit%]: data access hit(%) in L2 cache\n");
-	fprintf(fp, "\t\t [L*$ hit%]: sum of hit(%) in L1 and L2 cache\n");
+	fprintf(fp, "\t\t [L1$ hit%%]: data access hit(%%) in L1 cache \n");
+	fprintf(fp, "\t\t [L2$ hit%%]: data access hit(%%) in L2 cache\n");
+	fprintf(fp, "\t\t [L*$ hit%%]: sum of hit(%%) in L1 and L2 cache\n");
 	} else
 
 	if (hwpc_group.platform == "A64FX" ) {
@@ -1689,9 +1700,9 @@ void PerfWatch::outputPapiCounterLegend (FILE* fp)
 	fprintf(fp, "\t\t L1_HIT:     L1 data cache hits\n");
 	fprintf(fp, "\t\t L1_TCM:     L1 data cache misses\n");
 	fprintf(fp, "\t\t L2_TCM:     L2 cache misses\n");
-	fprintf(fp, "\t\t [L1$ hit%]: data access hit(%) in L1 cache \n");
-	fprintf(fp, "\t\t [L2$ hit%]: data access hit(%) in L2 cache\n");
-	fprintf(fp, "\t\t [L*$ hit%]: sum of hit(%) in L1 and L2 cache\n");
+	fprintf(fp, "\t\t [L1$ hit%%]: data access hit(%%) in L1 cache \n");
+	fprintf(fp, "\t\t [L2$ hit%%]: data access hit(%%) in L2 cache\n");
+	fprintf(fp, "\t\t [L*$ hit%%]: sum of hit(%%) in L1 and L2 cache\n");
 	}
 
 
@@ -1704,7 +1715,7 @@ void PerfWatch::outputPapiCounterLegend (FILE* fp)
 	fprintf(fp, "\t\t WBACK_MEM:  memory write via cache writeback store\n");
 	fprintf(fp, "\t\t STRMS_MEM:  memory write via streaming store, i.e. nontemporal store \n");
 		}
-	fprintf(fp, "\t\t [Vector %]: the measurement of this column is not available on Xeon processors.\n"); 
+	fprintf(fp, "\t\t [Vector %%]: the measurement of this column is not available on Xeon processors.\n"); 
 	} else
 
 	if (hwpc_group.platform == "SPARC64" ) {
@@ -1717,7 +1728,7 @@ void PerfWatch::outputPapiCounterLegend (FILE* fp)
 	fprintf(fp, "\t\t 2SIMD:LDST: memory load/store SIMD instructions(2SIMD)\n");
 	fprintf(fp, "\t\t 4SIMD:LDST: memory load/store extended SIMD instructions(4SIMD)\n");
 		}
-	fprintf(fp, "\t\t [Vector %]: percentage of SIMD load/store instructions over all load/store instructions.\n");
+	fprintf(fp, "\t\t [Vector %%]: percentage of SIMD load/store instructions over all load/store instructions.\n");
 	} else
 
 	if (hwpc_group.platform == "A64FX" ) {
@@ -1729,7 +1740,7 @@ void PerfWatch::outputPapiCounterLegend (FILE* fp)
 	fprintf(fp, "\t\t SVE_SMV_ST: memory write by SVE and Advanced SIMD multiple vector contiguous structure store instructions.\n");
 	fprintf(fp, "\t\t GATHER_LD:  memory read by SVE non-contiguous gather-load instructions.\n");
 	fprintf(fp, "\t\t SCATTER_ST: memory write by SVE non-contiguous scatter-store instructions.\n");
-	fprintf(fp, "\t\t [Vector %]: percentage of SVE load/store instructions over all load/store instructions.\n");
+	fprintf(fp, "\t\t [Vector %%]: percentage of SVE load/store instructions over all load/store instructions.\n");
 	}
 
 // CYCLES
@@ -1739,7 +1750,7 @@ void PerfWatch::outputPapiCounterLegend (FILE* fp)
 	if (hwpc_group.platform == "A64FX" ) {
 	fprintf(fp, "\t\t FP_inst:   floating point instructions\n");
 	fprintf(fp, "\t\t FMA_inst:  fused multiply+add instructions\n");
-	fprintf(fp, "\t\t [FMA_ins%]: percentage of FMA instructions over all f.p. instructions\n");
+	fprintf(fp, "\t\t [FMA_ins%%]: percentage of FMA instructions over all f.p. instructions\n");
 	}
 	fprintf(fp, "\t\t [Ins/cyc]: performed instructions per machine clock cycle\n");
 
@@ -1777,11 +1788,11 @@ void PerfWatch::outputPapiCounterLegend (FILE* fp)
 
 	if (hwpc_group.platform == "A64FX" ) {
 	fprintf(fp, "\t Special remarks for A64FX VECTOR report.\n");
-	fprintf(fp, "\t\t [FMA_ops %] is a roughly approximated number using the following assumption. \n");
+	fprintf(fp, "\t\t [FMA_ops %%] is a roughly approximated number using the following assumption. \n");
 	fprintf(fp, "\t\t\t (FMA vector OPS)/(vector OPS) = (FMA scalar OPS)/(scalar OPS) for both DP and SP \n");
 	fprintf(fp, "\t Special remarks for A64FX BANDWIDTH report.\n");
 	fprintf(fp, "\t\t CMG_bus_RD and CMG_bus_WR both count the CMG aggregated values, not core.\n");
-	fprintf(fp, "\t\t So, Thread Report statistics shows the value internally divided by omp_get_max_threads().\n");
+	fprintf(fp, "\t\t So, Thread Report statistics shows the values in redundant manner.\n");
 	fprintf(fp, "\t\t Basic Report and Process Report statistics both show the measured value.\n");
 	}
 

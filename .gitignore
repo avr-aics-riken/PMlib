@@ -1,4 +1,4 @@
-BUILD_DIR/*
+BUILD_*
 
 # Compiled Object files
 *.slo
@@ -30,3 +30,7 @@ BUILD_DIR/*
 
 # Mac
 .DS_Store
+
+# editor buffer
+*.swp
+*.*~
