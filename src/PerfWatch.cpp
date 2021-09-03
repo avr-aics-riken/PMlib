@@ -562,26 +562,27 @@ namespace pm_lib {
   ///  			Aggregate the class private "my_papi" data into shared "papi" space.
   ///
   ///	@note This 2nd step aggregation must be called by all the threads inside parallel construct
+  ///	@note  Only the sections executed inside of parallel construct are merged.
+  ///		In Worksharing parallel structure, everything is in place and nothing is done here.
   ///
   void PerfWatch::mergeParallelThread(void)
   {
   #ifdef _OPENMP
 	if (m_threads_merged) return;
+	if (my_thread == 0) return;
 	if (m_started) return; // still in the middle of active start/stop pair
 		// The thread stats should be merged after the thread has stopped.
 
-	// Only the sections executed inside of parallel construct are merged.
-	// In Worksharing parallel structure, everything is in place and nothing is done here.
 	if ( !(m_in_parallel) ) return;
 
 	int i_thread;
 	i_thread = omp_get_thread_num();
 	if (i_thread != my_thread) {
+		// collection of thread values must be done by each thread instances
 		fprintf(stderr, "\n\t*** PMlib internal error <mergeParallelThread> [%s] my_thread:%d does not match OpenMP thread:%d\n ",
 				m_label.c_str(), my_thread, i_thread);
 	}
 
-	// collection of thread values must be done by each thread instances
     int is_unit = statsSwitch();
 
 	if ( is_unit >= 2) { // PMlib HWPC counter mode
@@ -697,14 +698,18 @@ namespace pm_lib {
 	m_time_threads  = 0.0;
 	m_flop_threads  = 0.0;
 
+// 2021/9/2 Change the collective operations from max to summation
 	for (int j=0; j<num_threads; j++) {
-		m_count_threads = std::max(m_count_threads, my_papi.th_v_sorted[j][0]);
-		m_time_threads = std::max(m_time_threads, my_papi.th_v_sorted[j][1]);
+		//	m_count_threads = std::max(m_count_threads, my_papi.th_v_sorted[j][0]);	// maximum counts among threads
+		//	m_time_threads = std::max(m_time_threads, my_papi.th_v_sorted[j][1]);	// longest time among threads
+		//	m_flop_threads += my_papi.th_v_sorted[j][2];		// total values of all threads
+		m_count_threads += my_papi.th_v_sorted[j][0];
+		m_time_threads += my_papi.th_v_sorted[j][1];
 		m_flop_threads += my_papi.th_v_sorted[j][2];
 	}
-	m_count = lround(m_count_threads);	// maximum counts among threads
-	m_time = m_time_threads;			// longest time among threads
-	m_flop = m_flop_threads;			// total values of all threads
+	m_count = lround(m_count_threads);
+	m_time = m_time_threads;
+	m_flop = m_flop_threads;
 
 
 	#ifdef DEBUG_PRINT_PAPI_THREADS
@@ -1506,9 +1511,8 @@ namespace pm_lib {
     for (int i = 0; i < m_np; i++) total_count += m_countArray[i];
 
     if ( total_count > 0 && is_unit <= 1) {
-      //	fprintf(fp, "Label  %s%s\n", m_exclusive ? "" : "*", m_label.c_str());
-      //	fprintf(fp, "Header ID  :     call   time[s] time[%%]  t_wait[s]  t[s]/call   counter     speed              \n");
-      fprintf(fp, "Section Label : %s%s\n", m_label.c_str(), m_exclusive ? "" : "(*)" );
+      //	fprintf(fp, "Section Label : %s%s\n", m_label.c_str(), m_exclusive ? "" : "(*)" );
+      fprintf(fp, "Section : %s%s%s\n",     m_label.c_str(), m_exclusive? "":" (*)" , m_in_parallel? " (+)":"" );
       fprintf(fp, "MPI rankID :     call   time[s] time[%%]  t_wait[s]  t[s]/call   counter     speed              \n");
       for (int i = 0; i < m_np; i++) {
 		t_per_call = (m_countArray[i]==0) ? 0.0: m_timeArray[i]/m_countArray[i];
@@ -1526,9 +1530,8 @@ namespace pm_lib {
 			);
       }
     } else if ( total_count > 0 && is_unit >= 2) {
-      //	fprintf(fp, "Label  %s%s\n", m_exclusive ? "" : "*", m_label.c_str());
-      //	fprintf(fp, "Header ID  :     call   time[s] time[%%]  t_wait[s]  t[s]/call   \n");
-      fprintf(fp, "Section Label : %s%s\n", m_label.c_str(), m_exclusive ? "" : "(*)" );
+      //	fprintf(fp, "Section Label : %s%s\n", m_label.c_str(), m_exclusive ? "" : "(*)" );
+      fprintf(fp, "Section : %s%s%s\n",     m_label.c_str(), m_exclusive? "":" (*)" , m_in_parallel? " (+)":"" );
       fprintf(fp, "MPI rankID :     call   time[s] time[%%]  t_wait[s]  t[s]/call   \n");
       for (int i = 0; i < m_np; i++) {
 		t_per_call = (m_countArray[i]==0) ? 0.0: m_timeArray[i]/m_countArray[i];
@@ -1698,11 +1701,9 @@ namespace pm_lib {
     int ip, jp, kp;
 	double dx;
 
-	if (m_exclusive) {
-		s = m_label;
-	} else {
-		s = m_label + "(*)";
-	}
+	s = m_label;
+	if (!m_exclusive)  { s = s + " (*)"; }
+	if (m_in_parallel) { s = s + " (+)"; }
 
 	// stats line showing the average value of HWPC stats
 
@@ -1735,7 +1736,7 @@ namespace pm_lib {
   {
 #ifdef USE_PAPI
     if (my_papi.num_events == 0) return;
-    if (!m_exclusive) return;
+    //	if (!m_exclusive) return;
     if ( m_count_sum == 0 ) return;
     if (my_rank == 0) {
       outputPapiCounterHeader (fp, s_label);
@@ -1759,7 +1760,7 @@ namespace pm_lib {
   {
 #ifdef USE_PAPI
     if (my_papi.num_events == 0) return;
-    if (!m_exclusive) return;
+    //	if (!m_exclusive) return;
     if ( m_count_sum == 0 ) return;
     if (my_rank == 0) outputPapiCounterHeader (fp, s_label);
     outputPapiCounterGroup (fp, p_group, pp_ranks);
@@ -1874,11 +1875,14 @@ namespace pm_lib {
     if (is_unit == 7) unit = "";		// 7: LOADSTORE : HWPC measured load/store instruction type
 
 	if (my_rank == 0 && is_unit < 2) {
-	    fprintf(fp, "Label  %s%s\n", m_exclusive ? "" : "*", m_label.c_str());
+	    //	fprintf(fp, "Label  %s%s\n", m_exclusive ? "" : "*", m_label.c_str());
+		fprintf(fp, "Section : %s%s%s\n", m_label.c_str(), m_exclusive? "":" (*)" , m_in_parallel? " (+)":"" );
+
     	fprintf(fp, "Thread  call  time[s]  t/tav[%%]  operations  performance\n");
 	} else 
 	if (my_rank == 0 && is_unit >= 2) {
-	    fprintf(fp, "Label  %s%s\n", m_exclusive ? "" : "*", m_label.c_str());
+	    //	fprintf(fp, "Label  %s%s\n", m_exclusive ? "" : "*", m_label.c_str());
+		fprintf(fp, "Section : %s%s%s\n", m_label.c_str(), m_exclusive? "":" (*)" , m_in_parallel? " (+)":"" );
 
 		std::string s;
 		int ip, jp, kp;
@@ -2013,8 +2017,8 @@ namespace pm_lib {
 #endif
 
 #ifdef USE_POWER
-	fprintf(fp, "\n\t Symbols in power consumption report: \n" );
-	fprintf(fp, "\t\tThe available POWER_CHOOSER values and their output data are shown below.\n\n");
+	fprintf(fp, "\n    Symbols in PMlib power consumption report: \n" );
+	fprintf(fp, "\t The available POWER_CHOOSER values and their output data are shown below.\n\n");
 
 	if (hwpc_group.platform == "A64FX" ) {
 	
@@ -2022,27 +2026,26 @@ namespace pm_lib {
 		fprintf(fp, "\t\t total     : Total of all parts. (CMG + MEMORY + TF+A+U) \n");
 		fprintf(fp, "\t\t CMG+L2    : All compute cores and L2 cache memory in all 4 CMGs \n");
 		fprintf(fp, "\t\t MEMORY    : Main memory (HBM)\n");
-		fprintf(fp, "\t\t TF+A+U    : TofuD interface & router + Assistant cores + other UnCMG parts \n");
-		fprintf(fp, "\t\t P.meter   : Physically measured power comsumption measured by power meter \n");
+		fprintf(fp, "\t\t TF+A+U    : TofuD network router and interface + Assistant cores + other UnCMG parts \n");
+		fprintf(fp, "\t\t Energy[Wh]: power comsumption in watt-hour unit\n");
 	
 		fprintf(fp, "\t POWER_CHOOSER=NUMA:\n");
 		fprintf(fp, "\t\t total     : Total of all parts. (CMG[0-3] + MEM[0-3] + TF+A+U)\n");
 		fprintf(fp, "\t\t CMG0+L2   : compute cores and L2 cache memory in CMG0. ditto for CMG[1-3]+L2. \n");
 		fprintf(fp, "\t\t MEM[0-3]  : Main memory (HBM) attached to CMG0[1,2,3]\n");
-		fprintf(fp, "\t\t TF+A+U    : TofuD interface & router + Assistant cores + other UnCMG parts \n");
-		fprintf(fp, "\t\t P.meter   : Physically measured power comsumption measured by power meter \n");
+		fprintf(fp, "\t\t TF+A+U    : TofuD network router and interface + Assistant cores + other UnCMG parts \n");
+		fprintf(fp, "\t\t Energy[Wh]: power comsumption in watt-hour unit\n");
 	
 		fprintf(fp, "\t POWER_CHOOSER=PARTS:\n");
 		fprintf(fp, "\t\t total     : Total of all parts. \n");
 		fprintf(fp, "\t\t CMG[0-3]  : compute cores in CMG0, CMG1, CMG2, CMG3 \n");
 		fprintf(fp, "\t\t L2CMG[0-3]: L2 cache memory in CMG0, CMG1, CMG2, CMG3 \n");
-		fprintf(fp, "\t\t Acore0    : Assistant core 0. \n");
-		fprintf(fp, "\t\t Acore1    : Assistant core 1. \n");
-		fprintf(fp, "\t\t TofuD     : TofuD interface & router \n");
-		fprintf(fp, "\t\t UnCMG     : Other CPU parts (those excluding compute cores, assistant cores or TofuD) \n");
+		fprintf(fp, "\t\t Acore[0-1]: Assistant core 0, 1. \n");
+		fprintf(fp, "\t\t TofuD     : TofuD network router and interface \n");
+		fprintf(fp, "\t\t UnCMG     : Other UnCMG parts (CPU parts excluding compute cores, assistant cores or TofuD) \n");
 		fprintf(fp, "\t\t PCI       : PCI express interface \n");
 		fprintf(fp, "\t\t TofuOpt   : Tofu optical modules \n");
-		fprintf(fp, "\t\t P.meter   : Physically measured power comsumption measured by power meter \n");
+		fprintf(fp, "\t\t Energy[Wh]: power comsumption in watt-hour unit\n");
 	}
 	fprintf(fp, "\n");
 #endif
