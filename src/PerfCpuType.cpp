@@ -319,7 +319,6 @@ void PerfWatch::createPapiCounterList ()
 		}
 	}
 
-
 	// SPARC based processors
     else if (s_model_string.find( "SPARC64" ) != string::npos ) {
 		hwpc_group.platform = "SPARC64" ;
@@ -340,30 +339,37 @@ void PerfWatch::createPapiCounterList ()
 		}
 	}
 
-	// ARM based processors
-    else if (s_model_string.empty() && s_vendor_string.find( "ARM" ) != string::npos ) {
-		// on ARM, PAPI_get_hardware_info() does not provide so useful information.
-		// so we check /proc/cpuinfo for further information
-		//
+	// Fugaku A64FX processors
+    else if (s_model_string.find( "A64FX" ) != string::npos ) {
+			hwpc_group.i_platform = 21;
+			hwpc_group.platform = "A64FX" ;
+			hwpc_group.coreGHz = 2.0;
+			hwpc_group.corePERF = hwpc_group.coreGHz * 1.0e9 * 32;
+	}
+
+	// other ARM based processors
+    else if (s_vendor_string.find( "ARM" ) != string::npos ) {
+		// on ARM, PAPI_get_hardware_info() does not provide useful information.
+		// So we check /proc/cpuinfo instead
+		//	else if (s_model_string.empty() ) {
+
 		identifyARMplatform ();
 
     	if ( hwpc_group.i_platform == 21 ) {
-			hwpc_group.platform = "A64FX" ;
-			s_model_string = hwpc_group.platform ;
-			hwpc_group.coreGHz = 2.0;
-			hwpc_group.corePERF = hwpc_group.coreGHz * 1.0e9 * 32;
+			// should have matched s_model_string.find( "A64FX" )
+			;
 		} else {
-			//	hwpc_group.i_platform = 99;
+			hwpc_group.i_platform = 98;
 			hwpc_group.platform = "unsupported_hardware";
 			s_model_string = hwpc_group.platform ;
 		}
-
 	}
 
 	// other processors are not supported by PMlib
     else {
 			hwpc_group.i_platform = 99;
 			hwpc_group.platform = "unsupported_hardware";
+			s_model_string = hwpc_group.platform ;
 	}
 
 
@@ -1576,14 +1582,8 @@ void PerfWatch::outputPapiCounterLegend (FILE* fp)
 		return;
 	}
 
-    if (s_model_string.empty() && s_vendor_string.find( "ARM" ) != string::npos ) {
-		identifyARMplatform ();
-	}
-    if ( hwpc_group.i_platform == 21 ) {
-		s_model_string = "Fugaku A64FX" ;
-	} else {
-		s_model_string = hwinfo->model_string;
-	}
+	s_model_string = hwinfo->model_string;
+
 	fprintf(fp, "\t Detected CPU architecture: %s \n", s_model_string.c_str());
 	fprintf(fp, "\t The available HWPC_CHOOSER values and their HWPC events for this CPU are shown below.\n");
 	fprintf(fp, "\n");
