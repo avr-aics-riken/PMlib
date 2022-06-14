@@ -1547,7 +1547,7 @@ void PerfWatch::outputPapiCounterLegend (FILE* fp)
 	fprintf(fp, "\t\t the measured HWPC event counts and the performance for each of the sections,\n");
 	fprintf(fp, "\t\t and if available the estimated power consumption required to execute the section.\n");
 	fprintf(fp, "\t\t The power consumption is estimated only for the sections run by rank 0 thread0 per node basis.\n");
-	fprintf(fp, "\t PMLIB_REPORT=BASIC:\n");
+	fprintf(fp, "\t PMLIB_REPORT=DETAIL:\n");
 	fprintf(fp, "\t\t In addition to basic report, produce the process report and the HWPC report.\n");
 	fprintf(fp, "\t\t The process report contains the section timer information for all the processes.\n");
 	fprintf(fp, "\t\t the HWPC report contains the HWPC event counts and the performance for for all the processes.\n");

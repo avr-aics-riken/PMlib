@@ -180,11 +180,14 @@ namespace pm_lib {
 // initialize Power API binding contexts
 	num_power = PerfMonitor::initializePOWER() ;
 
-    m_watchArray[0].initializePowerWatch (num_power, level_POWER);
+// 20220613
+// change better function name from initializePowerWatch to setRootPowerLevel
+
+    m_watchArray[0].setRootPowerLevel (num_power, level_POWER);
 
 	#ifdef DEBUG_PRINT_MONITOR
     if (my_rank == 0) {
-		fprintf(stderr, "\t <initialize> map of my_rank=%d, my_thread=%d\n", my_rank, my_thread);
+		fprintf(stderr, "<initialize> map should be blank at this point.\n");
 		#pragma omp critical
     	check_all_section_object();
 		// end critical does not exist for C++
@@ -198,6 +201,8 @@ namespace pm_lib {
 //	increment the shared sections as well
     int id_shared;
     id_shared = add_shared_section(label);
+
+    //	m_watchArray[0].setRootPowerLevel (num_power, level_POWER);
 
     m_nWatch++;
     m_watchArray[0].setProperties(label, id, CALC, num_process, my_rank, num_threads, false);
@@ -2101,6 +2106,9 @@ void warning_print (std::string cstr1, std::string cstr2, std::string cstr3, int
 }
 
 
+/// initialize the Power API interface objects
+///
+///
 int PerfMonitor::initializePOWER (void)
 {
 #ifdef USE_POWER

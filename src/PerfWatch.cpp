@@ -870,14 +870,14 @@ namespace pm_lib {
 
 
 
-  /// initialize Power API interface
+  /// set the Power API reporting level for the Root section
   ///
   ///	@param[in] n  number of Power objects initialized by PerfMonitor class instance
   ///	@param[in] n  level of detail for power report [0..3]
   ///
   ///	@note num_power is always 20 for Fugaku implementation
   ///
-  void PerfWatch::initializePowerWatch(int num, int level)
+  void PerfWatch::setRootPowerLevel(int num, int level)
   {
 #ifdef USE_POWER
 	power.num_power_stats = 0;
@@ -887,7 +887,7 @@ namespace pm_lib {
 	}
 	#ifdef DEBUG_PRINT_WATCH
     if (my_rank == 0) {
-    	fprintf(stderr, "<PerfWatch::initializePowerWatch> [%s] level_report=%d num_power_stats=%d \n",
+    	fprintf(stderr, "<PerfWatch::setRootPowerLevel> [%s] level_report=%d num_power_stats=%d \n",
 		m_label.c_str(), power.level_report, power.num_power_stats);
 	}
 	#endif

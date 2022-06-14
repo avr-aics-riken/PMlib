@@ -175,9 +175,9 @@ namespace pm_lib {
     ///
     void initializeHWPC(void);
 
-    /// initialize Power API related variables
+    /// set the Power API reporting level for the Root section
     ///
-    void initializePowerWatch(int num, int level);
+    void setRootPowerLevel(int num, int level);
 
 
     /// OTF 用の初期化
