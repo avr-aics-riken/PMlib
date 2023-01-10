@@ -9,10 +9,12 @@
 This library records the statistics information of run-time performance and the trace information of a user code and reports its summary. The PMlib is able to use for both serial and parallel environments including hybrid(OpenMP & MPI) code. In addition, PAPI interface allows us to access the information of build-in hardware counter.
 
 ## SOFTWARE REQUIREMENT
+- Compilers for Fortran/C/C++
 - Cmake
-- MPI library  (option)
-- PAPI library (option)
-- OTF library (option)
+- MPI library  (optional)
+- PAPI library (optional)
+- Power API library (optional)
+- OTF library (optional)
 
 Although MPI and PAPI libraries are optional, they are frequently used in the application, and are recommended to be included.
 
@@ -49,7 +51,8 @@ Typical installation will be composed of three steps.
 
 ### max_nthreads
 
-`~/include/pmlib_papi.h`の`const int Max_nthreads=36`をシステムに応じて変更
+Maximum number of the measuable threads per process can be configured. The default is 36.
+Change the value of `const int Max_nthreads` in `~/include/pmlib_papi.h`.
 
 
 ### Build

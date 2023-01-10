@@ -197,6 +197,35 @@ void PerfWatch::initializeHWPC ()
 }
 
 
+  /// cleanup and free HWPC memory space for papi HighLevelInfo struct
+  /// @note  this routine is called by PerfMonitor::stopRoot()
+  ///
+void PerfWatch::cleanupHWPC ()
+{
+
+#ifdef _OPENMP
+#ifdef USE_PAPI
+	bool root_in_parallel;
+
+	#pragma omp barrier
+	root_in_parallel = omp_in_parallel();
+
+	if (root_in_parallel) {
+		my_papi_internal_free();
+
+	} else {
+	#pragma omp parallel
+		{
+		my_papi_internal_free();
+		} // end of #pragma omp parallel
+
+	} // end of if (root_in_parallel)
+
+#endif // USE_PAPI
+#endif
+}
+
+
 
   /// Construct the available list of PAPI counters for the targer processor
   /// @note  this routine needs the processor hardware information
@@ -1829,6 +1858,7 @@ void PerfWatch::outputPapiCounterLegend (FILE* fp)
 	}
 
 #endif // USE_PAPI
+	fflush(fp);
 }
 
 

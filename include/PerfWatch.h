@@ -175,6 +175,10 @@ namespace pm_lib {
     ///
     void initializeHWPC(void);
 
+    /// HWPC終了前に一時メモリ領域を開放する
+    ///
+    void cleanupHWPC(void);
+
     /// set the Power API reporting level for the Root section
     ///
     void setRootPowerLevel(int num, int level);

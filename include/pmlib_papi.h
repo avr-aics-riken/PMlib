@@ -37,6 +37,7 @@ extern "C" int my_papi_bind_read  ( long long *, int );
 extern "C" int my_papi_add_events ( int *, int);
 
 extern "C" void my_papi_name_to_code ( const char *, int *);
+extern "C" void my_papi_internal_free ( void );
 #endif
 
 /// HWPC counter情報の記憶配列

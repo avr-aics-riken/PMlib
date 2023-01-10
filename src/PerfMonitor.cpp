@@ -591,6 +591,8 @@ namespace pm_lib {
     	m_watchArray[0].power_stop( pm_pacntxt, pm_extcntxt, pm_obj_array, pm_obj_ext );
     	(void) finalizePOWER();
 
+    	m_watchArray[0].cleanupHWPC();
+
     	is_Root_active = false;
     }
   }
@@ -928,11 +930,12 @@ namespace pm_lib {
 	if (inside==0) {
 		stopRoot ();
 	} else if (inside==1) {
-    	if (my_rank==0) 
+    	if (my_rank==0) {
 		fprintf(stderr, "\n*** PMlib warning. wrong usage *** \n");
 		fprintf(stderr, "To report the stats including the sections inside of parallel region,\n");
 		fprintf(stderr, "PerfReport::report() must be called instead of PerfMonitor::report() \n");
 		fprintf(stderr, "The following report is not correct. \n\n");
+		}
 
 		stopRoot ();
 	} else {

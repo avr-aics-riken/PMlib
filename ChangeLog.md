@@ -2,6 +2,13 @@
 
 ## REVISION HISTORY
 
+
+---
+- 2023-01-10 Version 9.0.0
+  - reflect a change in /proc/cpuinfo file format on Fugaku
+  - fix a bug in power api for root section
+  - add my_papi_internal_free() to collect garbage leaks
+
 ---
 - 2021-08-23 Version 8.3.0
   - enhanced report routine to handle stats for both of outside and inside of parallel regions
