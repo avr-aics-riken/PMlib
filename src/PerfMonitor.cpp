@@ -282,11 +282,11 @@ namespace pm_lib {
    		id_shared = add_shared_section(label);
 
     	#ifdef DEBUG_PRINT_MONITOR
-		fprintf(stderr, "<setProperties> [%s] NEW section created by my_thread=%d as [%d] \n", label.c_str(), my_thread, id);
+		fprintf(stderr, "<setProperties> [%s] NEW section created by my_rank=%d, my_thread=%d as [%d] \n", label.c_str(), my_rank, my_thread, id);
 		#endif
 	} else {
     	#ifdef DEBUG_PRINT_MONITOR
-		fprintf(stderr, "<setProperties> [%s] section exists. my_thread=%d as [%d] \n", label.c_str(), my_thread, id);
+		fprintf(stderr, "<setProperties> [%s] section exists. my_rank=%d, my_thread=%d as [%d] \n", label.c_str(), my_rank, my_thread, id);
 		#endif
 	}
 
@@ -431,7 +431,7 @@ namespace pm_lib {
 	#else
 	i_thread = 0;
 	#endif
-	if (my_rank == 0) {
+	//	if (my_rank == 0) {
 		//	fprintf(stderr, "<start> [%s] section i_thread=%d : is %s \n",
 		//		label.c_str(), i_thread, (id<0)?"NEW!":"already in");
 		if (id < 0) {
@@ -439,7 +439,7 @@ namespace pm_lib {
 		} else {
 			fprintf(stderr, "<start> [%s] i_thread=%d : label exists.\n", label.c_str(), i_thread);
 		}
-	}
+	//	}
 	#endif
 
     if (id < 0) {
@@ -448,10 +448,10 @@ namespace pm_lib {
 
       id = find_section_object(label);
       #ifdef DEBUG_PRINT_MONITOR
-      if (my_rank == 0) {
+      //	if (my_rank == 0) {
         fprintf(stderr, "<start> created property for [%s] at class address %p\n",
 				label.c_str(), &m_watchArray[id]);
-      }
+      //	}
       #endif
     }
     is_exclusive_construct = true;
@@ -463,9 +463,9 @@ namespace pm_lib {
 
     //	last_started_label = label;
     #ifdef DEBUG_PRINT_MONITOR
-    if (my_rank == 0) {
+    //	if (my_rank == 0) {
       fprintf(stderr, "<start> [%s] id=%d\n", label.c_str(), id);
-    }
+    //	}
     #endif
   }
 
@@ -504,9 +504,9 @@ namespace pm_lib {
     is_exclusive_construct = false;
 
     #ifdef DEBUG_PRINT_MONITOR
-    if (my_rank == 0) {
+    //	if (my_rank == 0) {
       fprintf(stderr, "<stop> [%s] id=%d\n", label.c_str(), id);
-    }
+    //	}
     #endif
   }
 
@@ -612,11 +612,11 @@ namespace pm_lib {
 	n_shared_sections = shared_map_sections.size();	// this is the shared value for all threads
 
 	#ifdef DEBUG_PRINT_MONITOR
-    if (my_rank == 0) {
-		fprintf(stderr, "\n<countSections> started. n_shared_sections=%d \n" , n_shared_sections);
+    //	if (my_rank == 0) {
+		fprintf(stderr, "\n<countSections> started. my_rank=%d, n_shared_sections=%d \n" , my_rank, n_shared_sections);
 		check_all_shared_sections();
 		fprintf(stderr, "\n");
-	}
+	//	}
 	#endif
 
 	if (n_shared_sections == m_nWatch) return; // The master thread contains all the shared sections
@@ -631,16 +631,18 @@ namespace pm_lib {
 		m_watchArray[id].m_in_parallel = true;
 
 		#ifdef DEBUG_PRINT_MONITOR
-    	if (my_rank == 0) { fprintf(stderr, "<countSections> created new [%s] in the master thread \n", p_label.c_str()); }
+    	//	if (my_rank == 0) {
+			fprintf(stderr, "<countSections> created new [%s] in the master thread of my_rank=%d \n", p_label.c_str(), my_rank);
+		//	}
 		#endif
 	}
 
 	#ifdef DEBUG_PRINT_MONITOR
-    if (my_rank == 0) {
+    //	if (my_rank == 0) {
 		fprintf(stderr, "\n<countSections> master thread private map is updated.\n" );
 		check_all_section_object();
 		fprintf(stderr, "\n");
-	}
+	//	}
 	#endif
 
   }
@@ -717,7 +719,7 @@ namespace pm_lib {
   {
     if (!is_PMlib_enabled) return;
 #ifdef _OPENMP
-	int mid;
+	int mid = -1;	// this has been a hidden bug.
 	bool in_parallel;
 	in_parallel = omp_in_parallel();
 	std::string s;
@@ -2423,9 +2425,9 @@ int PerfMonitor::add_section_object(std::string arg_st)
    	m_map_sections.insert( make_pair(arg_st, mid) );
 
     #ifdef DEBUG_PRINT_LABEL
-	if (my_rank==0) {
-	fprintf(stderr, "<add_section_object> [%s] [%d] my_thread=%d \n", arg_st.c_str(), mid, my_thread);
-	}
+	//	if (my_rank==0) {
+   	fprintf(stderr, "<add_section_object> [%s] my_rank=%d, my_thread=%d, [mid=%d] \n", arg_st.c_str(), my_rank, my_thread, mid);
+	//	}
     #endif
    	// we may better return the insert status...?
 	return mid;
@@ -2449,9 +2451,9 @@ int PerfMonitor::find_section_object(std::string arg_st)
    		mid = m_map_sections[arg_st] ;
    	}
 	#ifdef DEBUG_PRINT_LABEL
-	if (my_rank==0) {
-   	fprintf(stderr, "<find_section_object> %s : mid=%d my_thread=%d \n", arg_st.c_str(), mid, my_thread);
-	}
+	//	if (my_rank==0) {
+   	fprintf(stderr, "<find_section_object> [%s] my_rank=%d, my_thread=%d, [mid=%d] \n", arg_st.c_str(), my_rank, my_thread, mid);
+	//	}
 	#endif
    	return mid;
 }
@@ -2471,9 +2473,9 @@ void PerfMonitor::loop_section_object(const int mid, std::string& p_label)
 		if (it->second == mid) {
 			p_label = it->first;
 			#ifdef DEBUG_PRINT_LABEL
-			if (my_rank==0) {
-			fprintf(stderr, "<loop_section_object> mid=%d my_thread=%d matched to [%s] \n", mid, my_thread, p_label.c_str() );
-			}
+			//	if (my_rank==0) {
+			fprintf(stderr, "<loop_section_object> [mid=%d] in my_rank=%d my_thread=%d matched to [%s] \n", mid, my_rank, my_thread, p_label.c_str() );
+			//	}
 			#endif
 			return;
 		}
@@ -2528,9 +2530,10 @@ int PerfMonitor::add_shared_section(std::string arg_st)
    		n_shared_sections = shared_map_sections[arg_st] ;
 
     	#ifdef DEBUG_PRINT_LABEL
-		if (my_rank==0) {
-		fprintf(stderr, "<add_shared_section> [%s] [%d] my_thread=%d \n", arg_st.c_str(), n_shared_sections, my_thread);
-		}
+		//	if (my_rank==0) {
+		//	fprintf(stderr, "<add_shared_section> [%s] [%d] my_thread=%d \n", arg_st.c_str(), n_shared_sections, my_thread);
+		fprintf(stderr, "<add_shared_section> [%s] n_shared_sections is now [%d] my_rank=%d, my_thread=%d \n", arg_st.c_str(), n_shared_sections, my_rank, my_thread);
+		//	}
     	#endif
 	}
 	// remark. end critical does not exist for C++. its only for fortran !$omp.
