@@ -1,8 +1,8 @@
 # PMlib - Performance Monitor library
 
 * Copyright (c) 2010-2011 VCAD System Research Program, RIKEN. All rights reserved.
-* Copyright (c) 2012-2020 RIKEN Center for Computational Science (R-CCS). All rights reserved.
-* Copyright (c) 2016-2020 Research Institute for Information Technology (RIIT), Kyushu University. All rights reserved.
+* Copyright (c) 2012-2023 RIKEN Center for Computational Science (R-CCS). All rights reserved.
+* Copyright (c) 2016-2023 Research Institute for Information Technology (RIIT), Kyushu University. All rights reserved.
 
 ## OUTLINE
 
@@ -51,7 +51,7 @@ Typical installation will be composed of three steps.
 
 ### max_nthreads
 
-Maximum number of the measuable threads per process can be configured. The default is 36.
+Maximum number of the measuable threads per process can be configured. The default is 48.
 Change the value of `const int Max_nthreads` in `~/include/pmlib_papi.h`.
 
 

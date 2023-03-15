@@ -75,7 +75,7 @@ Several example PMlib reports are shown in the log file log_reports/RUN-MPI.1705
 Set the type of the hardware performance counter event groups to report.
 Choose the value from one of [FLOPS, BANDWIDTH, VECTOR, CACHE, CYCLE, LOADSTORE, USER].
 
-	HWPC_CHOOSER=FLOPS
+	HWPC_CHOOSER=FLOPS (default)
 		floating point operations for single precision and for double precision,
 		and their related performance in flops.
 	HWPC_CHOOSER=BANDWIDTH
@@ -91,9 +91,22 @@ Choose the value from one of [FLOPS, BANDWIDTH, VECTOR, CACHE, CYCLE, LOADSTORE,
 		gather/scatter instructions.
 	HWPC_CHOOSER=CYCLE
 		total cycles and instructions
-	HWPC_CHOOSER=USER (default)
+	HWPC_CHOOSER=USER
 		User provided argument values, aka Arithmetic Workload,
 		are accumulated and reported.
+
+#### POWER_CHOOSER
+
+Controlls the contents of the power consumption report.
+
+	POWER_CHOOSER=OFF (default)
+		do not report the power consumption stats.
+	POWER_CHOOSER=NODE
+		report the node stats as the group of combined CMGs, MEMORY, Tofu+AC.
+	POWER_CHOOSER=NUMA
+		report the stats grouped per numa node.
+	POWER_CHOOSER=PARTS
+		report the breakdown of all the parts.
 
 #### BYPASS_PMLIB
 
@@ -104,17 +117,4 @@ PMlib is always enabled unless this BYPASS_PMLIB is set.
 
 Set ON for producing the time history file in OTF format.
 default value NO.
-
-#### POWER_CHOOSER
-
-Controlls the contents of the power consumption report.
-
-	POWER_CHOOSER=OFF
-		do not report the power consumption stats.
-	POWER_CHOOSER=NODE (default)
-		report the node stats as the group of combined CMGs, MEMORY, Tofu+AC.
-	POWER_CHOOSER=NUMA
-		report the stats grouped per numa node.
-	POWER_CHOOSER=PARTS
-		report the breakdown of all the parts.
 

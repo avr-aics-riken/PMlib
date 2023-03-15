@@ -130,7 +130,7 @@ namespace pm_lib {
 // Parse the Environment Variable HWPC_CHOOSER
 	// If given, the value should be one of {FLOPS| BANDWIDTH| VECTOR| CACHE| CYCLE| LOADSTORE| USER}
 	std::string s_chooser;
-	std::string s_default = "USER";
+	std::string s_default = "FLOPS";
 
     cp_env = NULL;
 	cp_env = std::getenv("HWPC_CHOOSER");
@@ -1788,7 +1788,7 @@ void PerfMonitor::printBasicPower(FILE* fp, int maxLabelLen, int op_sort)
 
     m_watchArray[0].printEnvVars(fp);
 
-    fprintf(fp, "\tActive PMlib elapse time (from initialize to report/print) = %9.3e [sec]\n", tot);
+    fprintf(fp, "\tActive PMlib elapsed time (from initialize to report/print) = %9.3e [sec]\n", tot);
     fprintf(fp, "\tBasic process stats as the average of all the processes are reported below.\n");
     fprintf(fp, "\tSee Legend page if the section name is annotated with special symbols such as (*),(+).\n");
     fprintf(fp, "\n");
@@ -1832,12 +1832,15 @@ void PerfMonitor::printBasicPower(FILE* fp, int maxLabelLen, int op_sort)
     is_unit = m_watchArray[0].statsSwitch();
 	//	fprintf(fp, "%-*s| number of|  averaged process execution time [sec] ", maxLabelLen, "Section");
 	//	fprintf(fp, "%-*s| number of| total execution time and time per call ", maxLabelLen, "Section");
-	fprintf(fp, "%-*s| number of| measured time in total, %%, per call, SD", maxLabelLen, "Section");
+	//	fprintf(fp, "%-*s| number of| measured time in total, %%, per call, SD", maxLabelLen, "Section");
+	//	fprintf(fp, "%-*s| number of| total measured, weight, time per,  std. ", maxLabelLen, "Section");
+	fprintf(fp, "%-*s| number of| measured, weight,  per call,  standard ", maxLabelLen, "Section");
+
 
     if ( is_unit == 0 || is_unit == 1 ) {
       fprintf(fp, "| user defined numerical performance\n");
     } else if ( is_unit == 2 ) {
-      fprintf(fp, "| hardware counted data access events\n");
+      fprintf(fp, "| hardware counted data access \n");
     } else if ( is_unit == 3 ) {
       fprintf(fp, "| hardware counted floating point ops.\n");
     } else if ( is_unit == 4 ) {
@@ -1851,22 +1854,22 @@ void PerfMonitor::printBasicPower(FILE* fp, int maxLabelLen, int op_sort)
     }
 
 	//	fprintf(fp, "%-*s|   calls  |   total    [%%]   total/call     sdv    ", maxLabelLen, "Label");
-	fprintf(fp, "%-*s|   calls  |  time[sec]   [%%]  time/call  std.dev.  ", maxLabelLen, "Label");
+	fprintf(fp, "%-*s|   calls  |  time[sec]   [%%]   time[sec]  deviation", maxLabelLen, "Label");
 
     if ( is_unit == 0 || is_unit == 1 ) {
-      fprintf(fp, "|  operations   sdv    performance\n");
+      fprintf(fp, "| operations  std.dv  performance\n");
     } else if ( is_unit == 2 ) {
-      fprintf(fp, "|    Bytes      sdv   Mem+LLC bandwidth\n");
+      fprintf(fp, "|   Bytes    std.dv  Mem+LLC bandwidth\n");
     } else if ( is_unit == 3 ) {
-      fprintf(fp, "|  f.p.ops      sdv    performance\n");
+      fprintf(fp, "|  f.p.ops    std.dv  performance\n");
     } else if ( is_unit == 4 ) {
-      fprintf(fp, "|  f.p.ops      sdv    vectorized%%\n");
+      fprintf(fp, "|  f.p.ops    std.dv  vectorized%%\n");
     } else if ( is_unit == 5 ) {
-      fprintf(fp, "| load+store    sdv    L1+L2 hit%%\n");
+      fprintf(fp, "| load+store  std.dv  L1+L2 hit%%\n");
     } else if ( is_unit == 6 ) {
-      fprintf(fp, "| instructions  sdv    performance\n");
+      fprintf(fp, "| instructions std.dv performance\n");
     } else if ( is_unit == 7 ) {
-      fprintf(fp, "| load+store    sdv    vectorized%%\n");
+      fprintf(fp, "| load+store  std.dv  vectorized%%\n");
     } else {
       fprintf(fp, "| *** internal bug. <printBasicSections> ***\n");
 		;	// should not reach here
@@ -1926,7 +1929,7 @@ void PerfMonitor::printBasicPower(FILE* fp, int maxLabelLen, int op_sort)
               w.m_time_av,          // 測定区間の時間(全プロセスの平均値)
               100*w.m_time_av/tot,  // 比率：測定区間の時間/全区間（=Root区間）の時間
               tav,                 // コール1回あたりの時間
-              w.m_time_sd          // 標準偏差
+              w.m_time_sd          // 全プロセスでの標準偏差
 			);
 
 		// 0: user set bandwidth
@@ -2019,67 +2022,72 @@ void PerfMonitor::printBasicPower(FILE* fp, int maxLabelLen, int op_sort)
     //
     if ( (is_unit == 0) || (is_unit == 1) ) {
       if ( sum_time_comm > 0.0 ) {
-      fprintf(fp, "%-*s %1s %9.3e", maxLabelLen+10, "aggregate active sections", "", sum_time_comm);
-      //	fprintf(fp, "%-*s %1s %9.3e", maxLabelLen+10, "All sections combined", "", sum_time_comm);
+      fprintf(fp, "%-*s   %9.3e %6.2f ", maxLabelLen+10, "Sum of exclusive sections", sum_time_comm, 100*sum_time_comm/tot);
       double comm_serial = PerfWatch::unitFlop(sum_comm/sum_time_comm, unit, 0);
-      fprintf(fp, "%30s  %8.3e          %7.2f %s\n", "-Exclusive COMM sections-", sum_comm, comm_serial, unit.c_str());
+      fprintf(fp, "%22s  %8.3e          %7.2f %s\n", " ", sum_comm, comm_serial, unit.c_str());
       }
       if ( sum_time_flop > 0.0 ) {
-      fprintf(fp, "%-*s %1s %9.3e", maxLabelLen+10, "aggregate active sections", "", sum_time_flop);
-      //	fprintf(fp, "%-*s %1s %9.3e", maxLabelLen+10, "All sections combined", "", sum_time_flop);
+      fprintf(fp, "%-*s   %9.3e %6.2f ", maxLabelLen+10, "Sum of exclusive sections", sum_time_flop, 100*sum_time_flop/tot);
       double flop_serial = PerfWatch::unitFlop(sum_flop/sum_time_flop, unit, 1);
-      fprintf(fp, "%30s  %8.3e          %7.2f %s\n", "-Exclusive CALC sections-", sum_flop, flop_serial, unit.c_str());
+      fprintf(fp, "%22s  %8.3e          %7.2f %s\n", " ", sum_flop, flop_serial, unit.c_str());
       }
 	} else
-    // For HWPC stats, use the Root section elapsed time (tot) as the total time
+    // For the stats of each section, use the value of its own, except for calculating the time %.
+	// In time % calculation, use the Root section elapsed time (tot) as the total time
     if ( (is_unit == 2) || (is_unit == 3) || (is_unit == 6) ) {
-      fprintf(fp, "%-*s %1s %9.3e", maxLabelLen+10, "aggregate active sections", "", tot);
-      //	fprintf(fp, "%-*s %1s %9.3e", maxLabelLen+10, "All sections combined", "", tot);
-      double flop_serial = PerfWatch::unitFlop(sum_flop/tot, unit, is_unit);
-      fprintf(fp, "%30s  %8.3e          %7.2f %s\n", "-Exclusive HWPC sections-", sum_flop, flop_serial, unit.c_str());
+      //	fprintf(fp, "%-*s %1s %9.3e", maxLabelLen+10, "aggregate active sections", "", tot);
+      //	fprintf(fp, "%-*s  %9.3e", maxLabelLen+10, "aggregate exclusive sections", sum_time_flop);
+      fprintf(fp, "%-*s   %9.3e %6.2f ", maxLabelLen+10, "Sum of exclusive sections", sum_time_flop, 100*sum_time_flop/tot);
+      double flop_serial = PerfWatch::unitFlop(sum_flop/sum_time_flop, unit, is_unit);
+      fprintf(fp, "%22s  %8.3e          %7.2f %s\n", " ", sum_flop, flop_serial, unit.c_str());
 
 	} else
     if ( (is_unit == 4) || (is_unit == 5) || (is_unit == 7) ) {
-      fprintf(fp, "%-*s %1s %9.3e", maxLabelLen+10, "aggregate active sections", "", tot);
-      //	fprintf(fp, "%-*s %1s %9.3e", maxLabelLen+10, "All sections combined", "", tot);
+      fprintf(fp, "%-*s   %9.3e %6.2f ", maxLabelLen+10, "Sum of exclusive sections", sum_time_flop, 100*sum_time_flop/tot);
       double other_serial = PerfWatch::unitFlop(sum_other/sum_flop, unit, is_unit);
-      fprintf(fp, "%30s  %8.3e          %7.2f %s\n", "-Exclusive HWPC sections-", sum_flop, other_serial, unit.c_str());
+      fprintf(fp, "%22s  %8.3e          %7.2f %s\n", " ", sum_flop, other_serial, unit.c_str());
 	}
 
+
+    // sum of all processes, i.e. Job level, flop counts and/or byte counts
+    //
+    if ( (is_unit == 0) || (is_unit == 1) ) {
+      if ( sum_time_comm > 0.0 ) {
+
+      double sum_comm_job = (double)num_process*sum_comm;
+      double comm_job = PerfWatch::unitFlop(sum_comm_job/sum_time_comm, unit, 0);
+      fprintf(fp, "%-*s %16s", maxLabelLen+10, "[sum of all processes]", " " );
+      fprintf(fp, "%22s     %8.3e          %7.2f %s\n", "", sum_comm_job, comm_job, unit.c_str());
+      }
+      if ( sum_time_flop > 0.0 ) {
+      double sum_flop_job = (double)num_process*sum_flop;
+      double flop_job = PerfWatch::unitFlop(sum_flop_job/sum_time_flop, unit, 1);
+      fprintf(fp, "%-*s %16s", maxLabelLen+10, "[sum of all processes]", " " );
+      fprintf(fp, "%22s     %8.3e          %7.2f %s\n", "", sum_flop_job, flop_job, unit.c_str());
+      }
+	} else
+    if ( (is_unit == 2) || (is_unit == 3) || (is_unit == 6) ) {
+
+      double sum_flop_job = (double)num_process*sum_flop;
+      double flop_job = PerfWatch::unitFlop(sum_flop_job/sum_time_flop, unit, is_unit);
+      fprintf(fp, "%-*s %16s", maxLabelLen+10, "[sum of all processes]", " " );
+      fprintf(fp, "%22s     %8.3e          %7.2f %s\n", "", sum_flop_job, flop_job, unit.c_str());
+
+	} else
+    if ( (is_unit == 4) || (is_unit == 5) || (is_unit == 7) ) {
+      double sum_flop_job = (double)num_process*sum_flop;
+      double other_serial = PerfWatch::unitFlop(sum_other/sum_flop, unit, is_unit);
+      double other_job = other_serial;
+      fprintf(fp, "%-*s %16s", maxLabelLen+10, "[sum of all processes]", " " );
+      fprintf(fp, "%22s     %8.3e          %7.2f %s\n", "", sum_flop_job, other_job, unit.c_str());
+	}
 
 	for (int i = 0; i < maxLabelLen; i++) fputc('-', fp);
 	fprintf(fp,       "+----------+----------------------------------------+--------------------------------\n");
 
-    // Job total flop counts and/or byte counts
+    // Lastly, print the active PMlib elapsed time (from initialize to report/print) 
     //
-    if ( (is_unit == 0) || (is_unit == 1) ) {
-      if ( sum_time_comm > 0.0 ) {
-      fprintf(fp, "%-*s %1s %9.3e", maxLabelLen+10, "Total of all processes", "", sum_time_comm);
-      double sum_comm_job = (double)num_process*sum_comm;
-      double comm_job = PerfWatch::unitFlop(sum_comm_job/sum_time_comm, unit, 0);
-      fprintf(fp, "%30s  %8.3e          %7.2f %s\n", "-Exclusive COMM sections-", sum_comm_job, comm_job, unit.c_str());
-      }
-      if ( sum_time_flop > 0.0 ) {
-      fprintf(fp, "%-*s %1s %9.3e", maxLabelLen+10, "Total of all processes", "", sum_time_flop);
-      double sum_flop_job = (double)num_process*sum_flop;
-      double flop_job = PerfWatch::unitFlop(sum_flop_job/sum_time_flop, unit, 1);
-      fprintf(fp, "%30s  %8.3e          %7.2f %s\n", "-Exclusive CALC sections-", sum_flop_job, flop_job, unit.c_str());
-      }
-	} else
-    // For HWPC stats, use the Root section elapsed time (tot) as the total time
-    if ( (is_unit == 2) || (is_unit == 3) || (is_unit == 6) ) {
-      fprintf(fp, "%-*s %1s %9.3e", maxLabelLen+10, "Total of all processes", "", tot);
-      double sum_flop_job = (double)num_process*sum_flop;
-      double flop_job = PerfWatch::unitFlop(sum_flop_job/tot, unit, is_unit);
-      fprintf(fp, "%30s  %8.3e          %7.2f %s\n", "-Exclusive HWPC sections-", sum_flop_job, flop_job, unit.c_str());
-	} else
-    if ( (is_unit == 4) || (is_unit == 5) || (is_unit == 7) ) {
-      fprintf(fp, "%-*s %1s %9.3e", maxLabelLen+10, "Total of all processes", "", tot);
-      double sum_flop_job = (double)num_process*sum_flop;
-      double other_serial = PerfWatch::unitFlop(sum_other/sum_flop, unit, is_unit);
-      double other_job = other_serial;
-      fprintf(fp, "%30s  %8.3e          %7.2f %s\n", "-Exclusive HWPC sections-", sum_flop_job, other_job, unit.c_str());
-	}
+    fprintf(fp, "%-*s   %9.3e %6.2f \n", maxLabelLen+10, "[active PMlib elapsed time]", tot, 100.0);
 
   }
 

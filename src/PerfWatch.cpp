@@ -493,8 +493,8 @@ namespace pm_lib {
 
 
   ///  Merging the thread parallel data into the master thread in three steps.
-  ///  These three step routines are called by <PerfMonitor::gather>
-  ///  which is called by <PerfMonitor::report/print> in a serial region.
+  ///  These three step routines are called by <PerfMonitor::mergeThreads>
+  ///  which is called by <PerfMonitor::report> in a serial region.
   ///  After these steps, the master thread will retain the aggregated values
   ///  in its "my_papi" struct.
   ///  Shared struct "papi" is used as a scratch space during these steps.
@@ -630,8 +630,8 @@ namespace pm_lib {
 
 
   ///  Merging the thread parallel data into the master thread in three steps.
-  ///  These three step routines are called by <PerfMonitor::gather>
-  ///  which is called by <PerfMonitor::report/print> in a serial region.
+  ///  These three routines are called by <PerfMonitor::gather> which is
+  ///  called by <PerfMonitor::report> in a serial region.
   ///  After these steps, the master thread will retain the aggregated values
   ///  in its "my_papi" struct.
   ///  Shared struct "papi" is used as a scratch space during these steps.
@@ -660,29 +660,103 @@ namespace pm_lib {
 			}
 		}
 
-		// Normal HWPC events are isolated inside the compute core,
-		// and their values should be accumulated.
+		//
+		// Normal HWPC events are isolated inside the compute core, and their values should be accumulated.
+		// The below formula is valid for the most cases. Just accmulate the values.
+		//
+		for (int i=0; i<my_papi.num_events; i++) {
+			my_papi.accumu[i] = 0.0;
+			for (int j=0; j<num_threads; j++) {
+				my_papi.accumu[i] += my_papi.th_accumu[j][i];
+			}
+		}
+
 		// Some events such as memory controller are outside compute cores, and their values are shared,
 		// i.e. their values should not be accumulated.
 
-		bool isolated_events;
-		isolated_events = true;
-		if ( ( is_unit == 2) && ( hwpc_group.i_platform == 21 ) ) { // special case for A64FX BANDWIDTH events
-		isolated_events = false;
-		}
+		// Detect A64FX BANDWIDTH event whose counter values are counter per CMG, not separated per core
+		if ( ( is_unit == 2) && ( hwpc_group.i_platform == 21 ) ) {
 
-		for (int i=0; i<my_papi.num_events; i++) {
-			my_papi.accumu[i] = 0.0;
-			if (isolated_events) { // accmulate the values
-				for (int j=0; j<num_threads; j++) {
-				my_papi.accumu[i] += my_papi.th_accumu[j][i];
-				}
-			} else { // choose the maximum value
-				for (int j=0; j<num_threads; j++) {
-				my_papi.accumu[i] = std::max (my_papi.accumu[i], my_papi.th_accumu[j][i]);
+			int np_node;			//	the number of processes on this node
+			int my_rank_on_node;	// 	the local rank number of this process on this node
+
+			char* cp_env;
+			cp_env = std::getenv("PJM_PROC_BY_NODE");
+			if (cp_env == NULL) {
+				fprintf (stderr, "\n\t *** PMlib warning. BANDWIDTH option for A64FX is only supported on Fugaku.\n");
+				fprintf (stderr, "\t\t The environment variable PJM_PROC_BY_NODE is not set. \n");
+				fprintf (stderr, "\t\t The report will assume np_node(the number of processes per node) = 1. \n");
+				np_node = 1;
+			} else {
+				np_node = atoi(cp_env);
+				if (np_node < 1 || np_node > 48) {
+				fprintf (stderr, "\n\t *** PMlib warning. BANDWIDTH option for A64FX is only supported on Fugaku.\n");
+					fprintf (stderr, "\t\t The number of processes per node should be 1 <= np_node <= 48,\n");
+					fprintf (stderr, "\t\t but the value is set as %d. \n", np_node);
+					fprintf (stderr, "\t\t The report will assume np_node=1. \n");
+					np_node = 1;
+				} else {
+					// np_node looks OK
 				}
 			}
+			cp_env = std::getenv("PLE_RANK_ON_NODE");
+			if (cp_env == NULL) {
+				// unable to obtain the rank number of this process
+				fprintf (stderr, "\n\t *** PMlib warning. The environment variable PLE_RANK_ON_NODE is not set. \n");
+				fprintf (stderr, "\t\t The report will assume there is only 1 process on this node. \n");
+				my_rank_on_node = 0;
+			} else {
+				my_rank_on_node = atoi(cp_env);
+				if (my_rank_on_node < 0 || my_rank_on_node > 47) {
+					fprintf (stderr, "\n\t *** PMlib warning. The value of PLE_RANK_ON_NODE should be 0 <= p <= 47.\n");
+					fprintf (stderr, "\t\t but the value is set as %d. \n", my_rank_on_node);
+					fprintf (stderr, "\t\t The report will assume my_rank_on_node=0. \n");
+					my_rank_on_node = 0;
+				} else {
+					//  my_rank_on_node looks OK
+				}
+			}
+			// by now, two important values are set as 1 <= np_node <= 48 and 0 <= my_rank_on_node <= 47
+			// The normal packed thread affinity is assumed. scattered affinity is not currently supported.
+			double share_ratio = 0.0;
+			if (np_node <= 4) {
+				int ncmg_proc = (num_threads-1)/12+1;		//	the number of occupied CMGs by this process
+				for (int i=0; i<my_papi.num_events; i++) {
+					my_papi.accumu[i] = 0.0;
+					for (int k=0; k<ncmg_proc; k++) {
+						my_papi.accumu[i] += my_papi.th_accumu[12*k][i];
+					}
+				}
+				if (np_node == 3 && num_threads > 12) {
+					share_ratio = 1.0/3.0;
+					for (int i=0; i<my_papi.num_events; i++) {
+						my_papi.accumu[i] += my_papi.th_accumu[num_threads-1][i] * share_ratio;
+					}
+				}
+				#ifdef DEBUG_PRINT_PAPI_THREADS
+    			fprintf(stderr, "<updateMergedThread> A64FX BANDWIDTH case: [%s] np_node=%d, my_rank_on_node=%d \n", m_label.c_str(), np_node, my_rank_on_node);
+				#endif
+
+			} else if (np_node >= 5) {
+				int np_share = (np_node-1)/4+1;		// max. # of processes sharing CMG
+				if ((my_rank_on_node % 4) <= ((np_node-1) % 4)) {
+					share_ratio = 1.0/np_share;			// crowded CMG share
+				} else {
+					share_ratio = 1.0/(np_share-1.0);	// less crowded CMG share
+				}
+
+				for (int i=0; i<my_papi.num_events; i++) {
+					my_papi.accumu[i] = my_papi.th_accumu[0][i] * share_ratio;
+				}
+				#ifdef DEBUG_PRINT_PAPI_THREADS
+    			fprintf(stderr, "<updateMergedThread> A64FX BANDWIDTH case: [%s] np_node=%d, my_rank_on_node=%d \n", m_label.c_str(), np_node, my_rank_on_node);
+    			fprintf(stderr, "\t\t np_share=%d, share_ratio=%f \n", np_share, share_ratio);
+				#endif
+			}
 		}
+
+
+
 	} else {	// PMlib user counter mode
 		for (int j=0; j<num_threads; j++) {
 			for (int i=0; i<3; i++) {
