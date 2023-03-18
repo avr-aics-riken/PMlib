@@ -1834,7 +1834,8 @@ void PerfMonitor::printBasicPower(FILE* fp, int maxLabelLen, int op_sort)
 	//	fprintf(fp, "%-*s| number of| total execution time and time per call ", maxLabelLen, "Section");
 	//	fprintf(fp, "%-*s| number of| measured time in total, %%, per call, SD", maxLabelLen, "Section");
 	//	fprintf(fp, "%-*s| number of| total measured, weight, time per,  std. ", maxLabelLen, "Section");
-	fprintf(fp, "%-*s| number of| measured, weight,  per call,  standard ", maxLabelLen, "Section");
+	//	fprintf(fp, "%-*s| number of| measured, weight,  per call,  standard ", maxLabelLen, "Section");
+	fprintf(fp, "%-*s| number of| measured | weight| time per| std.dv of ", maxLabelLen, "Section");
 
 
     if ( is_unit == 0 || is_unit == 1 ) {
@@ -1844,7 +1845,7 @@ void PerfMonitor::printBasicPower(FILE* fp, int maxLabelLen, int op_sort)
     } else if ( is_unit == 3 ) {
       fprintf(fp, "| hardware counted floating point ops.\n");
     } else if ( is_unit == 4 ) {
-      fprintf(fp, "| hardware vectorized floating point ops.\n");
+      fprintf(fp, "| hardware counted floating point ops.\n");
     } else if ( is_unit == 5 ) {
       fprintf(fp, "| hardware counted cache utilization\n");
     } else if ( is_unit == 6 ) {
@@ -1854,7 +1855,8 @@ void PerfMonitor::printBasicPower(FILE* fp, int maxLabelLen, int op_sort)
     }
 
 	//	fprintf(fp, "%-*s|   calls  |   total    [%%]   total/call     sdv    ", maxLabelLen, "Label");
-	fprintf(fp, "%-*s|   calls  |  time[sec]   [%%]   time[sec]  deviation", maxLabelLen, "Label");
+	//	fprintf(fp, "%-*s|   calls  |  time[sec]   [%%]   time[sec]  deviation", maxLabelLen, "Label");
+	fprintf(fp, "%-*s|   calls  | time[sec]   [%%]   call[sec]    time    ", maxLabelLen, "Label");
 
     if ( is_unit == 0 || is_unit == 1 ) {
       fprintf(fp, "| operations  std.dv  performance\n");

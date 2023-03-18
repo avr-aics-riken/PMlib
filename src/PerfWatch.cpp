@@ -1792,7 +1792,13 @@ namespace pm_lib {
 		dx = dx / num_process;
 		fprintf (fp, "  %9.3e", dx);
     }
-	fprintf (fp, "\n");
+	if (!m_exclusive) {
+		fprintf (fp, " (*)\n");
+	} else if (m_in_parallel) {
+		fprintf (fp, " (+)\n");
+	} else {
+		fprintf (fp, "\n");
+	}
 
 #endif
   }

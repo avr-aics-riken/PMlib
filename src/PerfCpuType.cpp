@@ -1106,10 +1106,10 @@ void PerfWatch::sortPapiCounterList (void)
 				fp_vector = 4.0*fp_sp4 + 8.0*fp_sp8 + 16.0*fp_sp16 + 2.0*fp_dp2 + 4.0*fp_dp4 + 8.0*fp_dp8;
 				fp_total  = fp_sp1 + fp_dp1 + fp_vector;
 			}
-			if (m_exclusive) {
-				if ( fp_total > 0.0 ) {
+			// calculate vector_percent for both of exclusive and inclusive sections
+			//	if (m_exclusive) { }
+			if ( fp_total > 0.0 ) {
 				vector_percent = fp_vector/fp_total;
-				}
 			}
 
 		} else
@@ -1135,10 +1135,10 @@ void PerfWatch::sortPapiCounterList (void)
 				fp_vector = (                      4.0*fp_dp4 + 8.0*fp_dp8 + 16.0*fp_dp16);
 				fp_total  = (fp_dp1 + 2.0*fp_dp2 + 4.0*fp_dp4 + 8.0*fp_dp8 + 16.0*fp_dp16);
 			}
-			if (m_exclusive) {
-				if ( fp_total > 0.0 ) {
+			// calculate vector_percent for both of exclusive and inclusive sections
+			//	if (m_exclusive) { }
+			if ( fp_total > 0.0 ) {
 				vector_percent = fp_vector/fp_total;
-				}
 			}
 
 		} else
@@ -1202,10 +1202,10 @@ void PerfWatch::sortPapiCounterList (void)
 				my_papi.v_sorted[ip+2] = fp_spv;
 
 			}
-			if (m_exclusive) {
-				if ( fp_total > 0.0 ) {
+			// calculate vector_percent for both of exclusive and inclusive sections
+			//	if (m_exclusive) { }
+			if ( fp_total > 0.0 ) {
 				vector_percent = fp_vector/fp_total;
-				}
 			}
 		}
 
