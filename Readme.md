@@ -1,18 +1,20 @@
 # PMlib - Performance Monitor library
 
 * Copyright (c) 2010-2011 VCAD System Research Program, RIKEN. All rights reserved.
-* Copyright (c) 2012-2020 RIKEN Center for Computational Science (R-CCS). All rights reserved.
-* Copyright (c) 2016-2020 Research Institute for Information Technology (RIIT), Kyushu University. All rights reserved.
+* Copyright (c) 2012-2023 RIKEN Center for Computational Science (R-CCS). All rights reserved.
+* Copyright (c) 2016-2023 Research Institute for Information Technology (RIIT), Kyushu University. All rights reserved.
 
 ## OUTLINE
 
 This library records the statistics information of run-time performance and the trace information of a user code and reports its summary. The PMlib is able to use for both serial and parallel environments including hybrid(OpenMP & MPI) code. In addition, PAPI interface allows us to access the information of build-in hardware counter.
 
 ## SOFTWARE REQUIREMENT
+- Compilers for Fortran/C/C++
 - Cmake
-- MPI library  (option)
-- PAPI library (option)
-- OTF library (option)
+- MPI library  (optional)
+- PAPI library (optional)
+- Power API library (optional)
+- OTF library (optional)
 
 Although MPI and PAPI libraries are optional, they are frequently used in the application, and are recommended to be included.
 
@@ -49,7 +51,8 @@ Typical installation will be composed of three steps.
 
 ### max_nthreads
 
-`~/include/pmlib_papi.h`の`const int Max_nthreads=36`をシステムに応じて変更
+Maximum number of the measuable threads per process can be configured. The default is 48.
+Change the value of `const int Max_nthreads` in `~/include/pmlib_papi.h`.
 
 
 ### Build
@@ -309,10 +312,21 @@ Note that the amount of the report is decided by the number of processes, the nu
 `HWPC_CHOOSER=(FLOPS|BANDWIDTH|VECTOR|LOADSTORE|CACHE|CYCLE)`
 
 If this environment variable is set, PMlib automatically detects the PAPI based hardware counters. If this environment variable is not set, the HWPC counters are not reported.
+To enable this feature, PMlib must be built with PAPI option enabled.
+
+`POWER_CHOOSER=(NODE|NUMA|PARTS|OFF)`
+
+If this environment variable is set, PMlib detects the POWER API supported devices and collect the data from them.
+The power consumption information is recorded in rather coarse manner, and the overhead to collect the data
+from those devices tends to be heavy. It is recommended to set this value as OFF (default) 
+for the measurement that requires precise time resolution.
+To enable this feature, PMlib must be built with Power API option enabled.
 
 `OTF_TRACING=(off|on|full)`
 
-If this environment variable is set, PMlib automatically generates the Open Trace Format files for post processing. There will be three type of OTF files.
+If this environment variable is set, PMlib automatically generates the Open Trace Format files for post processing.
+To enable this feature, PMlib must be built with OTF tracing option enabled.
+There will be three type of OTF files.
 
 ~~~
   ${OTF_FILENAME}.otf
@@ -338,7 +352,13 @@ execute the intrinsic tests by;
 Meanwhile, the summary is displayed for stdout.
 
 
-## PAPI install (intel compiler)
+## Remark on PAPI interface
+
+Note that the default PAPI library provided with distro Operating System may not be best built for the
+specific CPU type. In such case, users may choose to build PAPI library using the latest distribution
+for their environment. The latest package and the build instructions are available from PAPI home page.
+
+Typically, the Linux PAPI installation on Intel Xeon processors can be as simple as the example below.
 
 ~~~
 $ ./configure --prefix=${PREFIX} CC=icc F77=ifort

@@ -532,44 +532,6 @@ void f_pm_printcomm_ (char* fc, MPI_Comm new_comm, int& icolor, int& key, int& l
 }
 
 
-/// PMlib Fortran インタフェイス
-/// 測定途中経過の状況レポートを出力（排他測定区間を対象とする）
-///
-///   @param[in] fc	出力ファイル名(character文字列)
-///   @param[in] comments	任意のコメント(character文字列)
-///   @param[in] fp_sort 測定区間の表示順 (0:経過時間順に表示、1:登録順で表示)
-///   @param[in] fc_size  fc文字列の長さ（文字数）
-///   @param[in] comments_size  comments文字列の長さ（文字数）
-///
-///   @note fc_sizeはFortranコンパイラが自動的に追加してしまう引数。
-///			ユーザがFortranプログラムから呼び出す場合に指定する必要はない。
-///
-void f_pm_printprogress_ (char* fc, char* comments, int& fp_sort, int fc_size, int comments_size)
-{
-	FILE *fp;
-	std::string s=std::string(fc,fc_size);
-	#ifdef DEBUG_PRINT_MONITOR
-	//	fprintf(stderr, "<f_pm_printprogress_> fc=%s, comments=%s, fp_sort=%d, fc_size=%d, comments_size=%d \n",
-	//		s.c_str(), comments, fp_sort, fc_size, comments_size);
-	#endif
-
-	if (s == "" || fc_size == 0) {
-		fp=stdout;
-	} else {
-		fp=fopen(fc,"w+");
-		if (fp == NULL) {
-			//	fprintf(stderr, "*** warning <f_pm_printcomm_> can not open: %s\n", fc);
-			fp=stdout;
-		}
-	}
-	if (fp_sort != 0 && fp_sort != 1) fp_sort = 0;
-
-	std::string s2=std::string(comments,comments_size);
-	PM.printProgress (fp, s2, fp_sort);
-
-	return;
-}
-
 
 /// PMlib Fortran インタフェイス
 /// ポスト処理用traceファイルの出力

@@ -516,43 +516,6 @@ void C_pm_printcomm (char* fc, MPI_Comm new_comm, int icolor, int key, int legen
 
 
 /// PMlib C interface
-/// 測定途中経過の状況レポートを出力（排他測定区間を対象とする）
-///
-///   @param[in] fc	出力ファイル名(character文字列)
-///   @param[in] comments	任意のコメント(character文字列)
-///   @param[in] fp_sort 測定区間の表示順 (0:経過時間順に表示、1:登録順で表示)
-///
-///
-void C_pm_printprogress (char* fc, char* comments, int fp_sort)
-{
-	FILE *fp;
-	std::string s;
-	s=fc;
-#ifdef DEBUG_PRINT_MONITOR
-	//	fprintf(stderr, "<C_pm_printprogress> fc=%s, comments=%s, fp_sort=%d \n",
-	//		s.c_str(), comments, fp_sort);
-#endif
-
-	if (s == "" ) {
-		fp=stdout;
-	} else {
-		fp=fopen(fc,"w+");
-		if (fp == NULL) {
-			//	fprintf(stderr, "*** warning <C_pm_printcomm> can not open: %s\n", fc);
-			fp=stdout;
-		}
-	}
-	if (fp_sort != 0 && fp_sort != 1) fp_sort = 0;
-
-	std::string s2;
-	s2=comments;
-	PM.printProgress (fp, s2, fp_sort);
-
-	return;
-}
-
-
-/// PMlib C interface
 /// output OTF1 trace file for post processing
 ///
 void C_pm_posttrace (void)

@@ -2,6 +2,19 @@
 
 ## REVISION HISTORY
 
+
+---
+- 2023-03-20 Version 9.0.1
+  - correction to gather the BANDWIDTH hardware counter values, supporting more than 1 process
+    on A64FX CMG.
+  - report both of exclusive sections and inclusive sections in BASIC report
+
+---
+- 2023-01-10 Version 9.0.0
+  - reflect a change in /proc/cpuinfo file format on Fugaku
+  - fix a bug in power api for root section
+  - add my_papi_internal_free() to collect garbage leaks
+
 ---
 - 2021-08-23 Version 8.3.0
   - enhanced report routine to handle stats for both of outside and inside of parallel regions

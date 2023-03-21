@@ -197,6 +197,35 @@ void PerfWatch::initializeHWPC ()
 }
 
 
+  /// cleanup and free HWPC memory space for papi HighLevelInfo struct
+  /// @note  this routine is called by PerfMonitor::stopRoot()
+  ///
+void PerfWatch::cleanupHWPC ()
+{
+
+#ifdef _OPENMP
+#ifdef USE_PAPI
+	bool root_in_parallel;
+
+	#pragma omp barrier
+	root_in_parallel = omp_in_parallel();
+
+	if (root_in_parallel) {
+		my_papi_internal_free();
+
+	} else {
+	#pragma omp parallel
+		{
+		my_papi_internal_free();
+		} // end of #pragma omp parallel
+
+	} // end of if (root_in_parallel)
+
+#endif // USE_PAPI
+#endif
+}
+
+
 
   /// Construct the available list of PAPI counters for the targer processor
   /// @note  this routine needs the processor hardware information
@@ -319,7 +348,6 @@ void PerfWatch::createPapiCounterList ()
 		}
 	}
 
-
 	// SPARC based processors
     else if (s_model_string.find( "SPARC64" ) != string::npos ) {
 		hwpc_group.platform = "SPARC64" ;
@@ -340,30 +368,37 @@ void PerfWatch::createPapiCounterList ()
 		}
 	}
 
-	// ARM based processors
-    else if (s_model_string.empty() && s_vendor_string.find( "ARM" ) != string::npos ) {
-		// on ARM, PAPI_get_hardware_info() does not provide so useful information.
-		// so we check /proc/cpuinfo for further information
-		//
+	// Fugaku A64FX processors
+    else if (s_model_string.find( "A64FX" ) != string::npos ) {
+			hwpc_group.i_platform = 21;
+			hwpc_group.platform = "A64FX" ;
+			hwpc_group.coreGHz = 2.0;
+			hwpc_group.corePERF = hwpc_group.coreGHz * 1.0e9 * 32;
+	}
+
+	// other ARM based processors
+    else if (s_vendor_string.find( "ARM" ) != string::npos ) {
+		// on ARM, PAPI_get_hardware_info() does not provide useful information.
+		// So we check /proc/cpuinfo instead
+		//	else if (s_model_string.empty() ) {
+
 		identifyARMplatform ();
 
     	if ( hwpc_group.i_platform == 21 ) {
-			hwpc_group.platform = "A64FX" ;
-			s_model_string = hwpc_group.platform ;
-			hwpc_group.coreGHz = 2.0;
-			hwpc_group.corePERF = hwpc_group.coreGHz * 1.0e9 * 32;
+			// should have matched s_model_string.find( "A64FX" )
+			;
 		} else {
-			//	hwpc_group.i_platform = 99;
+			hwpc_group.i_platform = 98;
 			hwpc_group.platform = "unsupported_hardware";
 			s_model_string = hwpc_group.platform ;
 		}
-
 	}
 
 	// other processors are not supported by PMlib
     else {
 			hwpc_group.i_platform = 99;
 			hwpc_group.platform = "unsupported_hardware";
+			s_model_string = hwpc_group.platform ;
 	}
 
 
@@ -1071,10 +1106,10 @@ void PerfWatch::sortPapiCounterList (void)
 				fp_vector = 4.0*fp_sp4 + 8.0*fp_sp8 + 16.0*fp_sp16 + 2.0*fp_dp2 + 4.0*fp_dp4 + 8.0*fp_dp8;
 				fp_total  = fp_sp1 + fp_dp1 + fp_vector;
 			}
-			if (m_exclusive) {
-				if ( fp_total > 0.0 ) {
+			// calculate vector_percent for both of exclusive and inclusive sections
+			//	if (m_exclusive) { }
+			if ( fp_total > 0.0 ) {
 				vector_percent = fp_vector/fp_total;
-				}
 			}
 
 		} else
@@ -1100,10 +1135,10 @@ void PerfWatch::sortPapiCounterList (void)
 				fp_vector = (                      4.0*fp_dp4 + 8.0*fp_dp8 + 16.0*fp_dp16);
 				fp_total  = (fp_dp1 + 2.0*fp_dp2 + 4.0*fp_dp4 + 8.0*fp_dp8 + 16.0*fp_dp16);
 			}
-			if (m_exclusive) {
-				if ( fp_total > 0.0 ) {
+			// calculate vector_percent for both of exclusive and inclusive sections
+			//	if (m_exclusive) { }
+			if ( fp_total > 0.0 ) {
 				vector_percent = fp_vector/fp_total;
-				}
 			}
 
 		} else
@@ -1167,10 +1202,10 @@ void PerfWatch::sortPapiCounterList (void)
 				my_papi.v_sorted[ip+2] = fp_spv;
 
 			}
-			if (m_exclusive) {
-				if ( fp_total > 0.0 ) {
+			// calculate vector_percent for both of exclusive and inclusive sections
+			//	if (m_exclusive) { }
+			if ( fp_total > 0.0 ) {
 				vector_percent = fp_vector/fp_total;
-				}
 			}
 		}
 
@@ -1445,7 +1480,7 @@ void PerfWatch::outputPapiCounterHeader (FILE* fp, std::string s_label)
 {
 #ifdef USE_PAPI
 
-	fprintf(fp, "Section Label : %s%s\n", s_label.c_str(), m_exclusive ? "" : "(*)" );
+	fprintf(fp, "Section : %s%s%s\n", s_label.c_str(), m_exclusive? "":" (*)" , m_in_parallel? " (+)":"" );
 
 	std::string s;
 	int ip, jp, kp;
@@ -1526,7 +1561,6 @@ void PerfWatch::outputPapiCounterGroup (FILE* fp, MPI_Group p_group, int* pp_ran
   ///
 void PerfWatch::outputPapiCounterLegend (FILE* fp)
 {
-#ifdef USE_PAPI
 
 // TODO: We should simplify these too many fprintf() calls into one fprintf() call. sometime...
 
@@ -1535,7 +1569,39 @@ void PerfWatch::outputPapiCounterLegend (FILE* fp)
 	std::string s_vendor_string;
 	using namespace std;
 
-	fprintf(fp, "\n\t Symbols in hardware performance counter (HWPC) report:\n\n" );
+	fprintf(fp, "\n    PMlib report controll environment variable:\n" );
+	fprintf(fp, "\n");
+	fprintf(fp, "\t PMLIB_REPORT=BASIC:\n");
+	fprintf(fp, "\t\t Produce the basic report which contains the averaged timer information, and if available\n");
+	fprintf(fp, "\t\t the measured HWPC event counts and the performance for each of the sections,\n");
+	fprintf(fp, "\t\t and if available the estimated power consumption required to execute the section.\n");
+	fprintf(fp, "\t\t The power consumption is estimated only for the sections run by rank 0 thread0 per node basis.\n");
+	fprintf(fp, "\t PMLIB_REPORT=DETAIL:\n");
+	fprintf(fp, "\t\t In addition to basic report, produce the process report and the HWPC report.\n");
+	fprintf(fp, "\t\t The process report contains the section timer information for all the processes.\n");
+	fprintf(fp, "\t\t the HWPC report contains the HWPC event counts and the performance for for all the processes.\n");
+	fprintf(fp, "\t PMLIB_REPORT=FULL:\n");
+	fprintf(fp, "\t\t In addition to detail report, produce the thread report which contains the HWPC event counts\n");
+	fprintf(fp, "\t\t and the performance for each of the OpenMP threads for all the processes.\n");
+	fprintf(fp, "\t\t The maximum number of threads is limited to the physical number of compute cores per CPU.\n");
+	fprintf(fp, "\n");
+	fprintf(fp, "\t The Section table shows the averaged value from all the processes.\n");
+	fprintf(fp, "\t The total time in the aggregate active sections row is taken from active PMlib elapse time.\n");
+	fprintf(fp, "\t Following annotation symbols are attached to the section lable if judged as so by PMlib.\n");
+	fprintf(fp, "\t (*) : The section is inclusive, i.e. the stats includes other sections inside of it.\n");
+	fprintf(fp, "\t       The section without (*) simbol is exclusive, which does not include other section.\n");
+	fprintf(fp, "\t (+) : The section is executed inside of OpenMP parallel region, which can overlap with\n");
+	fprintf(fp, "\t       other sections including itself.\n");
+	fprintf(fp, "\t       For this type of parallel construct, the execution time must be interpreted carefully\n");
+	fprintf(fp, "\t       based on the inclusive section stats for that parallel region, and on the thread report.\n");
+	fprintf(fp, "\t       The section without (+) is defined in serial region. It can start parallel region inside.\n");
+	fprintf(fp, "\t The sections without any annotation symbols, i.e. exclusive and in serial region,\n");
+	fprintf(fp, "\t are suited to simply nested loop kernels often seen in HPC applications.\n");
+	fprintf(fp, "\n");
+
+
+#ifdef USE_PAPI
+	fprintf(fp, "\n    Symbols in PMlib hardware performance counter (HWPC) report:\n" );
 	hwinfo = PAPI_get_hardware_info();
 	if (hwinfo == NULL) {
 		//	fprintf (fp, "\n\t<PAPI_get_hardware_info> failed. \n" );
@@ -1545,18 +1611,13 @@ void PerfWatch::outputPapiCounterLegend (FILE* fp)
 		return;
 	}
 
-    if (s_model_string.empty() && s_vendor_string.find( "ARM" ) != string::npos ) {
-		identifyARMplatform ();
-	}
-    if ( hwpc_group.i_platform == 21 ) {
-		s_model_string = "Fugaku A64FX" ;
-	} else {
-		s_model_string = hwinfo->model_string;
-	}
-	fprintf(fp, "\t Detected CPU architecture: %s \n", s_model_string.c_str());
+	s_model_string = hwinfo->model_string;
 
+	fprintf(fp, "\t Detected CPU architecture: %s \n", s_model_string.c_str());
 	fprintf(fp, "\t The available HWPC_CHOOSER values and their HWPC events for this CPU are shown below.\n");
 	fprintf(fp, "\n");
+
+    //	if (m_watchArray[0].my_papi.num_events == 0) return;
 
 // FLOPS
 	fprintf(fp, "\t HWPC_CHOOSER=FLOPS:\n");
@@ -1797,6 +1858,7 @@ void PerfWatch::outputPapiCounterLegend (FILE* fp)
 	}
 
 #endif // USE_PAPI
+	fflush(fp);
 }
 
 

@@ -69,7 +69,7 @@ int my_papi_add_events ( int *events, int num_events)
 	#endif
 
 	if ( ( retval = my_internal_check_state( &state ) ) != PAPI_OK ) {
-		fprintf(stderr,"*** error. <my_papi_add_events> :: <_state>\n");
+		fprintf(stderr,"*** error. <my_papi_add_events> :: <_check_state>\n");
 		return retval;
 	}
 
@@ -101,7 +101,7 @@ int my_papi_bind_start ( long long *values, int num_events)
 	#endif
 
 	if ( ( retval = my_internal_check_state( &state ) ) != PAPI_OK ) {
-		fprintf(stderr,"*** error. <my_papi_bind_start> :: <_state>\n");
+		fprintf(stderr,"*** error. <my_papi_bind_start> :: <_check_state>\n");
 		return retval;
 	}
 	if ( ( retval = PAPI_start( state->EventSet ) ) != PAPI_OK ) {
@@ -134,7 +134,7 @@ int my_papi_bind_stop ( long long *values, int num_events)
 	#endif
 
 	if ( ( retval = my_internal_check_state( &state ) ) != PAPI_OK ) {
-		fprintf(stderr,"*** error. <my_papi_bind_stop> :: <_state>\n");
+		fprintf(stderr,"*** error. <my_papi_bind_stop> :: <_check_state>\n");
 		return retval;
 	}
 	if ( ( retval = PAPI_stop( state->EventSet, values ) ) != PAPI_OK ) {
@@ -164,7 +164,7 @@ int my_papi_bind_read ( long long *values, int num_events)
 	#endif
 
 	if ( ( retval = my_internal_check_state( &state ) ) != PAPI_OK ) {
-		fprintf(stderr,"*** error. <my_papi_bind_read> :: <_state> \n");
+		fprintf(stderr,"*** error. <my_papi_bind_read> :: <_check_state> \n");
 		return retval;
 	}
 	if ( ( retval = PAPI_read( state->EventSet, values ) ) != PAPI_OK ) {
@@ -208,8 +208,12 @@ int my_internal_check_state( HighLevelInfo ** hlstate )
 
 	p_get = PAPI_get_thr_specific(PAPI_HIGH_LEVEL_TLS, (void **) &state );
 	if ( p_get != PAPI_OK || state == NULL ) {
+
 		state = (HighLevelInfo *) malloc(sizeof(HighLevelInfo));
 		if ( state == NULL ) return ( PAPI_ENOMEM );
+		#ifdef DEBUG_PRINT_PAPI_EXT
+		fprintf(stderr,"\t <my_internal_check_state> called malloc. size=%d, address=%p \n", sizeof(HighLevelInfo), state);
+		#endif
 
 		memset(state, 0, sizeof(HighLevelInfo));
 		state->EventSet = PAPI_NULL;
@@ -232,3 +236,24 @@ void my_internal_cleanup_hl_info( HighLevelInfo * state )
 	return;
 }
 
+
+void my_papi_internal_free()
+{
+	HighLevelInfo *state = NULL;
+	int retval;
+
+	if ( ( retval = my_internal_check_state( &state ) ) != PAPI_OK ) {
+		fprintf(stderr,"\n *** PMlib warning. <my_papi_internal_free> will not cleanup HighLevelInfo *state. \n");
+		return;
+	}
+
+	#ifdef DEBUG_PRINT_PAPI_EXT
+	fprintf(stderr,"\t <my_papi_internal_free> size=%d, address=%p \n", sizeof(HighLevelInfo), state);
+	#endif
+
+	my_internal_cleanup_hl_info( state );
+	PAPI_cleanup_eventset( state->EventSet );
+	free( state );
+
+	return;
+}

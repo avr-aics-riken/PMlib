@@ -46,6 +46,12 @@ end subroutine
 !!   各ラベル毎に対応した区間番号を内部で自動生成する
 !!   @ 最初に確保した区間数init_nWatchが不足したら動的に追加する
 !!
+!!   @note 多くのアプリケーションにおいてsetProperties()関数の呼び出しは不要である。
+!!   しかしMPI並列プログラムの各プロセスが測定区間群を異なる順序でstart()/stop()する場合や
+!!   特定のプロセスだけにしかstart()/stop()されない区間がある場合は、
+!!   それらの区間名をあらかじめsetProperties()関数で登録しておくことが必要となる。
+!!  この場合 setProperties()関数の呼び出しは initialize()の直後に行うことが望ましい。
+!!
 subroutine f_pm_setproperties (fc, f_type, f_exclusive)
 end subroutine
 
@@ -192,6 +198,7 @@ end subroutine
 !> PMlib Fortran 測定結果のレポート出力をコントロール
 !!
 !!   @param[in] character*(*) fc	出力ファイル名(character文字列)
+!!                    もし空の文字列 "" が引数として渡された場合は、標準出力へレポートする
 !!
 !!   @note  のルーチンを呼ぶと必要なレポートを全て出力することができる。
 !!		出力の内容は環境変数でコントロールする

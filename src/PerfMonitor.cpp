@@ -130,7 +130,7 @@ namespace pm_lib {
 // Parse the Environment Variable HWPC_CHOOSER
 	// If given, the value should be one of {FLOPS| BANDWIDTH| VECTOR| CACHE| CYCLE| LOADSTORE| USER}
 	std::string s_chooser;
-	std::string s_default = "USER";
+	std::string s_default = "FLOPS";
 
     cp_env = NULL;
 	cp_env = std::getenv("HWPC_CHOOSER");
@@ -180,11 +180,14 @@ namespace pm_lib {
 // initialize Power API binding contexts
 	num_power = PerfMonitor::initializePOWER() ;
 
-    m_watchArray[0].initializePowerWatch (num_power, level_POWER);
+// 20220613
+// change better function name from initializePowerWatch to setRootPowerLevel
+
+    m_watchArray[0].setRootPowerLevel (num_power, level_POWER);
 
 	#ifdef DEBUG_PRINT_MONITOR
     if (my_rank == 0) {
-		fprintf(stderr, "\t <initialize> map of my_rank=%d, my_thread=%d\n", my_rank, my_thread);
+		fprintf(stderr, "<initialize> map should be blank at this point.\n");
 		#pragma omp critical
     	check_all_section_object();
 		// end critical does not exist for C++
@@ -198,6 +201,8 @@ namespace pm_lib {
 //	increment the shared sections as well
     int id_shared;
     id_shared = add_shared_section(label);
+
+    //	m_watchArray[0].setRootPowerLevel (num_power, level_POWER);
 
     m_nWatch++;
     m_watchArray[0].setProperties(label, id, CALC, num_process, my_rank, num_threads, false);
@@ -277,11 +282,11 @@ namespace pm_lib {
    		id_shared = add_shared_section(label);
 
     	#ifdef DEBUG_PRINT_MONITOR
-		fprintf(stderr, "<setProperties> [%s] NEW section created by my_thread=%d as [%d] \n", label.c_str(), my_thread, id);
+		fprintf(stderr, "<setProperties> [%s] NEW section created by my_rank=%d, my_thread=%d as [%d] \n", label.c_str(), my_rank, my_thread, id);
 		#endif
 	} else {
     	#ifdef DEBUG_PRINT_MONITOR
-		fprintf(stderr, "<setProperties> [%s] section exists. my_thread=%d as [%d] \n", label.c_str(), my_thread, id);
+		fprintf(stderr, "<setProperties> [%s] section exists. my_rank=%d, my_thread=%d as [%d] \n", label.c_str(), my_rank, my_thread, id);
 		#endif
 	}
 
@@ -426,7 +431,7 @@ namespace pm_lib {
 	#else
 	i_thread = 0;
 	#endif
-	if (my_rank == 0) {
+	//	if (my_rank == 0) {
 		//	fprintf(stderr, "<start> [%s] section i_thread=%d : is %s \n",
 		//		label.c_str(), i_thread, (id<0)?"NEW!":"already in");
 		if (id < 0) {
@@ -434,7 +439,7 @@ namespace pm_lib {
 		} else {
 			fprintf(stderr, "<start> [%s] i_thread=%d : label exists.\n", label.c_str(), i_thread);
 		}
-	}
+	//	}
 	#endif
 
     if (id < 0) {
@@ -443,10 +448,10 @@ namespace pm_lib {
 
       id = find_section_object(label);
       #ifdef DEBUG_PRINT_MONITOR
-      if (my_rank == 0) {
+      //	if (my_rank == 0) {
         fprintf(stderr, "<start> created property for [%s] at class address %p\n",
 				label.c_str(), &m_watchArray[id]);
-      }
+      //	}
       #endif
     }
     is_exclusive_construct = true;
@@ -458,9 +463,9 @@ namespace pm_lib {
 
     //	last_started_label = label;
     #ifdef DEBUG_PRINT_MONITOR
-    if (my_rank == 0) {
+    //	if (my_rank == 0) {
       fprintf(stderr, "<start> [%s] id=%d\n", label.c_str(), id);
-    }
+    //	}
     #endif
   }
 
@@ -499,9 +504,9 @@ namespace pm_lib {
     is_exclusive_construct = false;
 
     #ifdef DEBUG_PRINT_MONITOR
-    if (my_rank == 0) {
+    //	if (my_rank == 0) {
       fprintf(stderr, "<stop> [%s] id=%d\n", label.c_str(), id);
-    }
+    //	}
     #endif
   }
 
@@ -586,27 +591,60 @@ namespace pm_lib {
     	m_watchArray[0].power_stop( pm_pacntxt, pm_extcntxt, pm_obj_array, pm_obj_ext );
     	(void) finalizePOWER();
 
+    	m_watchArray[0].cleanupHWPC();
+
     	is_Root_active = false;
     }
   }
 
   /// Count the number of shared measured sections
+  /// Increase the section object instances of the master thread (0), if necessary
   ///
-  ///   @param[out] nSections     number of shared measured sections
+  ///   @param[out] n_shared_sections     number of shared measured sections
   ///
-  void PerfMonitor::countSections (int &nSections)
+  ///	@note this routine is called by report driver in a serial context
+  ///
+  void PerfMonitor::countSections (int &n_shared_sections)
   {
-	#ifdef DEBUG_PRINT_MONITOR
-	check_all_shared_sections();
-	#endif
+	std::string p_label;
+	int id;
 
-	//	nSections = m_nWatch;	// the local value, i.e. local to each thread class object
-
-	nSections = shared_map_sections.size();	// this is the shared value for all threads
+	n_shared_sections = shared_map_sections.size();	// this is the shared value for all threads
 
 	#ifdef DEBUG_PRINT_MONITOR
-    if (my_rank == 0) { fprintf(stderr, "<countSections> nSections=%d \n" , nSections); }
+    //	if (my_rank == 0) {
+		fprintf(stderr, "\n<countSections> started. my_rank=%d, n_shared_sections=%d \n" , my_rank, n_shared_sections);
+		check_all_shared_sections();
+		fprintf(stderr, "\n");
+	//	}
 	#endif
+
+	if (n_shared_sections == m_nWatch) return; // The master thread contains all the shared sections
+
+	// Add the missing section object instances in the master thread
+	std::map<std::string, int>::const_iterator it;
+	for(it = shared_map_sections.begin(); it != shared_map_sections.end(); ++it) {
+		p_label = it->first;
+		if ( find_section_object(p_label) >= 0)  continue;
+		PerfMonitor::setProperties(p_label);
+		id = find_section_object(p_label);
+		m_watchArray[id].m_in_parallel = true;
+
+		#ifdef DEBUG_PRINT_MONITOR
+    	//	if (my_rank == 0) {
+			fprintf(stderr, "<countSections> created new [%s] in the master thread of my_rank=%d \n", p_label.c_str(), my_rank);
+		//	}
+		#endif
+	}
+
+	#ifdef DEBUG_PRINT_MONITOR
+    //	if (my_rank == 0) {
+		fprintf(stderr, "\n<countSections> master thread private map is updated.\n" );
+		check_all_section_object();
+		fprintf(stderr, "\n");
+	//	}
+	#endif
+
   }
 
 
@@ -644,15 +682,18 @@ namespace pm_lib {
 		}
 	}
 	if ( (mid<0) || (mid>=n_shared_sections) ) {
-		fprintf(stderr, "*** PMlib internal Error <SerialParallelRegion> section id=%d was not found\n", id);
-		inside=-1;
-		return;
-	}
+		// Well, this class instance does not contain the section labeled "s".
+		// So the id in the shared section map must have been defined by some other class instance
+		// which means that the section is created by one of the other parallel thread
+		inside=1;
 
+	} else
 	if (m_watchArray[mid].m_in_parallel) {
 		inside=1;
+
 	} else {
 		inside=0;
+
 	}
 
 	#ifdef DEBUG_PRINT_MONITOR
@@ -678,15 +719,18 @@ namespace pm_lib {
   {
     if (!is_PMlib_enabled) return;
 #ifdef _OPENMP
-	int mid;
+	int mid = -1;	// this has been a hidden bug.
 	bool in_parallel;
 	in_parallel = omp_in_parallel();
 	std::string s;
 
+	// identify the section label for id
 	for (auto it=shared_map_sections.begin(); it != shared_map_sections.end(); ++it)
 	{
     	if (it->second == id) {
 			s = it->first;
+			// search for section id in local thread
+			// if found, mid returns the local section id. if not, mid=-1.
 			mid = find_section_object(s);
 			break;
 		}
@@ -694,39 +738,23 @@ namespace pm_lib {
 
 	#ifdef DEBUG_PRINT_MONITOR
     if (my_rank == 0) {
-		fprintf(stderr, "<mergeThreads> id=%d [%s] mid=%d in %s region. \n" , id, s.c_str(), mid, in_parallel?"PARALLEL":"SERIAL");
+		#pragma omp critical
+		if ( mid<0 ) { // this thread does not contain the shared section [id]
+			fprintf(stderr, "<mergeThreads> shared [%s] does not exist in thread %d\n" , s.c_str(), my_thread );
+		} else { // the class instance contains the shared section id
+			fprintf(stderr, "<mergeThreads> shared [%s] exists in thread %d. merge starts. \n" , s.c_str(), my_thread);
+		}
 	}
 	#endif
 
+	#pragma omp barrier
+	if ( mid>=0 ) m_watchArray[mid].mergeMasterThread();
+	#pragma omp barrier
+	if ( mid>=0 ) m_watchArray[mid].mergeParallelThread();
+	#pragma omp barrier
+	if ( mid>=0 ) m_watchArray[mid].updateMergedThread();
+	#pragma omp barrier
 
-	#pragma omp barrier
-	m_watchArray[mid].mergeMasterThread();
-	#pragma omp barrier
-	m_watchArray[mid].mergeParallelThread();
-	#pragma omp barrier
-	m_watchArray[mid].updateMergedThread();
-	#pragma omp barrier
-
-#endif
-  }
-
-
-  ///  Merge the parallel thread data of all sections
-  ///  This function is obsolete and should not be necessary. Just leave here as a history
-  ///
-  void PerfMonitor::Obsolete_mergeThreads (void)
-  {
-    if (!is_PMlib_enabled) return;
-#ifdef _OPENMP
-	for (int i=0; i<m_nWatch; i++) {
-		#pragma omp barrier
-		m_watchArray[i].mergeMasterThread();
-		#pragma omp barrier
-		m_watchArray[i].mergeParallelThread();
-		#pragma omp barrier
-		m_watchArray[i].updateMergedThread();
-	}
-	#pragma omp barrier
 #endif
   }
 
@@ -904,11 +932,12 @@ namespace pm_lib {
 	if (inside==0) {
 		stopRoot ();
 	} else if (inside==1) {
-    	if (my_rank==0) 
+    	if (my_rank==0) {
 		fprintf(stderr, "\n*** PMlib warning. wrong usage *** \n");
 		fprintf(stderr, "To report the stats including the sections inside of parallel region,\n");
 		fprintf(stderr, "PerfReport::report() must be called instead of PerfMonitor::report() \n");
 		fprintf(stderr, "The following report is not correct. \n\n");
+		}
 
 		stopRoot ();
 	} else {
@@ -1038,8 +1067,11 @@ namespace pm_lib {
     for (int i = 0; i < m_nWatch; i++) {
       int labelLen = m_watchArray[i].m_label.size();
       if (!m_watchArray[i].m_exclusive) {
-        labelLen = labelLen + 3;
-        }
+        labelLen = labelLen + 4;	// for inclusive sections, add "(*)" symbol to the label
+      }
+      if (m_watchArray[i].m_in_parallel) {
+        labelLen = labelLen + 4;	// for sections inside of parallel region, add "(+)" symbol
+      }
       maxLabelLen = (labelLen > maxLabelLen) ? labelLen : maxLabelLen;
     }
     maxLabelLen++;
@@ -1062,7 +1094,7 @@ namespace pm_lib {
                                   sum_time_flop, sum_time_comm, sum_time_other, unit, op_sort);
 
     /// テイラ（合計）部分を出力。
-    PerfMonitor::printBasicTailer (fp, maxLabelLen, sum_flop, sum_comm, sum_other,
+    PerfMonitor::printBasicTailer (fp, maxLabelLen, tot, sum_flop, sum_comm, sum_other,
                                   sum_time_flop, sum_time_comm, sum_time_other, unit);
 
     PerfMonitor::printBasicHWPC (fp, maxLabelLen, op_sort);
@@ -1119,7 +1151,7 @@ void PerfMonitor::printBasicPower(FILE* fp, int maxLabelLen, int op_sort)
     if (!is_PMlib_enabled) return;
 #ifdef USE_POWER
 //
-// Fugaku local implementation
+// This routine reflects Fugaku specific Power API implementation
 //
 	int n_parts;
     std::string p_label;
@@ -1195,8 +1227,36 @@ void PerfMonitor::printBasicPower(FILE* fp, int maxLabelLen, int op_sort)
 	fprintf(fp, "\n");
 	fprintf(fp, "# PMlib Power Consumption report per node basis ---------------------------------- #\n");
 	fprintf(fp, "\n");
-    fprintf(fp, "\tReport of the master node is generated for POWER_CHOOSER=%s option.\n\n", p_label.c_str());
+    fprintf(fp, "\tReport is generated for POWER_CHOOSER=%s option.\n\n", p_label.c_str());
 
+	double t_joule;
+	int nnodes;
+	int np_per_node;
+	int iret;
+
+// the combined power consumption for all the processes
+
+    char* cp_env;
+    cp_env = NULL;
+	cp_env = std::getenv("PJM_PROC_BY_NODE");	// Fugaku job manager holds this variable
+	if (cp_env == NULL) {
+		np_per_node = 1;
+	} else {
+		np_per_node = atoi(cp_env);;
+	}
+	nnodes=(num_process-1)/np_per_node+1;
+
+	fprintf(fp, "\t The aggregate power consumption of %d processes on %d nodes =", num_process, nnodes);
+	// m_power_av is the average value of my_power.w_accumu[Max_power_stats-1]; for all processes
+	t_joule = (m_watchArray[0].m_power_av * nnodes);
+	fprintf(fp, "%10.2e [J] == %10.2e [Wh]\n", t_joule, t_joule/3600.0);
+
+
+// the power consumption for the selected sections
+// Only the sections executed by the master thread is reported
+
+    fprintf(fp, "\t The power consumption of the master node per each section is shown below.\n");
+    fprintf(fp, "\t Remark that only the sections executed by rank 0 thread 0 are shown.\n\n");
 
     for (int i=0; i< maxLabelLen; i++) { fputc(' ', fp); }
 	fprintf(fp, "   Estimated power inside node [W]\n");
@@ -1219,6 +1279,9 @@ void PerfMonitor::printBasicPower(FILE* fp, int maxLabelLen, int op_sort)
 		}
 		if (m == 0) continue;
 		PerfWatch& w = m_watchArray[m];
+
+		// report the sections that are executed by the master thread only
+		if (w.my_papi.th_v_sorted[0][0] == 0) continue;
 
 		if (level_POWER == 1) {	// total, CMG+L2, MEMORY, TF+A+U
 			sorted_joule[0] = w.my_power.w_accumu[0];
@@ -1259,9 +1322,9 @@ void PerfMonitor::printBasicPower(FILE* fp, int maxLabelLen, int op_sort)
 		}
 
 		p_label = w.m_label;
-		if (!w.m_exclusive) {
-			p_label = w.m_label + "(*)";
-		}
+		if (!w.m_exclusive) { p_label = p_label + " (*)"; }
+		if (w.m_in_parallel) { p_label = p_label + " (+)"; }
+
 		fprintf(fp, "%-*s:", maxLabelLen, p_label.c_str() );
 		for (int i=0; i<n_parts; i++) {
 			fprintf(fp, "%7.1f ",  sorted_joule[i]/w.m_time_av);	// Watt value
@@ -1272,33 +1335,6 @@ void PerfMonitor::printBasicPower(FILE* fp, int maxLabelLen, int op_sort)
 
     for (int i=0; i< maxLabelLen; i++) { fputc('-', fp); }	; fprintf(fp, "+--------+");
     for (int i=0; i<(n_parts-1)*8; i++) { fputc('-', fp); }	 ; fprintf(fp, "+----------\n");
-
-	double t_joule;
-	int nnodes;
-	int np_per_node;
-	int iret;
-
-    char* cp_env;
-    cp_env = NULL;
-	cp_env = std::getenv("PJM_PROC_BY_NODE");	// Fugaku job manager holds this variable
-	if (cp_env == NULL) {
-		np_per_node = 1;
-	} else {
-		np_per_node = atoi(cp_env);;
-	}
-    #ifdef DEBUG_PRINT_MONITOR
-	if (my_rank == 0) {
-		fprintf(fp, "<PerfMonitor::printBasicPower> translated PJM_PROC_BY_NODE=%d \n", np_per_node);
-	}
-	#endif
-	//	nnodes=num_process/np_per_node;
-	nnodes=(num_process-1)/np_per_node+1;
-
-	fprintf(fp, "\n");
-	fprintf(fp, "\t The aggregate power consumption of %d processes on %d nodes =", num_process, nnodes);
-	// m_power_av is the average value of my_power.w_accumu[Max_power_stats-1]; for all processes
-	t_joule = (m_watchArray[0].m_power_av * nnodes);
-	fprintf(fp, "%10.2e [J] == %10.2e [Wh]\n", t_joule, t_joule/3600.0);
 
 #endif
 }
@@ -1341,16 +1377,7 @@ void PerfMonitor::printBasicPower(FILE* fp, int maxLabelLen, int op_sort)
 
       // 測定時間の分母
       // initialize()からgather()までの区間（==Root区間）の測定時間を分母とする
-      double tot = 0.0;
-      if (0 == 0) {
-        tot =  m_watchArray[0].m_time_av;
-      } else {
-        for (int i = 0; i < m_nWatch; i++) {
-          if (m_watchArray[i].m_exclusive) {
-            tot +=  m_watchArray[i].m_time_av;
-          }
-        }
-      }
+      double tot = m_watchArray[0].m_time_av;
 
     // 測定区間の時間と計算量を表示。表示順は引数 op_sort で指定されている。
       for (int j = 0; j < m_nWatch; j++) {
@@ -1502,16 +1529,7 @@ void PerfMonitor::printBasicPower(FILE* fp, int maxLabelLen, int op_sort)
 
       // 測定時間の分母
       // initialize()からgather()までの区間（==Root区間）の測定時間を分母とする
-      double tot = 0.0;
-      if (0 == 0) {
-        tot =  m_watchArray[0].m_time_av;
-      } else {
-        for (int i = 0; i < m_nWatch; i++) {
-          if (m_watchArray[i].m_exclusive) {
-            tot +=  m_watchArray[i].m_time_av;
-          }
-        }
-      }
+      double tot =  m_watchArray[0].m_time_av;
 
       for (int j = 0; j < m_nWatch; j++) {
         int i;
@@ -1638,67 +1656,6 @@ void PerfMonitor::printBasicPower(FILE* fp, int maxLabelLen, int op_sort)
   }
 
 
-  /// 測定途中経過の状況レポートを出力（排他測定区間を対象とする）
-  ///
-  ///   @param[in] fp       出力ファイルポインタ
-  ///   @param[in] comments 任意のコメント
-  ///   @param[in] op_sort 測定区間の表示順 (0:経過時間順、1:登録順)
-  ///
-  ///   @note 基本レポートと同様なフォーマットで出力する。
-  ///      MPIの場合、rank0プロセスの測定回数が１以上の区間のみを表示する。
-  ///   @note  内部では以下の処理を行う。
-  ///    各測定区間の全プロセス途中経過状況を集約。 gather_and_stats();
-  ///    測定結果の平均値・標準偏差などの基礎的な統計計算。
-  ///    経過時間でソートした測定区間のリストm_order[m_nWatch] を作成する。
-  ///    各測定区間のHWPCイベントの統計値を取得する。
-  ///
-  void PerfMonitor::printProgress(FILE* fp, std::string comments, int op_sort)
-  {
-    if (!is_PMlib_enabled) return;
-
-    if (m_nWatch == 0) return; // No section defined with setProperties()
-
-    gather_and_stats();
-
-    sort_m_order();
-
-    if (my_rank != 0) return;
-
-    // 測定時間の分母
-    //  排他測定区間の合計
-    //  排他測定区間+非排他測定区間の合計
-    double tot = 0.0;
-    for (int i = 0; i < m_nWatch; i++) {
-      if (m_watchArray[i].m_exclusive) {
-        tot +=  m_watchArray[i].m_time_av;
-      }
-    }
-
-    int maxLabelLen = 0;
-    for (int i = 0; i < m_nWatch; i++) {
-      int labelLen = m_watchArray[i].m_label.size();
-      if (!m_watchArray[i].m_exclusive) {
-        labelLen = labelLen + 3;
-        }
-      maxLabelLen = (labelLen > maxLabelLen) ? labelLen : maxLabelLen;
-    }
-    maxLabelLen++;
-
-    double sum_time_comm = 0.0;
-    double sum_time_flop = 0.0;
-    double sum_time_other = 0.0;
-    double sum_comm = 0.0;
-    double sum_flop = 0.0;
-    double sum_other = 0.0;
-    std::string unit;
-
-    fprintf(fp, "\n### PMlib printProgress ---------- %s \n", comments.c_str());
-    // 各測定区間を出力
-    PerfMonitor::printBasicSections (fp, maxLabelLen, tot, sum_flop, sum_comm, sum_other,
-                                  sum_time_flop, sum_time_comm, sum_time_other, unit, op_sort);
-
-    return;
-  }
 
   /// ポスト処理用traceファイルの出力と終了処理
   ///
@@ -1831,9 +1788,9 @@ void PerfMonitor::printBasicPower(FILE* fp, int maxLabelLen, int op_sort)
 
     m_watchArray[0].printEnvVars(fp);
 
-    fprintf(fp, "\tActive PMlib elapse time (from initialize to report/print) = %9.3e [sec]\n", tot);
-    fprintf(fp, "\tExclusive sections and inclusive sections are reported below.\n");
-    fprintf(fp, "\tInclusive sections, marked with (*), are not added in the statistics total.\n");
+    fprintf(fp, "\tActive PMlib elapsed time (from initialize to report/print) = %9.3e [sec]\n", tot);
+    fprintf(fp, "\tBasic process stats as the average of all the processes are reported below.\n");
+    fprintf(fp, "\tSee Legend page if the section name is annotated with special symbols such as (*),(+).\n");
     fprintf(fp, "\n");
 
   }
@@ -1855,7 +1812,7 @@ void PerfMonitor::printBasicPower(FILE* fp, int maxLabelLen, int op_sort)
   ///
   ///   @note  計算量（演算数やデータ移動量）選択方法は PerfWatch::stop() のコメントに詳しく説明されている。
   ///
-  void PerfMonitor::printBasicSections(FILE* fp, int maxLabelLen, double& tot,
+  void PerfMonitor::printBasicSections(FILE* fp, int maxLabelLen, double tot,
                                   double& sum_flop, double& sum_comm, double& sum_other,
                                   double& sum_time_flop, double& sum_time_comm, double& sum_time_other,
                                   std::string unit, int op_sort)
@@ -1873,45 +1830,48 @@ void PerfMonitor::printBasicPower(FILE* fp, int maxLabelLen, int op_sort)
 
     int is_unit;
     is_unit = m_watchArray[0].statsSwitch();
-	//	fprintf(fp, "%-*s| number of|        accumulated time[sec]           ", maxLabelLen, "Section");
-	fprintf(fp, "%-*s| number of|  averaged process execution time [sec] ", maxLabelLen, "Section");
+	//	fprintf(fp, "%-*s| number of|  averaged process execution time [sec] ", maxLabelLen, "Section");
+	//	fprintf(fp, "%-*s| number of| total execution time and time per call ", maxLabelLen, "Section");
+	//	fprintf(fp, "%-*s| number of| measured time in total, %%, per call, SD", maxLabelLen, "Section");
+	//	fprintf(fp, "%-*s| number of| total measured, weight, time per,  std. ", maxLabelLen, "Section");
+	//	fprintf(fp, "%-*s| number of| measured, weight,  per call,  standard ", maxLabelLen, "Section");
+	fprintf(fp, "%-*s| number of| measured | weight| time per| std.dv of ", maxLabelLen, "Section");
+
 
     if ( is_unit == 0 || is_unit == 1 ) {
       fprintf(fp, "| user defined numerical performance\n");
     } else if ( is_unit == 2 ) {
-      fprintf(fp, "| hardware counted data access events\n");
+      fprintf(fp, "| hardware counted data access \n");
     } else if ( is_unit == 3 ) {
       fprintf(fp, "| hardware counted floating point ops.\n");
     } else if ( is_unit == 4 ) {
-      fprintf(fp, "| hardware vectorized floating point ops.\n");
+      fprintf(fp, "| hardware counted floating point ops.\n");
     } else if ( is_unit == 5 ) {
       fprintf(fp, "| hardware counted cache utilization\n");
     } else if ( is_unit == 6 ) {
       fprintf(fp, "| hardware counted total instructions\n");
     } else if ( is_unit == 7 ) {
       fprintf(fp, "| memory load and store instruction type\n");
-    } else {
-      fprintf(fp, "| *** internal bug. <printBasicSections> ***\n");
-		;	// should not reach here
     }
 
-	//	fprintf(fp, "%-*s|   calls  |      avr   avr[%%]     sdv    avr/call  ", maxLabelLen, "Label");
-	fprintf(fp, "%-*s|   calls  |   total    [%%]   total/call     sdv    ", maxLabelLen, "Label");
+	//	fprintf(fp, "%-*s|   calls  |   total    [%%]   total/call     sdv    ", maxLabelLen, "Label");
+	//	fprintf(fp, "%-*s|   calls  |  time[sec]   [%%]   time[sec]  deviation", maxLabelLen, "Label");
+	fprintf(fp, "%-*s|   calls  | time[sec]   [%%]   call[sec]    time    ", maxLabelLen, "Label");
 
     if ( is_unit == 0 || is_unit == 1 ) {
-      fprintf(fp, "|  operations   sdv    performance\n");
+      fprintf(fp, "| operations  std.dv  performance\n");
     } else if ( is_unit == 2 ) {
-      fprintf(fp, "|    Bytes      sdv   Mem+LLC bandwidth\n");
+      fprintf(fp, "|   Bytes    std.dv  Mem+LLC bandwidth\n");
     } else if ( is_unit == 3 ) {
-      fprintf(fp, "|  f.p.ops      sdv    performance\n");
+      fprintf(fp, "|  f.p.ops    std.dv  performance\n");
     } else if ( is_unit == 4 ) {
-      fprintf(fp, "|  f.p.ops      sdv    vectorized%%\n");
+      fprintf(fp, "|  f.p.ops    std.dv  vectorized%%\n");
     } else if ( is_unit == 5 ) {
-      fprintf(fp, "| load+store    sdv    L1+L2 hit%%\n");
+      fprintf(fp, "| load+store  std.dv  L1+L2 hit%%\n");
     } else if ( is_unit == 6 ) {
-      fprintf(fp, "| instructions  sdv    performance\n");
+      fprintf(fp, "| instructions std.dv performance\n");
     } else if ( is_unit == 7 ) {
-      fprintf(fp, "| load+store    sdv    vectorized%%\n");
+      fprintf(fp, "| load+store  std.dv  vectorized%%\n");
     } else {
       fprintf(fp, "| *** internal bug. <printBasicSections> ***\n");
 		;	// should not reach here
@@ -1959,7 +1919,8 @@ void PerfMonitor::printBasicPower(FILE* fp, int maxLabelLen, int op_sort)
       is_unit = w.statsSwitch();
 
       p_label = w.m_label;
-      if (!w.m_exclusive) { p_label = w.m_label + "(*)"; }	// 非排他測定区間は単位表示が(*)
+      if (!w.m_exclusive) { p_label = w.m_label + " (*)"; }	
+      if (w.m_in_parallel) { p_label = w.m_label + " (+)"; }
 
 	//fprintf(fp, "%-*s|   calls  |   total    [%]    total/call     sdv    ", maxLabelLen, "Label");
 
@@ -1970,7 +1931,7 @@ void PerfMonitor::printBasicPower(FILE* fp, int maxLabelLen, int op_sort)
               w.m_time_av,          // 測定区間の時間(全プロセスの平均値)
               100*w.m_time_av/tot,  // 比率：測定区間の時間/全区間（=Root区間）の時間
               tav,                 // コール1回あたりの時間
-              w.m_time_sd          // 標準偏差
+              w.m_time_sd          // 全プロセスでの標準偏差
 			);
 
 		// 0: user set bandwidth
@@ -1997,7 +1958,8 @@ void PerfMonitor::printBasicPower(FILE* fp, int maxLabelLen, int op_sort)
 
       double uF = w.unitFlop(fops, unit, is_unit);
       p_label = unit;		// 計算速度の単位
-      if (!w.m_exclusive) { p_label = unit + "(*)"; } // 非排他測定区間は(*)表示
+      if (!w.m_exclusive)  { p_label = p_label + "(*)"; }
+      if (w.m_in_parallel) { p_label = p_label + "(+)"; }
 
       fprintf(fp, "    %8.3e  %8.2e %6.2f %s\n",
             w.m_flop_av,          // 測定区間の計算量(全プロセスの平均値)
@@ -2035,6 +1997,7 @@ void PerfMonitor::printBasicPower(FILE* fp, int maxLabelLen, int op_sort)
   ///
   ///   @param[in] fp       出力ファイルポインタ
   ///   @param[in] maxLabelLen    ラベル文字長
+  ///   @param[in] tot  Root区間の経過時間
   ///   @param[in] sum_time_flop  演算経過時間
   ///   @param[in] sum_time_comm  通信経過時間
   ///   @param[in] sum_time_other  その他経過時間
@@ -2043,7 +2006,7 @@ void PerfMonitor::printBasicPower(FILE* fp, int maxLabelLen, int op_sort)
   ///   @param[in] sum_other  その他
   ///   @param[in] unit 計算量の単位
   ///
-  void PerfMonitor::printBasicTailer(FILE* fp, int maxLabelLen,
+  void PerfMonitor::printBasicTailer(FILE* fp, int maxLabelLen, double tot,
                                      double sum_flop, double sum_comm, double sum_other,
                                      double sum_time_flop, double sum_time_comm, double sum_time_other,
                                      std::string unit)
@@ -2059,67 +2022,74 @@ void PerfMonitor::printBasicPower(FILE* fp, int maxLabelLen, int op_sort)
 
     // Subtotal of the flop counts and/or byte counts per process
     //
-    // 2021/6/14 Changed the label from  "Sections per process" to "All sections combined"
-    //
     if ( (is_unit == 0) || (is_unit == 1) ) {
       if ( sum_time_comm > 0.0 ) {
-      fprintf(fp, "%-*s %1s %9.3e", maxLabelLen+10, "All sections combined", "", sum_time_comm);
+      fprintf(fp, "%-*s   %9.3e %6.2f ", maxLabelLen+10, "Sum of exclusive sections", sum_time_comm, 100*sum_time_comm/tot);
       double comm_serial = PerfWatch::unitFlop(sum_comm/sum_time_comm, unit, 0);
-      fprintf(fp, "%30s  %8.3e          %7.2f %s\n", "-Exclusive COMM sections-", sum_comm, comm_serial, unit.c_str());
+      fprintf(fp, "%22s  %8.3e          %7.2f %s\n", " ", sum_comm, comm_serial, unit.c_str());
       }
       if ( sum_time_flop > 0.0 ) {
-      fprintf(fp, "%-*s %1s %9.3e", maxLabelLen+10, "All sections combined", "", sum_time_flop);
+      fprintf(fp, "%-*s   %9.3e %6.2f ", maxLabelLen+10, "Sum of exclusive sections", sum_time_flop, 100*sum_time_flop/tot);
       double flop_serial = PerfWatch::unitFlop(sum_flop/sum_time_flop, unit, 1);
-      fprintf(fp, "%30s  %8.3e          %7.2f %s\n", "-Exclusive CALC sections-", sum_flop, flop_serial, unit.c_str());
+      fprintf(fp, "%22s  %8.3e          %7.2f %s\n", " ", sum_flop, flop_serial, unit.c_str());
       }
 	} else
+    // For the stats of each section, use the value of its own, except for calculating the time %.
+	// In time % calculation, use the Root section elapsed time (tot) as the total time
     if ( (is_unit == 2) || (is_unit == 3) || (is_unit == 6) ) {
-      fprintf(fp, "%-*s %1s %9.3e", maxLabelLen+10, "All sections combined", "", sum_time_flop);
+      //	fprintf(fp, "%-*s %1s %9.3e", maxLabelLen+10, "aggregate active sections", "", tot);
+      //	fprintf(fp, "%-*s  %9.3e", maxLabelLen+10, "aggregate exclusive sections", sum_time_flop);
+      fprintf(fp, "%-*s   %9.3e %6.2f ", maxLabelLen+10, "Sum of exclusive sections", sum_time_flop, 100*sum_time_flop/tot);
       double flop_serial = PerfWatch::unitFlop(sum_flop/sum_time_flop, unit, is_unit);
-      fprintf(fp, "%30s  %8.3e          %7.2f %s\n", "-Exclusive HWPC sections-", sum_flop, flop_serial, unit.c_str());
+      fprintf(fp, "%22s  %8.3e          %7.2f %s\n", " ", sum_flop, flop_serial, unit.c_str());
 
 	} else
     if ( (is_unit == 4) || (is_unit == 5) || (is_unit == 7) ) {
-      fprintf(fp, "%-*s %1s %9.3e", maxLabelLen+10, "All sections combined", "", sum_time_flop);
+      fprintf(fp, "%-*s   %9.3e %6.2f ", maxLabelLen+10, "Sum of exclusive sections", sum_time_flop, 100*sum_time_flop/tot);
       double other_serial = PerfWatch::unitFlop(sum_other/sum_flop, unit, is_unit);
-      fprintf(fp, "%30s  %8.3e          %7.2f %s\n", "-Exclusive HWPC sections-", sum_flop, other_serial, unit.c_str());
+      fprintf(fp, "%22s  %8.3e          %7.2f %s\n", " ", sum_flop, other_serial, unit.c_str());
 	}
 
+
+    // sum of all processes, i.e. Job level, flop counts and/or byte counts
+    //
+    if ( (is_unit == 0) || (is_unit == 1) ) {
+      if ( sum_time_comm > 0.0 ) {
+
+      double sum_comm_job = (double)num_process*sum_comm;
+      double comm_job = PerfWatch::unitFlop(sum_comm_job/sum_time_comm, unit, 0);
+      fprintf(fp, "%-*s %16s", maxLabelLen+10, "[sum of all processes]", " " );
+      fprintf(fp, "%22s     %8.3e          %7.2f %s\n", "", sum_comm_job, comm_job, unit.c_str());
+      }
+      if ( sum_time_flop > 0.0 ) {
+      double sum_flop_job = (double)num_process*sum_flop;
+      double flop_job = PerfWatch::unitFlop(sum_flop_job/sum_time_flop, unit, 1);
+      fprintf(fp, "%-*s %16s", maxLabelLen+10, "[sum of all processes]", " " );
+      fprintf(fp, "%22s     %8.3e          %7.2f %s\n", "", sum_flop_job, flop_job, unit.c_str());
+      }
+	} else
+    if ( (is_unit == 2) || (is_unit == 3) || (is_unit == 6) ) {
+
+      double sum_flop_job = (double)num_process*sum_flop;
+      double flop_job = PerfWatch::unitFlop(sum_flop_job/sum_time_flop, unit, is_unit);
+      fprintf(fp, "%-*s %16s", maxLabelLen+10, "[sum of all processes]", " " );
+      fprintf(fp, "%22s     %8.3e          %7.2f %s\n", "", sum_flop_job, flop_job, unit.c_str());
+
+	} else
+    if ( (is_unit == 4) || (is_unit == 5) || (is_unit == 7) ) {
+      double sum_flop_job = (double)num_process*sum_flop;
+      double other_serial = PerfWatch::unitFlop(sum_other/sum_flop, unit, is_unit);
+      double other_job = other_serial;
+      fprintf(fp, "%-*s %16s", maxLabelLen+10, "[sum of all processes]", " " );
+      fprintf(fp, "%22s     %8.3e          %7.2f %s\n", "", sum_flop_job, other_job, unit.c_str());
+	}
 
 	for (int i = 0; i < maxLabelLen; i++) fputc('-', fp);
 	fprintf(fp,       "+----------+----------------------------------------+--------------------------------\n");
 
-    // Job total flop counts and/or byte counts
+    // Lastly, print the active PMlib elapsed time (from initialize to report/print) 
     //
-    // 2021/6/14 Changed the label from  "Sections total job" to "Total of all processes"
-    //
-    if ( (is_unit == 0) || (is_unit == 1) ) {
-      if ( sum_time_comm > 0.0 ) {
-      fprintf(fp, "%-*s %1s %9.3e", maxLabelLen+10, "Total of all processes", "", sum_time_comm);
-      double sum_comm_job = (double)num_process*sum_comm;
-      double comm_job = PerfWatch::unitFlop(sum_comm_job/sum_time_comm, unit, 0);
-      fprintf(fp, "%30s  %8.3e          %7.2f %s\n", "-Exclusive COMM sections-", sum_comm_job, comm_job, unit.c_str());
-      }
-      if ( sum_time_flop > 0.0 ) {
-      fprintf(fp, "%-*s %1s %9.3e", maxLabelLen+10, "Total of all processes", "", sum_time_flop);
-      double sum_flop_job = (double)num_process*sum_flop;
-      double flop_job = PerfWatch::unitFlop(sum_flop_job/sum_time_flop, unit, 1);
-      fprintf(fp, "%30s  %8.3e          %7.2f %s\n", "-Exclusive CALC sections-", sum_flop_job, flop_job, unit.c_str());
-      }
-	} else
-    if ( (is_unit == 2) || (is_unit == 3) || (is_unit == 6) ) {
-      fprintf(fp, "%-*s %1s %9.3e", maxLabelLen+10, "Total of all processes", "", sum_time_flop);
-      double sum_flop_job = (double)num_process*sum_flop;
-      double flop_job = PerfWatch::unitFlop(sum_flop_job/sum_time_flop, unit, is_unit);
-      fprintf(fp, "%30s  %8.3e          %7.2f %s\n", "-Exclusive HWPC sections-", sum_flop_job, flop_job, unit.c_str());
-	} else
-    if ( (is_unit == 4) || (is_unit == 5) || (is_unit == 7) ) {
-      fprintf(fp, "%-*s %1s %9.3e", maxLabelLen+10, "Total of all processes", "", sum_time_flop);
-      double sum_flop_job = (double)num_process*sum_flop;
-      double other_serial = PerfWatch::unitFlop(sum_other/sum_flop, unit, is_unit);
-      double other_job = other_serial;
-      fprintf(fp, "%30s  %8.3e          %7.2f %s\n", "-Exclusive HWPC sections-", sum_flop_job, other_job, unit.c_str());
-	}
+    fprintf(fp, "%-*s   %9.3e %6.2f \n", maxLabelLen+10, "[active PMlib elapsed time]", tot, 100.0);
 
   }
 
@@ -2151,6 +2121,9 @@ void warning_print (std::string cstr1, std::string cstr2, std::string cstr3, int
 }
 
 
+/// initialize the Power API interface objects
+///
+///
 int PerfMonitor::initializePOWER (void)
 {
 #ifdef USE_POWER
@@ -2462,18 +2435,22 @@ int PerfMonitor::add_section_object(std::string arg_st)
    	m_map_sections.insert( make_pair(arg_st, mid) );
 
     #ifdef DEBUG_PRINT_LABEL
-	if (my_rank==0) {
-	fprintf(stderr, "<add_section_object> [%s] [%d] my_thread=%d \n", arg_st.c_str(), mid, my_thread);
-	}
+	//	if (my_rank==0) {
+   	fprintf(stderr, "<add_section_object> [%s] my_rank=%d, my_thread=%d, [mid=%d] \n", arg_st.c_str(), my_rank, my_thread, mid);
+	//	}
     #endif
    	// we may better return the insert status...?
 	return mid;
 }
 
   /// 測定区間のラベルに対応する区間番号を取得
-  /// Search through the map and find section ID from the given label
+  /// Search through the map and return the section ID from the given label
   ///
   ///   @param[in] arg_st   the label of the section
+  ///
+  ///	@return
+  ///	The return value shows the location within the thread local section map
+  ///	If arg_st does not exist in the section map, the value (-1) is returned.
   ///
 int PerfMonitor::find_section_object(std::string arg_st)
 {
@@ -2484,9 +2461,9 @@ int PerfMonitor::find_section_object(std::string arg_st)
    		mid = m_map_sections[arg_st] ;
    	}
 	#ifdef DEBUG_PRINT_LABEL
-	if (my_rank==0) {
-   	fprintf(stderr, "<find_section_object> %s : mid=%d my_thread=%d \n", arg_st.c_str(), mid, my_thread);
-	}
+	//	if (my_rank==0) {
+   	fprintf(stderr, "<find_section_object> [%s] my_rank=%d, my_thread=%d, [mid=%d] \n", arg_st.c_str(), my_rank, my_thread, mid);
+	//	}
 	#endif
    	return mid;
 }
@@ -2506,9 +2483,9 @@ void PerfMonitor::loop_section_object(const int mid, std::string& p_label)
 		if (it->second == mid) {
 			p_label = it->first;
 			#ifdef DEBUG_PRINT_LABEL
-			if (my_rank==0) {
-			fprintf(stderr, "<loop_section_object> mid=%d my_thread=%d matched to [%s] \n", mid, my_thread, p_label.c_str() );
-			}
+			//	if (my_rank==0) {
+			fprintf(stderr, "<loop_section_object> [mid=%d] in my_rank=%d my_thread=%d matched to [%s] \n", mid, my_rank, my_thread, p_label.c_str() );
+			//	}
 			#endif
 			return;
 		}
@@ -2542,27 +2519,34 @@ void PerfMonitor::check_all_section_object(void)
   ///
   ///   @param[in] arg_st   the label of the newly created shared section
   ///
-  ///	@note The shared map is accessible from all threads inside or outside of parallel construct
+  ///	@return
+  ///	The return value shows the total number of the shared sections
+  ///	including the one just created.
+  ///
+  ///	@note
+  ///	The shared map is accessible from all threads inside or outside of parallel region
+  ///	@note
+  ///	The entry is not added if arg_st already exists in the map
   ///
 int PerfMonitor::add_shared_section(std::string arg_st)
 {
    	int n_shared_sections;
-	int n = shared_map_sections.size();
-		//	int ip = m_nWatch; // was a BUG
 	#ifdef _OPENMP
 	#pragma omp critical
-	// remark. end critical does not exist for C++. its only for fortran !$omp.
 	#endif
 	{
+		int n = shared_map_sections.size();
    		shared_map_sections.insert( make_pair(arg_st, n) );
    		n_shared_sections = shared_map_sections[arg_st] ;
 
     	#ifdef DEBUG_PRINT_LABEL
-		if (my_rank==0) {
-		fprintf(stderr, "<add_shared_section> [%s] [%d] my_thread=%d \n", arg_st.c_str(), n_shared_sections, my_thread);
-		}
+		//	if (my_rank==0) {
+		//	fprintf(stderr, "<add_shared_section> [%s] [%d] my_thread=%d \n", arg_st.c_str(), n_shared_sections, my_thread);
+		fprintf(stderr, "<add_shared_section> [%s] n_shared_sections is now [%d] my_rank=%d, my_thread=%d \n", arg_st.c_str(), n_shared_sections, my_rank, my_thread);
+		//	}
     	#endif
 	}
+	// remark. end critical does not exist for C++. its only for fortran !$omp.
 	return n_shared_sections;
 }
 

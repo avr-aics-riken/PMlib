@@ -423,20 +423,6 @@ namespace pm_lib {
     void printComm (FILE* fp, MPI_Comm p_comm, int icolor, int key, int legend=0, int op_sort=0);
 
 
-    /// 測定途中経過の状況レポートを出力（排他測定区間を対象とする）
-    ///
-    ///   @param[in] fp       出力ファイルポインタ
-    ///   @param[in] comments 任意のコメント
-    ///   @param[in] op_sort 測定区間の表示順 (0:経過時間順、1:登録順)
-    ///
-    ///   @note 基本レポートと同様なフォーマットで途中経過を出力する。
-    ///      多数回の反復計算を行う様なプログラムにおいて初期の経過状況を
-    ///      モニターする場合などに有効に用いることができる。
-    ///
-    void printProgress(FILE* fp, const std::string comments, int op_sort=0);
-
-
-
     /// ポスト処理用traceファイルの出力
     ///
     /// @note プログラム実行中一回のみポスト処理用traceファイルを出力できる
@@ -541,7 +527,7 @@ namespace pm_lib {
     ///   @param[in] fp       出力ファイルポインタ
     ///   @param[in] hostname ホスト名(省略時はrank 0 実行ホスト名)
     ///   @param[in] comments 任意のコメント
-    ///   @param[in] tot      測定経過時間
+    ///   @param[in] tot       Root区間の全経過時間
     ///
     void printBasicHeader(FILE* fp, const std::string hostname, const std::string comments, double tot=0.0);
 
@@ -549,7 +535,7 @@ namespace pm_lib {
     ///
     ///   @param[in] fp        出力ファイルポインタ
     ///   @param[in] maxLabelLen    ラベル文字長
-    ///   @param[in] tot       全経過時間
+    ///   @param[in] tot       Root区間の全経過時間
     ///   @param[in] sum_time_flop  演算経過時間
     ///   @param[in] sum_time_comm  通信経過時間
     ///   @param[in] sum_time_other  その他経過時間
@@ -562,7 +548,7 @@ namespace pm_lib {
     ///   @note   計算量（演算数やデータ移動量）選択方法は PerfWatch::stop() の
     ///           コメントに詳しく説明されている。
     ///
-    void printBasicSections(FILE* fp, int maxLabelLen, double& tot,
+    void printBasicSections(FILE* fp, int maxLabelLen, double tot,
               double& sum_flop, double& sum_comm, double& sum_other,
               double& sum_time_flop, double& sum_time_comm, double& sum_time_other,
               std::string unit, int op_sort=0);
@@ -571,6 +557,7 @@ namespace pm_lib {
     ///
     ///   @param[in] fp       出力ファイルポインタ
     ///   @param[in] maxLabelLen    ラベル文字長
+    ///   @param[in] tot       Root区間の全経過時間
     ///   @param[in] sum_time_flop  演算経過時間
     ///   @param[in] sum_time_comm  通信経過時間
     ///   @param[in] sum_time_other  その他経過時間
@@ -579,7 +566,7 @@ namespace pm_lib {
     ///   @param[in] sum_other  その他
     ///   @param[in] unit 計算量の単位
     ///
-    void printBasicTailer(FILE* fp, int maxLabelLen,
+    void printBasicTailer(FILE* fp, int maxLabelLen, double tot,
               double sum_flop, double sum_comm, double sum_other,
               double sum_time_flop, double sum_time_comm, double sum_time_other,
               const std::string unit);
@@ -643,13 +630,8 @@ namespace pm_lib {
 	int operatePowerKnob (int knob, int operation, int & value);
 
 
-
-    /// just as a record of DEBUG version
-    ///
-    void Obsolete_mergeThreads(void);
-
-
   }; // end of class PerfMonitor //
+
 
   /**
    * additional class to integrate serial/threaded report for C++ user code
